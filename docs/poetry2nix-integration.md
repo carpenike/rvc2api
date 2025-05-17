@@ -73,7 +73,7 @@ outputs = { self, nixpkgs, flake-utils, poetry2nix, ... }:
         extraPackages = ps: with ps; [
           black
           ruff
-          mypy
+          # Using Pyright as the standardized type checker (see pyrightconfig.json)
           pytest
         ];
       };
