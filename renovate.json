@@ -1,9 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": ["config:best-practices"],
   "commitMessagePrefix": "chore(deps): ",
   "labels": ["dependencies"],
   "rebaseWhen": "behind-base-branch",
+  "dependencyDashboard": true,
 
   "lockFileMaintenance": {
     "enabled": true,
@@ -55,6 +56,70 @@
       "matchManagers": ["pre-commit"],
       "groupName": "pre-commit hooks",
       "addLabels": ["pre-commit", "hooks"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "TypeScript type definitions",
+      "addLabels": ["typescript", "types"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^eslint", "eslint-plugin-"],
+      "groupName": "ESLint packages",
+      "addLabels": ["frontend", "linting"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["jest", "^@testing-library/"],
+      "groupName": "Testing packages",
+      "addLabels": ["frontend", "testing"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["typescript", "^typescript-"],
+      "groupName": "TypeScript packages",
+      "addLabels": ["frontend", "typescript"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["vite", "^@vitejs/"],
+      "groupName": "Vite packages",
+      "addLabels": ["frontend", "build-tools"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["tailwindcss", "postcss", "autoprefixer"],
+      "groupName": "CSS tooling",
+      "addLabels": ["frontend", "styling"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^react$", "^react-dom$", "^react-router"],
+      "groupName": "React core packages",
+      "addLabels": ["frontend", "react"],
+      "stabilityDays": 7
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "matchPackagePatterns": ["^@headlessui/", "^@heroicons/"],
+      "groupName": "UI component libraries",
+      "addLabels": ["frontend", "ui-components"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "addLabels": ["javascript", "non-major"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["javascript", "major"],
+      "stabilityDays": 14
     }
-  ]
+  ],
+  "schedule": ["after 10pm and before 5am"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5
 }
