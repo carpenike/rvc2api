@@ -36,6 +36,13 @@ class WebSocketLogHandler(logging.Handler):
         super().__init__()
         self.loop = loop
 
+    def _handle_callback_result(self, fut: asyncio.Future, client: WebSocket) -> None:
+        """Handle the result of an asynchronous send operation."""
+        try:
+            fut.result()
+        except Exception:
+            log_ws_clients.discard(client)
+
     def emit(self, record):
         log_entry = self.format(record)
         for ws_client in list(log_ws_clients):
@@ -44,13 +51,14 @@ class WebSocketLogHandler(logging.Handler):
                     coro = ws_client.send_text(log_entry)
                     fut = asyncio.run_coroutine_threadsafe(coro, self.loop)
 
-                    def remove_on_fail(fut):
-                        try:
-                            fut.result()
-                        except Exception:
-                            log_ws_clients.discard(ws_client)
+                    # Create a callback function with the client captured in closure
+                    def create_callback(client):
+                        def callback(future):
+                            self._handle_callback_result(future, client)
 
-                    fut.add_done_callback(remove_on_fail)
+                        return callback
+
+                    fut.add_done_callback(create_callback(ws_client))
             except Exception:
                 log_ws_clients.discard(ws_client)
 
@@ -140,8 +148,11 @@ async def can_sniffer_ws_endpoint(ws: WebSocket):
             await ws.send_json(group)
         while True:
             await ws.receive_text()  # Keep the connection open
-    except Exception:
-        pass
+    except WebSocketDisconnect:
+        logger.info(f"CAN Sniffer WebSocket client disconnected: {ws.client.host}:{ws.client.port}")
+    except Exception as e:
+        client_info = f"{ws.client.host}:{ws.client.port}"
+        logger.error(f"CAN Sniffer WebSocket error for client {client_info}: {e}")
     finally:
         can_sniffer_ws_clients.discard(ws)
 
@@ -193,8 +204,11 @@ async def network_map_ws_endpoint(ws: WebSocket):
         await ws.send_json(payload)
         while True:
             await ws.receive_text()  # Keep the connection open
-    except Exception:
-        pass
+    except WebSocketDisconnect:
+        logger.info(f"Network Map WebSocket client disconnected: {ws.client.host}:{ws.client.port}")
+    except Exception as e:
+        client_info = f"{ws.client.host}:{ws.client.port}"
+        logger.error(f"Network Map WebSocket error for client {client_info}: {e}")
     finally:
         network_map_ws_clients.discard(ws)
 
@@ -247,7 +261,10 @@ async def features_ws_endpoint(ws: WebSocket):
         await ws.send_json(payload)
         while True:
             await ws.receive_text()  # Keep the connection open
-    except Exception:
-        pass
+    except WebSocketDisconnect:
+        logger.info(f"Features WebSocket client disconnected: {ws.client.host}:{ws.client.port}")
+    except Exception as e:
+        client_info = f"{ws.client.host}:{ws.client.port}"
+        logger.error(f"Features WebSocket error for client {client_info}: {e}")
     finally:
         features_ws_clients.discard(ws)

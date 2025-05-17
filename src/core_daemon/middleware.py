@@ -6,14 +6,17 @@ for purposes such as logging, metrics collection, or request modification.
 """
 
 import time
+from collections.abc import Awaitable, Callable
 
-from fastapi import Request
+from fastapi import Request, Response
 
 # Import metrics used by the middleware
 from core_daemon.metrics import HTTP_LATENCY, HTTP_REQUESTS
 
 
-async def prometheus_http_middleware(request: Request, call_next):
+async def prometheus_http_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """
     FastAPI middleware to record Prometheus metrics for HTTP requests.
 

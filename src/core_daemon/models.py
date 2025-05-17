@@ -20,7 +20,7 @@ Models:
     - CoachInfo: (re-exported from common.models)
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -30,30 +30,30 @@ class Entity(BaseModel):
     """Represents the state and metadata of a monitored RV-C entity."""
 
     entity_id: str
-    value: Dict[str, str]
-    raw: Dict[str, int]
+    value: dict[str, str]
+    raw: dict[str, int]
     state: str
     timestamp: float
-    suggested_area: Optional[str] = "Unknown"
-    device_type: Optional[str] = "unknown"
-    capabilities: Optional[List[str]] = []
-    friendly_name: Optional[str] = None
-    groups: Optional[List[str]] = Field(default_factory=list)
+    suggested_area: str | None = "Unknown"
+    device_type: str | None = "unknown"
+    capabilities: list[str] | None = []
+    friendly_name: str | None = None
+    groups: list[str] | None = Field(default_factory=list)
 
 
 class ControlCommand(BaseModel):
     """Defines the structure for sending control commands to an entity, typically a light."""
 
     command: str
-    state: Optional[str] = Field(
+    state: str | None = Field(
         None, description="Target state: 'on' or 'off'. Required only for 'set' command."
     )
-    brightness: Optional[int] = Field(
+    brightness: int | None = Field(
         None,
         ge=0,
         le=100,
         description=(
-            "Brightness percent (0–100). Only used when command is 'set' and state is 'on'."
+            "Brightness percent (0-100). Only used when command is 'set' and state is 'on'."
         ),
     )
 
@@ -66,31 +66,31 @@ class SuggestedMapping(BaseModel):
 
     instance: str
     name: str
-    suggested_area: Optional[str] = None
+    suggested_area: str | None = None
 
 
 class UnmappedEntryModel(BaseModel):
     """Represents an RV-C message that could not be mapped to a configured entity."""
 
     pgn_hex: str
-    pgn_name: Optional[str] = Field(
+    pgn_name: str | None = Field(
         None,
         description=(
             "The human-readable name of the PGN (from arbitration ID), if known from the spec."
         ),
     )
     dgn_hex: str
-    dgn_name: Optional[str] = Field(
+    dgn_name: str | None = Field(
         None, description="The human-readable name of the DGN, if known from the spec."
     )
     instance: str
     last_data_hex: str
-    decoded_signals: Optional[Dict[str, Any]] = None
+    decoded_signals: dict[str, Any] | None = None
     first_seen_timestamp: float
     last_seen_timestamp: float
     count: int
-    suggestions: Optional[List[SuggestedMapping]] = None
-    spec_entry: Optional[Dict[str, Any]] = Field(
+    suggestions: list[SuggestedMapping] | None = None
+    spec_entry: dict[str, Any] | None = Field(
         None,
         description=("The raw rvc.json spec entry used for decoding, if PGN was known."),
     )
@@ -112,11 +112,11 @@ class BulkLightControlResponse(BaseModel):
     status: str
     message: str  # Added message field
     action: str
-    group: Optional[str] = None  # Added group field
+    group: str | None = None  # Added group field
     lights_processed: int
     lights_commanded: int
-    errors: List[Dict[str, str]] = Field(default_factory=list)  # Changed type from List[str]
-    details: List[Dict[str, Any]] = Field(default_factory=list)  # Added details field
+    errors: list[dict[str, str]] = Field(default_factory=list)  # Changed type from List[str]
+    details: list[dict[str, Any]] = Field(default_factory=list)  # Added details field
 
 
 class ControlEntityResponse(BaseModel):
@@ -134,51 +134,52 @@ class CANInterfaceStats(BaseModel):
     """Statistics for a CAN interface."""
 
     name: str
-    state: Optional[str] = None
-    restart_ms: Optional[int] = None
-    bitrate: Optional[int] = None
-    sample_point: Optional[float] = None
-    tq: Optional[int] = None  # Time quantum in nanoseconds
-    prop_seg: Optional[int] = None
-    phase_seg1: Optional[int] = None
-    phase_seg2: Optional[int] = None
-    sjw: Optional[int] = None  # Synchronization Jump Width
-    brp: Optional[int] = None  # Bitrate Prescaler
+    state: str | None = None
+    restart_ms: int | None = None
+    bitrate: int | None = None
+    sample_point: float | None = None
+    tq: int | None = None  # Time quantum in nanoseconds
+    prop_seg: int | None = None
+    phase_seg1: int | None = None
+    phase_seg2: int | None = None
+    sjw: int | None = None  # Synchronization Jump Width
+    brp: int | None = None  # Bitrate Prescaler
     # Shortened line:
-    clock_freq: Optional[int] = Field(default=None, alias="clock")  # Clock frequency Hz
+    clock_freq: int | None = Field(default=None, alias="clock")  # Clock frequency Hz
+    notes: str | None = None  # Additional notes or platform-specific information
 
     # From ip -s link show
-    tx_packets: Optional[int] = None
-    rx_packets: Optional[int] = None
-    tx_bytes: Optional[int] = None
-    rx_bytes: Optional[int] = None
-    tx_errors: Optional[int] = None
-    rx_errors: Optional[int] = None
-    bus_errors: Optional[int] = None  # General bus errors
-    restarts: Optional[int] = None  # Controller restarts
+    tx_packets: int | None = None
+    rx_packets: int | None = None
+    tx_bytes: int | None = None
+    rx_bytes: int | None = None
+    tx_errors: int | None = None
+    rx_errors: int | None = None
+    bus_errors: int | None = None  # General bus errors
+    restarts: int | None = None  # Controller restarts
 
     # Additional details from ip -details link show
-    link_type: Optional[str] = Field(default=None, alias="link/can")
-    promiscuity: Optional[int] = None
-    allmulti: Optional[int] = None
-    minmtu: Optional[int] = None
-    maxmtu: Optional[int] = None
-    parentbus: Optional[str] = None
-    parentdev: Optional[str] = None
+    link_type: str | None = Field(default=None, alias="link/can")
+    promiscuity: int | None = None
+    allmulti: int | None = None
+    minmtu: int | None = None
+    maxmtu: int | None = None
+    parentbus: str | None = None
+    parentdev: str | None = None
 
     # Specific error counters if available (these might vary by controller)
-    error_warning: Optional[int] = None  # Entered error warning state count
-    error_passive: Optional[int] = None  # Entered error passive state count
-    bus_off: Optional[int] = None  # Entered bus off state count
+    error_warning: int | None = None  # Entered error warning state count
+    error_passive: int | None = None  # Entered error passive state count
+    bus_off: int | None = None  # Entered bus off state count
 
     # Raw details string for any unparsed info, if needed for debugging
-    raw_details: Optional[str] = None
+    raw_details: str | None = None
 
 
 class AllCANStats(BaseModel):
     """Statistics for all CAN interfaces."""
 
-    interfaces: Dict[str, CANInterfaceStats]
+    interfaces: dict[str, CANInterfaceStats]
 
 
 class GitHubReleaseAsset(BaseModel):
@@ -186,38 +187,38 @@ class GitHubReleaseAsset(BaseModel):
 
     name: str
     browser_download_url: str
-    size: Optional[int] = None
-    download_count: Optional[int] = None
+    size: int | None = None
+    download_count: int | None = None
 
 
 class GitHubReleaseInfo(BaseModel):
     """Represents metadata about a GitHub release for update checking."""
 
-    tag_name: Optional[str] = None
-    name: Optional[str] = None
-    body: Optional[str] = None
-    html_url: Optional[str] = None
-    published_at: Optional[str] = None
-    created_at: Optional[str] = None
-    assets: Optional[List[GitHubReleaseAsset]] = None
-    tarball_url: Optional[str] = None
-    zipball_url: Optional[str] = None
-    prerelease: Optional[bool] = None
-    draft: Optional[bool] = None
-    author: Optional[dict] = None  # login, html_url
-    discussion_url: Optional[str] = None
+    tag_name: str | None = None
+    name: str | None = None
+    body: str | None = None
+    html_url: str | None = None
+    published_at: str | None = None
+    created_at: str | None = None
+    assets: list[GitHubReleaseAsset] | None = None
+    tarball_url: str | None = None
+    zipball_url: str | None = None
+    prerelease: bool | None = None
+    draft: bool | None = None
+    author: dict | None = None  # login, html_url
+    discussion_url: str | None = None
 
 
 class GitHubUpdateStatus(BaseModel):
     """Represents the status and metadata of the latest GitHub release as cached by the server."""
 
-    latest_version: Optional[str] = None
-    last_checked: Optional[float] = None
-    last_success: Optional[float] = None
-    error: Optional[str] = None
-    latest_release_info: Optional[GitHubReleaseInfo] = None
-    repo: Optional[str] = None
-    api_url: Optional[str] = None
+    latest_version: str | None = None
+    last_checked: float | None = None
+    last_success: float | None = None
+    error: str | None = None
+    latest_release_info: GitHubReleaseInfo | None = None
+    repo: str | None = None
+    api_url: str | None = None
 
 
 # CoachInfo model has been moved to src/common/models.py

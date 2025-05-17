@@ -10,67 +10,58 @@ import asyncio
 import logging
 import time
 from collections import deque
-from typing import Any, Callable, Dict, List, Optional, Set  # Added Optional
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import WebSocket  # Added WebSocket for type hinting
 
 # Import metrics that are directly related to the state managed here
+from core_daemon.config import CONTROLLER_SOURCE_ADDR
 from core_daemon.metrics import ENTITY_COUNT, HISTORY_SIZE_GAUGE
-
-# Assuming UnmappedEntryModel is in core_daemon.models
-# We need to import it if it's used in type hints for unmapped_entries
 from core_daemon.models import UnknownPGNEntry, UnmappedEntryModel
 from rvc_decoder.decode import load_config_data  # Changed from rvc_load_and_process_device_mapping
 
-# At the top, after imports
-try:
-    from core_daemon.main import broadcast_can_sniffer_group
-except ImportError:
-    broadcast_can_sniffer_group = None
-
-# Import controller source address for global access
-from core_daemon.config import CONTROLLER_SOURCE_ADDR
+# To avoid circular imports, initialize this to None. Will be set in main.py
+broadcast_can_sniffer_group = None  # Will be set by core_daemon.main at runtime
 
 # In-memory state - holds the most recent data payload for each entity_id
-state: Dict[str, Dict[str, Any]] = {}
+state: dict[str, dict[str, Any]] = {}
 
 # History duration
 HISTORY_DURATION: int = 24 * 3600  # seconds
 MAX_HISTORY_LENGTH: int = 1000  # Define MAX_HISTORY_LENGTH
 
 # History data structure (initialized empty, to be populated by initialize_history_deques)
-history: Dict[str, deque[Dict[str, Any]]] = {}
+history: dict[str, deque[dict[str, Any]]] = {}
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
 # Unmapped entries
-unmapped_entries: Dict[str, UnmappedEntryModel] = {}
+unmapped_entries: dict[str, UnmappedEntryModel] = {}
 
 # Unknown PGNs (PGNs not found in rvc.json spec)
-unknown_pgns: Dict[str, UnknownPGNEntry] = {}
+unknown_pgns: dict[str, UnknownPGNEntry] = {}
 
 # Last known brightness levels for lights
-last_known_brightness_levels: Dict[str, int] = {}
+last_known_brightness_levels: dict[str, int] = {}
 
 # Configuration data loaded at startup, to be populated by initialize_app_from_config
-entity_id_lookup: Dict[str, Any] = {}
-light_entity_ids: List[str] = []
-light_command_info: Dict[str, Any] = {}
-decoder_map: Dict[int, Any] = {}
-raw_device_mapping: Dict[str, Any] = {}
-device_lookup: Dict[tuple, Any] = {}
-status_lookup: Dict[tuple, Any] = {}
-pgn_hex_to_name_map: Dict[str, str] = {}
+entity_id_lookup: dict[str, Any] = {}
+light_entity_ids: list[str] = []
+light_command_info: dict[str, Any] = {}
+decoder_map: dict[int, Any] = {}
+raw_device_mapping: dict[str, Any] = {}
+device_lookup: dict[tuple, Any] = {}
+status_lookup: dict[tuple, Any] = {}
+pgn_hex_to_name_map: dict[str, str] = {}
 
 # WebSocket client sets - moved here from websocket.py for central state management
-clients: Set[WebSocket] = set()
-log_ws_clients: Set[WebSocket] = set()
+clients: set[WebSocket] = set()
+log_ws_clients: set[WebSocket] = set()
 
 # CAN command/control sniffer log
-can_command_sniffer_log: list = (
-    []
-)  # Each entry: { 'timestamp', 'direction', 'arbitration_id', 'data', 'decoded', 'raw' }
+can_command_sniffer_log: list = []  # Each entry: { 'timestamp', 'direction', 'arbitration_id', 'data', 'decoded', 'raw' }
 
 # Known command/status DGN pairings for high-confidence grouping
 KNOWN_COMMAND_STATUS_PAIRS: dict[str, str] = {
@@ -87,6 +78,9 @@ observed_source_addresses: set[int] = set()
 
 # For each source address, track the last-seen sniffer entry (RX or TX)
 last_seen_by_source_addr: dict[int, dict] = {}
+
+# Keep references to background tasks to prevent garbage collection
+background_tasks: set[asyncio.Task] = set()
 
 # Add global variable for coach_info
 coach_info = None
@@ -133,7 +127,9 @@ def try_group_response(response_entry: dict):
             }
             can_sniffer_grouped.append(group)
             if broadcast_can_sniffer_group:
-                asyncio.create_task(broadcast_can_sniffer_group(group))
+                task = asyncio.create_task(broadcast_can_sniffer_group(group))
+                background_tasks.add(task)
+                task.add_done_callback(background_tasks.discard)
             pending_commands.remove(cmd)
             return True
     # Low-confidence: heuristic (same instance, short time window, opposite direction)
@@ -147,7 +143,9 @@ def try_group_response(response_entry: dict):
             }
             can_sniffer_grouped.append(group)
             if broadcast_can_sniffer_group:
-                asyncio.create_task(broadcast_can_sniffer_group(group))
+                task = asyncio.create_task(broadcast_can_sniffer_group(group))
+                background_tasks.add(task)
+                task.add_done_callback(background_tasks.discard)
             pending_commands.remove(cmd)
             return True
     return False
@@ -237,8 +235,8 @@ def initialize_app_from_config(config_data_tuple: tuple, decode_payload_function
     pgn_hex_to_name_map = pgn_hex_to_name_map_val
     coach_info = coach_info_val  # Store the CoachInfo model globally
 
-    # Convert set to sorted list for light_entity_ids, as it's typed List[str] globally
-    light_entity_ids = sorted(list(light_entity_ids_set_val))
+    # Convert set to sorted list for light_entity_ids
+    light_entity_ids = sorted(light_entity_ids_set_val)
 
     # Set up high-confidence DGN command/status mapping from dgn_pairs
     if dgn_pairs_val:
@@ -283,7 +281,7 @@ def initialize_history_deques_internal() -> None:
     logger.info("History deques initialized for all entities.")
 
 
-def update_entity_state_and_history(entity_id: str, payload_to_store: Dict[str, Any]) -> None:
+def update_entity_state_and_history(entity_id: str, payload_to_store: dict[str, Any]) -> None:
     """
     Updates the state and history for a given entity and updates relevant metrics.
 
@@ -397,10 +395,17 @@ def preseed_light_states_internal(decode_payload_func: Callable) -> None:
     logger.info("Finished pre-seeding light states.")
 
 
-def populate_app_state(
-    rvc_spec_path: Optional[str] = None, device_mapping_path: Optional[str] = None
-):
-    global entity_id_lookup, device_lookup, status_lookup, light_command_info, state, history, unknown_pgns, unmapped_entries, last_known_brightness_levels  # noqa: E501
+def populate_app_state(rvc_spec_path: str | None = None, device_mapping_path: str | None = None):
+    global \
+        entity_id_lookup, \
+        device_lookup, \
+        status_lookup, \
+        light_command_info, \
+        state, \
+        history, \
+        unknown_pgns, \
+        unmapped_entries, \
+        last_known_brightness_levels
 
     # Clear existing state
     entity_id_lookup.clear()
@@ -421,8 +426,8 @@ def populate_app_state(
     # Ensure this call uses the correct function name and expects the correct return structure
     processed_data_tuple = load_config_data(rvc_spec_path, device_mapping_path)
     # Unpack the tuple correctly based on what load_config_data returns
-    # load_config_data returns: decoder_map, device_mapping, device_lookup, status_lookup,
-    # light_entity_ids, entity_id_lookup, light_command_info, pgn_hex_to_name_map
+    # load_config_data returns 10 items: decoder_map, device_mapping, device_lookup, status_lookup,
+    # light_entity_ids, entity_id_lookup, light_command_info, pgn_hex_to_name_map, dgn_pairs, coach_info
     # We need to map these to the structure previously assumed for processed_data or adjust
     (
         _decoder_map,  # We might not need all of these directly in populate_app_state
@@ -433,6 +438,8 @@ def populate_app_state(
         loaded_entity_id_lookup,
         loaded_light_command_info,
         _pgn_hex_to_name_map,
+        _dgn_pairs,  # Added 9th item
+        _coach_info,  # Added 10th item
     ) = processed_data_tuple
 
     # Populate from processed_data
@@ -452,7 +459,7 @@ def populate_app_state(
     )
 
     # Initialize history deques for all known entities from entity_id_lookup
-    for eid in entity_id_lookup.keys():
+    for eid in entity_id_lookup:
         if eid not in history:  # Check if deque already exists (e.g. from previous partial load)
             history[eid] = deque(maxlen=MAX_HISTORY_LENGTH)
     logger.info("History deques initialized for all entities.")
@@ -515,7 +522,9 @@ def notify_network_map_ws():
 
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            loop.create_task(broadcast_network_map())
+            task = loop.create_task(broadcast_network_map())
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
     except Exception:
         pass
 

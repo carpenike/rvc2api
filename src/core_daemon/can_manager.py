@@ -13,13 +13,17 @@ import logging
 import os
 import threading
 import time
-from typing import Callable, Dict
+from collections.abc import Callable
 
-import can  # For can.Message, can.interface.Bus
+import can
+from can.bus import BusABC
 from can.exceptions import CanInterfaceNotImplementedError  # For more specific error handling
 
-from core_daemon.app_state import add_can_sniffer_entry, add_pending_command
-from core_daemon.config import CONTROLLER_SOURCE_ADDR
+from core_daemon.app_state import (
+    add_can_sniffer_entry,
+    add_pending_command,
+    get_controller_source_addr,
+)
 
 # Import specific metrics used by can_writer
 from core_daemon.metrics import CAN_TX_QUEUE_LENGTH
@@ -31,7 +35,7 @@ can_tx_queue: asyncio.Queue[tuple[can.Message, str]] = asyncio.Queue()
 
 # Dictionary to hold active CAN bus interfaces, keyed by interface name.
 # This is populated by initialize_can_listeners and used by can_writer.
-buses: Dict[str, can.Bus] = {}
+buses: dict[str, BusABC] = {}
 
 
 async def can_writer():
@@ -107,7 +111,7 @@ async def can_writer():
                     pass
                 # Use configurable controller source address
                 source_addr = msg.arbitration_id & 0xFF
-                origin = "self" if source_addr == CONTROLLER_SOURCE_ADDR else "other"
+                origin = "self" if source_addr == get_controller_source_addr() else "other"
                 sniffer_entry = {
                     "timestamp": now,
                     "direction": "tx",
@@ -158,8 +162,9 @@ def initialize_can_writer_task():
     """
     Creates and schedules the CAN writer asyncio task.
     """
-    asyncio.create_task(can_writer())
+    writer_task = asyncio.create_task(can_writer())
     logger.info("CAN writer task initialized and scheduled to run.")
+    return writer_task
 
 
 def initialize_can_listeners(
@@ -181,7 +186,19 @@ def initialize_can_listeners(
                                   It should accept (can.Message, str_interface_name).
         logger_instance: The logger instance to use for logging within the listeners.
     """
+    import platform
+
     global buses  # Ensure we are using the global buses dictionary
+
+    # Check for platform compatibility
+    is_linux = platform.system() == "Linux"
+    if not is_linux and bustype == "socketcan":
+        logger_instance.warning(
+            f"socketcan is not supported on {platform.system()}. "
+            f"CAN listeners will not be started. "
+            f"Consider using a virtual CAN interface for development."
+        )
+        return
 
     if not interfaces:
         logger_instance.warning("No CAN interfaces specified. CAN listeners will not be started.")

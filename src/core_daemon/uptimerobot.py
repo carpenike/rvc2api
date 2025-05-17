@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 
 import httpx
@@ -15,27 +16,25 @@ class UptimeRobotFeature(Feature):
         self._last_status = "unknown"
         self._last_message = None
 
-    async def startup(self):
+    async def startup(self) -> None:
         if not self.enabled:
             return
         self._task = asyncio.create_task(self._poll_loop())
         logger.info("UptimeRobotFeature started polling loop.")
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None
         logger.info("UptimeRobotFeature stopped polling loop.")
 
     @property
-    def health(self):
+    def health(self) -> str:
         return self._last_status
 
-    async def _poll_loop(self):
+    async def _poll_loop(self) -> None:
         api_key = self.config.get("api_key")
         if not api_key:
             self._last_status = "no_api_key"

@@ -7,16 +7,28 @@ check the CAN transmit queue, and CAN sniffer endpoints.
 
 import asyncio
 import logging
-from typing import Any, Dict
+import platform
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
-from pyroute2 import IPRoute
 
 from core_daemon.app_state import get_can_sniffer_grouped
 from core_daemon.can_manager import can_tx_queue
 from core_daemon.models import AllCANStats, CANInterfaceStats
 from core_daemon.websocket import network_map_ws_endpoint
+
+# Conditionally import pyroute2 only on Linux systems
+# This allows development on macOS without pyroute2 installed
+CAN_SUPPORTED = platform.system() == "Linux"
+if CAN_SUPPORTED:
+    try:
+        from pyroute2 import IPRoute  # type: ignore
+    except ImportError:
+        IPRoute = None
+        CAN_SUPPORTED = False
+else:
+    IPRoute = None
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +196,10 @@ async def get_can_interfaces_pyroute2() -> list[str]:
         list if none are found or an error occurs.
     """
     interfaces = []
+    if not CAN_SUPPORTED or IPRoute is None:
+        logger.debug("Cannot list CAN interfaces: pyroute2 not available or not on Linux")
+        return []
+
     try:
         with IPRoute() as ipr:
             # Get links of type 'can'.
@@ -201,10 +217,27 @@ async def get_can_interfaces_pyroute2() -> list[str]:
 async def get_can_status():
     """
     Retrieves detailed status for all CAN interfaces using pyroute2.
+    On non-Linux platforms, returns a platform-specific message.
     """
-    interfaces_data: Dict[str, CANInterfaceStats] = {}
+    interfaces_data: dict[str, CANInterfaceStats] = {}
 
+    # Handle non-Linux platforms or missing pyroute2
+    if not CAN_SUPPORTED or IPRoute is None:
+        platform_name = platform.system()
+        msg = f"CAN bus not supported on {platform_name} platform - pyroute2 requires Linux"
+        logger.debug(msg)
+        # Return a placeholder entry so the UI has something to display
+        interfaces_data["dummy_interface"] = CANInterfaceStats(
+            name="dummy_interface", state=f"Unsupported/{platform_name}", notes=msg
+        )
+        return AllCANStats(interfaces=interfaces_data)
+
+    # Linux platform with pyroute2 available
     try:
+        if IPRoute is None:
+            logger.debug("Cannot access CAN interfaces: IPRoute is None (import failed)")
+            return AllCANStats(interfaces={})
+
         with IPRoute() as ipr:
             # Get all links and then filter for CAN, or get CAN links directly
             # This ensures we have the full link object for stats, not just names.
@@ -248,7 +281,7 @@ async def get_can_status():
     return AllCANStats(interfaces=interfaces_data)
 
 
-@api_router_can.get("/queue", response_model=Dict[str, Any])
+@api_router_can.get("/queue", response_model=dict[str, Any])
 async def get_queue_status():
     """
     Return the current status of the CAN transmit queue.
@@ -307,15 +340,15 @@ async def get_can_sniffer_log_debug():
 @api_router_can.get("/network-map", response_class=JSONResponse)
 async def get_network_map():
     """Returns all observed CAN source addresses, with decoded info if available."""
-    from core_daemon.app_state import get_controller_source_addr  # Import the getter
     from core_daemon.app_state import (
         device_lookup,
+        get_controller_source_addr,  # Import the getter
         get_observed_source_addresses,
         last_seen_by_source_addr,
         status_lookup,
     )
 
-    SELF_SOURCE_ADDR = get_controller_source_addr()  # Use global/configurable value
+    self_source_addr = get_controller_source_addr()  # Use global/configurable value
     addresses = get_observed_source_addresses()
     result = []
     for addr in addresses:
@@ -346,7 +379,7 @@ async def get_network_map():
         result.append(
             {
                 "value": addr,
-                "is_self": addr == SELF_SOURCE_ADDR,
+                "is_self": addr == self_source_addr,
                 "dgn": dgn,
                 "instance": instance,
                 "device_type": device_type,
@@ -374,7 +407,7 @@ async def start_canbus_scan(background_tasks: BackgroundTasks):
 # Implement the scan logic (skeleton)
 async def run_canbus_scan_and_broadcast():
     """
-    For each address (0x00–0xF9), send PGN 59904 requests for Address Claimed (0xEE00),
+    For each address (0x00-0xF9), send PGN 59904 requests for Address Claimed (0xEE00),
     Product ID (0xFEFA), and Software Version (0xFEFC) to all CAN interfaces.
     Listen for responses and broadcast them to WebSocket clients.
     """
@@ -382,30 +415,30 @@ async def run_canbus_scan_and_broadcast():
 
     import can
 
+    from core_daemon.app_state import get_controller_source_addr
     from core_daemon.can_manager import buses, can_tx_queue
-    from core_daemon.config import CONTROLLER_SOURCE_ADDR
 
     # PGNs to request
-    PGNS = [0xEE00, 0xFEFA, 0xFEFC]
+    pgns = [0xEE00, 0xFEFA, 0xFEFC]
     # PGN 59904 (Request)
-    REQUEST_PGN = 0x00EA00
+    request_pgn = 0x00EA00
     # Get all available CAN interfaces
     interfaces = list(buses.keys())
     if not interfaces:
         logger.warning("No CAN interfaces available for CANbus scan.")
         return
     # Send requests to all addresses, including broadcast (0xFF)
-    for dest_addr in list(range(0x00, 0xFA)) + [0xFF]:
-        for pgn in PGNS:
+    for dest_addr in [*range(0x00, 0xFA), 0xFF]:
+        for pgn in pgns:
             # Compose 3-byte PGN in little-endian order for data field
             pgn_bytes = pgn.to_bytes(3, "little")
             data = pgn_bytes + bytes([0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
             # Compose arbitration ID for PGN 59904 (Request)
             prio = 6
-            dp = (REQUEST_PGN >> 16) & 1
-            pf = (REQUEST_PGN >> 8) & 0xFF
+            dp = (request_pgn >> 16) & 1
+            pf = (request_pgn >> 8) & 0xFF
             ps = dest_addr
-            sa = CONTROLLER_SOURCE_ADDR
+            sa = get_controller_source_addr()
             arbitration_id = (prio << 26) | (dp << 24) | (pf << 16) | (ps << 8) | sa
             msg = can.Message(arbitration_id=arbitration_id, data=data, is_extended_id=True)
             for iface in interfaces:

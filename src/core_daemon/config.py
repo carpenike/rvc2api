@@ -187,78 +187,48 @@ def get_fastapi_config():
     }
 
 
-# ── Static File and Template Paths ─────────────────────────────────────────
+# ── Static File Paths for API Documentation ────────────────────────────────────
 def get_static_paths():
     """
-    Resolves and returns paths to the web UI's static files and templates directories.
+    Resolves and returns path to the API static files directory for API documentation.
 
-    It primarily uses `importlib.resources` to locate these directories, making it
+    It primarily uses `importlib.resources` to locate this directory, making it
     robust for packaged applications. If `importlib.resources` fails (e.g., in
     certain development or non-standard package structures), it falls back to
     a `__file__`-based method to determine paths relative to this config.py file.
 
-    Logs errors if paths cannot be resolved or are invalid.
+    Note: With the refactoring to a standalone React frontend, this only handles
+    static files needed for API documentation, not UI templates or assets.
 
     Returns:
-        dict: A dictionary with keys 'web_ui_dir', 'static_dir', and 'templates_dir',
-              containing the absolute paths to these directories.
+        dict: A dictionary with key 'static_dir' containing the absolute path
+              to the static directory for API documentation.
     """
     static_dir_path_str = None
-    templates_dir_path_str = None
-    web_ui_dir_path_str = None
 
     try:
         module_logger.info("Attempting to get static paths using importlib.resources...")
 
-        # For 'core_daemon.web_ui.static'
-        static_files_traversable = importlib.resources.files("core_daemon.web_ui.static")
-        if static_files_traversable.is_dir():
-            static_dir_path_str = str(static_files_traversable)
-            module_logger.info(f"importlib.resources resolved static_dir: {static_dir_path_str}")
-        else:
+        # For API documentation static files
+        try:
+            # For API documentation static files
+            static_files_traversable = importlib.resources.files("core_daemon.static")
+            if static_files_traversable.is_dir():
+                static_dir_path_str = str(static_files_traversable)
+                module_logger.info(
+                    f"importlib.resources resolved static_dir: {static_dir_path_str}"
+                )
+            else:
+                module_logger.error(
+                    "'core_daemon.static' resolved by importlib.resources is not a directory."
+                )
+                raise ValueError("'core_daemon.static' is not a directory via importlib.resources")
+        except ModuleNotFoundError:
+            # Handle the case where core_daemon.static doesn't exist as a module/package
             module_logger.error(
-                "'core_daemon.web_ui.static' resolved by importlib.resources is not a directory."
+                "The 'core_daemon.static' module was not found. This is normal for development environments."
             )
-            raise ValueError(
-                "'core_daemon.web_ui.static' is not a directory via importlib.resources"
-            )
-
-        # For 'core_daemon.web_ui.templates'
-        templates_files_traversable = importlib.resources.files("core_daemon.web_ui.templates")
-        if templates_files_traversable.is_dir():
-            templates_dir_path_str = str(templates_files_traversable)
-            module_logger.info(
-                f"importlib.resources resolved templates_dir: {templates_dir_path_str}"
-            )
-        else:
-            module_logger.error(
-                "'core_daemon.web_ui.templates' resolved by importlib.resources is not a directory."
-            )
-            raise ValueError(
-                "'core_daemon.web_ui.templates' is not a directory via importlib.resources"
-            )
-
-        # For 'core_daemon.web_ui' (parent)
-        web_ui_files_traversable = importlib.resources.files("core_daemon.web_ui")
-        if web_ui_files_traversable.is_dir():
-            web_ui_dir_path_str = str(web_ui_files_traversable)
-            module_logger.info(f"importlib.resources resolved web_ui_dir: {web_ui_dir_path_str}")
-        elif static_dir_path_str:  # Try to derive from static_dir if direct web_ui fails
-            web_ui_dir_path_str = os.path.dirname(static_dir_path_str)
-            module_logger.info(
-                f"Derived web_ui_dir from static_dir"
-                f"('{static_dir_path_str}'): {web_ui_dir_path_str}"
-            )
-        else:
-            module_logger.error(
-                "'core_daemon.web_ui' not resolved as a directory and could not be derived."
-            )
-            raise ValueError("'core_daemon.web_ui' is not a directory via importlib.resources")
-
-        if not all([static_dir_path_str, templates_dir_path_str, web_ui_dir_path_str]):
-            # This case should ideally be caught by earlier ValueErrors
-            module_logger.error("Failed to resolve one or more paths using importlib.resources.")
-            raise ValueError("Path resolution failed with importlib.resources")
+            raise
 
     except Exception as e:
         module_logger.error(
@@ -274,44 +244,26 @@ def get_static_paths():
         core_daemon_dir = os.path.dirname(current_file_path)
         module_logger.info(f"Fallback: core_daemon_dir (parent of config.py): {core_daemon_dir}")
 
-        web_ui_dir_path_str = os.path.join(core_daemon_dir, "web_ui")
-        static_dir_path_str = os.path.join(web_ui_dir_path_str, "static")
-        templates_dir_path_str = os.path.join(web_ui_dir_path_str, "templates")
-
-        module_logger.info(f"Fallback resolved web_ui_dir: {web_ui_dir_path_str}")
+        static_dir_path_str = os.path.join(core_daemon_dir, "static")
         module_logger.info(f"Fallback resolved static_dir: {static_dir_path_str}")
-        module_logger.info(f"Fallback resolved templates_dir: {templates_dir_path_str}")
 
-    # Final validation of determined paths
+    # Final validation of determined path
     if not static_dir_path_str or not os.path.isdir(static_dir_path_str):
-        module_logger.critical(
-            f"CRITICAL FAILURE: Final static_dir ('{static_dir_path_str}')"
-            f"is invalid or not a directory. Static files will likely fail to serve."
+        module_logger.warning(
+            f"Warning: Final static_dir ('{static_dir_path_str}') is invalid or not a directory. "
+            f"API documentation static files will not be served."
         )
+        # Create the static directory if it doesn't exist
+        try:
+            os.makedirs(static_dir_path_str, exist_ok=True)
+            module_logger.info(f"Created static directory: {static_dir_path_str}")
+        except Exception as e:
+            module_logger.error(f"Failed to create static directory: {e}", exc_info=True)
     else:
         module_logger.info(f"Final static_dir to be used: {static_dir_path_str}")
 
-    if not templates_dir_path_str or not os.path.isdir(templates_dir_path_str):
-        module_logger.critical(
-            f"CRITICAL FAILURE: Final templates_dir ('{templates_dir_path_str}')"
-            f"is invalid or not a directory. Templates will likely fail to load."
-        )
-    else:
-        module_logger.info(f"Final templates_dir to be used: {templates_dir_path_str}")
-
-    if not web_ui_dir_path_str or not os.path.isdir(
-        web_ui_dir_path_str
-    ):  # Check if web_ui_dir is valid
-        module_logger.warning(
-            f"Warning: Final web_ui_dir ('{web_ui_dir_path_str}') is invalid or not a directory."
-        )
-    else:
-        module_logger.info(f"Final web_ui_dir to be used: {web_ui_dir_path_str}")
-
     return {
-        "web_ui_dir": web_ui_dir_path_str,
         "static_dir": static_dir_path_str,
-        "templates_dir": templates_dir_path_str,
     }
 
 
@@ -348,7 +300,7 @@ def load_user_coach_info_from_env() -> UserCoachInfo | None:
     """
     path = os.getenv("RVC2API_USER_COACH_INFO_PATH")
     if path and os.path.exists(path):
-        with open(path, "r") as f:
+        with open(path) as f:
             data = yaml.safe_load(f) or {}
         return UserCoachInfo(**data)
     return None

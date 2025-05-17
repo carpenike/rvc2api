@@ -12,13 +12,11 @@ This module includes routes for:
 import json
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import Annotated  # Used for the Body parameter modernization
 
 from fastapi import APIRouter, Body, HTTPException, Query
 
 # Application state and helpers
-from core_daemon.app_state import unknown_pgns  # Import unknown_pgns
-from core_daemon.app_state import unmapped_entries  # Ensure unmapped_entries is imported
 from core_daemon.app_state import (
     entity_id_lookup,
     get_last_known_brightness,
@@ -26,6 +24,8 @@ from core_daemon.app_state import (
     light_command_info,
     set_last_known_brightness,
     state,
+    unknown_pgns,  # Import unknown_pgns
+    unmapped_entries,  # Ensure unmapped_entries is imported
     update_entity_state_and_history,
 )
 
@@ -36,8 +36,13 @@ from core_daemon.can_manager import can_tx_queue, create_light_can_message
 from core_daemon.metrics import CAN_TX_ENQUEUE_LATENCY, CAN_TX_ENQUEUE_TOTAL, CAN_TX_QUEUE_LENGTH
 
 # Models
-from core_daemon.models import UnknownPGNEntry  # Import UnknownPGNEntry
-from core_daemon.models import ControlCommand, ControlEntityResponse, Entity, UnmappedEntryModel
+from core_daemon.models import (
+    ControlCommand,
+    ControlEntityResponse,
+    Entity,
+    UnknownPGNEntry,  # Import UnknownPGNEntry
+    UnmappedEntryModel,
+)
 
 # WebSocket for broadcasting updates
 from core_daemon.websocket import broadcast_to_clients
@@ -47,10 +52,10 @@ logger = logging.getLogger(__name__)
 api_router_entities = APIRouter()  # FastAPI router for entity-related API endpoints
 
 
-@api_router_entities.get("/entities", response_model=Dict[str, Entity])
+@api_router_entities.get("/entities", response_model=dict[str, Entity])
 async def list_entities(
-    device_type: Optional[str] = Query(None),
-    area: Optional[str] = Query(None),
+    device_type: str | None = Query(None),
+    area: str | None = Query(None),
 ):
     """
     Return all entities, optionally filtered by device_type and/or area.
@@ -69,14 +74,12 @@ async def list_entities(
         if device_type and entity_data.get("device_type") != device_type:
             return False
         # Check suggested_area from the entity_data itself
-        if area and entity_data.get("suggested_area") != area:
-            return False
-        return True
+        return not (area and entity_data.get("suggested_area") != area)
 
     return {eid: ent for eid, ent in state.items() if matches_entity_attributes(ent)}
 
 
-@api_router_entities.get("/entities/ids", response_model=List[str])
+@api_router_entities.get("/entities/ids", response_model=list[str])
 async def list_entity_ids():
     """Return all known entity IDs."""
     return list(state.keys())
@@ -102,13 +105,11 @@ async def get_entity(entity_id: str):
     return ent
 
 
-@api_router_entities.get("/entities/{entity_id}/history", response_model=List[Entity])
+@api_router_entities.get("/entities/{entity_id}/history", response_model=list[Entity])
 async def get_history(
     entity_id: str,
-    since: Optional[float] = Query(
-        None, description="Unix timestamp; only entries newer than this"
-    ),
-    limit: Optional[int] = Query(1000, ge=1, description="Max number of points to return"),
+    since: float | None = Query(None, description="Unix timestamp; only entries newer than this"),
+    limit: int | None = Query(1000, ge=1, description="Max number of points to return"),
 ):
     """
     Return the history of an entity.
@@ -134,7 +135,7 @@ async def get_history(
     return entries[-actual_limit:]
 
 
-@api_router_entities.get("/unmapped_entries", response_model=Dict[str, UnmappedEntryModel])
+@api_router_entities.get("/unmapped_entries", response_model=dict[str, UnmappedEntryModel])
 async def get_unmapped_entries_api():  # Renamed function for clarity
     """
     Return all DGN/instance pairs that were seen on the bus but not mapped in device_mapping.yml.
@@ -145,7 +146,7 @@ async def get_unmapped_entries_api():  # Renamed function for clarity
     return unmapped_entries  # Ensure this uses the imported app_state.unmapped_entries
 
 
-@api_router_entities.get("/unknown_pgns", response_model=Dict[str, UnknownPGNEntry])
+@api_router_entities.get("/unknown_pgns", response_model=dict[str, UnknownPGNEntry])
 async def get_unknown_pgns_api():
     """
     Return all CAN messages whose PGN (from arbitration ID) was not found in the rvc.json spec.
@@ -156,7 +157,7 @@ async def get_unknown_pgns_api():
     return unknown_pgns
 
 
-@api_router_entities.get("/meta", response_model=Dict[str, List[str]])
+@api_router_entities.get("/meta", response_model=dict[str, list[str]])
 async def metadata():
     """
     Expose groupable dimensions:
@@ -175,7 +176,7 @@ async def metadata():
         "capability": "capabilities",
         "groups": "groups",
     }
-    out: Dict[str, List[str]] = {}
+    out: dict[str, list[str]] = {}
 
     for public, internal in mapping.items():
         values = set()
@@ -185,7 +186,7 @@ async def metadata():
                 values.update(val)
             elif val is not None:
                 values.add(val)
-        out[public] = sorted(list(values))  # Ensure 'groups' is also processed here
+        out[public] = sorted(values)  # Ensure 'groups' is also processed here
 
     command_set = set()
     for eid, cfg in entity_id_lookup.items():
@@ -199,7 +200,7 @@ async def metadata():
                 command_set.add("brightness")
                 command_set.add("brightness_up")  # Or brightness_increase
                 command_set.add("brightness_down")  # Or brightness_decrease
-    out["command"] = sorted(list(command_set))
+    out["command"] = sorted(command_set)
 
     for key in ["type", "area", "capability", "command", "groups"]:
         out.setdefault(key, [])
@@ -358,26 +359,31 @@ async def _send_light_can_command(
 @api_router_entities.post("/entities/{entity_id}/control", response_model=ControlEntityResponse)
 async def control_entity(
     entity_id: str,
-    cmd: ControlCommand = Body(
-        ...,
-        examples={
-            "turn_on": {"summary": "Turn light on", "value": {"command": "set", "state": "on"}},
-            "turn_off": {"summary": "Turn light off", "value": {"command": "set", "state": "off"}},
-            "set_brightness": {
-                "summary": "Set brightness to 75%",
-                "value": {"command": "set", "state": "on", "brightness": 75},
-            },
-            "toggle": {"summary": "Toggle current state", "value": {"command": "toggle"}},
-            "brightness_up": {
-                "summary": "Increase brightness by 10%",
-                "value": {"command": "brightness_up"},  # Changed from brightness_increase
-            },
-            "brightness_down": {
-                "summary": "Decrease brightness by 10%",
-                "value": {"command": "brightness_down"},  # Changed from brightness_decrease
-            },
-        },
-    ),
+    cmd: Annotated[
+        ControlCommand,
+        Body(
+            examples={
+                "turn_on": {"summary": "Turn light on", "value": {"command": "set", "state": "on"}},
+                "turn_off": {
+                    "summary": "Turn light off",
+                    "value": {"command": "set", "state": "off"},
+                },
+                "set_brightness": {
+                    "summary": "Set brightness to 75%",
+                    "value": {"command": "set", "state": "on", "brightness": 75},
+                },
+                "toggle": {"summary": "Toggle current state", "value": {"command": "toggle"}},
+                "brightness_up": {
+                    "summary": "Increase brightness by 10%",
+                    "value": {"command": "brightness_up"},  # Changed from brightness_increase
+                },
+                "brightness_down": {
+                    "summary": "Decrease brightness by 10%",
+                    "value": {"command": "brightness_down"},  # Changed from brightness_decrease
+                },
+            }
+        ),
+    ],
 ) -> ControlEntityResponse:
     """
     Control a light entity based on the provided command.
@@ -435,7 +441,7 @@ async def control_entity(
     current_brightness_raw = current_raw_values.get("operating_status", 0)
     current_brightness_ui = (
         min(int(current_brightness_raw) // 2, 100)
-        if isinstance(current_brightness_raw, (int, float, str))
+        if isinstance(current_brightness_raw, int | float | str)
         and str(current_brightness_raw).isdigit()
         else (100 if current_on else 0)
     )
