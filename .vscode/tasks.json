@@ -108,6 +108,17 @@
       }
     },
     {
+      "label": "Type Check (Pyright)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && npx pyright src",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
       "label": "Build Frontend",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run build",
