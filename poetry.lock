@@ -793,14 +793,14 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "prometheus-client"
-version = "0.21.1"
+version = "0.22.0"
 description = "Python client for the Prometheus monitoring system."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "prometheus_client-0.21.1-py3-none-any.whl", hash = "sha256:594b45c410d6f4f8888940fe80b5cc2521b305a1fafe1c58609ef715a001f301"},
-    {file = "prometheus_client-0.21.1.tar.gz", hash = "sha256:252505a722ac04b0456be05c05f75f45d760c2911ffc45f2a06bcaed9f3ae3fb"},
+    {file = "prometheus_client-0.22.0-py3-none-any.whl", hash = "sha256:c8951bbe64e62b96cd8e8f5d917279d1b9b91ab766793f33d4dce6c228558713"},
+    {file = "prometheus_client-0.22.0.tar.gz", hash = "sha256:18da1d2241ac2d10c8d2110f13eedcd5c7c0c8af18c926e8731f04fc10cd575c"},
 ]
 
 [package.extras]
@@ -958,14 +958,14 @@ dev = ["build", "flake8", "mypy", "pytest", "twine"]
 
 [[package]]
 name = "pyroute2"
-version = "0.8.1"
+version = "0.9.2"
 description = "Python Netlink library"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "pyroute2-0.8.1-py3-none-any.whl", hash = "sha256:f339be8acffc46cd87bca19217b559ea5838810b4b08836301a52cb2cb4c054b"},
-    {file = "pyroute2-0.8.1.tar.gz", hash = "sha256:b91f4a1f7abb9824637b1fe67e6e4a0a071d98d4a1a1b47ef792304ff3adad11"},
+    {file = "pyroute2-0.9.2-py3-none-any.whl", hash = "sha256:70e3def534fbd8f232927c88415ce0bf5201c208304ad189322d2db5c331fe77"},
+    {file = "pyroute2-0.9.2.tar.gz", hash = "sha256:aea3c0e1b46f48295edb29caaba3ceb6415bdcb975cba3f1489ffcc3198e0ce3"},
 ]
 
 [package.dependencies]
@@ -1728,4 +1728,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12.6"
-content-hash = "6713589dde0c49c3d36f474edaee625671e23e7905f7c784bfdf155813f31f07"
+content-hash = "c5f154337cfe1c6beb82a042ebe940fe1fe54563d30fdb0feb8110794c1244a1"
