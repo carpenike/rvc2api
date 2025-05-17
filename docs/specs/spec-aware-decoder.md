@@ -1,148 +1,128 @@
-# RV-C Spec-Aware Decoder Enhancement Plan
+```markdown
+# Spec-Aware Decoder: Live RV-C Definition and Validation via FAISS
 
-This spec outlines the architecture and behavior for enhancing the `rvc2api` CANbus decoder with semantic awareness of the official RV-C specification. It allows for real-time detection of unknown or incorrectly defined DGNs by leveraging a FAISS vector index built from the spec PDF.
+## 1. Objective
 
----
+### 1.1. Purpose
+- Automatically identify and suggest decoder structures for unknown DGNs observed on the CANbus.
+- Validate and improve existing `rvc.json` entries against the official RV-C spec (via semantic embedding).
+- Enable faster, more accurate development of coach-specific decoder mappings.
 
-## Goals
-
-- Detect CAN messages with DGNs not defined in `rvc.json` and suggest matching decoder structures based on the official spec.
-- Validate existing `rvc.json` entries against the FAISS-indexed spec content.
-- Present suggestions and mismatches in the web UI and/or API endpoints for developer review.
-- Enable developers to maintain decoder accuracy over time as new messages appear or the spec evolves.
-
----
-
-## System Components
-
-### 1. FAISS Vector Index
-- Built from chunked RV-C spec (PDF)
-- Each chunk includes:
-  - `section`, `title`, `pages`, `text`, `source`, and `chunking` in metadata
-- Embedded using `text-embedding-3-large`
+### 1.2. Scope
+- Affected: `rvc.json`, FastAPI backend, decoder engine, UI (developer panel).
+- Unchanged: CANbus reader, core FastAPI routing, spec chunking/indexing.
+- Boundaries: This feature reads FAISS index and logs or suggests decoder changes — it does not automatically update persistent files.
 
 ---
 
-## Features
+## 2. Current State Analysis
 
-### A. **Unrecognized DGN Detection**
-When a message is received with a DGN not defined in `rvc.json`:
+### 2.1. Decoder Structure
+- `rvc.json` contains hard-coded decoder definitions keyed by DGN ID.
+- Unknown DGNs are either dropped or logged with no semantic analysis.
+- Validation of existing entries requires manual review of PDF spec.
 
-1. Backend performs a semantic search using the DGN ID and/or context.
-2. Retrieves the best matching spec chunk.
-3. Suggests a decoder definition based on that content.
-4. Logs and surfaces it via:
-
-   ```json
-   {
-     "dgn": "1FABC",
-     "first_seen": "2025-05-17T10:32:00Z",
-     "found_in_json": false,
-     "suggestion": {
-       "section": "7.3.12",
-       "title": "Inverter Output Status",
-       "text": "Byte 0: Inverter State..."
-     }
-   }
-   ```
-
-5. Displayed in a **“New DGNs” UI panel** and optionally returned via:
-
-   ```
-   GET /spec/unrecognized
-   ```
+### 2.2. Limitations
+- Unknown DGNs require manual research and YAML entry.
+- No mechanism to detect stale, inaccurate, or incomplete `rvc.json` entries.
+- Missed opportunity to leverage the existing FAISS spec embedding index.
 
 ---
 
-### B. **Existing DGN Validation**
-For messages with a DGN defined in `rvc.json`:
+## 3. Functional Design
 
-1. Query FAISS using DGN ID and name.
-2. Retrieve matching spec chunk.
-3. Compare `rvc.json` definition to spec content:
-   - Missing fields
-   - Name mismatches
-   - Byte offset mismatches
+### 3.1. Runtime Decoder Pipeline Enhancements
+- For each CAN message:
+  - If DGN is unknown:
+    - Query FAISS for spec chunk
+    - Suggest decoder structure in UI/API
+  - If DGN is known:
+    - Query FAISS
+    - Compare structure to `rvc.json`
+    - Log or expose mismatches
 
-4. Log results as:
+### 3.2. Suggested Decoder Structure Output
+- Section title and text from spec
+- Proposed JSON structure with field names, types, and units
+- Optional UI copy-paste block
 
-   ```json
-   {
-     "dgn": "1F510",
-     "status": "mismatch",
-     "issues": [
-       {
-         "type": "missing_field",
-         "byte": 2,
-         "description": "Byte 2 is defined in spec but not in rvc.json"
-       },
-       {
-         "type": "name_diff",
-         "byte": 1,
-         "rvc": "operating status",
-         "spec": "status"
-       }
-     ]
-   }
-   ```
-
-5. Displayed in a **“Decoder Conflicts” UI panel** and exposed via:
-
-   ```
-   GET /spec/mismatches
-   ```
+### 3.3. Mismatch Detection
+- Field-level diff between `rvc.json` and spec:
+  - Missing bytes
+  - Name differences
+  - Byte offset misalignment
+- Displayed in a validation panel in UI or exposed via:
+  ```
+  GET /spec/mismatches
+  ```
 
 ---
 
-## Architecture Overview
+## 4. Implementation Strategy
 
+### 4.1. Modules and Interfaces
+- `seen_dgn_cache.py`: In-memory (or persistent) cache of unknown DGNs + suggestions
+- `validate_dgn_fields.py`: Validator for known DGNs
+- `GET /spec/unrecognized`: List of undefined DGNs + spec matches
+- `GET /spec/mismatches`: List of mismatched DGN validations
+- UI: “New DGNs” panel for spec-based decoder suggestions
+- UI: “Decoder Conflicts” panel for existing entry validation
+
+### 4.2. UI Enhancements
+- “New DGNs” panel for spec-based decoder suggestions
+- “Decoder Conflicts” panel for existing entry validation
+
+---
+
+## 5. Testing Strategy
+
+- Unit tests for suggestion and validation logic
+- Mocked FAISS index queries with synthetic DGN inputs
+- UI tests to validate developer panels render expected output
+- Optional golden test set comparing `rvc.json` against fixed FAISS chunks
+
+---
+
+## 6. Documentation Updates
+
+- Update `rvc.json` format documentation to include `"proposed": true` and `"source": "faiss"` fields.
+- Add dev guide for running decoder validator tools.
+- Include reference to `validate_rvc_json.py` and `/spec/mismatches` endpoint.
+
+---
+
+## 7. Execution Checklist
+
+### 7.1. API and Decoder Engine
+- [ ] Add runtime DGN hook for unknown DGN capture
+- [ ] Implement FAISS lookup for unknown DGN
+- [ ] Build `seen_dgn_cache` structure
+- [ ] Build validation function for existing DGN entries
+- [ ] Add FastAPI endpoints
+
+### 7.2. UI Integration
+- [ ] Add “New DGNs” panel
+- [ ] Add “Decoder Conflicts” panel
+
+### 7.3. Developer Tooling
+- [ ] Integrate `validate_rvc_json.py` into dev workflow
+- [ ] Add support for exporting proposed decoders
+
+---
+
+## 8. Future Enhancements
+
+- Allow user confirmation of decoder suggestions via UI
+- Auto-generate pull requests for `rvc.json` updates
+- Add similarity confidence scoring to UI
+- Periodic batch re-validation of all DGNs
+
+---
+
+## 9. References
+
+- [LangChain FAISS integration](https://docs.langchain.com/docs/integrations/vectorstores/faiss)
+- [RV-C Specification PDF, 2023 Edition]
+- [`generate_embeddings.py` / `generate_faiss_index.py` scripts]
+- [Existing spec: Refactor Web UI to Standalone React App]
 ```
-[ CAN Message ]
-      ↓
-[ rvc.json Lookup ]
-      ↓
-  ┌────────────┬─────────────┐
-  │ Not Found  │ Found       │
-  │ (unknown)  │ (defined)   │
-  └────┬───────┴───────┬─────┘
-       ↓               ↓
-  [ FAISS Query ]   [ FAISS Query ]
-       ↓               ↓
- [ Best Chunk ]     [ Best Chunk ]
-       ↓               ↓
-[ Suggest Decoder ] [ Validate Fields ]
-       ↓               ↓
-[ Store Suggestion ] [ Store Mismatch ]
-       ↓               ↓
-[ UI Panel + API ] [ UI Panel + API ]
-```
-
----
-
-## Implementation Modules
-
-| Component | Description |
-|----------|-------------|
-| `seen_dgn_cache` | Tracks first-seen unknown DGNs + suggestions |
-| `validate_dgn_fields(dgn_id, rvc_entry)` | Compares `rvc.json` vs FAISS spec |
-| `GET /spec/unrecognized` | Returns unknown DGN suggestions |
-| `GET /spec/mismatches` | Returns mismatched DGN validations |
-| UI: “Suggested Decoders” | List of unknown DGNs with spec context |
-| UI: “Decoder Conflicts” | Known DGNs with validation issues |
-
----
-
-## Future Enhancements
-
-- Allow user to confirm or ignore suggestions via API or UI.
-- Output `rvc.json` patch suggestions or diffs.
-- Visualize match confidence scores in the UI.
-- Support batching re-validation after spec or `rvc.json` update.
-
----
-
-## Prerequisites
-
-- `rvc.json` loaded in memory or as a file
-- FAISS index built from `rvc-spec-*.pdf` using `text-embedding-3-large`
-- `langchain`, `faiss`, `openai` Python libraries available
