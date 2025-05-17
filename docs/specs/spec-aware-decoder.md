@@ -1,4 +1,3 @@
-```markdown
 # Spec-Aware Decoder: Live RV-C Definition and Validation via FAISS
 
 ## 1. Objective
@@ -125,4 +124,3 @@
 - [RV-C Specification PDF, 2023 Edition]
 - [`generate_embeddings.py` / `generate_faiss_index.py` scripts]
 - [Existing spec: Refactor Web UI to Standalone React App]
-```
