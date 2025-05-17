@@ -16,19 +16,14 @@ repos:
         args: ["--fix=lf"]
       - id: check-added-large-files
 
-  # Code formatter
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-
-  # Modern Python linter (replacement for flake8)
+  # Python linting and formatting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.11
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+        # Runs as the primary formatter in place of Black
 
   # HTML linting
   - repo: https://github.com/Riverside-Healthcare/djLint
