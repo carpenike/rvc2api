@@ -1,125 +1,288 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices"],
+  "extends": [
+    "config:best-practices"
+  ],
   "commitMessagePrefix": "chore(deps): ",
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "rebaseWhen": "behind-base-branch",
   "dependencyDashboard": true,
-
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": false,
-    "recreateClosed": true
+    "recreateWhen": "always"
   },
-
   "packageRules": [
     {
-      "matchPackagePatterns": ["black", "flake8", "mypy", "pytest", "pre-commit"],
-      "matchManagers": ["poetry", "nix"],
+      "matchManagers": [
+        "poetry",
+        "nix"
+      ],
       "groupName": "shared dev tools (black, mypy, etc)",
-      "addLabels": ["python", "nix", "shared-dev"]
+      "addLabels": [
+        "python",
+        "nix",
+        "shared-dev"
+      ],
+      "matchPackageNames": [
+        "/black/",
+        "/flake8/",
+        "/mypy/",
+        "/pytest/",
+        "/pre-commit/"
+      ]
     },
     {
-      "matchPackagePatterns": ["*"],
-      "matchManagers": ["poetry"],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "groupName": "python dependencies (non-major)",
-      "addLabels": ["python"]
+      "addLabels": [
+        "python"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchPackagePatterns": ["*"],
-      "matchManagers": ["poetry"],
-      "matchUpdateTypes": ["major"],
-      "addLabels": ["python", "major"]
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "addLabels": [
+        "python",
+        "major"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchManagers": ["nix"],
+      "matchManagers": [
+        "nix"
+      ],
       "groupName": "nix flake inputs",
-      "addLabels": ["nix"]
+      "addLabels": [
+        "nix"
+      ]
     },
     {
-      "matchPackagePatterns": ["black", "flake8", "mypy", "pytest", "pre-commit"],
-      "matchManagers": ["poetry"],
-      "matchDepTypes": ["dev"],
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchDepTypes": [
+        "dev"
+      ],
       "groupName": "python dev tools (non-major)",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "addLabels": ["python", "dev-tools"]
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "addLabels": [
+        "python",
+        "dev-tools"
+      ],
+      "matchPackageNames": [
+        "/black/",
+        "/flake8/",
+        "/mypy/",
+        "/pytest/",
+        "/pre-commit/"
+      ]
     },
     {
-      "matchPackagePatterns": ["black", "flake8", "mypy", "pytest", "pre-commit"],
-      "matchManagers": ["poetry"],
-      "matchDepTypes": ["dev"],
-      "matchUpdateTypes": ["major"],
-      "addLabels": ["python", "dev-tools", "major"]
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchDepTypes": [
+        "dev"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "addLabels": [
+        "python",
+        "dev-tools",
+        "major"
+      ],
+      "matchPackageNames": [
+        "/black/",
+        "/flake8/",
+        "/mypy/",
+        "/pytest/",
+        "/pre-commit/"
+      ]
     },
     {
-      "matchManagers": ["pre-commit"],
+      "matchManagers": [
+        "pre-commit"
+      ],
       "groupName": "pre-commit hooks",
-      "addLabels": ["pre-commit", "hooks"]
+      "addLabels": [
+        "pre-commit",
+        "hooks"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["^@types/"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "TypeScript type definitions",
-      "addLabels": ["typescript", "types"]
+      "addLabels": [
+        "typescript",
+        "types"
+      ],
+      "matchPackageNames": [
+        "/^@types//"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["^eslint", "eslint-plugin-"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "ESLint packages",
-      "addLabels": ["frontend", "linting"]
+      "addLabels": [
+        "frontend",
+        "linting"
+      ],
+      "matchPackageNames": [
+        "/^eslint/",
+        "/eslint-plugin-/"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["jest", "^@testing-library/"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "Testing packages",
-      "addLabels": ["frontend", "testing"]
+      "addLabels": [
+        "frontend",
+        "testing"
+      ],
+      "matchPackageNames": [
+        "/jest/",
+        "/^@testing-library//"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["typescript", "^typescript-"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "TypeScript packages",
-      "addLabels": ["frontend", "typescript"]
+      "addLabels": [
+        "frontend",
+        "typescript"
+      ],
+      "matchPackageNames": [
+        "/typescript/",
+        "/^typescript-/"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["vite", "^@vitejs/"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "Vite packages",
-      "addLabels": ["frontend", "build-tools"]
+      "addLabels": [
+        "frontend",
+        "build-tools"
+      ],
+      "matchPackageNames": [
+        "/vite/",
+        "/^@vitejs//"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["tailwindcss", "postcss", "autoprefixer"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "CSS tooling",
-      "addLabels": ["frontend", "styling"]
+      "addLabels": [
+        "frontend",
+        "styling"
+      ],
+      "matchPackageNames": [
+        "/tailwindcss/",
+        "/postcss/",
+        "/autoprefixer/"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["^react$", "^react-dom$", "^react-router"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "React core packages",
-      "addLabels": ["frontend", "react"],
-      "stabilityDays": 7
+      "addLabels": [
+        "frontend",
+        "react"
+      ],
+      "minimumReleaseAge": "7 days",
+      "matchPackageNames": [
+        "/^react$/",
+        "/^react-dom$/",
+        "/^react-router/"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchDepTypes": ["dependencies"],
-      "matchPackagePatterns": ["^@headlessui/", "^@heroicons/"],
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
       "groupName": "UI component libraries",
-      "addLabels": ["frontend", "ui-components"]
+      "addLabels": [
+        "frontend",
+        "ui-components"
+      ],
+      "matchPackageNames": [
+        "/^@headlessui//",
+        "/^@heroicons//"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "addLabels": ["javascript", "non-major"]
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "addLabels": [
+        "javascript",
+        "non-major"
+      ]
     },
     {
-      "matchManagers": ["npm"],
-      "matchUpdateTypes": ["major"],
-      "addLabels": ["javascript", "major"],
-      "stabilityDays": 14
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "addLabels": [
+        "javascript",
+        "major"
+      ],
+      "minimumReleaseAge": "14 days"
     }
   ],
-  "schedule": ["after 10pm and before 5am"],
+  "schedule": [
+    "after 10pm",
+    "before 5am"
+  ],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5
 }
