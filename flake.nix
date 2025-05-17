@@ -135,6 +135,12 @@
             pkgs.fish
             pythonPackages.pytest-asyncio
 
+            # --- Dev Tools dependencies ---
+            pythonPackages.langchain
+            pythonPackages."langchain-openai"
+            pythonPackages.pymupdf  # PyMuPDF, imported as fitz
+            pythonPackages."faiss"
+
             # --- Frontend dependencies ---
             # Only include Node.js runtime, npm will manage package dependencies
             pkgs.nodejs_20
@@ -161,6 +167,11 @@
             echo "  • cd web_ui && npm install    # Install frontend dependencies"
             echo "  • cd web_ui && npm run dev    # Start React dev server"
             echo "  • cd web_ui && npm run build  # Build production frontend"
+            echo ""
+            echo "💡 Dev Tools commands:"
+            echo "  • poetry install --with devtools  # Install dev tools dependencies"
+            echo "  • python dev_tools/generate_embeddings.py  # Process RV-C spec PDF"
+            echo "  • python dev_tools/query_faiss.py \"query\"  # Search RV-C spec"
 
             # Setup frontend if web_ui directory exists
             if [ -d "web_ui" ] && [ ! -d "web_ui/node_modules" ]; then
@@ -184,6 +195,12 @@
             pythonPackages.watchfiles
             pythonPackages.pytest-asyncio
             pkgs.pyright  # For Python type checking
+
+            # --- Dev Tools dependencies for CI ---
+            pythonPackages.langchain
+            pythonPackages."langchain-openai"
+            pythonPackages.pymupdf  # PyMuPDF, imported as fitz
+            pythonPackages."faiss-cpu"
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
