@@ -94,7 +94,7 @@ To use these features:
    - Start Backend Server
    - Start Frontend Dev Server
    - Run Tests
-   - Format Code (Black)
+   - Format Code (Ruff)
    - Lint (Ruff)
 
 ## Environment Variables

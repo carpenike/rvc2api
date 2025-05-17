@@ -71,7 +71,7 @@ outputs = { self, nixpkgs, flake-utils, poetry2nix, ... }:
 
         # For extra development tools not in pyproject.toml
         extraPackages = ps: with ps; [
-          black
+          ruff
           ruff
           # Using Pyright as the standardized type checker (see pyrightconfig.json)
           pytest

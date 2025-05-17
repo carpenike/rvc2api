@@ -24,9 +24,8 @@ Alternatively, you can install them one by one using the VS Code Extensions view
 
 ### Code Quality Tools
 
-- **[Black Formatter (ms-python.black-formatter)](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter)**: Integrates the Black code formatter for Python
-- **[isort (ms-python.isort)](https://marketplace.visualstudio.com/items?itemName=ms-python.isort)**: Import sorting for Python files
-- **[Ruff (charliermarsh.ruff)](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)**: Fast Python linter integrated into VS Code
+- **[Ruff (charliermarsh.ruff)](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)**: Fast Python linter and formatter integrated into VS Code
+- **[isort (ms-python.isort)](https://marketplace.visualstudio.com/items?itemName=ms-python.isort)**: Import sorting for Python files (mostly handled by Ruff now)
 
 ### Python Workflow
 
@@ -77,7 +76,7 @@ Many of these extensions work well with the VS Code tasks defined in `tasks.json
 
 1. Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
 2. Type and select "Tasks: Run Task"
-3. Choose a task like "Start Backend Server" or "Format Code (Black)"
+3. Choose a task like "Start Backend Server" or "Format Code (Ruff)"
 
 See the [VS Code Tasks documentation](https://code.visualstudio.com/docs/editor/tasks) for more information on using tasks.
 

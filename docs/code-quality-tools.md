@@ -26,21 +26,22 @@ poetry run ruff check .
 poetry run ruff check --fix .
 ```
 
-### Black
+### Ruff Format
 
-[Black](https://github.com/psf/black) is our Python code formatter. It enforces a consistent style by reformatting your code to conform to its rules.
+[Ruff Format](https://docs.astral.sh/ruff/formatter/) is our Python code formatter. It enforces a consistent style by reformatting your code to conform to its rules, similar to Black but integrated with the Ruff toolchain.
 
 #### Key features
 
 - Deterministic formatting
-- Minimal configuration
-- Compatible with Ruff
+- Fast performance
+- Integrated with Ruff linting
+- Compatible with Black-style formatting
 
 #### Usage
 
 ```bash
 # Format your code
-poetry run black src tests
+poetry run ruff format src tests
 ```
 
 ### Pyright/Pylance
@@ -115,7 +116,7 @@ For more details, see `typings/fastapi/README.md`.
 ## Why We Chose These Tools
 
 - **Ruff over Flake8**: Ruff is significantly faster and includes all the functionality of Flake8 plus much more. It also has better integration with modern Python tooling.
-- **Black for formatting**: Black is the industry standard for Python code formatting, offering consistent results with minimal configuration.
+- **Ruff Format over Black**: Ruff Format provides the same deterministic formatting as Black but is integrated with the Ruff toolchain, offering better performance and consistency with linting rules.
 - **Pyright over mypy for type checking**: We've standardized on Pyright because it offers excellent performance, strong IDE integration via VS Code's Pylance extension, and better support for modern Python typing features, especially with FastAPI and Pydantic. It also provides faster type checking for large codebases.
 - **Custom Type Stubs**: For better IDE support and type checking with libraries like FastAPI.
 
@@ -123,6 +124,6 @@ For more details, see `typings/fastapi/README.md`.
 
 VS Code tasks are configured for these tools:
 
-- **Format Code (Black)**: Formats Python code
+- **Format Code (Ruff)**: Formats Python code
 - **Lint (Ruff)**: Runs Ruff linting with fix capability
 - **Type Check (Pyright)**: Performs static type checking

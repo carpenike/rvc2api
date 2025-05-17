@@ -5,8 +5,8 @@ applyTo: "**/*.py"
 # Code Style & Documentation
 
 - **Python**: Version 3.12+
-- **Format**: `black` (line length: 100)
-- **Linting**: `ruff` or `flake8`
+- **Format**: `ruff format` (line length: 100)
+- **Linting**: `ruff check`
 - **Imports**: Group as `stdlib → third-party → local`
 - **Typing**: Use full type hints and Pydantic models
 - **Code Quality**: All code must pass both linting and type checking
@@ -21,12 +21,12 @@ applyTo: "**/*.py"
 - Required for all Python code
 - Run: `poetry run ruff check .`
 
-### Black
+### Ruff Format
 
 - Line length: 100 characters
-- No string normalization
+- Format follows a style similar to Black
 - Required for all Python code
-- Run: `poetry run black src`
+- Run: `poetry run ruff format src`
 
 ### Pyright/Pylance
 
@@ -44,7 +44,7 @@ All code must pass both linting and type checking:
 
 1. **Linting Check**: `poetry run ruff check .`
 2. **Type Check**: `npx pyright src`
-3. **Formatting**: `poetry run black src`
+3. **Formatting**: `poetry run ruff format src`
 
 ### Handling Import Issues
 

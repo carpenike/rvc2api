@@ -9,7 +9,7 @@ applyTo: "**"
 - All code quality checks pass:
   - Linting (`ruff check .`)
   - Type checking (`pyright src`)
-  - Formatting (`black src`)
+  - Formatting (`ruff format src`)
 - Scoped, focused change
 - Reference design intent or research if needed
 

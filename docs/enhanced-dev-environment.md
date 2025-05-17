@@ -10,7 +10,7 @@ A comprehensive set of VS Code tasks has been added to streamline development wo
 
   - Start Backend Server
   - Run Tests
-  - Format Code (Black)
+  - Format Code (Ruff)
   - Lint (Ruff)
 
 - **Frontend Development**

@@ -22,7 +22,7 @@ The pre-commit configuration includes:
 
 2. **Python code quality**:
 
-   - **Black**: Code formatting
+   - **Ruff Format**: Code formatting
    - **Ruff**: Modern Python linting (replaces Flake8)
    - **Pyright**: Type checking (see `pyrightconfig.json` and `pyproject.toml`)
 
@@ -44,7 +44,7 @@ poetry run pre-commit install
 poetry run pre-commit run --all-files
 
 # Run a specific hook
-poetry run pre-commit run black --all-files
+poetry run pre-commit run ruff-format --all-files
 ```
 
 ## GitHub Actions Configuration

@@ -16,7 +16,7 @@ applyTo: "**"
 ```bash
 poetry run python src/core_daemon/main.py  # Run server
 poetry run pytest  # Tests
-poetry run black src  # Format
+poetry run ruff format src  # Format
 poetry run ruff check .  # Lint
 npx pyright src  # Type checking
 ```
