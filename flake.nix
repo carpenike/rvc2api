@@ -1,7 +1,7 @@
 # flake# ▸ CLI apps (run with `nix run .#<n>`) for:
 #    - `test`     → run unit tests
 #    - `lint`     → run ruff, pyright, djlint
-#    - `format`   → run black and djlint in reformat mode — Nix flake definition for rvc2api
+#    - `format`   → run ruff format and djlint in reformat mode — Nix flake definition for rvc2api
 #
 # This flake provides:
 #
@@ -11,7 +11,7 @@
 # ▸ CLI apps (run with `nix run .#<name>`) for:
 #    - `test`     → run unit tests
 #    - `lint`     → run ruff, mypy, djlint
-#    - `format`   → run black and djlint in reformat mode
+#    - `format`   → run ruff format and djlint in reformat mode
 #    - `ci`       → run full gate: pre-commit, tests, lints, poetry lock
 #    - `precommit`→ run pre-commit checks across the repo
 # ▸ Nix flake checks (via `nix flake check`) for:
@@ -251,7 +251,7 @@
               text = ''
                 # Backend formatting
                 poetry install --no-root
-                poetry run black src
+                poetry run ruff format src
 
                 # Frontend formatting (if web_ui directory exists)
                 if [ -d "web_ui" ]; then
