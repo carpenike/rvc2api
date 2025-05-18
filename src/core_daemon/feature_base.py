@@ -2,6 +2,8 @@
 Base class for backend features (core or optional).
 """
 
+from typing import Any
+
 
 class Feature:
     """
@@ -12,21 +14,25 @@ class Feature:
     name: str
     enabled: bool
     core: bool
-    config: dict
+    config: dict[str, Any]
 
     def __init__(
-        self, name: str, enabled: bool = False, core: bool = False, config: dict | None = None
-    ):
+        self,
+        name: str,
+        enabled: bool = False,
+        core: bool = False,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         self.name = name
         self.enabled = enabled
         self.core = core
         self.config = config or {}
 
-    async def startup(self):
+    async def startup(self) -> None:
         """Called on FastAPI startup if feature is enabled."""
         pass
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Called on FastAPI shutdown if feature is enabled."""
         pass
 
