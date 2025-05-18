@@ -32,6 +32,37 @@ rules: {
 }
 ```
 
+## Monorepo Path Handling & Ignore Patterns
+
+- **Root ESLint Config**: The repo root contains `eslint.config.js` which imports the frontend config (`web_ui/eslint.config.js`). Always run ESLint and pre-commit from the repo root for correct path resolution.
+- **Absolute Ignore Patterns**: Legacy and legacy-adjacent files (e.g., `src/core_daemon/web_ui/`) are excluded using absolute ignore patterns in both ESLint config and pre-commit. Example:
+  ```js
+  ignores: [
+    // ...other ignores...
+    path.resolve(__dirname, "../src/core_daemon/web_ui/**"),
+  ];
+  ```
+- **Pre-commit Hook**: The `.pre-commit-config.yaml` is set to run ESLint from the root, using the root config and correct args. It uses absolute ignore patterns to ensure legacy files are not checked.
+
+## Best Practices for Flat Config + Pre-commit
+
+- Always use absolute paths for `tsconfig.eslint.json` and `tsconfigRootDir` in ESLint config.
+- Exclude all legacy/legacy-adjacent files in both ESLint and pre-commit configs.
+- Run ESLint and pre-commit from the repo root to ensure correct config resolution.
+- Use `npm run lint` and `npm run lint:fix` to check/fix only modern code.
+
+## Legacy Code Exclusion
+
+- All files in `src/core_daemon/web_ui/` and other legacy directories are excluded from linting and type checking.
+- This is enforced in both ESLint config and pre-commit hook using robust ignore patterns.
+- If new legacy files are added, update ignore patterns in both configs.
+
+## TypeScript Project Reference & ESLint Integration
+
+- ESLint is pointed to the correct `tsconfig.eslint.json` using absolute paths for parserOptions.
+- TypeScript project references (`tsconfig.json`, `tsconfig.app.json`, etc.) are used for modularity and performance.
+- If ESLint cannot resolve TypeScript config, check that all paths are absolute and that you are running from the repo root.
+
 ## Known Issues and Fixes
 
 ### TypeScript Interface Parsing Errors
@@ -92,3 +123,30 @@ If you encounter persistent ESLint errors even after running fix scripts:
    ```
 
 4. For persistent errors, check GitHub issue #30 for known issues
+
+## MCP Tool Usage
+
+- Use `@context7` for codebase-specific config, ignore, and legacy exclusion queries (e.g., `@context7 ESLint ignore patterns`, `@context7 legacy exclusion`).
+- Use `@perplexity` for external best practices and troubleshooting (e.g., `@perplexity monorepo ESLint flat config`).
+
+## Example ESLint Config Snippet
+
+```js
+// eslint.config.js (root)
+import webUiConfig from "./web_ui/eslint.config.js";
+export default [webUiConfig];
+```
+
+```js
+// web_ui/eslint.config.js (ignore pattern example)
+import path from "path";
+export default [
+  // ...other config...
+  {
+    ignores: [
+      path.resolve(__dirname, "../src/core_daemon/web_ui/**"),
+      // ...other ignores...
+    ],
+  },
+];
+```

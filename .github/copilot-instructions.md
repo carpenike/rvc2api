@@ -35,6 +35,19 @@ This document provides key information for GitHub Copilot to understand the `rvc
 - **TypeScript Interfaces**: Ensure all standalone interface files have imports to avoid parsing errors
 - **Trailing Commas**: Not allowed (configured in ESLint)
 
+## Monorepo ESLint & TypeScript Configuration (Frontend)
+
+- **Monorepo Flat Config**: ESLint is configured at the repo root (`eslint.config.js`) and imports the frontend config (`web_ui/eslint.config.js`) for monorepo compatibility. Always run ESLint and pre-commit from the repo root.
+- **TypeScript Project References**: The frontend uses strict TypeScript project references (`tsconfig.json`, `tsconfig.app.json`, `tsconfig.test.json`, etc.) for modularity and performance. ESLint is pointed to the correct `tsconfig.eslint.json` using absolute paths.
+- **Legacy Code Exclusion**: All legacy and legacy-adjacent files (e.g., `src/core_daemon/web_ui/`) are excluded from linting and type checking using robust absolute ignore patterns in ESLint config and pre-commit hooks. This ensures only modern, maintained code is checked.
+- **Pre-commit Integration**: The `.pre-commit-config.yaml` runs ESLint from the repo root, using the root config and correct args. It is set up to ignore legacy files and only check relevant frontend code.
+- **Troubleshooting**:
+  - If ESLint or pre-commit reports config or parsing errors, check that you are running from the repo root and that ignore patterns are absolute.
+  - For TypeScript interface parsing errors, ensure all interface files have at least one import (see `npm run fix:interfaces`).
+  - For persistent config issues, see `.github/instructions/eslint-typescript-config.instructions.md` and use MCP tools for targeted queries (e.g., `@context7 ESLint ignore patterns`, `@context7 legacy exclusion`).
+
+See `.github/instructions/eslint-typescript-config.instructions.md` for detailed config, ignore, and troubleshooting patterns.
+
 ## Core Architecture
 
 - `src/common/`: Shared models and utilities
