@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
-from core_daemon.services.vector_service import VectorService, get_vector_service
+from core_daemon.services.vector_service import get_vector_service
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
@@ -22,22 +22,14 @@ router = APIRouter(
 
 
 @router.get("/status")
-async def get_search_status(
-    vector_service: VectorService = None,
-) -> dict[str, Any]:
-    if vector_service is None:
-        from fastapi import Depends
-
-        vector_service = Depends(get_vector_service)
+async def get_search_status() -> dict[str, Any]:
     """
     Get the status of the vector search service.
-
-    Args:
-        vector_service: Vector service dependency
 
     Returns:
         Dictionary with status information and configuration
     """
+    vector_service = get_vector_service()
     status = vector_service.get_status()
     return {
         "vector_search": {
@@ -51,19 +43,13 @@ async def get_search_status(
 async def search_documentation(
     query: str = Query(..., description="Search query string"),
     k: int = Query(3, description="Number of results to return", ge=1, le=10),
-    vector_service: VectorService = None,
 ) -> list[dict[str, Any]]:
-    if vector_service is None:
-        from fastapi import Depends
-
-        vector_service = Depends(get_vector_service)
     """
     Search the RV-C documentation using vector-based semantic search.
 
     Args:
         query: Natural language search query
         k: Number of results to return (between 1 and 10)
-        vector_service: Vector service dependency
 
     Returns:
         List of search results with content and metadata
@@ -71,6 +57,7 @@ async def search_documentation(
     Raises:
         HTTPException: If search fails or service is unavailable
     """
+    vector_service = get_vector_service()
     try:
         if not vector_service.is_available():
             status = vector_service.get_status()
