@@ -1,10 +1,10 @@
 // ESLint Flat Config
 import jsConfig from "@eslint/js";
-import jsdoc from "eslint-plugin-jsdoc";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import globals from "globals";
 import tseslint from "typescript-eslint";
+import jsdoc from "eslint-plugin-jsdoc";
+import globals from "globals";
 
 export default [
   {
@@ -12,10 +12,8 @@ export default [
   },
   // Base JS config
   jsConfig.configs.recommended,
-
   // TypeScript configs
   ...tseslint.configs.recommended,
-
   // JavaScript common configs
   {
     files: ["**/*.{js,mjs}"],
@@ -28,12 +26,9 @@ export default [
     rules: {
       "quotes": ["error", "double"],
       "semi": ["error", "always"],
-      "comma-dangle": ["error", "never"],
-      "no-trailing-spaces": "error",
-      "eol-last": ["error", "always"]
+      "comma-dangle": ["error", "never"]
     }
   },
-
   // TypeScript specific configs
   {
     files: ["**/*.{ts,tsx}"],
@@ -44,12 +39,12 @@ export default [
       },
       parser: tseslint.parser,
       parserOptions: {
-        project: "./web_ui/tsconfig.eslint.json"
+        project: "./tsconfig.app.json"
       }
     },
-    // Only add plugins not already included by ...tseslint.configs.recommended
     plugins: {
-      "react-hooks": reactHooks,
+      "@typescript-eslint": tseslint.plugin,
+      "react-hooks": reactHooks.plugin,
       "react-refresh": reactRefresh,
       "jsdoc": jsdoc
     },
@@ -68,8 +63,6 @@ export default [
       "quotes": ["error", "double"],
       "semi": ["error", "always"],
       "comma-dangle": ["error", "never"],
-      "no-trailing-spaces": "error",
-      "eol-last": ["error", "always"],
 
       // React-specific rules
       ...reactHooks.configs.recommended.rules,
@@ -88,15 +81,6 @@ export default [
       "jsdoc/check-types": "warn"
     }
   },
-
-  // Node.js environment override for jest.setup.js
-  {
-    files: ["jest.setup.js"],
-    languageOptions: {
-      env: { node: true }
-    }
-  },
-
   // Test files
   {
     files: [
@@ -110,7 +94,6 @@ export default [
       }
     },
     rules: {
-      // Relax rules for test files
       "@typescript-eslint/no-explicit-any": "off"
     }
   }
