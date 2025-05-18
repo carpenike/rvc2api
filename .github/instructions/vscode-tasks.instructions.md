@@ -55,6 +55,13 @@ This file documents the VS Code tasks configuration for the `rvc2api` project. T
 | `Build: Frontend`      | Build the frontend  | `cd web_ui && npm run build` |
 | `Build: Documentation` | Build documentation | `cd docs && mkdocs build`    |
 
+### API Documentation Tasks
+
+| Task Name                    | Description                              | Command                                                                  |
+| ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| `API: Export OpenAPI Schema` | Export OpenAPI schema to JSON/YAML files | `poetry run python scripts/export_openapi.py`                            |
+| `API: Update Documentation`  | Export OpenAPI schema and rebuild docs   | `poetry run python scripts/export_openapi.py && cd docs && mkdocs build` |
+
 ### Development Environment Tasks
 
 | Task Name                    | Description                     | Command                      |

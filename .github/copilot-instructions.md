@@ -1,7 +1,8 @@
 # GitHub Copilot Instructions for rvc2api
 
-- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, *.tsbuildinfo, .cache, *.log) are excluded from linting and type checking in both root and frontend ESLint configs.
+- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, _.tsbuildinfo, .cache, _.log) are excluded from linting and type checking in both root and frontend ESLint configs.
 - All light-related API calls are made via /api/entities endpoints, not /api/lights, to ensure a unified and extensible API design.
+- All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 
 This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns. Detailed domain-specific instructions are organized in `.github/instructions/*.instructions.md` files.
 
@@ -14,6 +15,7 @@ This document provides key information for GitHub Copilot to understand the `rvc
 - **RV-C decoder** for CANbus messages
 - **Modular architecture** with clear separation of concerns
 - **Typed code** with Pydantic models and full type hints
+- **API Documentation** with MkDocs, Material theme, and OpenAPI integration
 
 ## Linting & Code Quality Requirements
 
@@ -75,6 +77,11 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 - **Testing**: pytest with mocked CANbus interfaces
 - **React Components**: Organized by feature in the `web_ui/src/` directory
 - **API Integration**: REST and WebSocket connections between frontend and backend
+- **Documentation**: MkDocs-based documentation with OpenAPI schema integration
+  - API endpoints documented with FastAPI's metadata and docstring features
+  - OpenAPI schema exported automatically via `scripts/export_openapi.py`
+  - Frontend TypeScript types generated from OpenAPI schema
+  - Documentation built with MkDocs Material theme
 - **Type Stubs**: Custom type stubs in `typings/` for third-party libraries
   - Use Protocol-based implementations for complex interfaces
   - Only include required parts of the API that are actually used

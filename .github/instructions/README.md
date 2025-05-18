@@ -11,6 +11,7 @@ This directory contains modular GitHub Copilot instructions for the `rvc2api` pr
 | [project-overview.instructions.md](project-overview.instructions.md) | All files      | Project architecture and structure                |
 | [python-backend.instructions.md](python-backend.instructions.md)     | Backend code   | Python backend architecture and patterns          |
 | [react-frontend.instructions.md](react-frontend.instructions.md)     | React UI files | React, TypeScript, and Vite frontend architecture |
+| [documentation.instructions.md](documentation.instructions.md)       | Markdown files | API documentation and MkDocs configuration        |
 
 ### Code Style and Quality
 
@@ -49,6 +50,22 @@ These files are designed to work with GitHub Copilot in VS Code. When editing a 
 
 You can also use the prompt templates in the [../prompts](../prompts) directory for more specific guidance on common development tasks.
 
+## API Documentation Integration
+
+The project uses a comprehensive API documentation system:
+
+- **FastAPI Documentation**: All endpoints are documented with metadata, examples, and response schemas
+- **OpenAPI Schema**: Automatically exported to JSON/YAML for use in documentation and TypeScript type generation
+- **MkDocs**: Material theme-based documentation site with API reference, architecture docs, and usage guides
+- **TypeScript Types**: Generated from OpenAPI schema for type-safe frontend API integration
+
+Dedicated VS Code tasks make it easy to update and maintain documentation:
+
+- `API: Export OpenAPI Schema`: Updates the OpenAPI schema JSON/YAML files
+- `API: Update Documentation`: Exports the schema and rebuilds the documentation site
+
+See [documentation.instructions.md](documentation.instructions.md) for detailed guidelines on documenting API endpoints.
+
 ## MCP Tools Integration
 
 The project uses Model Context Protocol (MCP) tools for AI-assisted development:
@@ -68,5 +85,6 @@ Extensive VS Code tasks are available to streamline development. These tasks cov
 - Testing (with and without coverage reports)
 - Building (frontend, documentation)
 - Development environment management
+- API documentation (OpenAPI schema export, documentation generation)
 
 See [vscode-tasks.instructions.md](vscode-tasks.instructions.md) for the complete list of available tasks and how to use them.

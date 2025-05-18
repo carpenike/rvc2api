@@ -44,6 +44,10 @@ applyTo: "**/src/**"
 - **State Management**: Centralized in `app_state.py`
 - **Configuration**: Environment variables with Pydantic Settings
 - **Error Handling**: Structured exceptions with proper logging
+- **API Documentation**: Comprehensive docstrings and metadata for OpenAPI schema
+  - All endpoints documented with examples and detailed descriptions
+  - OpenAPI schema exported to JSON/YAML for use in documentation and type generation
+  - See [Documentation Guidelines](documentation.instructions.md) for details
 - **Type Stubs**: Custom type stubs in `typings/` for third-party libraries
   - Use Protocol-based implementations for complex interfaces
   - Only include required parts of the API that are actually used
@@ -94,6 +98,7 @@ The Python backend is deployed as a service on the target system:
 ## See Also
 
 - [Python Code Style](python-code-style.instructions.md) - Detailed Python coding guidelines
+- [Documentation Guidelines](documentation.instructions.md) - API documentation standards
 - [VS Code Tasks](vscode-tasks.instructions.md) - Development workflow automation
 - [MCP Tools](mcp-tools.instructions.md) - Context-aware AI assistance
 - [Pull Request Expectations](pull-requests.instructions.md) - Code submission guidelines

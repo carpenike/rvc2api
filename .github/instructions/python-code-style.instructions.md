@@ -27,6 +27,7 @@ applyTo: "**/*.py"
 - Classes should follow single responsibility principle
 - Use docstrings (Google style) for all public functions, methods and classes
 - Include type annotations for all function parameters and returns
+- Document API endpoints comprehensively with examples and response schemas
 
 ## Import Structure
 
@@ -47,6 +48,50 @@ from fastapi import APIRouter, Depends
 from src.common.models import Entity
 from src.core_daemon.config import Settings
 ```
+
+## API Documentation
+
+- **Route Metadata**: Include comprehensive metadata for FastAPI routes:
+
+  ```python
+  @router.get(
+      "/endpoint",
+      response_model=ResponseModel,
+      summary="Brief summary",
+      description="Detailed description",
+      response_description="What the response contains",
+      tags=["Category"]
+  )
+  ```
+
+- **Docstrings**: Include detailed Google-style docstrings with examples:
+
+  ````python
+  async def get_entities():
+      """
+      Get all entities in the system.
+
+      This endpoint provides a list of all entities regardless of their state.
+
+      Returns:
+          List[EntityResponse]: A list of entity objects
+
+      Examples:
+          ```json
+          [
+              {
+                  "id": "light_123",
+                  "name": "Main Light",
+                  "type": "light"
+              }
+          ]
+          ```
+      """
+  ````
+
+- **Response Models**: Define and use Pydantic models for all request/response schemas
+- **Generate OpenAPI**: Update OpenAPI schema when changing endpoints (`API: Export OpenAPI Schema` task)
+- **See Documentation Guide**: Refer to [Documentation Guidelines](documentation.instructions.md) for complete details
 
 ## Best Practices
 
