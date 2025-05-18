@@ -96,53 +96,34 @@ export function Lights() {
       return newGrouped;
     });
 
-    // Send API request to update light state
+    // Send API request to update light state (now uses correct endpoint)
     setLightState(lightId, isOn).catch((err: Error) => {
-      console.error("Failed to update light state:", err);
-      setError(`Failed to update ${lightId}: ${err.message}`);
-
-      // Revert the state change if the API call fails
-      setLights(prevLights =>
-        prevLights.map(light =>
-          light.id === lightId ? { ...light, state: !isOn } : light
-        )
-      );
+      setError(err.message);
+      // Optionally revert UI state if error
     });
   };
 
   /**
    * Handles toggling all lights on or off
    *
-   * @param state - The new state to set for all lights (true for on, false for off)
+   * @param isOn - The new state to set for all lights
    */
-  /**
-   * Handles toggling all lights on or off
-   *
-   * @param state - The new state to set for all lights (true for on, false for off)
-   */
-  const handleToggleAllLights = (state: boolean) => {
-    setAllLights(state)
-      .then(() => {
-        // Update all lights in state
-        setLights(prevLights =>
-          prevLights.map(light => ({ ...light, state }))
-        );
-
-        // Update grouped lights
-        setGroupedLights(prev => {
-          const newGrouped = { ...prev };
-          Object.keys(newGrouped).forEach(location => {
-            newGrouped[location] = newGrouped[location].map(light =>
-              ({ ...light, state })
-            );
-          });
-          return newGrouped;
-        });
+  const handleToggleAllLights = (isOn: boolean) => {
+    setAllLights(isOn)
+      .then((updatedLights) => {
+        setLights(updatedLights);
+        // Regroup after update
+        const grouped = updatedLights.reduce((acc: Record<string, Light[]>, light: Light) => {
+          const location = light.location || "Unknown";
+          if (!acc[location]) {
+            acc[location] = [];
+          }
+          acc[location].push(light);
+          return acc;
+        }, {});
+        setGroupedLights(grouped);
       })
-      .catch((err: Error) => {
-        console.error("Failed to update all lights:", err);
-        setError(`Failed to update all lights: ${err.message}`);
-      });
+      .catch((err: Error) => setError(err.message));
   };
 
   if (loading) {

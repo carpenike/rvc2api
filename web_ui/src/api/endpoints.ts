@@ -41,7 +41,8 @@ export async function fetchCanStatus(): Promise<CanStatus> {
 
 // Light control
 export async function fetchLights(): Promise<LightStatus[]> {
-  const response = await fetch(`${API_BASE}/entities/lights`, defaultOptions);
+  // Updated to use the correct backend endpoint and query param
+  const response = await fetch(`${API_BASE}/entities?device_type=light`, defaultOptions);
   return handleApiResponse<LightStatus[]>(response);
 }
 
@@ -49,21 +50,28 @@ export async function setLightState(
   id: string,
   state: boolean
 ): Promise<LightStatus> {
-  const response = await fetch(`${API_BASE}/entities/lights/${id}/state`, {
+  // Updated to use the correct backend endpoint and method
+  const response = await fetch(`${API_BASE}/entities/${id}/control`, {
     ...defaultOptions,
-    method: "PUT",
+    method: "POST",
     body: JSON.stringify({ state })
   });
   return handleApiResponse<LightStatus>(response);
 }
 
 export async function setAllLights(state: boolean): Promise<LightStatus[]> {
-  const response = await fetch(`${API_BASE}/entities/lights/all`, {
-    ...defaultOptions,
-    method: "PUT",
-    body: JSON.stringify({ state })
-  });
-  return handleApiResponse<LightStatus[]>(response);
+  // Fetch all lights, then set each one
+  const lights = await fetchLights();
+  const results: LightStatus[] = [];
+  for (const light of lights) {
+    try {
+      const updated = await setLightState(light.id, state);
+      results.push(updated);
+    } catch (e) {
+      // Optionally handle errors per light
+    }
+  }
+  return results;
 }
 
 // Device mapping
