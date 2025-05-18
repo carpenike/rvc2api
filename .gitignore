@@ -179,6 +179,11 @@ result
 # direnv ignores
 .direnv
 
+# RV-C documentation and FAISS index
+resources/rv-c-spec.pdf
+resources/vector_store/
+resources/rvc_spec_chunks_with_overlap.json
+
 # Vite/React/Node.js
 web_ui/node_modules/
 web_ui/dist/
