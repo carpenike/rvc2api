@@ -39,6 +39,7 @@ rules: {
 ESLint may produce parsing errors for TypeScript files with standalone interfaces. This happens because ESLint treats files without imports/exports as script files rather than modules.
 
 Fix:
+
 - Ensure all TypeScript files with interfaces have at least one import
 - Use the `fix:interfaces` script to add React imports to affected files:
   ```bash
@@ -84,6 +85,7 @@ If you encounter persistent ESLint errors even after running fix scripts:
 1. Check if the file has proper imports (especially for interface-only files)
 2. Ensure the tsconfig.app.json includes the file in its paths
 3. Try running the specific fix scripts:
+
    ```
    npm run fix:interfaces  # For TypeScript interface parsing errors
    npm run fix:style       # For styling issues including trailing commas
