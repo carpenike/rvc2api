@@ -55,6 +55,7 @@ Python-based API and WebSocket server for interacting with an RV-C (Recreational
 - **RV-C Message Decoding:** Translates raw CAN bus messages into human-readable RV-C data.
 - **Entity Management:** Represents RV-C devices and their states as controllable entities.
 - **Web-based UI:** Provides a user-friendly interface for monitoring and interaction.
+- **Documentation Search:** AI-powered semantic search of RV-C specification using FAISS and OpenAI embeddings.
 - **Configuration Driven:** Uses YAML and JSON files for RV-C specifications and device mappings.
 - **Poetry for Dependency Management:** Ensures reproducible builds and development environments.
 
@@ -125,6 +126,31 @@ For quick start:
       poetry run python src/console_client/console.py --help
       ```
       Follow the client's help instructions to connect to the daemon.
+
+## RV-C Documentation Search
+
+The project includes a feature for semantically searching the RV-C specification using AI-powered embeddings:
+
+- **Setup the Documentation Search:**
+
+  ```bash
+  # Place the RV-C spec PDF in resources directory
+  cp /path/to/your/rv-c-spec.pdf resources/rv-c-spec.pdf
+
+  # Set your OpenAI API key
+  export OPENAI_API_KEY="your-api-key-here"
+
+  # Run the setup helper script
+  poetry run python scripts/setup_faiss.py --setup
+  ```
+
+- **Using the Search Feature:**
+
+  - **Via Web UI:** Navigate to the "Documentation" page in the web interface
+  - **Via API:** `GET /api/docs/search?query=your+search+query`
+  - **Via Command Line:** `poetry run python dev_tools/query_faiss.py "your search query"`
+
+For detailed instructions, see [RV-C Documentation Search Guide](docs/rv-c-documentation-search.md)
 
 ## Development
 
