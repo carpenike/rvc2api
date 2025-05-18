@@ -21,7 +21,15 @@ export default [
       "src/core_daemon/web_ui/**/*.jsx",
       // Exclude build and node_modules in web_ui
       "web_ui/dist/**",
-      "web_ui/node_modules/**"
+      "web_ui/dist-ssr/**",
+      "web_ui/node_modules/**",
+      "web_ui/.vite/**",
+      "web_ui/.vite-temp/**",
+      "web_ui/node_modules/.vite/**",
+      // Exclude any other output/cache directories
+      "web_ui/**/*.tsbuildinfo",
+      "web_ui/**/*.log",
+      "web_ui/.cache/**"
     ]
   },
   // Base JS config
