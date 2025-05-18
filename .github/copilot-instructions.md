@@ -1,5 +1,8 @@
 # GitHub Copilot Instructions for rvc2api
 
+- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, *.tsbuildinfo, .cache, *.log) are excluded from linting and type checking in both root and frontend ESLint configs.
+- All light-related API calls are made via /api/entities endpoints, not /api/lights, to ensure a unified and extensible API design.
+
 This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns. Detailed domain-specific instructions are organized in `.github/instructions/*.instructions.md` files.
 
 ## Project Summary

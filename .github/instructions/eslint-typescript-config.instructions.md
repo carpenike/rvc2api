@@ -59,6 +59,19 @@ rules: {
 - This is enforced in both ESLint config and pre-commit hook using robust ignore patterns.
 - If new legacy files are added, update ignore patterns in both configs.
 
+## ESLint Ignore Patterns for Build/Cache/Output Files
+
+All build, cache, and output files are excluded from linting and type checking. This includes:
+
+- `dist/`, `dist-ssr/`
+- `.vite/`, `.vite-temp/`, `node_modules/.vite/`
+- `node_modules/`
+- `*.tsbuildinfo`
+- `.cache/`
+- `*.log`
+
+These patterns are enforced in both the monorepo root and `web_ui` ESLint flat configs. If you see lint errors from these files, check your ignore patterns.
+
 ## TypeScript Project Reference & ESLint Integration
 
 - ESLint is pointed to the correct `tsconfig.eslint.json` using absolute paths for parserOptions.

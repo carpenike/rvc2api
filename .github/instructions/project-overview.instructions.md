@@ -22,3 +22,7 @@ applyTo: "**"
 - Business logic → `backend/services/`
 - Config → `backend/settings/`
 - Prepares for Victron Modbus integration
+
+# API Endpoint Design Decision
+
+All light-related API operations are consolidated under `/api/entities` endpoints (e.g., `/api/entities?device_type=light`). The legacy `/api/lights` endpoint is not used. This ensures a unified, type-safe, and extensible API surface for all entity types.
