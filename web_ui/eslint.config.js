@@ -4,11 +4,25 @@ import jsdoc from "eslint-plugin-jsdoc";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import tseslint from "typescript-eslint";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**"]
+    ignores: [
+      // Exclude all legacy web files in src/core_daemon (absolute from repo root)
+      "src/core_daemon/web_ui/static/**",
+      "src/core_daemon/web_ui/**/*.js",
+      "src/core_daemon/web_ui/**/*.ts",
+      "src/core_daemon/web_ui/**/*.tsx",
+      "src/core_daemon/web_ui/**/*.jsx",
+      // Exclude build and node_modules in web_ui
+      "web_ui/dist/**",
+      "web_ui/node_modules/**"
+    ]
   },
   // Base JS config
   jsConfig.configs.recommended,
@@ -44,7 +58,8 @@ export default [
       },
       parser: tseslint.parser,
       parserOptions: {
-        project: "./tsconfig.eslint.json"
+        project: path.resolve(__dirname, "tsconfig.eslint.json"),
+        tsconfigRootDir: __dirname
       }
     },
     // Only add plugins not already included by ...tseslint.configs.recommended
