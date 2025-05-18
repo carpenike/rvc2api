@@ -4,6 +4,8 @@ applyTo: "**/web_ui/**"
 
 # ESLint and TypeScript Configuration
 
+> **Note**: This file focuses on ESLint/TypeScript configuration and troubleshooting. For TypeScript coding standards, best practices, and style guidelines, see [typescript-code-style.instructions.md](typescript-code-style.instructions.md).
+
 ## ESLint Setup
 
 - Using ESLint v9+ with flat configuration format
@@ -150,3 +152,10 @@ export default [
   },
 ];
 ```
+
+## See Also
+
+- [TypeScript Code Style](typescript-code-style.instructions.md) - Coding standards and best practices
+- [React Frontend Architecture](react-frontend.instructions.md) - Overall frontend architecture
+- [VS Code Tasks](vscode-tasks.instructions.md) - Tasks for ESLint and TypeScript checking
+- [MCP Tools](mcp-tools.instructions.md) - Using @context7 for TypeScript/React questions

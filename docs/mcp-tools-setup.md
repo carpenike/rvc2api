@@ -85,14 +85,46 @@ The project includes VS Code tasks for managing MCP tools:
 @github repo:rvc2api stats
 ```
 
+## Best Practices
+
+### When to Prioritize Context7
+
+Always use Context7 for these scenarios:
+
+#### Working with External Libraries
+
+```
+@context7 how to use FastAPI dependency injection
+@context7 React useState with TypeScript generics
+@context7 tailwind responsive design patterns
+```
+
+#### Version-Specific Features
+
+```
+@context7 Next.js 14 App Router middleware
+@context7 React 18 concurrent mode features
+@context7 Python 3.12 typing features
+```
+
+#### Library API Questions
+
+```
+@context7 FastAPI WebSocket authentication
+@context7 React useCallback correct dependencies
+@context7 tailwind dark mode configuration
+```
+
+> **Important**: For any library or framework questions, always use `@context7` first before falling back to LLM-generated answers. This ensures you get current, correct API information rather than outdated or hallucinated answers.
+
 ## Troubleshooting
 
 ### Common Issues
 
 1. **MCP Server Not Responding**
 
-   - Use the "Restart MCP - context7 Server" task
-   - Check if the server process is running with "MCP Tools Status"
+   - Use the "MCP: Restart Context7 Server" task
+   - Check if the server process is running with "Status: Check MCP Tools"
    - Restart VS Code
 
 2. **Limited or Outdated Context**
@@ -103,6 +135,15 @@ The project includes VS Code tasks for managing MCP tools:
 3. **External Research Failing**
    - Check your internet connection
    - Verify API keys or authentication if applicable
+
+## Related Documentation
+
+For more information about MCP tools and their integration with specific project areas, see:
+
+- [Python Backend Architecture](../.github/instructions/python-backend.instructions.md) - Backend-specific MCP usage
+- [React Frontend Architecture](../.github/instructions/react-frontend.instructions.md) - Frontend-specific MCP usage
+- [MCP Tools Guide](../.github/instructions/mcp-tools.instructions.md) - Complete MCP tools reference
+- [VS Code Tasks](../.github/instructions/vscode-tasks.instructions.md) - Tasks for managing MCP tools
 
 ## Advanced Configuration
 

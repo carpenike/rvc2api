@@ -1,8 +1,9 @@
 {
+  "$schema": "https://schema.vscode.dev/vscode-tasks.schema.json",
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Start Backend Server",
+      "label": "Server: Start Backend",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry run python src/core_daemon/main.py",
       "isBackground": true,
@@ -29,13 +30,10 @@
         "clear": false,
         "focus": false
       },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": "build"
     },
     {
-      "label": "Start Frontend Dev Server",
+      "label": "Server: Start Frontend Dev Server",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run dev",
       "isBackground": true,
@@ -65,15 +63,48 @@
       "group": "build"
     },
     {
-      "label": "Start Full Development Environment",
-      "dependsOn": ["Start Backend Server", "Start Frontend Dev Server"],
+      "label": "Server: Start Full Dev Environment",
+      "dependsOn": [
+        "Server: Start Backend",
+        "Server: Start Frontend Dev Server"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
       }
     },
     {
-      "label": "Run Tests",
+      "label": "Server: Serve Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/docs && mkdocs serve",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": false
+      },
+      "problemMatcher": [
+        {
+          "pattern": [
+            {
+              "regexp": ".",
+              "file": 1,
+              "location": 2,
+              "message": 3
+            }
+          ],
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".*Serving on.*",
+            "endsPattern": "^.*Error.*$"
+          }
+        }
+      ]
+    },
+
+    {
+      "label": "Backend: Run Tests",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry run pytest",
       "group": "test",
@@ -83,21 +114,65 @@
         "showReuseMessage": false,
         "clear": true,
         "focus": true
+      },
+      "problemMatcher": {
+        "name": "pytest",
+        "pattern": {
+          "regexp": "^(.+):(\\d+):\\s+(\\w+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "severity": 3,
+          "message": 4
+        }
       }
     },
     {
-      "label": "Format Code (Black)",
+      "label": "Backend: Run Tests with Coverage",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run black src",
+      "command": "cd ${workspaceFolder} && poetry run pytest --cov=src --cov-report=term",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": {
+        "name": "pytest",
+        "pattern": {
+          "regexp": "^(.+):(\\d+):\\s+(\\w+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "severity": 3,
+          "message": 4
+        }
+      }
+    },
+    {
+      "label": "Backend: Format Code (Ruff)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run ruff format src",
       "group": "none",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
+      },
+      "problemMatcher": {
+        "name": "ruff-format-generic",
+        "pattern": {
+          "regexp": "^(.+?):(\\d+):(\\d+): (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4,
+          "severity": "error"
+        }
       }
     },
     {
-      "label": "Lint (Ruff)",
+      "label": "Backend: Lint (Ruff)",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry run ruff check .",
       "group": "test",
@@ -105,12 +180,44 @@
         "reveal": "always",
         "panel": "shared",
         "clear": true
+      },
+      "problemMatcher": {
+        "name": "ruff",
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(\\w+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
       }
     },
     {
-      "label": "Type Check (Pyright)",
+      "label": "Backend: Type Check (Pyright)",
       "type": "shell",
       "command": "cd ${workspaceFolder} && npx pyright src",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": {
+        "name": "pyright",
+        "pattern": {
+          "regexp": "^(.+?):(\\d+):(\\d+) - (error|warning): (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "Backend: Quality Check All",
+      "dependsOn": ["Backend: Lint (Ruff)", "Backend: Type Check (Pyright)"],
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -119,7 +226,20 @@
       }
     },
     {
-      "label": "Build Frontend",
+      "label": "Backend: Clean",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && find . -type d -name __pycache__ -exec rm -rf {} +; find . -type d -name .pytest_cache -exec rm -rf {} +; find . -type d -name .ruff_cache -exec rm -rf {} +; find . -name '*.pyc' -delete",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Build: Frontend",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run build",
       "group": "build",
@@ -127,10 +247,24 @@
         "reveal": "always",
         "panel": "shared",
         "clear": true
-      }
+      },
+      "problemMatcher": ["$tsc"]
     },
     {
-      "label": "Enter Nix Development Shell",
+      "label": "Build: Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/docs && mkdocs build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Dev: Enter Nix Shell",
       "type": "shell",
       "command": "cd ${workspaceFolder} && nix develop",
       "presentation": {
@@ -140,7 +274,21 @@
       }
     },
     {
-      "label": "Restart MCP - context7 Server",
+      "label": "Dev: Run Pre-commit Checks",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && pre-commit run --all-files",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "MCP: Restart Context7 Server",
       "type": "shell",
       "command": "pkill -f context7 || true; cd ${workspaceFolder} && context7 &",
       "problemMatcher": [],
@@ -150,20 +298,9 @@
         "close": true
       }
     },
+
     {
-      "label": "Build Documentation",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && cd docs && mkdocs build",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Update Poetry Dependencies",
+      "label": "Deps: Update Poetry",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry update",
       "presentation": {
@@ -173,7 +310,7 @@
       }
     },
     {
-      "label": "Lock Poetry Dependencies",
+      "label": "Deps: Lock Poetry",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry lock --no-update",
       "presentation": {
@@ -183,7 +320,18 @@
       }
     },
     {
-      "label": "MCP Tools Status",
+      "label": "Deps: Update Frontend",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm update",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+
+    {
+      "label": "Status: Check MCP Tools",
       "type": "shell",
       "command": "echo 'Checking MCP tool processes:' && ps aux | grep -E 'context7|perplexity|github' | grep -v grep || echo 'No MCP tool processes found'",
       "presentation": {
@@ -193,6 +341,17 @@
       }
     },
     {
+      "label": "Status: Backend Info",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && echo 'Python version:' && poetry run python --version && echo '\\nInstalled packages:' && poetry show",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+
+    {
       "label": "Frontend: Lint (ESLint)",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run lint",
@@ -201,10 +360,11 @@
         "reveal": "always",
         "panel": "shared",
         "clear": true
-      }
+      },
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
-      "label": "Frontend: Fix Lint Issues (ESLint)",
+      "label": "Frontend: Fix Lint Issues",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run lint:fix",
       "group": "none",
@@ -215,7 +375,7 @@
       }
     },
     {
-      "label": "Frontend: Fix All Style Issues",
+      "label": "Frontend: Fix Style Issues",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run fix:style",
       "group": "none",
@@ -226,7 +386,7 @@
       }
     },
     {
-      "label": "Frontend: Fix TypeScript Interface Issues",
+      "label": "Frontend: Fix Interface Issues",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run fix:interfaces",
       "group": "none",
@@ -237,9 +397,32 @@
       }
     },
     {
-      "label": "Frontend: Type Check (TypeScript)",
+      "label": "Frontend: Type Check",
       "type": "shell",
       "command": "cd ${workspaceFolder}/web_ui && npm run typecheck",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Frontend: Clean",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && rm -rf node_modules/.vite dist",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Quality Check All",
+      "dependsOn": ["Frontend: Lint (ESLint)", "Frontend: Type Check"],
       "group": "test",
       "presentation": {
         "reveal": "always",

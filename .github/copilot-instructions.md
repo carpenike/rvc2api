@@ -78,9 +78,19 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 
 ## Development Tools
 
-- **Model Context Protocol**: Use MCP tools to better understand the codebase
-  - `@context7`: Project-specific code lookup (e.g., `@context7 WebSocket connection handling`)
-  - `@perplexity`: External research for protocols and libraries
+- **VS Code Tasks**: Extensive task configuration for streamlined development:
+  - **Server Tasks**: Start backend, frontend, documentation server
+  - **Code Quality**: Linting, type checking, formatting for both backend and frontend
+  - **Testing**: Run tests with coverage for backend, run frontend tests
+  - **Build Tasks**: Build frontend and documentation
+  - **Development**: Nix shell, pre-commit checks, dependency management
+  - See `.github/instructions/vscode-tasks.instructions.md` for details
+- **Model Context Protocol**: MCP tools provide critical context-aware assistance
+  - `@context7`: **IMPORTANT** - Always use for up-to-date library documentation and code examples
+    - Provides current API specifications and examples that avoid hallucinated APIs
+    - Essential for any React, FastAPI, Next.js, or third-party library questions
+    - Examples: `@context7 React useState TypeScript`, `@context7 FastAPI WebSocket auth`
+  - `@perplexity`: External research for protocols and general concepts
   - `@github`: Repository and issue queries
-- **Detailed patterns**: See domain-specific instruction files for example queries
+- **MCP Best Practice**: Always default to `@context7` for library and framework questions before using general LLM knowledge
 - **Testing**: Use `poetry run pytest` for backend tests and `cd web_ui && npm test` for frontend

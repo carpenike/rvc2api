@@ -186,18 +186,22 @@ We have enhanced the development environment with several tools to streamline th
 - **VS Code Integration**: Preconfigured settings, tasks, and recommended extensions
 
   - See [VS Code Extensions](docs/vscode-extensions.md) for recommended extensions
-  - Use VS Code tasks for common operations (Run server, tests, format code, etc.)
+  - See [Enhanced Development Environment](docs/enhanced-dev-environment.md) for comprehensive task documentation
+  - Use VS Code tasks for efficient operation of backend, frontend, testing, and code quality tools
 
 - **MCP Tools**: AI-assisted development with Model Context Protocol
 
   - See [MCP Tools Setup](docs/mcp-tools-setup.md) for information on using @context7, @perplexity, and @github tools
+  - Always use @context7 first for accurate, up-to-date library API information
+  - Use @perplexity for general research and @github for repository exploration
 
 - **Poetry2nix Integration**: Proposed integration between Poetry and Nix
 
   - See [Poetry2nix Integration](docs/poetry2nix-integration.md) for implementation details
 
-- **Enhanced Development Environment**: Comprehensive development setup
-  - See [Enhanced Development Environment](docs/enhanced-dev-environment.md) for overview
+- **Development Environment**: Comprehensive development setup
+  - Structured documentation for both [backend](docs/code-quality-tools.md) and [frontend](docs/frontend-development.md) development
+  - Clear code style guidelines for Python and TypeScript
 - **Pre-commit and CI/CD**: Quality assurance and automation
   - See [Pre-commit and GitHub Actions](docs/pre-commit-and-actions.md) for configuration details
   - See [Code Quality Tools](docs/code-quality-tools.md) for information about our Python linting and formatting tools

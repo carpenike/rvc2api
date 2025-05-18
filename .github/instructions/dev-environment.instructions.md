@@ -48,3 +48,15 @@ cp .env.example .env
 1. Start the backend server: `poetry run python src/core_daemon/main.py`
 2. In a separate terminal: `cd web_ui && npm run dev`
 3. Access the frontend at http://localhost:5173
+
+## VS Code Tasks
+
+This project has extensive VS Code task configurations that streamline development workflows.
+
+For detailed information about available tasks, see [vscode-tasks.instructions.md](vscode-tasks.instructions.md).
+
+You can access tasks through:
+
+- Command Palette (Ctrl+Shift+P or ⌘+Shift+P on macOS) → "Tasks: Run Task"
+- Terminal menu → Run Task
+- Quick access with Ctrl+Shift+B or ⌘+Shift+B for default build tasks

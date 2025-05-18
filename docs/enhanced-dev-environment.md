@@ -94,6 +94,28 @@ See `docs/vscode-extensions.md` for a detailed list and descriptions.
 2. Consider implementing the poetry2nix integration
 3. Keep MCP servers updated for the best AI assistance experience
 
+## Detailed Documentation
+
+For GitHub Copilot and development guidance, see the `.github/instructions/` directory:
+
+- **Code Style and Architecture**
+
+  - [Python Backend Architecture](../.github/instructions/python-backend.instructions.md)
+  - [React Frontend Architecture](../.github/instructions/react-frontend.instructions.md)
+  - [Python Code Style Guidelines](../.github/instructions/python-code-style.instructions.md)
+  - [TypeScript Code Style Guidelines](../.github/instructions/typescript-code-style.instructions.md)
+
+- **Development Workflow**
+
+  - [VS Code Tasks Documentation](../.github/instructions/vscode-tasks.instructions.md)
+  - [Development Environment](../.github/instructions/dev-environment.instructions.md)
+  - [Pull Request Expectations](../.github/instructions/pull-requests.instructions.md)
+
+- **Tools and Configuration**
+  - [MCP Tools Guide](../.github/instructions/mcp-tools.instructions.md)
+  - [ESLint/TypeScript Config](../.github/instructions/eslint-typescript-config.instructions.md)
+  - [Environment Variables](../.github/instructions/env-vars.instructions.md)
+
 ## Known Issues
 
 - The poetry2nix integration is provided as a proof-of-concept and will need testing

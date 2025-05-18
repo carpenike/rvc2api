@@ -55,18 +55,38 @@ applyTo: "**/web_ui/**"
 
 ## MCP Tools for React Development
 
-### @context7 Use Cases
+### @context7 Use Cases - ALWAYS USE FIRST
 
-- Get WebSocket message formats: `@context7 WebSocket message format entities`
-- Find API endpoint schemas: `@context7 /api/entities schema`
-- Review component implementations: `@context7 Lights.tsx component`
-- Find backend state models: `@context7 entity state model`
+Always use `@context7` first for any React or library-related questions to get current, accurate API information:
 
-### @perplexity Use Cases
+- **React Hooks**: `@context7 React useState with TypeScript generics`, `@context7 useReducer complex state`
+- **Component Patterns**: `@context7 React functional component with TypeScript props`, `@context7 children prop types`
+- **React Events**: `@context7 React form events TypeScript`, `@context7 React synthetic event types`
+- **React Testing**: `@context7 React Testing Library component with state`
 
-- Research React best practices: `@perplexity React useEffect cleanup patterns`
-- Investigate WebSocket reconnection: `@perplexity WebSocket reconnection in React`
-- Explore UI component libraries: `@perplexity React component libraries for dashboard interfaces`
+- **Project-specific**:
+  - Get WebSocket message formats: `@context7 WebSocket message format entities`
+  - Find API endpoint schemas: `@context7 /api/entities schema`
+  - Review component implementations: `@context7 Lights.tsx component`
+  - Find backend state models: `@context7 entity state model`
+
+### @perplexity Use Cases - FOR GENERAL CONCEPTS ONLY
+
+Only use `@perplexity` for general concepts not related to specific library APIs:
+
+- Research general architecture patterns: `@perplexity frontend state management patterns`
+- Investigate general concepts: `@perplexity WebSocket security best practices`
+- Explore UI design principles: `@perplexity dashboard UI/UX principles`
+
+> **Important**: For any React, TypeScript, Vite, or Tailwind questions, always use `@context7` first to avoid outdated or hallucinated APIs.
+
+## See Also
+
+- [TypeScript Code Style](typescript-code-style.instructions.md) - Detailed TypeScript/React coding guidelines
+- [ESLint/TypeScript Config](eslint-typescript-config.instructions.md) - Configuration details
+- [VS Code Tasks](vscode-tasks.instructions.md) - Development workflow automation
+- [MCP Tools](mcp-tools.instructions.md) - Context-aware AI assistance
+- [Pull Request Expectations](pull-requests.instructions.md) - Code submission guidelines
 
 ## API Integration
 
