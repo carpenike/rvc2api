@@ -15,15 +15,16 @@ interface CardProps {
 }
 
 /**
- * Card component
+ * Card component for displaying content in a styled container.
  *
- * A container component with consistent styling used throughout the application
- * for grouping related content.
- *
- * @param props - Component properties
- * @returns A styled card component
+ * @param {object} props - Component properties
+ * @param {ReactNode} [props.title] - Card title (string or React element)
+ * @param {ReactNode} props.children - Card content
+ * @param {string} [props.className] - Additional CSS classes to apply
+ * @returns {JSX.Element} A styled card component
  */
-export function Card({ title, children, className = "" }: CardProps) {
+export function Card(props: CardProps) {
+  const { title, children, className = "" } = props;
   return (
     <div className={`card ${className}`}>
       {title && <h2 className="text-xl font-semibold mb-4">{title}</h2>}

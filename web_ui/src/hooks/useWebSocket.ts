@@ -34,6 +34,12 @@ interface UseWebSocketOptions {
  *
  * @param url - The WebSocket endpoint URL
  * @param options - Configuration options for the WebSocket
+ *   @param options.onMessage Callback for message events
+ *   @param options.reconnectInterval Reconnect interval in ms
+ *   @param options.reconnectAttempts Number of reconnect attempts
+ *   @param options.onOpen Callback for open event
+ *   @param options.onClose Callback for close event
+ *   @param options.onError Callback for error event
  * @returns Object containing connection status, received messages, and a function to send messages
  *
  * @example
@@ -55,6 +61,16 @@ export function useWebSocket(
     onError
   }: UseWebSocketOptions = {}
 ) {
+  /**
+   * Custom React hook for managing a WebSocket connection.
+   * @param url The WebSocket URL
+   * @param options.onMessage Callback for message events
+   * @param options.reconnectInterval Reconnect interval in ms
+   * @param options.reconnectAttempts Number of reconnect attempts
+   * @param options.onOpen Callback for open event
+   * @param options.onClose Callback for close event
+   * @param options.onError Callback for error event
+   */
   const [status, setStatus] = useState<WebSocketStatus>("connecting");
   const [messages, setMessages] = useState<unknown[]>([]);
   const wsRef = useRef<WebSocket | null>(null);

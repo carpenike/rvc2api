@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { Button } from "../components/Button";
+import "@testing-library/jest-dom";
 
 describe("Button component", () => {
   test("renders button with text", () => {

@@ -13,10 +13,10 @@ import { Button, Card } from "../components";
  */
 export function Dashboard() {
   /** Application health status information */
-  const [appHealth, setAppHealth] = useState<any>(null);
+  const [appHealth, setAppHealth] = useState<unknown>(null);
 
   /** CAN bus connection status information */
-  const [canStatus, setCanStatus] = useState<any>(null);
+  const [canStatus, setCanStatus] = useState<unknown>(null);
 
   /** Loading state for the API calls */
   const [loading, setLoading] = useState(false);
