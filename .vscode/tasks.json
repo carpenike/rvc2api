@@ -429,6 +429,32 @@
         "panel": "shared",
         "clear": true
       }
+    },
+    {
+      "label": "API: Export OpenAPI Schema",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "API: Update Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py && cd docs && mkdocs build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": []
     }
   ]
 }
