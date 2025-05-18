@@ -38,7 +38,12 @@ from fastapi.staticfiles import StaticFiles
 from core_daemon import app_state  # Import the module itself
 
 # Import the API routers
-from core_daemon.api_routers import api_router_can, api_router_config_ws, api_router_entities
+from core_daemon.api_routers import (
+    api_router_can,
+    api_router_config_ws,
+    api_router_docs,
+    api_router_entities,
+)
 from core_daemon.app_state import initialize_app_from_config
 
 # Import CAN components from can_manager
@@ -133,6 +138,21 @@ def create_app() -> FastAPI:
         # Start GitHub update checker
         await update_checker.start()
         app.state.update_checker = update_checker
+
+        # Check vector service status
+        from core_daemon.services.vector_service import get_vector_service
+
+        vector_service = get_vector_service()
+        if vector_service.is_available():
+            logger.info("FAISS vector search service initialized successfully")
+        else:
+            status = vector_service.get_status()
+            logger.warning(
+                "FAISS vector search service is not available: %s. "
+                "Documentation search will be disabled. "
+                "Run 'python scripts/setup_faiss.py --setup' to configure.",
+                status.get("error", "Unknown error"),
+            )
 
         loop = asyncio.get_running_loop()
         canbus_config = get_canbus_config()
@@ -237,6 +257,7 @@ def create_app() -> FastAPI:
     # ── API Routers ────────────────────────────────────────────────────────────
     app.include_router(api_router_can, prefix="/api")
     app.include_router(api_router_config_ws, prefix="/api")
+    app.include_router(api_router_docs, prefix="")  # /api/docs is handled in the router prefix
     app.include_router(api_router_entities, prefix="/api")
 
     return app

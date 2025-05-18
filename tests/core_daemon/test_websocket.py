@@ -224,7 +224,7 @@ class TestWebSocketEndpoints:
         Verifies that clients are added to and removed from the active client set.
         """
         assert len(websocket.clients) == 0
-        with client.websocket_connect("/ws/data") as _ws_conn:  # noqa: F841
+        with client.websocket_connect("/ws/data") as _ws_conn:
             assert len(websocket.clients) == 1
         assert len(websocket.clients) == 0  # Check removal on disconnect
 
@@ -234,7 +234,7 @@ class TestWebSocketEndpoints:
         Verifies that clients are added to and removed from the active log client set.
         """
         assert len(websocket.log_ws_clients) == 0
-        with client.websocket_connect("/ws/logs") as _ws_conn:  # noqa: F841
+        with client.websocket_connect("/ws/logs") as _ws_conn:
             assert len(websocket.log_ws_clients) == 1
         assert len(websocket.log_ws_clients) == 0
 
@@ -246,7 +246,7 @@ class TestWebSocketEndpoints:
         # This test is more complex as it requires injecting a problematic WebSocket
         # into the TestClient's context or mocking receive_text to raise an error.
         # For simplicity, we'll check the logging on disconnect path.
-        with client.websocket_connect("/ws/data") as _ws_conn:  # noqa: F841
+        with client.websocket_connect("/ws/data") as _ws_conn:
             assert len(websocket.clients) == 1
         assert len(websocket.clients) == 0
         # Check if logger.info was called for connect and disconnect

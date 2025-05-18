@@ -11,7 +11,7 @@ from prometheus_client import Counter, Gauge, Histogram
 # Define Prometheus metrics
 FRAME_COUNTER = Counter("rvc2api_frames_total", "Total CAN frames received")
 DECODE_ERRORS = Counter("rvc2api_decode_errors_total", "Total decode errors")
-LOOKUP_MISSES = Counter("rvc2api_lookup_misses_total", "Total device‑lookup misses")
+LOOKUP_MISSES = Counter("rvc2api_lookup_misses_total", "Total device-lookup misses")
 SUCCESSFUL_DECODES = Counter("rvc2api_successful_decodes_total", "Total successful decodes")
 WS_CLIENTS = Gauge("rvc2api_ws_clients", "Active WebSocket clients")
 WS_MESSAGES = Counter("rvc2api_ws_messages_total", "Total WebSocket messages sent")

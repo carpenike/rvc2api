@@ -17,10 +17,10 @@ Modules:
     - websocket: WebSocket handler for real-time communication
 """
 
-from ._version import VERSION
-from .app_state import initialize_app_from_config
-from .config import configure_logger, get_actual_paths
-from .main import app, create_app, main
+from core_daemon._version import VERSION
+from core_daemon.app_state import initialize_app_from_config
+from core_daemon.config import configure_logger, get_actual_paths
+from core_daemon.main import app, create_app, main
 
 __all__ = [
     "VERSION",

@@ -88,15 +88,15 @@ def metrics():
 async def get_device_mapping_config_content_api():
     if os.path.exists(actual_map_path_for_ui):
         try:
-            with open(actual_map_path_for_ui, "r") as f:
+            with open(actual_map_path_for_ui) as f:
                 return PlainTextResponse(f.read())
         except Exception as e:
             logger.error(
                 f"API Error: Could not read device mapping from " f"'{actual_map_path_for_ui}': {e}"
             )
             raise HTTPException(
-                status_code=500, detail=f"Error reading device mapping file: {str(e)}"
-            )
+                status_code=500, detail=f"Error reading device mapping file: {e!s}"
+            ) from e
     else:
         logger.error(
             f"API Error: Device mapping file not found for UI display at "
@@ -115,7 +115,7 @@ async def get_rvc_spec_metadata():
         )
         raise HTTPException(status_code=404, detail="RVC spec file not found.")
     try:
-        with open(actual_spec_path_for_ui, "r") as f:
+        with open(actual_spec_path_for_ui) as f:
             spec_data = json.load(f)
         return {
             "version": spec_data.get("version"),
@@ -123,23 +123,25 @@ async def get_rvc_spec_metadata():
         }
     except json.JSONDecodeError:
         logger.error(f"API Error: Could not decode RVC spec from '{actual_spec_path_for_ui}'")
-        raise HTTPException(status_code=500, detail="Error decoding RVC spec file.")
+        raise HTTPException(status_code=500, detail="Error decoding RVC spec file.") from None
     except Exception as e:
         logger.error(f"API Error: Could not read RVC spec from '{actual_spec_path_for_ui}': {e}")
-        raise HTTPException(status_code=500, detail=f"Error reading RVC spec file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error reading RVC spec file: {e!s}") from e
 
 
 @api_router_config_ws.get("/config/rvc_spec", response_class=PlainTextResponse)
 async def get_rvc_spec_config_content_api():
     if os.path.exists(actual_spec_path_for_ui):
         try:
-            with open(actual_spec_path_for_ui, "r") as f:
+            with open(actual_spec_path_for_ui) as f:
                 return PlainTextResponse(f.read())
         except Exception as e:
             logger.error(
                 f"API Error: Could not read RVC spec from " f"'{actual_spec_path_for_ui}': {e}"
             )
-            raise HTTPException(status_code=500, detail=f"Error reading RVC spec file: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error reading RVC spec file: {e!s}"
+            ) from e
     else:
         logger.error(
             f"API Error: RVC spec file not found for UI display at " f"'{actual_spec_path_for_ui}'"

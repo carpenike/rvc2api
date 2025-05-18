@@ -41,7 +41,7 @@ def _default_paths():
 
 def get_bits(data_bytes: bytes, start_bit: int, length: int) -> int:
     """
-    Extract a little‑endian bitfield from an 8‑byte CAN payload.
+    Extract a little-endian bitfield from an 8-byte CAN payload.
     """
     raw_int = int.from_bytes(data_bytes, byteorder="little")
     mask = (1 << length) - 1
@@ -52,7 +52,7 @@ def decode_payload(entry: dict, data_bytes: bytes) -> tuple[dict[str, str], dict
     """
     Decode all 'signals' in a spec entry:
       - raw_values: the integer bitfields
-      - decoded: human‑readable strings (with scale/offset/enum logic)
+      - decoded: human-readable strings (with scale/offset/enum logic)
 
     Returns:
       tuple(decoded: dict[str,str], raw_values: dict[str,int])
@@ -278,10 +278,7 @@ def load_config_data(
             fname = os.path.basename(device_mapping_path)
             base, _ = os.path.splitext(fname)
             # Try underscores first, then spaces
-            if "_" in base:
-                parts = base.split("_", 3)
-            else:
-                parts = base.split(" ", 3)
+            parts = base.split("_", 3) if "_" in base else base.split(" ", 3)
             if len(parts) == 4 and parts[0].isdigit():
                 coach_info = {
                     "year": str(parts[0]),
@@ -371,10 +368,7 @@ def load_config_data(
         # fallback: still try to provide coach_info from path
         fname = os.path.basename(device_mapping_path)
         base, _ = os.path.splitext(fname)
-        if "_" in base:
-            parts = base.split("_", 3)
-        else:
-            parts = base.split(" ", 3)
+        parts = base.split("_", 3) if "_" in base else base.split(" ", 3)
         if len(parts) == 4 and parts[0].isdigit():
             coach_info = {
                 "year": str(parts[0]),

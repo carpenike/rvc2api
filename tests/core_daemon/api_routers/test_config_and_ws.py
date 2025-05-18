@@ -80,9 +80,7 @@ def mock_config_paths():
         "core_daemon.api_routers.config_and_ws.actual_spec_path_for_ui", "/mock/spec_for_ui.json"
     ), patch(
         "core_daemon.api_routers.config_and_ws.actual_map_path_for_ui", "/mock/map_for_ui.yml"
-    ), patch(
-        "core_daemon.config.ACTUAL_SPEC_PATH", "/mock/actual_spec.json"
-    ), patch(
+    ), patch("core_daemon.config.ACTUAL_SPEC_PATH", "/mock/actual_spec.json"), patch(
         "core_daemon.config.ACTUAL_MAP_PATH", "/mock/actual_map.yml"
     ):
         yield
@@ -147,13 +145,10 @@ def test_get_rvc_spec_config_content_api_success(mock_file_open, mock_exists, cl
 # Tests for /config/spec and /config/mapping (FileResponse)
 @patch("os.path.exists")
 @patch("core_daemon.api_routers.config_and_ws.FileResponse")  # Patch FileResponse
-def test_get_rvc_spec_file_contents_success(MockFileResponse, mock_exists, client):
+def test_get_rvc_spec_file_contents_success(mock_fileresponse, mock_exists, client):
     """Tests successful retrieval of RVC spec file contents using FileResponse."""
     mock_exists.return_value = True
-    # Simulate FileResponse constructor and how it might be used or what it returns
-    # For a TestClient, the actual file sending is handled, we just need to ensure
-    # FileResponse is called.
-    MockFileResponse.return_value = MagicMock(
+    mock_fileresponse.return_value = MagicMock(
         spec=Response, status_code=200, media_type="text/plain"
     )
 
@@ -161,7 +156,7 @@ def test_get_rvc_spec_file_contents_success(MockFileResponse, mock_exists, clien
     assert response.status_code == 200  # This will be the status_code of the mocked FileResponse
     mock_exists.assert_called_once_with("/mock/actual_spec.json")
     # Shortened line E501
-    MockFileResponse.assert_called_once_with("/mock/actual_spec.json", media_type="text/plain")
+    mock_fileresponse.assert_called_once_with("/mock/actual_spec.json", media_type="text/plain")
 
 
 @patch("os.path.exists")
@@ -175,17 +170,17 @@ def test_get_rvc_spec_file_contents_not_found(mock_exists, client):
 
 @patch("os.path.exists")
 @patch("core_daemon.api_routers.config_and_ws.FileResponse")
-def test_get_device_mapping_file_contents_success(MockFileResponse, mock_exists, client):
+def test_get_device_mapping_file_contents_success(mock_fileresponse, mock_exists, client):
     """Tests successful retrieval of device mapping file contents using FileResponse."""
     mock_exists.return_value = True
-    MockFileResponse.return_value = MagicMock(
+    mock_fileresponse.return_value = MagicMock(
         spec=Response, status_code=200, media_type="text/plain"
     )
 
     response = client.get("/api/config/mapping")
     assert response.status_code == 200
     mock_exists.assert_called_once_with("/mock/actual_map.yml")
-    MockFileResponse.assert_called_once_with("/mock/actual_map.yml", media_type="text/plain")
+    mock_fileresponse.assert_called_once_with("/mock/actual_map.yml", media_type="text/plain")
 
 
 @patch("os.path.exists")
@@ -206,7 +201,7 @@ def test_get_device_mapping_file_contents_not_found(mock_exists, client):
 async def test_serve_websocket_endpoint(mock_ws_endpoint, client):
     """Tests that the /ws WebSocket endpoint is defined and calls the correct handler."""
     # FastAPI's TestClient provides a way to test WebSockets
-    with client.websocket_connect("/api/ws") as _websocket:  # noqa: F841
+    with client.websocket_connect("/api/ws") as _websocket:
         # We are not sending/receiving data here, just checking connection and handler call
         pass  # Connection itself is the test for the route
     mock_ws_endpoint.assert_called_once()  # Check if our handler was called
@@ -215,6 +210,6 @@ async def test_serve_websocket_endpoint(mock_ws_endpoint, client):
 @patch("core_daemon.api_routers.config_and_ws.websocket_logs_endpoint", new_callable=MagicMock)
 async def test_serve_websocket_logs_endpoint(mock_ws_logs_endpoint, client):
     """Tests that the /ws/logs WebSocket endpoint is defined and calls the correct handler."""
-    with client.websocket_connect("/api/ws/logs") as _websocket:  # noqa: F841
+    with client.websocket_connect("/api/ws/logs") as _websocket:
         pass
     mock_ws_logs_endpoint.assert_called_once()

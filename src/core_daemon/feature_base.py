@@ -2,8 +2,6 @@
 Base class for backend features (core or optional).
 """
 
-from typing import Optional
-
 
 class Feature:
     """
@@ -17,7 +15,7 @@ class Feature:
     config: dict
 
     def __init__(
-        self, name: str, enabled: bool = False, core: bool = False, config: Optional[dict] = None
+        self, name: str, enabled: bool = False, core: bool = False, config: dict | None = None
     ):
         self.name = name
         self.enabled = enabled

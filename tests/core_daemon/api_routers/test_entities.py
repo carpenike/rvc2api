@@ -18,6 +18,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from core_daemon.models import Entity, UnknownPGNEntry, UnmappedEntryModel
 
 # --- Mock Data and Fixtures ---
@@ -521,9 +522,9 @@ def mock_control_dependencies(
         "light.living_room"
     ].model_copy(deep=True)
 
-    mock_objects["get_last_known_brightness_patch"].return_value = (
-        50  # Default last known brightness
-    )
+    mock_objects[
+        "get_last_known_brightness_patch"
+    ].return_value = 50  # Default last known brightness
     mock_objects["send_light_can_command_patch"].return_value = True  # Default to successful send
 
     yield mock_objects  # Provide the dictionary of mock objects to the test
@@ -539,9 +540,9 @@ def test_control_entity_turn_on_from_off(mock_control_dependencies, mock_app_sta
     mock_control_dependencies["state_patch"].get.return_value = mock_app_state_data[
         entity_id
     ].model_copy(deep=True)
-    mock_control_dependencies["get_last_known_brightness_patch"].return_value = (
-        70  # Assume it was 70% before turning off
-    )
+    mock_control_dependencies[
+        "get_last_known_brightness_patch"
+    ].return_value = 70  # Assume it was 70% before turning off
 
     payload = {"command": "set", "state": "on"}
     response = client.post(f"/api/entities/{entity_id}/control", json=payload)
@@ -787,9 +788,9 @@ def test_control_entity_invalid_state_for_set(mock_control_dependencies, client)
 def test_control_entity_send_can_command_fails(mock_control_dependencies, client):
     """Tests control endpoint behavior when sending the CAN command fails."""
     entity_id = "light.living_room"
-    mock_control_dependencies["send_light_can_command_patch"].return_value = (
-        False  # Simulate failure
-    )
+    mock_control_dependencies[
+        "send_light_can_command_patch"
+    ].return_value = False  # Simulate failure
     payload = {"command": "set", "state": "on"}
     response = client.post(f"/api/entities/{entity_id}/control", json=payload)
     assert response.status_code == 500

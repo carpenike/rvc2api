@@ -7,18 +7,16 @@ enabled/disabled via config, and initialized at startup.
 
 import logging
 import os
-from typing import Dict, Optional
 
+from core_daemon.feature_base import Feature
 from core_daemon.github_update_checker import UpdateCheckerFeature
-
-from .feature_base import Feature
-from .uptimerobot import UptimeRobotFeature
+from core_daemon.uptimerobot import UptimeRobotFeature
 
 logger = logging.getLogger(__name__)
 
 
 # Registry of features by name
-_registered_features: Dict[str, Feature] = {}
+_registered_features: dict[str, Feature] = {}
 
 
 def register_feature(feature: Feature):
@@ -27,23 +25,23 @@ def register_feature(feature: Feature):
     logger.info(f"Registered feature: {feature.name} (enabled={feature.enabled})")
 
 
-def get_feature(name: str) -> Optional[Feature]:
+def get_feature(name: str) -> Feature | None:
     return _registered_features.get(name)
 
 
-def get_enabled_features() -> Dict[str, Feature]:
+def get_enabled_features() -> dict[str, Feature]:
     return {k: v for k, v in _registered_features.items() if v.enabled}
 
 
-def get_all_features() -> Dict[str, Feature]:
+def get_all_features() -> dict[str, Feature]:
     return dict(_registered_features)
 
 
-def get_core_features() -> Dict[str, Feature]:
+def get_core_features() -> dict[str, Feature]:
     return {k: v for k, v in _registered_features.items() if v.core}
 
 
-def get_optional_features() -> Dict[str, Feature]:
+def get_optional_features() -> dict[str, Feature]:
     return {k: v for k, v in _registered_features.items() if not v.core}
 
 

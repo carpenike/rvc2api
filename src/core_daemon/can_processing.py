@@ -17,16 +17,16 @@ import json
 # Logging - assuming logger is passed or configured globally
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import can
 
 # Imports from app_state
-from core_daemon.app_state import unknown_pgns  # Add unknown_pgns
 from core_daemon.app_state import (
     add_can_sniffer_entry,
     entity_id_lookup,
     try_group_response,
+    unknown_pgns,  # Add unknown_pgns
     unmapped_entries,
     update_entity_state_and_history,
 )
@@ -48,8 +48,11 @@ from core_daemon.metrics import (
 )
 
 # Imports from models
-from core_daemon.models import SuggestedMapping  # Add UnknownPGNEntry
-from core_daemon.models import UnknownPGNEntry, UnmappedEntryModel
+from core_daemon.models import (
+    SuggestedMapping,  # Add UnknownPGNEntry
+    UnknownPGNEntry,
+    UnmappedEntryModel,
+)
 
 # Imports from websocket
 from core_daemon.websocket import broadcast_to_clients
@@ -81,7 +84,7 @@ def process_can_message(
 
     FRAME_COUNTER.inc()
     start_time = time.perf_counter()
-    decoded_payload_for_unmapped: Optional[Dict[str, Any]] = None
+    decoded_payload_for_unmapped: dict[str, Any] | None = None
     entry = decoder_map.get(msg.arbitration_id)
 
     try:
@@ -215,7 +218,7 @@ def process_can_message(
             f"No device config for DGN={dgn}, Inst={inst} " f"(PGN 0x{msg.arbitration_id:X})"
         )
 
-        unmapped_key_str = f"{dgn.upper()}-{str(inst)}"
+        unmapped_key_str = f"{dgn.upper()}-{inst!s}"
         model_pgn_hex = f"{(msg.arbitration_id >> 8) & 0x3FFFF:X}".upper()
         model_pgn_name = pgn_hex_to_name_map.get(model_pgn_hex)
         model_dgn_hex = dgn.upper()

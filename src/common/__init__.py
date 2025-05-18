@@ -7,6 +7,6 @@ Modules:
     - models: Defines shared Pydantic models used by multiple components
 """
 
-from .models import CoachInfo, UserCoachInfo
+from common.models import CoachInfo, UserCoachInfo
 
 __all__ = ["CoachInfo", "UserCoachInfo"]

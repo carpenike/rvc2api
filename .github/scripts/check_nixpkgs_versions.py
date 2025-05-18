@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 check_nixpkgs_versions.py: CI script to ensure Poetry dependencies are available in Nixpkgs.
 Usage: python check_nixpkgs_versions.py pyproject.base.toml pyproject.toml
@@ -68,10 +67,7 @@ def main(base, new):
         if old_val == new_val:
             continue  # Not changed
         # Get version specifier
-        if isinstance(new_val, dict):
-            spec = new_val.get("version", "")
-        else:
-            spec = new_val
+        spec = new_val.get("version", "") if isinstance(new_val, dict) else new_val
         if not spec:
             continue
         nixver = nixpkgs_version(dep)

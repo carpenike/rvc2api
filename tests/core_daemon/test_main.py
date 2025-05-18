@@ -96,8 +96,8 @@ def test_fastapi_app_setup_static_and_templates_mounted(
     mock_get_paths,
     mock_configure_logger,
     mock_get_static_paths,
-    MockJinja2Templates,
-    MockStaticFiles,
+    mock_jinja2templates,
+    mock_staticfiles,
     mock_os_path_isdir,
 ):
     """
@@ -122,13 +122,13 @@ def test_fastapi_app_setup_static_and_templates_mounted(
     mock_os_path_isdir.return_value = True
 
     # Check if StaticFiles was mounted
-    MockStaticFiles.assert_called_once_with(
+    mock_staticfiles.assert_called_once_with(
         directory="/fake/static",
         follow_symlink=True,
     )
 
     # Check if Jinja2Templates was instantiated
-    MockJinja2Templates.assert_called_once_with(directory="/fake/templates")
+    mock_jinja2templates.assert_called_once_with(directory="/fake/templates")
 
 
 @patch("core_daemon.main.configure_logger")
