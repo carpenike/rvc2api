@@ -191,6 +191,61 @@
         "panel": "shared",
         "clear": true
       }
+    },
+    {
+      "label": "Frontend: Lint (ESLint)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run lint",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Frontend: Fix Lint Issues (ESLint)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run lint:fix",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Frontend: Fix All Style Issues",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run fix:style",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Frontend: Fix TypeScript Interface Issues",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run fix:interfaces",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Frontend: Type Check (TypeScript)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run typecheck",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
     }
   ]
 }
