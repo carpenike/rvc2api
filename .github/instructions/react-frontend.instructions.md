@@ -14,14 +14,20 @@ applyTo: "**/web_ui/**"
 
 ## Linting & Code Quality
 
-- TypeScript: Strict mode enabled
-- ESLint: Using flat config (eslint.config.js)
-- Plugins: react-hooks, react-refresh
+- TypeScript: Strict mode enabled with project references (tsconfig.json → tsconfig.app.json)
+- ESLint: Using flat config system with both eslint.config.js and eslint.config.mjs
+- Plugins: react-hooks, react-refresh, jsdoc
 - Type Checking: Run with `npm run typecheck` (required for all PRs)
 - Format: Follow ESLint configuration rules
+- Formatting Rules:
+  - No trailing commas (comma-dangle: ["error", "never"])
+  - Double quotes (quotes: ["error", "double"])
+  - Always use semicolons (semi: ["error", "always"])
 - Line Endings: LF (Unix style)
 - Indentation: 2 spaces
+- TypeScript Interfaces: Must have at least one import statement to avoid parsing errors
 - Verification: All code must pass linting, type checking, and formatting checks
+- Fix Scripts: Use `npm run fix:style` to fix common ESLint issues
 
 ## Directory Structure
 

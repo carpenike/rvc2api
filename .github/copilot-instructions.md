@@ -27,11 +27,13 @@ This document provides key information for GitHub Copilot to understand the `rvc
 
 ### TypeScript/React
 
-- **ESLint**: Using flat config in eslint.config.js
-- **TypeScript**: Strict mode enabled
+- **ESLint**: Using flat config in eslint.config.js and eslint.config.mjs
+- **TypeScript**: Strict mode enabled with project references
 - **Formatting**: Follow ESLint configuration rules
 - **Line Endings**: LF (Unix style)
 - **Indentation**: 2 spaces
+- **TypeScript Interfaces**: Ensure all standalone interface files have imports to avoid parsing errors
+- **Trailing Commas**: Not allowed (configured in ESLint)
 
 ## Core Architecture
 

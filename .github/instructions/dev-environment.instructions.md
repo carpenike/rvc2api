@@ -28,7 +28,11 @@ cd web_ui
 npm install  # Install dependencies
 npm run dev  # Start development server
 npm run build  # Build for production
-npm run lint  # Run ESLint
+npm run lint  # Run ESLint with flat config
+npm run lint:fix  # Run ESLint with automatic fixes
+npm run fix:style  # Run scripts to fix common ESLint issues
+npm run fix:interfaces  # Fix TypeScript interface parsing errors
+npm run typecheck  # Run TypeScript type checking
 ```
 
 ## Setup
