@@ -91,7 +91,6 @@ def test_initialize_app_from_config(mock_config_data_tuple, mock_decode_payload_
     ) as mock_init_history, patch.object(
         app_state, "preseed_light_states_internal"
     ) as mock_preseed_lights:
-
         app_state.initialize_app_from_config(mock_config_data_tuple, mock_decode_payload_function)
 
         assert app_state.decoder_map == {"decoder_map_val": 1}
@@ -272,7 +271,6 @@ def test_preseed_light_states_internal(mock_update_state_hist, mock_decode_paylo
     with patch.object(app_state.logger, "warning") as mock_logger_warning, patch(
         "core_daemon.app_state.time.time", return_value=12345.678
     ):
-
         app_state.preseed_light_states_internal(mock_decode_payload_function)
 
     assert mock_update_state_hist.call_count == 2  # light.one and light.two
