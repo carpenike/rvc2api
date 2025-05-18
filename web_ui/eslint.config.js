@@ -26,8 +26,8 @@ export default [
       }
     },
     rules: {
-      "quotes": ["error", "double"],
-      "semi": ["error", "always"],
+      quotes: ["error", "double"],
+      semi: ["error", "always"],
       "comma-dangle": ["error", "never"],
       "no-trailing-spaces": "error",
       "eol-last": ["error", "always"]
@@ -44,14 +44,14 @@ export default [
       },
       parser: tseslint.parser,
       parserOptions: {
-        project: "./web_ui/tsconfig.eslint.json"
+        project: "./tsconfig.eslint.json"
       }
     },
     // Only add plugins not already included by ...tseslint.configs.recommended
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
-      "jsdoc": jsdoc
+      jsdoc: jsdoc
     },
     rules: {
       // TypeScript-specific rules
@@ -65,8 +65,8 @@ export default [
       ],
 
       // General formatting rules
-      "quotes": ["error", "double"],
-      "semi": ["error", "always"],
+      quotes: ["error", "double"],
+      semi: ["error", "always"],
       "comma-dangle": ["error", "never"],
       "no-trailing-spaces": "error",
       "eol-last": ["error", "always"],
