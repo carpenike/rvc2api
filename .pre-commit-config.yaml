@@ -41,7 +41,7 @@ repos:
       - id: eslint
         files: \.(js|ts|tsx)$
         types: [file]
-        args: ["--fix", "--config", "web_ui/eslint.config.js"]
+        args: ["--fix", "--config", "eslint.config.js", "."]
         additional_dependencies:
           - eslint@9.25.0
           - eslint-plugin-react-hooks@5.2.0
