@@ -1,0 +1,36 @@
+{
+  "name": "RVC2API Nix Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "runArgs": [
+    "--privileged",
+    "--cap-add=NET_ADMIN",
+    "--cap-add=SYS_ADMIN"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.ruff",
+        "arrterian.nix-env-selector",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "github.copilot",
+        "github.copilot-chat"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/env python",
+        "python.analysis.diagnosticMode": "workspace",
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.stubPath": "${containerWorkspaceFolder}/typings",
+        "python.linting.ruffEnabled": true,
+        "python.languageServer": "Pylance"
+      }
+    }
+  },
+  "postCreateCommand": "nix develop || nix-shell",
+  "remoteUser": "root"
+}
