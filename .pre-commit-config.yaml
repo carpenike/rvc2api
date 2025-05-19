@@ -16,6 +16,7 @@ repos:
       - id: mixed-line-ending
         args: ["--fix=lf"]
       - id: check-added-large-files
+        exclude: ^resources/rvc-2023-11\.pdf$
 
   # Python linting and formatting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
