@@ -255,3 +255,7 @@ web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
 devcontainer.env
 
 .DS_STORE
+
+
+.devcontainer/home-cache
+.devcontainer/nix-store
