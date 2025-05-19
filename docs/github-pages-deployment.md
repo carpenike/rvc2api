@@ -51,10 +51,8 @@ Documentation is automatically deployed to GitHub Pages when changes are pushed 
 The documentation is available at:
 
 ```
-https://username.github.io/rvc2api/
+https://carpenike.github.io/rvc2api/
 ```
-
-Replace `username` with your GitHub username or organization.
 
 ## Debian Repository Deployment
 
@@ -63,7 +61,7 @@ The Debian repository is deployed to GitHub Pages when a new version tag is push
 ### Repository Structure
 
 ```
-https://username.github.io/rvc2api/debian-repo/
+https://carpenike.github.io/rvc2api/debian-repo/
 ├── dists/
 │   └── stable/
 │       ├── main/
@@ -89,16 +87,17 @@ To use the repository:
 1. Add the GPG key:
 
    ```bash
-   curl -fsSL https://username.github.io/rvc2api/debian-repo/KEY.gpg | sudo apt-key add -
+   curl -fsSL https://carpenike.github.io/rvc2api/debian-repo/KEY.gpg | sudo apt-key add -
    ```
 
 2. Add the repository:
 
    ```bash
-   echo "deb https://username.github.io/rvc2api/debian-repo stable main" | sudo tee /etc/apt/sources.list.d/rvc2api.list
+   echo "deb https://carpenike.github.io/rvc2api/debian-repo stable main" | sudo tee /etc/apt/sources.list.d/rvc2api.list
    ```
 
 3. Update and install:
+
    ```bash
    sudo apt update
    sudo apt install rvc2api
