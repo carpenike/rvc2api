@@ -12,7 +12,8 @@ import can
 
 def configure_logging():
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     return logging.getLogger("can_test")
 
@@ -96,7 +97,10 @@ if __name__ == "__main__":
         help="Interval between messages in seconds (default: 1.0)",
     )
     parser.add_argument(
-        "--duration", type=int, default=30, help="Duration to monitor bus in seconds (default: 30)"
+        "--duration",
+        type=int,
+        default=30,
+        help="Duration to monitor bus in seconds (default: 30)",
     )
 
     args = parser.parse_args()

@@ -53,6 +53,7 @@ python dev_tools/test_vcan.py --action monitor --interface vcan0 --duration 60
 ```
 
 For more comprehensive testing, open two terminal windows in VSCode:
+
 1. In one terminal, run the monitoring command
 2. In another terminal, run the sending command
 
