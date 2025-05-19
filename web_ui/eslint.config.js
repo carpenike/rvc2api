@@ -29,7 +29,18 @@ export default [
       // Exclude any other output/cache directories
       "web_ui/**/*.tsbuildinfo",
       "web_ui/**/*.log",
-      "web_ui/.cache/**"
+      "web_ui/.cache/**",
+      // Exclude documentation and generated output
+      "web_ui/site/**",
+      "web_ui/docs/_build/**",
+      "web_ui/assets/javascripts/workers/*.min.js",
+      "web_ui/CNAME",
+      "web_ui/objects.inv",
+      "web_ui/sitemap.xml*",
+      "web_ui/index.html",
+      "web_ui/404.html",
+      // Exclude Node.js scripts (not frontend source)
+      "web_ui/scripts/**"
     ]
   },
   // Base JS config

@@ -1,0 +1,10 @@
+# GitHub Pages configuration
+
+# Use GitHub Actions as the publishing source
+source:
+  branch: gh-pages
+  workflow_file: deploy-combined.yml
+
+# Build settings
+build:
+  strategy: pages

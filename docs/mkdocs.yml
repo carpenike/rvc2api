@@ -1,0 +1,76 @@
+site_name: rvc2api Documentation
+site_description: Documentation for the rvc2api project
+site_url: http://localhost:8000
+
+docs_dir: .
+site_dir: ../site
+
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: amber
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          selection:
+            inherited_members: true
+          rendering:
+            show_source: true
+            show_category_heading: true
+            show_if_no_docstring: true
+  - swagger-ui-tag
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Development Environment: development-environments.md
+      - VS Code Setup: vscode-extensions.md
+  - Architecture:
+      - Project Overview: architecture/overview.md
+      - Backend Architecture: architecture/backend.md
+      - Frontend Architecture: architecture/frontend.md
+  - API Reference:
+      - Overview: api/overview.md
+      - OpenAPI Specification: api/openapi.md
+      - Entity Endpoints: api/entities.md
+      - CAN Endpoints: api/can.md
+      - WebSocket API: api/websocket.md
+  - Frontend Development:
+      - Setup: frontend-development.md
+      - API Integration: api/frontend-integration.md
+  - Quality Assurance:
+      - Code Quality Tools: code-quality-tools.md
+      - Pyright Type Checking: pyright-type-checking.md
+      - Pre-Commit Hooks: pre-commit-and-actions.md
+  - Deployment:
+      - React Deployment: react-deployment.md
+      - NixOS Module: nixos-module.md
+  - Contributing:
+      - Pull Request Guidelines: contributing/pull-requests.md

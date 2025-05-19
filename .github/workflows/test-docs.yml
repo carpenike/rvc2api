@@ -1,0 +1,52 @@
+name: Test Documentation Build
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Install dependencies
+        run: |
+          poetry install --only dev
+
+      - name: Generate OpenAPI schema
+        run: |
+          poetry run python scripts/export_openapi.py
+
+      - name: Build documentation
+        run: |
+          poetry run mkdocs build
+
+      - name: Check links
+        run: |
+          # Using a basic grep to find potential broken links
+          echo "Checking for potential broken relative links..."
+          grep -r "\[.*\](.*)" --include="*.md" docs/ | grep -v "https\?://" | grep -v "\.md)" | grep -v "#" || true
+
+          echo "Checking for 'TODO' comments in documentation..."
+          grep -r "TODO" --include="*.md" docs/ || echo "No TODOs found"

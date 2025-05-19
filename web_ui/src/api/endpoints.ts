@@ -67,7 +67,7 @@ export async function setAllLights(state: boolean): Promise<LightStatus[]> {
     try {
       const updated = await setLightState(light.id, state);
       results.push(updated);
-    } catch (e) {
+    } catch {
       // Optionally handle errors per light
     }
   }
