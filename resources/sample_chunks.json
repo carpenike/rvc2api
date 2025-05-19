@@ -1,0 +1,18 @@
+[
+  {
+    "text": "This is a sample section about battery temperature monitoring.\nThe RV-C protocol allows temperature monitoring at 0.1 degree resolution.\nTemperature values are reported in degrees Celsius.\nValid range is typically -40C to 125C.",
+    "section": "2.3",
+    "title": "Battery Temperature",
+    "pages": [
+      12
+    ]
+  },
+  {
+    "text": "This section covers water tank level monitoring.\nLevel sensors provide data in percentage of full.\nValues range from 0% (empty) to 100% (full).\nRV-C uses 1-byte integer values for level reporting.",
+    "section": "3.1",
+    "title": "Water Tank Level",
+    "pages": [
+      24
+    ]
+  }
+]

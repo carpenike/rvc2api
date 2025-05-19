@@ -73,6 +73,8 @@ nav:
           - WebSocket API: api/websocket.md
       - RV-C Integration:
           - RV-C Documentation Search: rv-c-documentation-search.md
+          - Mixed Chunking Strategies: mixed-chunking-strategies.md
+          - PDF Processing Guide: pdf-processing-guide.md
       - Deployment:
           - React Deployment: react-deployment.md
           - NixOS Module: nixos-module.md

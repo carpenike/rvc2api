@@ -72,8 +72,10 @@ mike = "^2.1.3"
 mkdocs-autorefs = "^1.4.1"
 
 [tool.poetry.group.devtools.dependencies]
-langchain = "^0.1.14"
-langchain-openai = "^0.1.1"
+langchain = "~0.1.4"
+langchain-community = "^0.0.16"
+langchain-openai = "^0.0.5"
+langchain-core = "~0.1.23"
 pymupdf = "^1.24.1"  # PyMuPDF, imported as fitz in code
 faiss-cpu = "^1.7.4"
 

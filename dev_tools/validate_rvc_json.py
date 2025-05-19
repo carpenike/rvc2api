@@ -11,13 +11,15 @@ import os
 from pathlib import Path
 from typing import Any
 
+from document_loader import filter_results_by_source
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
 # Configuration constants
-FAISS_INDEX_PATH: str = "resources/faiss/rvc_spec_f49bfc39f2db"
+FAISS_INDEX_PATH: str = "resources/vector_store/rvc_spec_index"  # Updated path
 RVC_JSON_PATH: str = "rvc.json"
 MODEL_NAME: str = "text-embedding-3-large"
+DEFAULT_SOURCE: str = "rvc-spec-2023-11.pdf"
 
 
 def main() -> None:
@@ -58,12 +60,21 @@ def main() -> None:
     for dgn_id, data in rvc_data.items():
         dgn_name = data.get("name", "")
         query = f"DGN {dgn_id} {dgn_name}"
-        results = vectorstore.similarity_search(query, k=1)
+
+        # Get all matches and filter for those from our preferred source
+        results = vectorstore.similarity_search(query, k=3)
+
+        # Use helper function to filter by source
+        results = filter_results_by_source(results=results, source=DEFAULT_SOURCE, limit=1)
 
         print(f"--- DGN {dgn_id} ({dgn_name}) ---")
         if results:
-            context = results[0].page_content
-            print(context[:1000])
+            doc = results[0]
+            print(f"Source: {doc.metadata.get('source', 'unknown')}")
+            print(f"Chunking strategy: {doc.metadata.get('chunking', 'unknown')}")
+            print(f"Section: {doc.metadata.get('section', '')} - {doc.metadata.get('title', '')}")
+            print(f"Pages: {doc.metadata.get('pages', [])}")
+            print(doc.page_content[:1000])
         else:
             print("No matching documentation found.")
         print()
