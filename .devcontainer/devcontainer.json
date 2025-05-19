@@ -1,36 +1,45 @@
 {
   "name": "RVC2API Nix Development",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
   "runArgs": [
     "--privileged",
     "--cap-add=NET_ADMIN",
-    "--cap-add=SYS_ADMIN"
+    "--cap-add=SYS_ADMIN",
+    "--network=host",
+    "--env-file",
+    "devcontainer.env"
   ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/nix:latest": {
+      "version": "latest",
+      "installNixFlakes": true,
+      "installNixUnstable": false,
+      "installNixDirenv": false,
+      "extraNixConfig": "experimental-features = nix-command flakes"
+    },
+    "ghcr.io/ChristopherMacGown/devcontainer-features/direnv:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+   "ghcr.io/devcontainers/features/python:1": {
+     "version": "3"
+   }
+  },
+  "containerEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}:${PYTHONPATH}",
+    "NODE_OPTIONS": "--openssl-legacy-provider",
+    "PERPLEXITY_API_KEY": "${localEnv:PERPLEXITY_API_KEY}",
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}"
+  },
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global core.autocrlf input && git config --global core.eol lf",
+  "postStartCommand": "direnv allow",
   "customizations": {
     "vscode": {
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-python.ruff",
-        "arrterian.nix-env-selector",
-        "dbaeumer.vscode-eslint",
-        "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
-        "github.copilot",
-        "github.copilot-chat"
-      ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/bin/env python",
-        "python.analysis.diagnosticMode": "workspace",
-        "python.analysis.typeCheckingMode": "basic",
-        "python.analysis.stubPath": "${containerWorkspaceFolder}/typings",
-        "python.linting.ruffEnabled": true,
-        "python.languageServer": "Pylance"
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "terminal.integrated.shellArgs.linux": ["-l"]
       }
     }
-  },
-  "postCreateCommand": "nix develop || nix-shell",
-  "remoteUser": "root"
+  }
 }

@@ -250,3 +250,6 @@ web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
 web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg/
 web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-static/
 web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
+
+# Ignore devcontainer secrets
+devcontainer.env
