@@ -40,43 +40,54 @@ poetry run python enhanced_document_processor.py --pdf resources/your-document-n
 
 For complete documentation, run `poetry run python enhanced_document_processor.py --help`
 
-### `generate_embeddings.py` (Legacy)
+### Alternative Embedding Providers
 
-Processes the RV-C specification PDF, extracts content by sections, and generates overlapping text chunks for better semantic search results.
+The enhanced document processor supports multiple embedding providers:
 
-**Usage:**
+#### OpenAI API
 
-```bash
-python generate_embeddings.py
-```
-
-**Configuration:**
-
-- PDF_PATH: Path to the RV-C specification PDF (default: `resources/rvc-spec-2023-11.pdf`)
-- OUTPUT_PATH: Path where the chunked JSON output will be saved (default: `resources/rvc_spec_chunks_with_overlap.json`)
-- OVERLAP_LINES: Number of lines to overlap between chunks for better context
-- CHUNKING_STRATEGY: Identifier for the chunking method used (default: `section_overlap`)
-
-### `generate_faiss_index.py`
-
-Converts the pre-processed text chunks into a FAISS vector index for efficient semantic searching.
-
-**Usage:**
+Use the standard OpenAI API (default):
 
 ```bash
-python generate_faiss_index.py
+export OPENAI_API_KEY="your-openai-api-key"
+poetry run python enhanced_document_processor.py --pdf resources/your-document-name.pdf
 ```
 
-**Dependencies:**
+#### Azure OpenAI
 
-- Requires OpenAI API key: `export OPENAI_API_KEY=your-api-key`
-- Requires chunks file from `generate_embeddings.py`
+Use Azure OpenAI for embeddings by setting the required environment variables:
 
-**Configuration:**
+```bash
+export OPENAI_API_KEY="your-azure-api-key"
+export OPENAI_API_BASE="https://your-resource-name.openai.azure.com/"
+export OPENAI_API_VERSION="2023-05-15"
+export OPENAI_API_TYPE="azure"
+export OPENAI_DEPLOYMENT_NAME="your-deployment-id"
 
-- CHUNKS_PATH: Path to the JSON chunks file (default: `resources/rvc_spec_chunks_with_overlap.json`)
-- FAISS_INDEX_PATH: Path where the FAISS index will be saved (default: `resources/vector_store/rvc_spec_index`)
-- MODEL_NAME: OpenAI embedding model to use (default: `text-embedding-3-large`)
+poetry run python enhanced_document_processor.py --pdf resources/your-document-name.pdf
+```
+
+Or use command-line arguments:
+
+```bash
+poetry run python enhanced_document_processor.py \
+  --pdf resources/your-document-name.pdf \
+  --api-type azure \
+  --api-base "https://your-resource-name.openai.azure.com/" \
+  --api-version "2023-05-15" \
+  --deployment-name "your-deployment-id"
+```
+
+#### Custom OpenAI-Compatible Endpoints
+
+You can also use other OpenAI-compatible endpoints, such as local servers, proxies, or alternative providers:
+
+```bash
+poetry run python enhanced_document_processor.py \
+  --pdf resources/your-document-name.pdf \
+  --api-type custom \
+  --api-base "http://localhost:8000/v1"
+```
 
 ### `query_faiss.py`
 
@@ -195,6 +206,10 @@ all_docs = rvc_chunks + victron_chunks
 vectorstore = FAISS.from_documents(all_docs, embeddings)
 ```
 
+## Required Dependencies
+
+1. Python 3.9+ with proper type annotations
+2. OpenAI API key (set as OPENAI_API_KEY environment variable)
 3. Additional Python packages (all included in the poetry devtools group):
    - langchain
    - langchain-openai

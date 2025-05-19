@@ -485,7 +485,34 @@ def add_to_faiss_index(
 
     # Initialize embeddings
     try:
-        embeddings = OpenAIEmbeddings(model=model_name)
+        # Check if using Azure OpenAI or custom endpoint
+        api_type = os.getenv("OPENAI_API_TYPE", "").lower()
+
+        if api_type == "azure":
+            # Using Azure OpenAI
+            embeddings = OpenAIEmbeddings(
+                model=model_name,  # Still used for non-Azure
+                deployment=os.getenv(
+                    "OPENAI_DEPLOYMENT_NAME", model_name
+                ),  # Azure uses deployment name
+                openai_api_base=os.getenv(
+                    "OPENAI_API_BASE"
+                ),  # e.g., https://<resource>.openai.azure.com/
+                openai_api_type="azure",
+                openai_api_version=os.getenv("OPENAI_API_VERSION", "2023-05-15"),
+            )
+            print("Using Azure OpenAI for embeddings")
+        elif os.getenv("OPENAI_API_BASE"):
+            # Using custom OpenAI-compatible endpoint (like local server, proxy, etc.)
+            embeddings = OpenAIEmbeddings(
+                model=model_name,
+                openai_api_base=os.getenv("OPENAI_API_BASE"),
+            )
+            print(f"Using custom OpenAI-compatible endpoint: {os.getenv('OPENAI_API_BASE')}")
+        else:
+            # Default to standard OpenAI
+            embeddings = OpenAIEmbeddings(model=model_name)
+            print(f"Using standard OpenAI API with model: {model_name}")
     except Exception as e:
         raise RuntimeError(f"Failed to initialize OpenAI embeddings: {e!s}") from e
 
@@ -613,6 +640,32 @@ def parse_arguments():
         help="Auto-detect the best chunking strategy based on document structure",
     )
 
+    # API endpoint configuration options
+    parser.add_argument(
+        "--api-type",
+        type=str,
+        choices=["openai", "azure", "custom"],
+        help="API type to use (default: use OPENAI_API_TYPE env var or 'openai')",
+    )
+
+    parser.add_argument(
+        "--api-base",
+        type=str,
+        help="Base URL for API (default: use OPENAI_API_BASE env var)",
+    )
+
+    parser.add_argument(
+        "--api-version",
+        type=str,
+        help="API version for Azure (default: use OPENAI_API_VERSION env var or '2023-05-15')",
+    )
+
+    parser.add_argument(
+        "--deployment-name",
+        type=str,
+        help="Azure OpenAI deployment name (default: use OPENAI_DEPLOYMENT_NAME env var or model name)",
+    )
+
     return parser.parse_args()
 
 
@@ -716,6 +769,16 @@ def main() -> None:
 
                     source_path = CustomPath(args.pdf)
                     print(f"Using custom source tag: {args.source_tag}")
+
+                # Set environment variables if provided by command line
+                if args.api_type:
+                    os.environ["OPENAI_API_TYPE"] = args.api_type
+                if args.api_base:
+                    os.environ["OPENAI_API_BASE"] = args.api_base
+                if args.api_version:
+                    os.environ["OPENAI_API_VERSION"] = args.api_version
+                if args.deployment_name:
+                    os.environ["OPENAI_DEPLOYMENT_NAME"] = args.deployment_name
 
                 add_to_faiss_index(
                     chunks=chunks,

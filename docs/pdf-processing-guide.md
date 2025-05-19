@@ -263,8 +263,71 @@ Added to index: resources/vector_store/rvc_spec_index
 
 This summary helps identify any issues in the processing workflow.
 
+## Using Alternative OpenAI API Endpoints
+
+The enhanced document processor now supports Azure OpenAI and other OpenAI-compatible endpoints.
+
+### Azure OpenAI
+
+To use Azure OpenAI for embeddings, set the required environment variables:
+
+```bash
+export OPENAI_API_KEY="your-azure-api-key"
+export OPENAI_API_BASE="https://your-resource-name.openai.azure.com/"
+export OPENAI_API_VERSION="2023-05-15"
+export OPENAI_API_TYPE="azure"
+export OPENAI_DEPLOYMENT_NAME="your-deployment-id"
+```
+
+Then run the document processor normally:
+
+```bash
+poetry run python dev_tools/enhanced_document_processor.py \
+  --pdf resources/your-document-name-2023.pdf \
+  --add-to-index resources/vector_store/your_index
+```
+
+Alternatively, you can specify API details via command-line arguments:
+
+```bash
+poetry run python dev_tools/enhanced_document_processor.py \
+  --pdf resources/your-document-name-2023.pdf \
+  --add-to-index resources/vector_store/your_index \
+  --api-type azure \
+  --api-base "https://your-resource-name.openai.azure.com/" \
+  --api-version "2023-05-15" \
+  --deployment-name "your-deployment-id"
+```
+
+> **Note**: For Azure OpenAI, `deployment-name` is used instead of `model`, but you should still set the `--model` parameter for fallback purposes.
+
+### Custom OpenAI-Compatible Endpoints
+
+You can also use other OpenAI-compatible endpoints, such as local servers, proxies, or alternative providers:
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_API_BASE="http://localhost:8000/v1"
+```
+
+Or via command-line:
+
+```bash
+poetry run python dev_tools/enhanced_document_processor.py \
+  --pdf resources/your-document-name-2023.pdf \
+  --add-to-index resources/vector_store/your_index \
+  --api-type custom \
+  --api-base "http://localhost:8000/v1"
+```
+
+This allows you to use services like:
+- vLLM in OpenAI-compatible mode
+- LM Studio local servers
+- Other OpenAI-compatible API providers
+
 ## References
 
 - [LangChain FAISS Integration](https://docs.langchain.com/docs/integrations/vectorstores/faiss)
 - [PyMuPDF Documentation](https://pymupdf.readthedocs.io/)
 - [OpenAI Embeddings Documentation](https://platform.openai.com/docs/guides/embeddings)
+- [Azure OpenAI Service Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
