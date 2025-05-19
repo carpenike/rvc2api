@@ -253,3 +253,5 @@ web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
 
 # Ignore devcontainer secrets
 devcontainer.env
+
+.DS_STORE
