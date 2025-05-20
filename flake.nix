@@ -170,9 +170,12 @@ function fish_prompt
   set_color green
   echo -n "(nix develop) "
   set_color normal
-  fish_default_prompt
+  echo -n (prompt_pwd) ' > '
 end
 EOF
+              if [ -n "$FISH_VERSION" ]; then
+                source "$HOME/.config/fish/conf.d/nix_devshell_prompt.fish"
+              fi
             fi
             # Set up Node.js environment
             export NODE_PATH=$PWD/web_ui/node_modules
