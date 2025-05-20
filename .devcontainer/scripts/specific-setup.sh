@@ -63,4 +63,3 @@ EOF
 chmod +x /workspace/.devcontainer/activate-nix-env.sh
 
 echo "✅ Project-specific setup completed at $(date)" | tee -a "$LOG_FILE"
-echo "📝 To fully activate the Nix shell, run: ./.devcontainer/activate-nix-env.sh" | tee -a "$LOG_FILE"
