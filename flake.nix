@@ -112,9 +112,6 @@
         };
 
         devShell = pkgs.mkShell {
-          shellHook = ''
-            export PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $PS1"
-          '';
           buildInputs = [
             # --- Backend dependencies ---
             python
@@ -158,6 +155,7 @@
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
+            export PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $PS1"
             # Set up Node.js environment
             export NODE_PATH=$PWD/web_ui/node_modules
 
