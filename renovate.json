@@ -343,7 +343,7 @@
         "npm",
         "poetry"
       ],
-      "ignorePrereleases": true
+      "ignoreUnstable": true
     }
   ],
   "schedule": [
