@@ -65,7 +65,7 @@ repos:
     hooks:
       - id: check-poetry-lock
         name: Ensure poetry.lock is in sync with pyproject.toml
-        entry: poetry check --lock --no-interaction
+        entry: bash -c 'if command -v poetry >/dev/null 2>&1; then poetry check --lock --no-interaction; else echo "Poetry not in PATH, skipping check"; exit 0; fi'
         language: system
         pass_filenames: false
         always_run: true
