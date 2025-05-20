@@ -25,14 +25,13 @@
   "containerEnv": {
     "DEVCONTAINER": "true",
     "WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
-    "PATH": "/home/vscode/.nix-profile/bin:${containerEnv:PATH}",
     "PYTHONPATH": "${containerWorkspaceFolder}:${containerEnv:PYTHONPATH}",
     "NODE_OPTIONS": "--openssl-legacy-provider",
     "PERPLEXITY_API_KEY": "${localEnv:PERPLEXITY_API_KEY}",
     "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}"
   },
 
-  "postCreateCommand": "./.devcontainer/specific-setup.sh",
+  "postCreateCommand": "./.devcontainer/scripts/specific-setup.sh",
 
   "waitFor": "postCreateCommand",
 

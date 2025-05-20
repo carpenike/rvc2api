@@ -1,48 +1,55 @@
 FROM mcr.microsoft.com/devcontainers/base:debian
 
-# 1) Install system dependencies (including xz-utils for Nix installer)
-RUN set -euxo pipefail \
-  && apt-get update \
+# 0) Make /bin/sh point at bash so pipefail works everywhere
+USER root
+RUN ln -sf /bin/bash /bin/sh
+
+# 1) Switch all RUNs to bash with strict flags
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+
+# 2) Install system dependencies (including coreutils for `sleep`)
+RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       xz-utils \
-       coreutils findutils procps util-linux bash curl wget git \
+       xz-utils coreutils findutils procps util-linux curl wget git \
        ca-certificates gnupg lsb-release iproute2 can-utils \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# 2) Configure sudo for vscode user
-RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+# 3) Give vscode passwordless sudo
+RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/vscode \
   && chmod 0440 /etc/sudoers.d/vscode
 
-# 3) Switch to vscode user for single-user Nix install
+# 4) Single-user Nix + Poetry, direnv & (optionally) nodejs
 USER vscode
 ENV HOME=/home/vscode \
-    PATH=/home/vscode/.nix-profile/bin:${PATH}
+    PATH=/home/vscode/.nix-profile/bin:$PATH \
+    PYTHONPATH=/workspace
 
-# 4) Install Nix (single-user), then Poetry + direnv via nix-env
-RUN set -euxo pipefail \
-  && curl -L https://nixos.org/nix/install | sh \
+RUN curl -L https://nixos.org/nix/install | sh \
   && . $HOME/.nix-profile/etc/profile.d/nix.sh \
-  && nix-env -iA nixpkgs.poetry nixpkgs.direnv \
+  && nix-env -iA \
+       nixpkgs.poetry \
+       nixpkgs.direnv \
+       nixpkgs.nodejs \
   && poetry config virtualenvs.create false \
-  && echo '\
-. $HOME/.nix-profile/etc/profile.d/nix.sh\n\
-eval "$(direnv hook bash)"\
-' >> $HOME/.bashrc
+  && printf '%s\n' \
+       ". $HOME/.nix-profile/etc/profile.d/nix.sh" \
+       "eval \"\$(direnv hook bash)\"" \
+     >> $HOME/.bashrc
 
-# 5) Add direnv hook for fish shell
+# 5) Fish hook for direnv
 RUN mkdir -p $HOME/.config/fish/conf.d \
   && echo 'eval (direnv hook fish)' > $HOME/.config/fish/conf.d/direnv.fish
 
-# 6) Python workspace settings
-ENV PYTHONPATH=/workspace:${PYTHONPATH}
+# 6) Point Git at the system gpg
+RUN git config --global gpg.program /usr/bin/gpg
 
-# 7) Final cleanup (as root) to reclaim space
+# 7) Cleanup
 USER root
 RUN apt-get autoremove -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
 
-# 8) Set default shell and switch back to vscode
+# 8) Back to vscode with bash as default shell
 ENV SHELL=/bin/bash
 USER vscode
