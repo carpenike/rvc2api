@@ -24,6 +24,12 @@
   },
   "packageRules": [
     {
+      "matchUpdateTypes": [
+        "pin"
+      ],
+      "groupName": "Pin all dependencies"
+    },
+    {
       "matchManagers": [
         "poetry",
         "nix"
