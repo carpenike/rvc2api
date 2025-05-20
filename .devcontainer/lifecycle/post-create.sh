@@ -24,6 +24,8 @@ else
   echo "⚠️ Nix not available, skipping package installation" | tee -a "$LOG_FILE"
 fi
 
+git config --global gpg.program /bin/gpg
+
 # Make diagnostics scripts executable
 chmod +x /workspace/.devcontainer/diagnostics/diagnose-nix.sh
 

@@ -13,7 +13,7 @@
     "--cap-add=NET_ADMIN",
     "--cap-add=SYS_ADMIN",
     "--env-file",
-    "${localWorkspaceFolder}/devcontainer.env",
+    "${localWorkspaceFolder}/.devcontainer/devcontainer.env",
     "--memory=6g",
     "--cpus=2"
   ],
@@ -53,5 +53,14 @@
     "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached"
   ],
 
-  "waitFor": "onCreateCommand"
+  "waitFor": "onCreateCommand",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "arrterian.nix-env-selector",
+        "ms-python.python",
+        "mkhl.direnv"
+      ]
+    }
+  }
 }
