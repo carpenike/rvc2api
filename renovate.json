@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:recommended",
     "config:best-practices",
     "group:monorepos"
   ],
@@ -328,14 +328,14 @@
     },
     {
       "description": "Label likely security updates (pattern match)",
-      "matchPackagePatterns": [
-        ".*(security|cve|vuln).*"
-      ],
       "addLabels": [
         "security",
         "urgent"
       ],
-      "automerge": false
+      "automerge": false,
+      "matchPackageNames": [
+        "/.*(security|cve|vuln).*/"
+      ]
     },
     {
       "description": "Ignore prereleases by default",
