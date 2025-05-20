@@ -537,6 +537,32 @@
           }
         }
       ]
+    },
+    {
+      "label": "System: Setup Colima vcan",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && chmod +x scripts/setup_colima_vcan.sh && scripts/setup_colima_vcan.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": false
+      },
+      "group": "none",
+      "detail": "Set up vcan interfaces in Colima VM"
+    },
+    {
+      "label": "System: Ensure vcan Interfaces",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && chmod +x scripts/ensure_vcan_interfaces.sh && scripts/ensure_vcan_interfaces.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": false
+      },
+      "group": "none",
+      "detail": "Ensure vcan interfaces are available in container"
     }
   ]
 }

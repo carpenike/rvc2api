@@ -259,3 +259,4 @@ devcontainer.env
 
 .devcontainer/home-cache
 .devcontainer/nix-store
+.devcontainer/nix-profile

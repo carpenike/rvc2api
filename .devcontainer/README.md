@@ -1,18 +1,74 @@
-# DevContainer Environment Setup
+# DevContainer Environment
 
-This directory contains the configuration for the VS Code DevContainer development environment.
+This directory contains the configuration for the VS Code DevContainer development environment for the rvc2api project.
 
-## Optimized Development Experience
+## Important Update: Nix Installation Fix
 
-The DevContainer configuration has been optimized for both performance and stability. Key improvements include:
+A fix for Nix installation issues has been implemented. If you're experiencing problems with Nix in the container:
 
-- **Cached filesystem operations** for better performance
-- **Resource limits** to prevent container crashes
-- **Nix optimizations** for faster builds
-- **VS Code settings** to improve editor performance
-- **Persistent Nix store** to prevent unnecessary rebuilds
+1. Run the migration script: `./.devcontainer/migrate-nix-fix.sh`
+2. Rebuild the DevContainer using "Dev Containers: Rebuild Without Cache"
+3. See `NIX-FIX-NOTES.md` for details about the changes
 
-For detailed performance optimization tips, see [PERFORMANCE.md](./PERFORMANCE.md).
+## Container Structure
+
+The container environment uses a streamlined structure organized by lifecycle phase:
+
+```plaintext
+.devcontainer/
+├── devcontainer.json           # Main configuration file
+├── NIX-FIX-NOTES.md            # Documentation for Nix fixes
+├── migrate-nix-fix.sh          # Script to apply Nix fixes
+├── lifecycle/                  # Container lifecycle scripts
+│   ├── initialize.sh           # Run before container creation (on host)
+│   ├── on-create.sh            # Run when container is created
+│   ├── post-create.sh          # Run after container creation
+│   └── post-start.sh           # Run when container starts
+├── scripts/                    # Utility scripts
+│   ├── setup-nix.sh            # Set up Nix package manager
+│   ├── setup-vcan.sh           # Set up virtual CAN interfaces
+│   └── setup-dev-tools.sh      # Set up development tools
+├── diagnostics/                # Diagnostic tools
+│   ├── diagnose-nix.sh         # Diagnose Nix issues
+│   └── diagnose-vcan.sh        # Diagnose vcan interface issues
+├── config/                     # Configuration files
+│   └── env.sh                  # Environment variables
+├── nix-store/                  # Persistent Nix store directory
+├── nix-profile/                # Persistent Nix profile directory
+└── home-cache/                 # Home directory cache
+```
+
+## Getting Started
+
+1. **Prerequisites**:
+
+   - Visual Studio Code with Remote Development Extension Pack
+   - Docker (Docker Desktop or Colima on macOS)
+   - Git
+
+2. **Initial Setup**:
+
+   - For macOS users with Colima: Run `.devcontainer/setup-colima.sh` to configure Colima optimally
+   - For Docker Desktop users: No additional setup needed
+
+3. **Starting the DevContainer**:
+   - Open VS Code in the project directory
+   - Click on the Remote Development icon in the bottom left corner
+   - Select "Reopen in Container"
+
+## Troubleshooting
+
+### Common Issues
+
+#### Nix not available in container
+
+If `nix` commands are not working in the container:
+
+1. Apply the Nix fix: `./.devcontainer/migrate-nix-fix.sh`
+2. Rebuild the container with "Dev Containers: Rebuild Without Cache"
+3. Check logs at `/workspace/devcontainer_startup.log` and `/workspace/nix_setup.log`
+
+For other issues, refer to the detailed guides in `TROUBLESHOOTING.md`.
 
 ## Container Setup
 
@@ -34,128 +90,10 @@ ip link show | grep -i can
 # Expected output should show at least vcan0
 # Example output:
 #   X: vcan0: <NOARP,UP,LOWER_UP> mtu 72 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
-#   X: vcan1: <NOARP,UP,LOWER_UP> mtu 72 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
 ```
 
-If you're using Colima with systemd-configured interfaces on the host VM, the interfaces should be automatically accessible in your DevContainer due to the `--network=host` configuration.
+If virtual CAN interfaces are not available, run the diagnostics script:
 
-## Manual Setup Process (For host systems)
-
-If you prefer to set up your environment manually or are using a non-DevContainer setup:
-
-### Colima Environment (macOS with Docker)
-
-1. Follow the install process for colima and start the VM:
-
-   ```bash
-   # Install colima (if not already installed)
-   brew install colima docker docker-credential-helper
-
-   # Start colima with recommended settings
-   colima start --cpu 4 --memory 8 --disk 40 --mount-type sshfs
-
-   # Verify Docker is working with Colima
-   docker info | grep -i runtime
-   ```
-
-2. SSH into the Colima VM to configure vcan:
-
-   ```bash
-   colima ssh
-   ```
-
-3. Ensure the Linux headers are installed so the vcan module can be loaded:
-
-   ```bash
-   sudo apt update
-   sudo apt install -y build-essential linux-headers-$(uname -r) linux-modules-extra-$(uname -r)
-   ```
-
-4. Ensure the vcan module is loaded and the interface starts at boot:
-
-   ```bash
-   # Load vcan module
-   sudo modprobe vcan
-
-   # Create systemd service for vcan0
-   sudo tee /etc/systemd/system/vcan0.service <<'EOF'
-   [Unit]
-   Description=Create and bring up vcan0
-   After=network.target
-
-   [Service]
-   Type=oneshot
-   ExecStart=/usr/sbin/ip link add dev vcan0 type vcan
-   ExecStart=/usr/sbin/ip link set up vcan0
-   RemainAfterExit=yes
-
-   [Install]
-   WantedBy=multi-user.target
-   EOF
-
-   # Create systemd service for vcan1 (if needed)
-   sudo tee /etc/systemd/system/vcan1.service <<'EOF'
-   [Unit]
-   Description=Create and bring up vcan1
-   After=network.target
-
-   [Service]
-   Type=oneshot
-   ExecStart=/usr/sbin/ip link add dev vcan1 type vcan
-   ExecStart=/usr/sbin/ip link set up vcan1
-   RemainAfterExit=yes
-
-   [Install]
-   WantedBy=multi-user.target
-   EOF
-
-   # Enable and start the services
-   sudo systemctl enable vcan0.service
-   sudo systemctl start vcan0.service
-   sudo systemctl enable vcan1.service
-   sudo systemctl start vcan1.service
-
-   # Verify the interfaces are up
-   ip link show | grep -i vcan
-   ```
-
-## Troubleshooting
-
-If you encounter issues with the DevContainer:
-
-1. For Colima users, see [COLIMA.md](./COLIMA.md) for specific optimization tips
-2. For general performance tips, see [PERFORMANCE.md](./PERFORMANCE.md)
-3. Ensure your Docker environment has sufficient resources allocated
-4. Consider using the "Clone Repository in Container Volume..." approach for better performance
-
-### CAN Interface Issues
-
-If virtual CAN interfaces are not available in your DevContainer:
-
-1. **Verify interfaces in host environment**:
-
-   ```bash
-   # On macOS with Colima
-   colima ssh
-   ip link show | grep -i vcan
-   ```
-
-2. **Check container networking**:
-
-   ```bash
-   # Inside DevContainer
-   ifconfig -a | grep -i vcan    # or
-   ip link show | grep -i vcan
-   ```
-
-3. **Ensure the container has proper network access**:
-
-   - Verify that `--network=host` is in the `runArgs` section of `devcontainer.json`
-   - For Colima users, make sure both the host VM and container networking is properly configured
-
-4. **Manually create interfaces** if necessary:
-   ```bash
-   # Inside DevContainer (requires NET_ADMIN capability)
-   sudo ip link add dev vcan0 type vcan
-   sudo ip link set up vcan0
-   ```
+```bash
+/workspace/.devcontainer/diagnostics/diagnose-vcan.sh
+```

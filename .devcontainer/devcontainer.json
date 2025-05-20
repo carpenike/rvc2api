@@ -4,25 +4,24 @@
 
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
 
   "runArgs": [
     "--network=host",
+    "--privileged",
     "--cap-add=NET_ADMIN",
     "--cap-add=SYS_ADMIN",
     "--env-file",
-    "devcontainer.env",
-    "--memory=8g",
-    "--cpus=4"
+    "${localWorkspaceFolder}/devcontainer.env",
+    "--memory=6g",
+    "--cpus=2"
   ],
 
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/nix:latest": {
-      "version": "latest",
-      "installNixFlakes": true,
-      "installNixUnstable": false,
-      "installNixDirenv": false,
-      "extraNixConfig": "experimental-features = nix-command flakes\nsubstituters = https://cache.nixos.org\ntrusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=\nsandbox = relaxed\n"
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "upgradePackages": true
     },
     "ghcr.io/ChristopherMacGown/devcontainer-features/direnv:1": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -34,54 +33,25 @@
   },
 
   "containerEnv": {
-    "PYTHONPATH": "${containerWorkspaceFolder}:${PYTHONPATH}",
+    "PYTHONPATH": "${containerWorkspaceFolder}:${containerEnv:PYTHONPATH}",
     "NODE_OPTIONS": "--openssl-legacy-provider",
     "PERPLEXITY_API_KEY": "${localEnv:PERPLEXITY_API_KEY}",
     "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}",
-    "NIX_CONFIG": "experimental-features = nix-command flakes"
+    "PATH": "/nix/var/nix/profiles/default/bin:/nix/store:/nix/var/nix/profiles/per-user/vscode/bin:/bin:/usr/bin:/usr/local/bin:${containerEnv:PATH}",
+    "DEVCONTAINER": "true",
+    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
   },
 
-  "onCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global core.autocrlf input && git config --global core.eol lf",
-
-  "postStartCommand": "direnv allow",
-
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash",
-        "terminal.integrated.profiles.linux": {
-          "bash": {
-            "path": "/bin/bash",
-            "args": ["-l"]
-          }
-        },
-        "files.watcherExclude": {
-          "**/.git/objects/**": true,
-          "**/.git/subtree-cache/**": true,
-          "**/node_modules/**": true,
-          "**/.nix-store/**": true,
-          "**/.direnv/**": true
-        },
-        "files.exclude": {
-          "**/.git/objects/**": true,
-          "**/.git/subtree-cache/**": true,
-          "**/node_modules/**": true,
-          "**/.nix-store/**": true,
-          "**/.direnv/**": true
-        }
-      },
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "github.copilot",
-        "arrterian.nix-env-selector"
-      ]
-    }
-  },
+  "initializeCommand": "./.devcontainer/lifecycle/initialize.sh",
+  "onCreateCommand": "./.devcontainer/lifecycle/on-create.sh",
+  "postCreateCommand": "./.devcontainer/lifecycle/post-create.sh",
+  "postStartCommand": "./.devcontainer/lifecycle/post-start.sh",
 
   "mounts": [
-    "source=${localWorkspaceFolder}/.devcontainer/nix-store,target=/nix,type=bind,consistency=cached"
-  ]
+    "source=rvc2api-nix-store,target=/nix,type=volume",
+    "source=${localWorkspaceFolder}/.devcontainer/home-cache,target=/home/vscode/.cache,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached"
+  ],
+
+  "waitFor": "onCreateCommand"
 }
