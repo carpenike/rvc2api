@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:debian
+FROM mcr.microsoft.com/devcontainers/base:debian@sha256:a04e0d63bb8087c8931947bed44364b3addeb40591949bbec9b18eafe80fc220
 
 # 0) Make /bin/sh point at bash so pipefail works everywhere
 USER root
