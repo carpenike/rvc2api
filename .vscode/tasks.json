@@ -276,7 +276,7 @@
     {
       "label": "Dev: Run Pre-commit Checks",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && pre-commit run --all-files",
+      "command": "cd ${workspaceFolder} && poetry run pre-commit run --all-files",
       "group": "test",
       "presentation": {
         "reveal": "always",
