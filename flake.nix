@@ -112,6 +112,9 @@
         };
 
         devShell = pkgs.mkShell {
+          shellHook = ''
+            export PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $PS1"
+          '';
           buildInputs = [
             # --- Backend dependencies ---
             python
