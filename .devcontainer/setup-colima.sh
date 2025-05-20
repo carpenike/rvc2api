@@ -88,7 +88,7 @@ set -euo pipefail
 
 echo "📦 Installing headers & build-essential..."
 sudo apt-get update
-sudo apt-get install -y linux-headers-$(uname -r) build-essential
+sudo apt-get install -y linux-headers-$(uname -r) build-essential linux-modules-extra-$(uname -r)
 
 echo "🔄 vcan and can_dev modules will be loaded on next boot (added to /etc/modules-load.d/vcan.conf)"
 echo -e "vcan\ncan_dev" | sudo tee /etc/modules-load.d/vcan.conf >/dev/null
