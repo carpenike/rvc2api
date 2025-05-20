@@ -19,7 +19,10 @@ RUN apt-get update \
 RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/vscode \
   && chmod 0440 /etc/sudoers.d/vscode
 
-# 4) Single-user Nix + Poetry, direnv & (optionally) nodejs
+# 4) Bake in your nix.conf so the installer picks up your settings
+COPY nix.conf /etc/nix/nix.conf
+
+# 5) Single-user Nix + Poetry, direnv & nodejs
 USER vscode
 ENV HOME=/home/vscode \
     PATH=/home/vscode/.nix-profile/bin:$PATH \
@@ -37,19 +40,19 @@ RUN curl -L https://nixos.org/nix/install | sh \
        "eval \"\$(direnv hook bash)\"" \
      >> $HOME/.bashrc
 
-# 5) Fish hook for direnv
+# 6) Fish hook for direnv
 RUN mkdir -p $HOME/.config/fish/conf.d \
   && echo 'eval (direnv hook fish)' > $HOME/.config/fish/conf.d/direnv.fish
 
-# 6) Point Git at the system gpg
+# 7) Point Git at the system gpg
 RUN git config --global gpg.program /usr/bin/gpg
 
-# 7) Cleanup
+# 8) Cleanup
 USER root
 RUN apt-get autoremove -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
 
-# 8) Back to vscode with bash as default shell
+# 9) Back to vscode with bash as default shell
 ENV SHELL=/bin/bash
 USER vscode
