@@ -59,7 +59,13 @@
       "extensions": [
         "arrterian.nix-env-selector",
         "ms-python.python",
-        "mkhl.direnv"
+        "mkhl.direnv",
+        "jnoortheen.nix-ide",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "bradlc.vscode-tailwindcss",
+        "charliermarsh.ruff"
+
       ]
     }
   }
