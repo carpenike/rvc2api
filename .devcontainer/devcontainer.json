@@ -52,7 +52,8 @@
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "bradlc.vscode-tailwindcss",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint"
       ]
     }
   }
