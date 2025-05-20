@@ -155,7 +155,14 @@
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
-            export PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $PS1"
+            # Set prompt reliably in bash (including VS Code) and zsh
+            if [ -n "$BASH_VERSION" ]; then
+              export OLD_PS1="$PS1"
+              export PROMPT_COMMAND_ORIG="$PROMPT_COMMAND"
+              export PROMPT_COMMAND='PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $OLD_PS1"; [ -n "$PROMPT_COMMAND_ORIG" ] && eval "$PROMPT_COMMAND_ORIG"'
+            elif [ -n "$ZSH_VERSION" ]; then
+              export PS1="%F{green}(nix develop)%f $PS1"
+            fi
             # Set up Node.js environment
             export NODE_PATH=$PWD/web_ui/node_modules
 
