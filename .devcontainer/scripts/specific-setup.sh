@@ -60,6 +60,5 @@ echo "🚀 Activating Nix development environment…"
 cd /workspace
 exec nix develop
 EOF
-chmod +x /workspace/.devcontainer/activate-nix-env.sh
 
 echo "✅ Project-specific setup completed at $(date)" | tee -a "$LOG_FILE"
