@@ -1,5 +1,8 @@
 # See https://pre-commit.com for full documentation
 
+default_language_version:
+  python: python3.12
+
 repos:
   # Core file + YAML + merge conflict + whitespace checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
