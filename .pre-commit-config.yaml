@@ -48,7 +48,7 @@ repos:
     rev: v8.56.0
     hooks:
       - id: eslint
-        files: \.(js|ts|tsx)$
+        files: ^web_ui/src/.*\.(js|ts|tsx)$
         types: [file]
         args: ["--fix", "--config", "eslint.config.js", "."]
         exclude: |
