@@ -1,9 +1,13 @@
 {
   "name": "RVC2API Nix Development",
-  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
 
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
 
@@ -18,54 +22,38 @@
     "--cpus=2"
   ],
 
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "upgradePackages": true
-    },
-    "ghcr.io/ChristopherMacGown/devcontainer-features/direnv:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    },
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3"
-    }
-  },
-
   "containerEnv": {
+    "DEVCONTAINER": "true",
+    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
+    "PATH": "/home/vscode/.nix-profile/bin:${containerEnv:PATH}",
     "PYTHONPATH": "${containerWorkspaceFolder}:${containerEnv:PYTHONPATH}",
     "NODE_OPTIONS": "--openssl-legacy-provider",
     "PERPLEXITY_API_KEY": "${localEnv:PERPLEXITY_API_KEY}",
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}",
-    "PATH": "/nix/var/nix/profiles/default/bin:/nix/store:/nix/var/nix/profiles/per-user/vscode/bin:/bin:/usr/bin:/usr/local/bin:${containerEnv:PATH}",
-    "DEVCONTAINER": "true",
-    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}"
   },
 
-  "initializeCommand": "./.devcontainer/lifecycle/initialize.sh",
-  "onCreateCommand": "./.devcontainer/lifecycle/on-create.sh",
-  "postCreateCommand": "./.devcontainer/lifecycle/post-create.sh",
-  "postStartCommand": "./.devcontainer/lifecycle/post-start.sh",
+  "postCreateCommand": "./.devcontainer/specific-setup.sh",
+
+  "waitFor": "postCreateCommand",
 
   "mounts": [
-    "source=rvc2api-nix-store,target=/nix,type=volume",
-    "source=${localWorkspaceFolder}/.devcontainer/home-cache,target=/home/vscode/.cache,type=bind,consistency=cached",
-    "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached"
+    "source=rvc2api-nix-store,target=/home/vscode/.nix/store,type=volume",
+    "source=rvc2api-nix-defexpr,target=/home/vscode/.nix-defexpr,type=volume",
+    "source=rvc2api-direnv,target=/home/vscode/.direnv,type=volume",
+    "source=${localWorkspaceFolder}/.devcontainer/home-cache,target=/home/vscode/.cache,type=bind,consistency=cached"
   ],
 
-  "waitFor": "onCreateCommand",
   "customizations": {
     "vscode": {
       "extensions": [
         "arrterian.nix-env-selector",
-        "ms-python.python",
         "mkhl.direnv",
         "jnoortheen.nix-ide",
+        "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "bradlc.vscode-tailwindcss",
         "charliermarsh.ruff"
-
       ]
     }
   }
