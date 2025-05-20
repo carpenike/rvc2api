@@ -163,6 +163,17 @@
             elif [ -n "$ZSH_VERSION" ]; then
               export PS1="%F{green}(nix develop)%f $PS1"
             fi
+            if [ -n "$FISH_VERSION" ] || [ -x "$(command -v fish)" ]; then
+              mkdir -p "$HOME/.config/fish/conf.d"
+              cat > "$HOME/.config/fish/conf.d/nix_devshell_prompt.fish" <<'EOF'
+function fish_prompt
+  set_color green
+  echo -n "(nix develop) "
+  set_color normal
+  fish_default_prompt
+end
+EOF
+            fi
             # Set up Node.js environment
             export NODE_PATH=$PWD/web_ui/node_modules
 
