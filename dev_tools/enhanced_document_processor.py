@@ -524,7 +524,9 @@ def add_to_faiss_index(
             print(f"Created new FAISS index with {len(docs)} documents")
         else:
             # Add to existing index
-            vectorstore = FAISS.load_local(str(index_path), embeddings)
+            vectorstore = FAISS.load_local(
+                str(index_path), embeddings, allow_dangerous_deserialization=True
+            )
             print(f"Loaded existing FAISS index from {index_path}")
             vectorstore.add_documents(docs)
             print(f"Added {len(docs)} new documents to index")
