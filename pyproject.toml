@@ -1,22 +1,24 @@
 [build-system]
-requires    = ["poetry-core>=1.8.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
-name        = "rvc2api"
-version     = "0.1.0"
+[project]
+name = "rvc2api"
+version = "0.1.0"
 description = "CAN-bus web service exposing RV-C network data via HTTP & WebSocket"
-readme      = "README.md"
-license     = "MIT"
-authors     = ["Ryan Holt <ryan@ryanholt.net>"]
-
-# PyPI metadata
-keywords    = ["can", "rv-c", "websocket", "fastapi"]
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Ryan Holt", email = "ryan@ryanholt.net" }]
+keywords = ["can", "rv-c", "websocket", "fastapi"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
   "Operating System :: POSIX :: Linux",
 ]
+urls = { Homepage = "https://github.com/carpenike/rvc2api", Repository = "https://github.com/carpenike/rvc2api" }
+
+[tool.poetry]
+# Only keep Poetry-specific settings here (none in your current file).
 
 # src layout
 packages = [
@@ -26,43 +28,41 @@ packages = [
 ]
 
 # Explicitly include package data like templates and static files
-# Paths are relative to this pyproject.toml file.
 include = [
-    "src/core_daemon/static/**/*",
-    # Legacy web UI path kept for backward compatibility during transition
-    "src/core_daemon/web_ui/static/**/*",
-    "src/core_daemon/web_ui/templates/**/*",
-    # Ensuring rvc_decoder config is also explicitly included, though it seemed to work by default.
-    "src/rvc_decoder/config/*"
+  "src/core_daemon/static/**/*",
+  "src/core_daemon/web_ui/static/**/*",
+  "src/core_daemon/web_ui/templates/**/*",
+  "src/rvc_decoder/config/*"
 ]
 
 # The React frontend (web_ui/) is managed separately through npm
 # See web_ui/README.md and docs/frontend-development.md for details
 
 [tool.poetry.dependencies]
-python = "^3.12.6" # Updated to avoid Python 3.12.5 issues with Black
-fastapi    = "^0.115"                 # Updated from ^0.95
+python = "^3.12.6"
+fastapi = "^0.115"
 uvicorn = { extras = ["standard"], version = "^0.34" }
 python-can = "^4.0"
-pydantic   = "^2.9"                   # Updated from ^1.10 (Major V2 update)
-pyyaml     = "^6.0"
-# Dependencies added from flake.nix and original pyproject.toml
-prometheus_client = "^0.21.0"       # Updated from ^0.20.0"
+pydantic = "^2.9"
+pyyaml = "^6.0"
+prometheus_client = "^0.21.0"
 coloredlogs = "^15.0"
 jinja2 = "^3.1.4"
 pyroute2 = ">=0.7.10, <0.9.0"
+langchain-community = "^0.3"
+langchain-core = "^0.3"
+pluggy = ">=1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
-mypy   = "^1.10"  # Kept for backward compatibility
-ruff = "^0.1.11"  # Provides both linting and formatting
-black = "^25.0.0" # Kept for backward compatibility, Ruff format is now preferred
+mypy = "^1.10"
+ruff = "^0.1.11"
+black = "^25.0.0"
 pre-commit = "^4.0.0"
 types-PyYAML = "^6.0.12.12"
 httpx = "^0.28.0"
 djlint = "^1.34.0"
 pytest-asyncio = "^0.23.0"
-# Documentation tools
 mkdocs = "^1.6.1"
 mkdocs-material = "^9.6.14"
 mkdocstrings = "^0.29.1"
@@ -70,84 +70,43 @@ mkdocstrings-python = "^1.16.10"
 mkdocs-swagger-ui-tag = "^0.7.1"
 mike = "^2.1.3"
 mkdocs-autorefs = "^1.4.1"
+mkdocs-mermaid2-plugin = "^1.2.1"
+setuptools = "^80.8.0"
 
 [tool.poetry.group.devtools.dependencies]
-langchain = "~0.1.4"
-langchain-community = "^0.0.16"
-langchain-openai = "^0.0.5"
-langchain-core = "~0.1.23"
-pymupdf = "^1.24.1"  # PyMuPDF, imported as fitz in code
-
-[tool.poetry.urls]
-Homepage   = "https://github.com/carpenike/rvc2api"
-Repository = "https://github.com/carpenike/rvc2api"
+pymupdf = "1.23.26"
+faiss-cpu = "^1.7.4"
 
 [tool.poetry.scripts]
-rvc2api-daemon = "core_daemon.main:main" # Assumes main() in main.py runs the Uvicorn server
-rvc2api-console = "console_client.console:main" # Assumes main() in console.py runs the console client
-frontend-build = "scripts.build_frontend:main" # Frontend build and management utilities
+rvc2api-daemon = "core_daemon.main:main"
+rvc2api-console = "console_client.console:main"
+frontend-build = "scripts.build_frontend:main"
 
-# Removing flake8 config as we now use Ruff exclusively for linting
-
-# Black configuration removed in favor of Ruff format
+[tool.poetry.urls]
+Homepage = "https://github.com/carpenike/rvc2api"
+Repository = "https://github.com/carpenike/rvc2api"
 
 [tool.pytest.ini_options]
-# 1) Add “src” (or “.” if your code lives at project root) onto sys.path:
 pythonpath = ["src"]
-# 2) (Optional but recommended) Use importlib mode in a src-layout project:
-addopts     = ["--import-mode=importlib"]
-# 3) Tell pytest where your tests live (defaults to “tests” if omitted):
-testpaths   = ["tests"]
+addopts = ["--import-mode=importlib"]
+testpaths = ["tests"]
 
-# Ruff (Python linter and formatter) configuration - comprehensive replacement for flake8 and Black
 [tool.ruff]
-# General settings
 line-length = 100
 target-version = "py312"
 
 [tool.ruff.format]
-# Format settings - replacing Black
 line-ending = "lf"
 indent-style = "space"
 quote-style = "double"
 
-# Linting settings
 [tool.ruff.lint]
-# Include all the rules from flake8 plus additional ones
 select = [
-  "E",   # pycodestyle errors (equivalent to flake8 E codes)
-  "F",   # pyflakes (equivalent to flake8 F codes)
-  "I",   # isort
-  "B",   # flake8-bugbear
-  "C4",  # flake8-comprehensions
-  "SIM", # flake8-simplify
-  "TCH", # flake8-type-checking
-  "TID", # flake8-tidy-imports
-  "UP",  # pyupgrade
-  "W",   # pycodestyle warnings (equivalent to flake8 W codes)
-  "N",   # pep8-naming
-  "C90", # mccabe complexity (equivalent to flake8 C901)
-  "RUF", # Ruff-specific rules
+  "E", "F", "I", "B", "C4", "SIM", "TCH", "TID", "UP", "W", "N", "C90", "RUF"
 ]
-ignore = [
-  "E203",  # Whitespace before ':' (handled by Ruff formatter)
-  "E501",  # Line too long (handled by Ruff formatter)
-  "C901",  # Function is too complex (for complex functions like control_entity)
-]
-unfixable = [
-  # Don't let ruff auto-fix imports without considering them thoroughly
-  "F401",  # Unused imports
-  "F841",  # Unused variables
-]
-# Exclude the same directories as flake8 did
-exclude = [
-  ".git",
-  "__pycache__",
-  ".venv",
-  "build",
-  "dist",
-  "*.egg-info"
-]
+ignore = ["E203", "E501", "C901"]
+unfixable = ["F401", "F841"]
+exclude = [".git", "__pycache__", ".venv", "build", "dist", "*.egg-info"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["common", "core_daemon", "rvc_decoder"]
@@ -157,20 +116,15 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["E501"]
-# Allow function names that don't follow snake_case for FastAPI compatibility
-# Also allow exception names without Error suffix to match FastAPI's conventions
 "typings/fastapi/__init__.py" = ["N802", "N818"]
 "typings/fastapi/__init__.pyi" = ["N802", "N818"]
 "typings/fastapi/params.py" = ["N802"]
 "typings/fastapi/params.pyi" = ["N802"]
-# Allow relative imports in the typings directory for proper type stub organization
 "typings/**/*.py" = ["TID252"]
 "typings/**/*.pyi" = ["TID252"]
-# Ignore httpx import resolution issues in specific files
 "src/core_daemon/uptimerobot.py" = ["F401", "E902"]
 
 [tool.pyright]
-# Pyright configuration aligned with pyrightconfig.json
 include = ["src"]
 exclude = ["**/node_modules", "**/__pycache__", ".venv"]
 typeCheckingMode = "basic"
