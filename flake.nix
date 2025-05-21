@@ -21,8 +21,8 @@
 # ▸ Package build output under `packages.<system>.rvc2api`
 #
 # Best Practices:
-# - Canonical version is managed in `VERSION`
-# - `pyproject.toml` is pinned to version "0.0.0"
+# - Canonical version is managed in `VERSION` file
+# - `pyproject.toml` is synchronized with the VERSION file during builds
 # - Release automation is handled via `release-please`, which updates `VERSION` and `flake.nix`
 # - Runtime version is available in the app via `core_daemon._version.VERSION`
 #
@@ -66,6 +66,7 @@
         python = pkgs.python312;
         pythonPackages = pkgs.python312Packages;
 
+        # Read version from VERSION file (source of truth)
         version = builtins.replaceStrings ["\n"] [""] (builtins.readFile ./VERSION);
 
         rvc2apiPackage = pythonPackages.buildPythonPackage {
@@ -153,13 +154,13 @@
             pythonPackages.pyroute2
             pkgs.iproute2
             pkgs.stdenv.cc.cc.lib
+            pkgs.zlib
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
             # Helper: run poetry with Nix's libstdc++ only for Python invocations
             poetry() {
-              LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} \
-                command poetry "$@"
+              LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} command poetry "$@"
             }
             export -f poetry
             # Set prompt reliably in bash (including VS Code) and zsh
@@ -239,7 +240,6 @@ EOF
             pkgs.can-utils
             pythonPackages.pyroute2
             pkgs.iproute2
-            pkgs.stdenv.cc.cc.lib
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
