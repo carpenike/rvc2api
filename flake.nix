@@ -156,11 +156,16 @@
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
+            # Helper: run poetry with Nix's libstdc++ only for Python invocations
+            poetry() {
+              LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} \
+                command poetry "$@"
+            }
+            export -f poetry
             # Set prompt reliably in bash (including VS Code) and zsh
             if [ -n "$BASH_VERSION" ]; then
               export OLD_PS1="$PS1"
-              export PROMPT_COMMAND_ORIG="$PROMPT_COMMAND"
-              export PROMPT_COMMAND='PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $OLD_PS1"; [ -n "$PROMPT_COMMAND_ORIG" ] && eval "$PROMPT_COMMAND_ORIG"'
+              export PS1="\[\033[1;32m\](nix develop)\[\033[0m\] $OLD_PS1"
             elif [ -n "$ZSH_VERSION" ]; then
               export PS1="%F{green}(nix develop)%f $PS1"
             fi
@@ -171,7 +176,7 @@ function fish_prompt
   set_color green
   echo -n "(nix develop) "
   set_color normal
-  echo -n (prompt_pwd) ' > '
+  echo -n (prompt_pwd) " > "
 end
 EOF
               if [ -n "$FISH_VERSION" ]; then
@@ -183,8 +188,12 @@ EOF
 
             echo "🐚 Entered rvc2api devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
             echo "💡 Backend commands:"
-            echo "  • poetry install              # Install Python dependencies"
+            echo "  • poetry install              # Install Python dependencies (now always uses correct LD_LIBRARY_PATH)"
             echo "  • poetry run python src/core_daemon/main.py  # Run API server"
+            echo "  • poetry run pytest           # Run tests"
+            echo "  • poetry run ruff check .     # Lint"
+            echo "  • poetry run ruff format src  # Format"
+            echo "  • npx pyright src             # Type checking"
             echo ""
             echo "💡 Frontend commands:"
             echo "  • cd web_ui && npm install    # Install frontend dependencies"
