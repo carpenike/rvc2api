@@ -3,6 +3,7 @@
 - All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, *.tsbuildinfo, .cache, *.log) are excluded from linting and type checking in both root and frontend ESLint configs.
 - All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
+- **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
 
 This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns.
 
