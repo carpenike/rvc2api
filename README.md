@@ -152,6 +152,30 @@ The project includes a feature for semantically searching the RV-C specification
 
 For detailed instructions, see [RV-C Documentation Search Guide](docs/rv-c-documentation-search.md)
 
+## Processing PDFs and Adding Embeddings
+
+To process a PDF and add its chunks to the FAISS vector store for semantic search, use the following command:
+
+```bash
+poetry run python dev_tools/enhanced_document_processor.py \
+  --pdf /path/to/your.pdf \
+  --chunking section_overlap \
+  --add-to-index resources/vector_store/
+```
+
+- Replace `/path/to/your.pdf` with your PDF file.
+- Choose the appropriate `--chunking` strategy (e.g., `section_overlap`, `paragraph`, `token`, `sliding_window`).
+- The `--add-to-index <path>` argument is required to generate embeddings and store them in the FAISS index. The path should point to your shared FAISS index directory (e.g., `resources/vector_store/`).
+- The FAISS index should be shared across all documents for unified search; do not create a separate index per PDF.
+- Always use `poetry run python ...` to ensure the correct environment is used.
+
+**Notes:**
+- Embeddings are only created and added to the index when `--add-to-index <path>` is specified. Chunking alone does not generate embeddings.
+- The argument is `--chunking`, not `--chunking-method`.
+- The argument is `--add-to-index <path>`, not just a flag or `true/false`.
+
+For more details, see [docs/pdf-processing-guide.md](docs/pdf-processing-guide.md).
+
 ## Development
 
 - **Activate the virtual environment:**
