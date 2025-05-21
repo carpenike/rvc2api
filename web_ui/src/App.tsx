@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { Navbar } from "./components";
+import { SideNav } from "./components";
 import { useWebSocket } from "./hooks";
 import "./index.css";
 import {
@@ -104,12 +104,35 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-rv-background text-rv-text">
-      {/* Navigation */}
-      <Navbar currentView={getCurrentView()} />
+      {/* Top header - desktop only */}
+      <div className="hidden lg:flex bg-rv-surface text-rv-text px-6 py-4 items-center justify-between shadow-lg rounded-xl mb-4 mx-4 mt-4">
+        <div className="flex items-center">
+          <span className="text-xl font-bold">RVC2API</span>
+        </div>
 
-      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* WebSocket status indicator */}
+        <div className="flex items-center space-x-2">
+          <span>WebSocket:</span>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              wsStatus === "open"
+                ? "bg-rv-success/20 text-rv-success"
+                : wsStatus === "connecting"
+                ? "bg-rv-warning/20 text-rv-warning"
+                : "bg-rv-error/20 text-rv-error"
+            }`}
+          >
+            {wsStatus}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden min-h-0 px-0 lg:px-4 relative">
+        {/* Sidebar Navigation */}
+        <SideNav currentView={getCurrentView()} wsStatus={wsStatus} />
+
         {/* Main Content */}
-        <main className="flex-1 container mx-auto p-6">
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto lg:ml-16">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/lights" element={<Lights />} />
@@ -125,23 +148,10 @@ function App() {
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-rv-surface text-rv-text/60 text-xs p-4 flex justify-between items-center">
+      {/* Footer - desktop only */}
+      <footer className="hidden lg:flex bg-rv-surface text-rv-text/60 text-xs p-4 mx-4 mb-4 justify-between items-center rounded-xl shadow-lg">
         <span>rvc2api React UI</span>
-        <div className="flex items-center space-x-2">
-          <span>WebSocket:</span>
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              wsStatus === "open"
-                ? "bg-rv-success/20 text-rv-success"
-                : wsStatus === "connecting"
-                ? "bg-rv-warning/20 text-rv-warning"
-                : "bg-rv-error/20 text-rv-error"
-            }`}
-          >
-            {wsStatus}
-          </span>
-        </div>
+        <span>© {new Date().getFullYear()}</span>
       </footer>
     </div>
   );
