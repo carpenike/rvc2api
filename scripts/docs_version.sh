@@ -16,9 +16,9 @@ function show_help() {
     echo "Commands:"
     echo "  serve         Start mike server with versioned documentation"
     echo "  list          List all currently deployed versions"
-    echo "  deploy        Deploy current version from pyproject.toml"
+    echo "  deploy        Deploy current version from VERSION file"
     echo "  deploy-dev    Deploy current state as 'dev' version"
-    echo "  set-default   Set version from pyproject.toml as default"
+    echo "  set-default   Set version from VERSION file as default"
     echo "  help          Show this help message"
     echo ""
     echo "Examples:"
@@ -44,10 +44,10 @@ function ensure_dependencies() {
     fi
 }
 
-# Get the current version from pyproject.toml
+# Get the current version from VERSION file
 function get_version() {
-    # Extract version from pyproject.toml using grep and cut
-    version=$(grep -m 1 "^version" pyproject.toml | cut -d= -f2 | tr -d ' "')
+    # Read directly from the VERSION file
+    version=$(cat VERSION)
     echo "$version"
 }
 

@@ -43,22 +43,22 @@ This document summarizes the changes made to the documentation versioning system
 
 3. **Cross-Platform Compatibility**: Standard bash scripts work in more environments than fish-specific scripts.
 
-4. **Simpler Workflows**: No need to manage a separate VERSION file anymore.
+4. **Unified Version Management**: Using the VERSION file as the single source of truth simplifies version management.
 
 ## Testing
 
 The new scripts have been tested and work correctly:
 
 - `./scripts/docs_version.sh list` shows the available documentation versions
-- The scripts correctly extract the version from pyproject.toml
+- The scripts correctly extract the version from the VERSION file
 - VS Code tasks work properly with the new scripts
 
 ## Next Steps
 
 1. **Remove the Old Fish Scripts**: Once everyone has migrated to the new bash scripts, we can remove the old fish scripts.
 
-2. ✅ **VERSION File Removed**: The VERSION file has been removed, and the project now exclusively uses pyproject.toml as the source of truth.
+2. ✅ **VERSION File Implementation**: The VERSION file is now the single source of truth for version information.
 
 3. **Update Documentation**: Make sure all documentation references the new approach.
 
-4. **Communicate the Change**: Let contributors know about the change to using pyproject.toml as the source of truth for version information.
+4. **Communicate the Change**: Let contributors know about the change to using the VERSION file as the source of truth for version information.

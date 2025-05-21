@@ -8,7 +8,7 @@ Python-based API and WebSocket server for interacting with an RV-C (Recreational
 
 ## Version Management
 
-This project uses [pyproject.toml](./pyproject.toml) as the single source of truth for version information. The version is managed with [release-please](https://github.com/googleapis/release-please) which automatically creates release PRs based on conventional commits. See [Version Management documentation](./docs/version-management.md) for details.
+This project uses the [VERSION](./VERSION) file as the single source of truth for version information. The version is managed with [release-please](https://github.com/googleapis/release-please) which automatically creates release PRs based on conventional commits. See [Version Management documentation](./docs/version-management.md) for details.
 
 ## Key Components
 
