@@ -84,8 +84,8 @@ VS Code tasks are provided for common documentation versioning operations:
 - **Docs: Serve Versioned Documentation**: Start a local mike server with versioned docs
 - **Docs: Deploy Version**: Deploy a specific version (prompts for version)
 - **Docs: List Versions**: List all currently deployed versions
-- **Docs: Deploy Current Version**: Deploy using the version in the VERSION file
-- **Docs: Set Default Version**: Set the version in VERSION file as default
+- **Docs: Deploy Current Version**: Deploy using the version from pyproject.toml
+- **Docs: Set Default Version**: Set the current version from pyproject.toml as default
 - **Docs: Deploy Dev Version**: Deploy the current state as the "dev" version
 
 ## Configuration Details

@@ -6,6 +6,10 @@ Python-based API and WebSocket server for interacting with an RV-C (Recreational
 
 `rvc2api` is designed to bridge RV-C networks with modern applications by providing a structured API and real-time data streaming. It decodes RV-C messages, manages device states, and allows for sending commands to the RV-C bus.
 
+## Version Management
+
+This project uses [pyproject.toml](./pyproject.toml) as the single source of truth for version information. The version is managed with [release-please](https://github.com/googleapis/release-please) which automatically creates release PRs based on conventional commits. See [Version Management documentation](./docs/version-management.md) for details.
+
 ## Key Components
 
 - **Core Daemon (`src/core_daemon/`):**

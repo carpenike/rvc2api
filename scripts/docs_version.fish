@@ -12,14 +12,14 @@ function show_help
     echo "Commands:"
     echo "  serve         Start mike server with versioned documentation"
     echo "  list          List all currently deployed versions"
-    echo "  deploy        Deploy current version from VERSION file"
+    echo "  deploy        Deploy current version from pyproject.toml"
     echo "  deploy-dev    Deploy current state as 'dev' version"
-    echo "  set-default   Set version from VERSION file as default"
+    echo "  set-default   Set version from pyproject.toml as default"
     echo "  help          Show this help message"
     echo ""
     echo "Examples:"
     echo "  ./docs_version.fish serve     # Start versioned docs server"
-    echo "  ./docs_version.fish deploy    # Deploy version from VERSION file"
+    echo "  ./docs_version.fish deploy    # Deploy version from pyproject.toml"
 end
 
 function ensure_dependencies
@@ -52,12 +52,13 @@ switch "$argv[1]"
         poetry run mike list
 
     case "deploy"
-        if test -f VERSION
-            set current_version (cat VERSION | string trim)
+        # Extract version from pyproject.toml
+        set current_version (grep -m 1 "^version" pyproject.toml | cut -d= -f2 | tr -d ' "')
+        if test -n "$current_version"
             echo "Deploying documentation version $current_version..."
             poetry run mike deploy $current_version --push
         else
-            echo "Error: VERSION file not found"
+            echo "Error: Could not extract version from pyproject.toml"
             exit 1
         end
 
@@ -66,12 +67,13 @@ switch "$argv[1]"
         poetry run mike deploy dev --push
 
     case "set-default"
-        if test -f VERSION
-            set current_version (cat VERSION | string trim)
+        # Extract version from pyproject.toml
+        set current_version (grep -m 1 "^version" pyproject.toml | cut -d= -f2 | tr -d ' "')
+        if test -n "$current_version"
             echo "Setting version $current_version as default..."
             poetry run mike set-default $current_version --push
         else
-            echo "Error: VERSION file not found"
+            echo "Error: Could not extract version from pyproject.toml"
             exit 1
         end
 

@@ -83,6 +83,7 @@ nav:
           - Debian Repository: debian-repository.md
           - GitHub Pages: github-pages-deployment.md
           - Enabling GitHub Pages: enabling-github-pages.md
+          - Version Management: version-management.md
 
   - Developer Guide:
       - Architecture:
@@ -118,6 +119,7 @@ nav:
       - Versioning with Release-Please: versioning-with-release-please.md
       - Versioning Fixes: docs-versioning-fixes.md
       - Versioning Updates: documentation-versioning-update.md
+      - Unified Version Management: version-management.md
 
   - Specs:
       - React Frontend Migration: specs/refactor-web-ui-to-react.md

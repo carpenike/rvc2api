@@ -57,7 +57,7 @@ The new scripts have been tested and work correctly:
 
 1. **Remove the Old Fish Scripts**: Once everyone has migrated to the new bash scripts, we can remove the old fish scripts.
 
-2. **Remove the VERSION File**: This file is no longer needed and can be removed in a future update.
+2. ✅ **VERSION File Removed**: The VERSION file has been removed, and the project now exclusively uses pyproject.toml as the source of truth.
 
 3. **Update Documentation**: Make sure all documentation references the new approach.
 

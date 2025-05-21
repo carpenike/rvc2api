@@ -15,8 +15,8 @@ end
 echo "Generating OpenAPI schema..."
 poetry run python scripts/export_openapi.py
 
-# Get current version from VERSION file
-set current_version (cat VERSION | string trim)
+# Get current version from pyproject.toml
+set current_version (grep -m 1 "^version" pyproject.toml | cut -d= -f2 | tr -d ' "')
 echo "Current version is: $current_version"
 
 # Ensure gh-pages branch exists
