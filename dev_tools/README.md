@@ -2,6 +2,56 @@
 
 This directory contains various developer tools and utility scripts for the RVC2API project. These tools are primarily designed for development, testing, and data processing tasks.
 
+## CAN Interface Testing Tools
+
+### `test_canbus_config.py`
+
+A test script for verifying the CAN bus interface auto-detection functionality in the rvc2api project. This script is useful for manually testing and demonstrating the automatic detection of CAN interfaces in different environments.
+
+**Key Features:**
+
+- Tests auto-detection of available CAN interfaces when no environment variables are set
+- Tests configuration with explicitly set CAN interfaces via environment variables
+- Tests custom bustype and bitrate settings
+- Provides clear output of detected interfaces and resulting configurations
+- Useful for debugging CAN interface issues in different environments
+
+**Usage:**
+
+```bash
+# Run the test script to verify CAN interface auto-detection
+poetry run python test_canbus_config.py
+```
+
+**Test Scenarios:**
+
+1. Auto-detection without environment variables
+2. Single interface specified in CAN_CHANNELS
+3. Multiple interfaces specified in CAN_CHANNELS
+4. Custom bustype and bitrate settings
+
+### `test_vcan_setup.py`
+
+A utility script for testing virtual CAN (vCAN) interface setup. This tool helps verify that the vCAN interfaces are properly configured and that messages can be sent and received correctly.
+
+**Usage:**
+
+```bash
+# Test vCAN interface setup
+poetry run python test_vcan_setup.py
+```
+
+### `test_vcan.py`
+
+A simple script for testing basic CAN message sending and receiving functionality on vCAN interfaces. Useful for verifying that the CAN communication stack is working properly.
+
+**Usage:**
+
+```bash
+# Send and receive test messages on vCAN interfaces
+poetry run python test_vcan.py
+```
+
 ## RV-C Documentation Search Tools
 
 This set of tools enables semantic searching of RV-C and other technical documentation using vector embeddings and the FAISS library. The system supports mixed chunking strategies in a single FAISS index, allowing efficient search across multiple document types with different formats.
@@ -50,7 +100,7 @@ Use the standard OpenAI API (default):
 
 ```bash
 export OPENAI_API_KEY="your-openai-api-key"
-poetry run python enhanced_document_processor.py --pdf resources/your-document-name.pdf
+poetry run python enhanced_document_processor.py --pdf ../resources/your-document-name.pdf
 ```
 
 #### Azure OpenAI
