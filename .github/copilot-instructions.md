@@ -4,6 +4,7 @@
 - All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 - **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
+- **All Shell activities should be done within the Nix Develop Shell** Use `nix develop` before running any cli command
 
 This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns.
 
