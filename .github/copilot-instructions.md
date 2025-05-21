@@ -1,10 +1,31 @@
 # GitHub Copilot Instructions for rvc2api
 
-- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, _.tsbuildinfo, .cache, _.log) are excluded from linting and type checking in both root and frontend ESLint configs.
-- All light-related API calls are made via /api/entities endpoints, not /api/lights, to ensure a unified and extensible API design.
+- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, *.tsbuildinfo, .cache, *.log) are excluded from linting and type checking in both root and frontend ESLint configs.
+- All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 
-This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns. Detailed domain-specific instructions are organized in `.github/instructions/*.instructions.md` files.
+This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns.
+
+## Modular Copilot Instructions
+
+This project uses modular Copilot instruction files stored in `.github/instructions/`.
+Each `.instructions.md` file contains targeted guidance for specific languages, frameworks, or workflows.
+
+**Key instruction files:**
+
+- [`project-overview.instructions.md`](.github/instructions/project-overview.instructions.md): Project architecture and structure
+- [`python-code-style.instructions.md`](.github/instructions/python-code-style.instructions.md): Python coding standards
+- [`typescript-code-style.instructions.md`](.github/instructions/typescript-code-style.instructions.md): TypeScript/React coding standards
+- [`eslint-typescript-config.instructions.md`](.github/instructions/eslint-typescript-config.instructions.md): ESLint and TypeScript config details
+- [`dev-environment.instructions.md`](.github/instructions/dev-environment.instructions.md): Development environment setup and tooling
+- [`testing.instructions.md`](.github/instructions/testing.instructions.md): Test patterns and requirements
+- [`pull-requests.instructions.md`](.github/instructions/pull-requests.instructions.md): PR guidelines and expectations
+- [`documentation.instructions.md`](.github/instructions/documentation.instructions.md): API documentation and MkDocs configuration
+- [`mcp-tools.instructions.md`](.github/instructions/mcp-tools.instructions.md): Using Copilot Chat tools and context commands
+- [`env-vars.instructions.md`](.github/instructions/env-vars.instructions.md): Configuration and environment setup
+
+> **For any code generation or chat involving these topics, refer to the relevant `.instructions.md` file in `.github/instructions/` for detailed guidance.**
+
 
 ## Project Summary
 
