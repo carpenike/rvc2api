@@ -268,9 +268,57 @@ def get_static_paths():
 
 
 # ── CAN Bus Configuration ─────────────────────────────────────────────────
+def get_available_can_interfaces():
+    """
+    Auto-detect available CAN interfaces on the system.
+
+    Returns:
+        list: A list of available CAN interface names (e.g., ["can0", "vcan0"])
+    """
+    import platform
+
+    interfaces = []
+
+    # Only attempt to detect interfaces on Linux
+    if platform.system() != "Linux":
+        module_logger.warning("CAN interface auto-detection is only supported on Linux systems")
+        return interfaces
+
+    # Try using pyroute2 if available (preferred method)
+    try:
+        from pyroute2 import IPRoute
+
+        with IPRoute() as ipr:
+            links = ipr.get_links(kind="can") + ipr.get_links(kind="vcan")
+            for link in links:
+                interfaces.append(link.get_attr("IFLA_IFNAME"))
+        if interfaces:
+            module_logger.debug(f"Found CAN interfaces using pyroute2: {interfaces}")
+            return interfaces
+    except ImportError:
+        module_logger.debug("pyroute2 library not available for CAN interface detection")
+    except Exception as e:
+        module_logger.debug(f"Error using pyroute2 for CAN interface detection: {e}")
+
+    # Fallback to checking common interface names using /sys/class/net
+    try:
+        import glob
+
+        can_paths = glob.glob("/sys/class/net/can*") + glob.glob("/sys/class/net/vcan*")
+        for path in can_paths:
+            interfaces.append(os.path.basename(path))
+        if interfaces:
+            module_logger.debug(f"Found CAN interfaces using fallback method: {interfaces}")
+        return interfaces
+    except Exception as e:
+        module_logger.debug(f"Error using fallback CAN interface detection: {e}")
+        return []
+
+
 def get_canbus_config():
     """
     Retrieves CAN bus configuration settings from environment variables.
+    If CAN_CHANNELS is not specified, attempts to auto-detect available interfaces.
 
     Returns:
         dict: A dictionary containing:
@@ -278,8 +326,31 @@ def get_canbus_config():
               - 'bustype': The CAN bus type (e.g., 'socketcan').
               - 'bitrate': The CAN bus bitrate as an integer.
     """
+    # Get channels from environment variable if set
+    channels_env = os.getenv("CAN_CHANNELS")
+    channels = []
+
+    if channels_env:
+        # Use configured channels from environment variable
+        channels = channels_env.split(",")
+        module_logger.info(f"Using CAN interfaces from environment: {channels}")
+    else:
+        # Try to auto-detect available interfaces
+        detected = get_available_can_interfaces()
+        if detected:
+            channels = detected
+            module_logger.info(f"Auto-detected CAN interfaces: {channels}")
+        else:
+            # Fall back to default only if nothing is detected
+            default_channels = ["can0"]
+            channels = default_channels
+            module_logger.warning(
+                f"No CAN interfaces specified or detected. "
+                f"Falling back to default: {default_channels}"
+            )
+
     return {
-        "channels": os.getenv("CAN_CHANNELS", "can0,can1").split(","),
+        "channels": channels,
         "bustype": os.getenv("CAN_BUSTYPE", "socketcan"),
         "bitrate": int(os.getenv("CAN_BITRATE", "500000")),
     }
