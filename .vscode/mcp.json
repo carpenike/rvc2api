@@ -6,10 +6,7 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "server-perplexity-ask"],
-      "env": {
-        "PERPLEXITY_API_KEY": "${env:PERPLEXITY_API_KEY}"
-
-      }
+      "envFile": "${workspaceFolder}/.env"
     },
     "context7": {
       "type": "stdio",
@@ -20,17 +17,12 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-
-      }
+      "envFile": "${workspaceFolder}/.env"
     },
     "@21st-dev/magic": {
       "command": "npx",
       "args": ["-y", "@21st-dev/magic@latest"],
-      "env": {
-        "API_KEY": "${env:MAGIC_API_KEY}"
-      }
+      "envFile": "${workspaceFolder}/.env"
     }
   }
 }
