@@ -24,7 +24,7 @@ except ImportError:
 def listener_thread():
     """Set up a CAN bus listener and print received messages."""
     try:
-        bus = can.interface.Bus(channel="vcan0", bustype="socketcan")
+        bus = can.interface.Bus(channel="vcan0", interface="socketcan")
         print("Listening for messages on vcan0...")
 
         # Set up a simple listener
@@ -59,7 +59,7 @@ def main():
         time.sleep(0.5)
 
         # Send a test message
-        with can.interface.Bus(channel="vcan0", bustype="socketcan") as bus:
+        with can.interface.Bus(channel="vcan0", interface="socketcan") as bus:
             print("Sending test message on vcan0...")
             message = can.Message(
                 arbitration_id=0x123,
