@@ -152,6 +152,7 @@
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             pythonPackages.pyroute2
             pkgs.iproute2
+            pkgs.stdenv.cc.cc.lib
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
@@ -229,6 +230,7 @@ EOF
             pkgs.can-utils
             pythonPackages.pyroute2
             pkgs.iproute2
+            pkgs.stdenv.cc.cc.lib
           ];
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
