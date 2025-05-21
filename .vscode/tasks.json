@@ -563,6 +563,19 @@
       },
       "group": "none",
       "detail": "Ensure vcan interfaces are available in container"
+    },
+    {
+      "label": "System: Test vCAN Setup",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python dev_tools/test_vcan_setup.py",
+      "group": "none",
+      "detail": "Test vCAN setup by sending and receiving a message",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": false
+      }
     }
   ]
 }
