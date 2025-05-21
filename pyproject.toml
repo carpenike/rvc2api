@@ -77,7 +77,6 @@ langchain-community = "^0.0.16"
 langchain-openai = "^0.0.5"
 langchain-core = "~0.1.23"
 pymupdf = "^1.24.1"  # PyMuPDF, imported as fitz in code
-faiss-cpu = "^1.7.4"
 
 [tool.poetry.urls]
 Homepage   = "https://github.com/carpenike/rvc2api"
