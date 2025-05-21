@@ -34,7 +34,6 @@ RUN curl -L https://nixos.org/nix/install | sh \
        nixpkgs.poetry \
        nixpkgs.direnv \
        nixpkgs.nodejs \
-  && poetry config virtualenvs.create false \
   && printf '%s\n' \
        ". $HOME/.nix-profile/etc/profile.d/nix.sh" \
        "eval \"\$(direnv hook bash)\"" \
