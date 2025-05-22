@@ -69,8 +69,7 @@ class VectorService:
             self.embeddings = OpenAIEmbeddings(model=embedding_model)
             self.vectorstore = FAISS.load_local(index_path, self.embeddings)
             logger.info(
-                f"FAISS index loaded successfully from {index_path} "
-                f"using model {embedding_model}"
+                f"FAISS index loaded successfully from {index_path} using model {embedding_model}"
             )
         except Exception as e:
             error_msg = f"Failed to load FAISS index: {e}"

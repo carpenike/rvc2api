@@ -20,6 +20,7 @@ Key responsibilities include:
     - Defining startup and shutdown event handlers.
 - Providing a command-line interface to start the Uvicorn server.
 """
+
 import asyncio
 import functools
 import logging

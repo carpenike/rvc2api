@@ -214,9 +214,7 @@ def process_can_message(
 
     if not matching_devices:
         LOOKUP_MISSES.inc()
-        logger.debug(
-            f"No device config for DGN={dgn}, Inst={inst} " f"(PGN 0x{msg.arbitration_id:X})"
-        )
+        logger.debug(f"No device config for DGN={dgn}, Inst={inst} (PGN 0x{msg.arbitration_id:X})")
 
         unmapped_key_str = f"{dgn.upper()}-{inst!s}"
         model_pgn_hex = f"{(msg.arbitration_id >> 8) & 0x3FFFF:X}".upper()

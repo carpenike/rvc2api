@@ -6,6 +6,7 @@ Provides a background task to periodically check the latest release
 version from GitHub and cache it for API use.
 This avoids client-side rate limiting and centralizes update logic.
 """
+
 import asyncio
 import logging
 import os

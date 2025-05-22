@@ -17,8 +17,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import yaml
-
+from backend.core.events import get_event_bus
 from backend.services.feature_base import Feature
 
 logger = logging.getLogger(__name__)
@@ -35,15 +34,11 @@ class FeatureManager:
     Features are registered with the manager and can be queried by name.
     """
 
-    def __init__(self, event_bus: Any = None) -> None:
+    def __init__(self) -> None:
         """
         Initialize the feature manager.
-
-        Args:
-            event_bus: Optional event bus for publishing feature events
         """
         self._features: dict[str, Feature] = {}
-        self._event_bus = event_bus
         self._audit_log: list[dict[str, Any]] = []
 
     def register_feature(self, feature: Feature) -> None:
@@ -61,11 +56,10 @@ class FeatureManager:
             raise ValueError(f"Feature '{feature.name}' is already registered.")
         self._features[feature.name] = feature
         logger.info(f"Registered feature: {feature.name} (enabled={feature.enabled})")
-        if self._event_bus:
-            self._event_bus.publish(
-                "feature_registered",
-                {"name": feature.name, "enabled": feature.enabled, "core": feature.core},
-            )
+        get_event_bus().publish(
+            "feature_registered",
+            {"name": feature.name, "enabled": feature.enabled, "core": feature.core},
+        )
 
     def unregister_feature(self, feature_name: str) -> None:
         """
@@ -77,8 +71,7 @@ class FeatureManager:
         if feature_name in self._features:
             del self._features[feature_name]
             logger.info(f"Unregistered feature: {feature_name}")
-            if self._event_bus:
-                self._event_bus.publish("feature_unregistered", {"name": feature_name})
+            get_event_bus().publish("feature_unregistered", {"name": feature_name})
 
     def is_enabled(self, feature_name: str) -> bool:
         """
@@ -165,8 +158,7 @@ class FeatureManager:
             feature.enabled = True
             logger.info(f"Feature enabled at runtime: {feature_name}")
             self._audit_log.append({"event": "enabled", "feature": feature_name})
-            if self._event_bus:
-                self._event_bus.publish("feature_enabled", {"name": feature_name})
+            get_event_bus().publish("feature_enabled", {"name": feature_name})
 
     def disable_feature(self, feature_name: str) -> None:
         """
@@ -180,8 +172,7 @@ class FeatureManager:
             feature.enabled = False
             logger.info(f"Feature disabled at runtime: {feature_name}")
             self._audit_log.append({"event": "disabled", "feature": feature_name})
-            if self._event_bus:
-                self._event_bus.publish("feature_disabled", {"name": feature_name})
+            get_event_bus().publish("feature_disabled", {"name": feature_name})
 
     def reload_features_from_config(self, settings: Any) -> None:
         """
@@ -296,10 +287,7 @@ class FeatureManager:
                 logger.info(f"Starting feature: {name}")
                 await feature.startup()
 
-                if self._event_bus:
-                    self._event_bus.publish(
-                        "feature_started", {"name": name, "health": feature.health}
-                    )
+                get_event_bus().publish("feature_started", {"name": name, "health": feature.health})
         except ValueError as e:
             logger.error(f"Feature startup failed: {e}")
             raise
@@ -322,8 +310,7 @@ class FeatureManager:
                 logger.info(f"Shutting down feature: {name}")
                 await feature.shutdown()
 
-                if self._event_bus:
-                    self._event_bus.publish("feature_stopped", {"name": name})
+                get_event_bus().publish("feature_stopped", {"name": name})
         except ValueError as e:
             logger.error(f"Feature shutdown error: {e}")
 
@@ -340,18 +327,22 @@ class FeatureManager:
         Returns:
             FeatureManager instance with features loaded from config
         """
+        import yaml  # local import to avoid global import if not needed
+
+        from backend.services.feature_base import GenericFeature
+
         with open(yaml_path, encoding="utf-8") as f:
             config = yaml.safe_load(f)
         manager = cls()
         for name, data in config.items():
-            manager.register_feature(
-                Feature(
-                    name=name,
-                    enabled=bool(data.get("enabled", False)),
-                    core=bool(data.get("core", False)),
-                    dependencies=list(data.get("depends_on", [])),
-                )
+            feature = GenericFeature(
+                name=name,
+                enabled=bool(data.get("enabled", False)),
+                core=bool(data.get("core", False)),
+                config=data,
+                dependencies=data.get("depends_on", []),
             )
+            manager.register_feature(feature)
         return manager
 
 

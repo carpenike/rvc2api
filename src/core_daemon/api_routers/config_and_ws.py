@@ -92,15 +92,14 @@ async def get_device_mapping_config_content_api():
                 return PlainTextResponse(f.read())
         except Exception as e:
             logger.error(
-                f"API Error: Could not read device mapping from " f"'{actual_map_path_for_ui}': {e}"
+                f"API Error: Could not read device mapping from '{actual_map_path_for_ui}': {e}"
             )
             raise HTTPException(
                 status_code=500, detail=f"Error reading device mapping file: {e!s}"
             ) from e
     else:
         logger.error(
-            f"API Error: Device mapping file not found for UI display at "
-            f"'{actual_map_path_for_ui}'"
+            f"API Error: Device mapping file not found for UI display at '{actual_map_path_for_ui}'"
         )
         raise HTTPException(status_code=404, detail="Device mapping file not found.")
 
@@ -137,14 +136,14 @@ async def get_rvc_spec_config_content_api():
                 return PlainTextResponse(f.read())
         except Exception as e:
             logger.error(
-                f"API Error: Could not read RVC spec from " f"'{actual_spec_path_for_ui}': {e}"
+                f"API Error: Could not read RVC spec from '{actual_spec_path_for_ui}': {e}"
             )
             raise HTTPException(
                 status_code=500, detail=f"Error reading RVC spec file: {e!s}"
             ) from e
     else:
         logger.error(
-            f"API Error: RVC spec file not found for UI display at " f"'{actual_spec_path_for_ui}'"
+            f"API Error: RVC spec file not found for UI display at '{actual_spec_path_for_ui}'"
         )
         raise HTTPException(status_code=404, detail="RVC spec file not found.")
 

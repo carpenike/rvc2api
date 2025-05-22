@@ -131,3 +131,20 @@ class Feature(ABC):
             f"<Feature name={self.name!r} enabled={self.enabled!r} core={self.core!r} "
             f"dependencies={self.dependencies!r}>"
         )
+
+
+class GenericFeature(Feature):
+    """
+    Generic concrete implementation of Feature for config-driven features.
+    Provides no-op lifecycle methods and basic health reporting.
+    """
+
+    async def startup(self) -> None:
+        pass
+
+    async def shutdown(self) -> None:
+        pass
+
+    @property
+    def health(self) -> str:
+        return "healthy" if self.enabled else "disabled"

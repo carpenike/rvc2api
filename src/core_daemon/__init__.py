@@ -25,9 +25,9 @@ from core_daemon.main import app, create_app, main
 __all__ = [
     "VERSION",
     "app",
-    "create_app",
-    "main",
-    "initialize_app_from_config",
     "configure_logger",
+    "create_app",
     "get_actual_paths",
+    "initialize_app_from_config",
+    "main",
 ]

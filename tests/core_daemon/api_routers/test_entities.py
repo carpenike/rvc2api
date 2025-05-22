@@ -1023,9 +1023,7 @@ def test_control_lights_bulk_one_fails(mock_bulk_control_dependencies, mock_app_
 
     # Make sending command for kitchen light fail
     async def send_side_effect(entity_id, brightness, action):
-        if entity_id == "light.kitchen":
-            return False
-        return True
+        return entity_id != "light.kitchen"
 
     mock_bulk_control_dependencies["send_light_can_command_patch"].side_effect = send_side_effect
 

@@ -17,7 +17,7 @@ Functions:
 from rvc_decoder.decode import decode_payload, get_bits, load_config_data
 
 __all__ = [
-    "get_bits",
     "decode_payload",
+    "get_bits",
     "load_config_data",
 ]

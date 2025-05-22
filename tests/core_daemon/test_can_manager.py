@@ -249,7 +249,7 @@ async def test_can_writer_sends_message_bus_exists(
     # Allow the writer to run. The timeout ensures the test doesn't hang if something is wrong.
     try:
         await asyncio.wait_for(writer_task, timeout=1.0)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pytest.fail("can_writer task timed out")
     except RuntimeError as e:  # Catch the sentinel
         if "NoneType" not in str(e):  # Reraise if not our sentinel
@@ -292,7 +292,7 @@ async def test_can_writer_initializes_bus_if_not_exists(
     writer_task = asyncio.create_task(can_manager.can_writer())
     try:
         await asyncio.wait_for(writer_task, timeout=1.0)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pytest.fail("can_writer task timed out during bus initialization test")
     except RuntimeError as e:  # Catch the sentinel
         if "NoneType" not in str(e):
@@ -328,7 +328,7 @@ async def test_can_writer_handles_can_error_on_send(
         writer_task = asyncio.create_task(can_manager.can_writer())
         try:
             await asyncio.wait_for(writer_task, timeout=1.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pytest.fail("can_writer task timed out during CanError test")
         except RuntimeError as e:  # Catch the sentinel
             if "NoneType" not in str(e):
@@ -363,7 +363,7 @@ async def test_can_writer_handles_bus_init_error_fallback(
         writer_task = asyncio.create_task(can_manager.can_writer())
         try:
             await asyncio.wait_for(writer_task, timeout=1.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pytest.fail("can_writer task timed out during bus init error fallback test")
         except RuntimeError as e:  # Catch the sentinel
             if "NoneType" not in str(e):

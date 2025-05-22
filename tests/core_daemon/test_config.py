@@ -292,9 +292,7 @@ def test_get_actual_paths_env_spec_invalid_exists(
     def side_effect_exists(path):
         if path == MOCK_ENV_SPEC_PATH:
             return False
-        if path == MOCK_ENV_MAP_PATH:
-            return True
-        return False
+        return path == MOCK_ENV_MAP_PATH
 
     mock_path_exists.side_effect = side_effect_exists
     mock_os_access.return_value = True  # Assume readable if exists
@@ -327,9 +325,7 @@ def test_get_actual_paths_env_map_invalid_access(
 
     # Spec path from env is valid, map path from env exists but not readable
     def side_effect_access(path, mode):
-        if path == MOCK_ENV_MAP_PATH:
-            return False
-        return True  # Assume spec path is readable
+        return path != MOCK_ENV_MAP_PATH  # Assume spec path is readable
 
     mock_path_exists.return_value = True  # Assume both exist
     mock_os_access.side_effect = side_effect_access
@@ -637,9 +633,7 @@ def test_get_static_paths_importlib_final_validation_fails_static(
 
     # importlib.resources resolves paths, but static_dir fails os.path.isdir validation
     def isdir_side_effect(path):
-        if path == MOCK_STATIC_PATH_LIB:
-            return False
-        return True
+        return path != MOCK_STATIC_PATH_LIB
 
     mock_os_path_isdir.side_effect = isdir_side_effect
 
@@ -687,9 +681,7 @@ def test_get_static_paths_fallback_final_validation_fails_templates(
 
     # Fallback resolves paths, but templates_dir fails os.path.isdir validation
     def isdir_side_effect(path):
-        if path == MOCK_TEMPLATES_DIR_FALLBACK:
-            return False
-        return True
+        return path != MOCK_TEMPLATES_DIR_FALLBACK
 
     mock_os_path_isdir.side_effect = isdir_side_effect
 

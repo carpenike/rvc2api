@@ -5,7 +5,7 @@ This file provides type hints for commonly used FastAPI components.
 Uses Python 3.9+ typing syntax with | for unions and builtin collection types.
 
 Note: The non-snake_case function name Body() is exempted from linting rules
-in pyproject.toml using [tool.ruff.lint.per-file-ignores] configuration.
+in pyproject.toml using [tool.ruff.lint-per-file-ignores] configuration.
 """
 
 from collections.abc import Callable
@@ -235,6 +235,7 @@ def Query(
     example: Any = None,
     examples: examples_type = None,
 ) -> Any: ...
+def Depends(dependency: Callable[..., Any] | None = None) -> Any: ...
 
 # For backward compatibility
 body_param: Any = Body
