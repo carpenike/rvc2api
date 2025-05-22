@@ -14,31 +14,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: web_ui
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Nix (with flakes enabled)
+        uses: cachix/install-nix-action@v31
         with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: web_ui/package-lock.json
+          extra_nix_config: |
+            experimental-features = nix-command flakes
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup Nix cache
+        uses: cachix/cachix-action@v16
+        with:
+          name: rvc2api
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Build
-        run: npm run build
+      - name: Run frontend checks in Nix shell
+        run: |
+          nix develop --command bash -c '
+            cd web_ui
+            npm ci
+            npm run lint
+            npm run typecheck
+            npm run build
+          '
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

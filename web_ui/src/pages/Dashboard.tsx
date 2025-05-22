@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchAppHealth, fetchCanStatus } from "../api";
+import type { AllCanStats } from "../api/types";
 import { Button, Card } from "../components";
+import { CanBusStatusPanel } from "../components/CanBusStatusPanel";
 
 /**
  * Dashboard page component
@@ -16,16 +18,13 @@ export function Dashboard() {
   const [appHealth, setAppHealth] = useState<unknown>(null);
 
   /** CAN bus connection status information */
-  const [canStatus, setCanStatus] = useState<unknown>(null);
+  const [canStatus, setCanStatus] = useState<AllCanStats | null>(null);
 
   /** Loading state for the API calls */
   const [loading, setLoading] = useState(false);
 
   /** Error state for failed API calls */
   const [error, setError] = useState<string | null>(null);
-
-  /** WebSocket connection status */
-  const [wsStatus, setWsStatus] = useState<string>("unknown");
 
   /**
    * Fetch app health and CAN status data on component mount
@@ -44,74 +43,58 @@ export function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // This will be updated via a prop from the parent to show real WebSocket status
-  useEffect(() => {
-    // WebSocket status will be provided by the parent App component
-    const eventHandler = (e: CustomEvent) => {
-      setWsStatus(e.detail.status);
-    };
-
-    window.addEventListener("ws-status-change", eventHandler as EventListener);
-    return () => {
-      window.removeEventListener("ws-status-change", eventHandler as EventListener);
-    };
-  }, []);
-
   return (
-    <section className="space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+    <section className="space-y-8 bg-background text-foreground min-h-screen p-4 md:p-8">
+      <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
 
-      <Card title="Quick Light Controls" className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Button variant="primary">All Lights On</Button>
-          <Button variant="ghost">All Lights Off</Button>
-          <Button variant="accent">Exterior On</Button>
-          <Button variant="ghost">Exterior Off</Button>
-          <Button variant="secondary">Interior On</Button>
-          <Button variant="ghost">Interior Off</Button>
+      <Card title="Quick Light Controls" className="mb-8 bg-card text-card-foreground">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Button variant="primary" className="w-full" aria-label="Turn all lights on">All Lights On</Button>
+          <Button variant="ghost" className="w-full" aria-label="Turn all lights off">All Lights Off</Button>
+          <Button variant="accent" className="w-full" aria-label="Turn exterior lights on">Exterior On</Button>
+          <Button variant="ghost" className="w-full" aria-label="Turn exterior lights off">Exterior Off</Button>
+          <Button variant="secondary" className="w-full" aria-label="Turn interior lights on">Interior On</Button>
+          <Button variant="ghost" className="w-full" aria-label="Turn interior lights off">Interior Off</Button>
         </div>
       </Card>
 
-      <Card title="Scenes">
-        <p className="text-rv-text/70 mb-4">Scene management and definition coming soon.</p>
-        <Button variant="primary">Create New Scene</Button>
+      <Card title="Scenes" className="bg-card text-card-foreground">
+        <p className="text-muted-foreground mb-6">Scene management and definition coming soon.</p>
+        <Button variant="primary" aria-label="Create new scene">Create New Scene</Button>
       </Card>
 
       <div className="mt-8 space-y-6">
-        <h2 className="text-2xl font-semibold">System Status</h2>
-        {loading && <p className="text-rv-text/70">Loading...</p>}
-        {error && <p className="text-rv-error">{error}</p>}
+        <h2 className="text-xl font-semibold text-primary">System Status</h2>
+        {loading && <p className="text-muted-foreground">Loading...</p>}
+        {error && <p className="text-error" role="alert">{error}</p>}
 
-        <Card title="Application Health">
-          {appHealth ? (
-            <pre className="text-rv-text/90 text-sm whitespace-pre-wrap overflow-x-auto rounded-lg">{JSON.stringify(appHealth, null, 2)}</pre>
-          ) : (
-            <p className="text-rv-text/50">Loading application health...</p>
-          )}
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <Card title="Application Health" className="bg-card text-card-foreground">
+            {appHealth ? (
+              <pre className="text-foreground text-sm whitespace-pre-wrap overflow-x-auto rounded-lg bg-muted p-3">
+                {JSON.stringify(appHealth, null, 2)}
+              </pre>
+            ) : (
+              <p className="text-muted-foreground">Loading application health...</p>
+            )}
+          </Card>
 
-        <Card title="CAN Bus Interfaces">
-          {canStatus ? (
-            <pre className="text-rv-text/90 text-sm whitespace-pre-wrap overflow-x-auto rounded-lg">{JSON.stringify(canStatus, null, 2)}</pre>
-          ) : (
-            <p className="text-rv-text/50">Loading CAN status...</p>
-          )}
-        </Card>
+          <Card title="CAN Bus Interfaces" className="bg-card text-card-foreground">
+            {canStatus && canStatus.interfaces ? (
+              <CanBusStatusPanel interfaces={canStatus.interfaces} />
+            ) : loading ? (
+              <p className="text-muted-foreground">Loading CAN status...</p>
+            ) : error ? (
+              <p className="text-error" role="alert">{error}</p>
+            ) : (
+              <p className="text-muted-foreground">No CAN status available.</p>
+            )}
+          </Card>
 
-        <Card title="WebSocket Status">
-          <div className="flex items-center space-x-2">
-            <span>Status:</span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              wsStatus === "open"
-                ? "bg-rv-success/20 text-rv-success"
-                : wsStatus === "connecting"
-                  ? "bg-rv-warning/20 text-rv-warning"
-                  : "bg-rv-error/20 text-rv-error"
-            }`}>
-              {wsStatus}
-            </span>
-          </div>
-        </Card>
+          <Card title="WebSocket Status" className="bg-card text-card-foreground">
+            <span className="text-muted-foreground">WebSocket status coming soon.</span>
+          </Card>
+        </div>
       </div>
     </section>
   );

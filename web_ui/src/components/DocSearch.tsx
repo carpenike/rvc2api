@@ -1,7 +1,8 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchDocumentation } from "../api/docsApi";
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "react";
 import type { SearchResult } from "../api/docsApi";
+import { searchDocumentation } from "../api/docsApi";
 
 interface DocSearchProps {
   className?: string;
@@ -10,6 +11,8 @@ interface DocSearchProps {
 export function DocSearch({ className = "" }: DocSearchProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debounceTimer = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: results = [], isLoading, error } = useQuery({
     queryKey: ["docSearch", debouncedQuery],
@@ -22,83 +25,91 @@ export function DocSearch({ className = "" }: DocSearchProps) {
   // Debounce search input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
-
-    // Clear any existing timer
-    const timerId = window.setTimeout(() => {
+    if (debounceTimer.current) {
+      window.clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = window.setTimeout(() => {
       setDebouncedQuery(e.target.value);
     }, 500);
-
-    return () => window.clearTimeout(timerId);
   };
 
+  // Accessibility: focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   return (
-    <div className={`doc-search ${className}`}>
-      <h3 className="text-lg font-medium mb-2">RV-C Documentation Search</h3>
+    <section
+      className={clsx(
+        "doc-search rounded-lg border border-rv-border bg-rv-surface text-rv-text p-6 shadow-sm transition-colors duration-200",
+        className
+      )}
+      aria-label="Documentation Search"
+      role="search"
+      data-testid="doc-search"
+    >
+      <h2 className="text-lg font-semibold mb-2 text-rv-heading" id="doc-search-title">
+        RV-C Documentation Search
+      </h2>
       <div className="mb-4">
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={handleInputChange}
           placeholder="Search the RV-C documentation..."
-          className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 rounded border border-rv-border bg-rv-surface text-rv-text focus:outline-none focus:ring-2 focus:ring-rv-primary"
           aria-label="Search query"
+          aria-describedby="doc-search-help"
         />
         {query.trim().length > 0 && query.trim().length < 3 && (
-          <p className="text-sm text-gray-500 mt-1">Type at least 3 characters to search</p>
+          <p id="doc-search-help" className="text-sm text-rv-muted mt-1">
+            Type at least 3 characters to search
+          </p>
         )}
       </div>
 
       {isLoading && (
-        <div className="flex justify-center items-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-          <span className="ml-2">Searching documentation...</span>
+        <div className="flex justify-center items-center py-4" aria-live="polite">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rv-primary"></div>
+          <span className="ml-2 text-rv-muted">Searching documentation...</span>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error instanceof Error ? error.message : "Unknown error"}</span>
-          {error instanceof Error && error.message.includes("not available") && (
-            <div className="mt-2 text-sm">
-              <p>To set up documentation search:</p>
-              <ol className="list-decimal pl-5 mt-1">
-                <li>Ensure the RV-C specification PDF is in the resources directory</li>
-                <li>Set the OPENAI_API_KEY environment variable</li>
-                <li>Run: <code className="bg-red-50 px-1">python scripts/setup_faiss.py --setup</code></li>
-                <li>Restart the server</li>
-              </ol>
-            </div>
-          )}
+        <div className="text-rv-error bg-rv-error/10 rounded p-2 mt-2" role="alert">
+          Error searching documentation. Please try again.
         </div>
       )}
 
       {!isLoading && !error && results.length === 0 && debouncedQuery.trim().length >= 3 && (
-        <p className="text-gray-500">No documentation matches found for "{debouncedQuery}"</p>
+        <div className="text-rv-muted mt-2" role="status">
+          No results found for "{debouncedQuery}".
+        </div>
       )}
 
       {results.length > 0 && (
-        <div className="space-y-4 mt-2">
-          <h4 className="text-md font-medium">Search Results</h4>
-          {results.map((result: SearchResult, index: number) => (
-            <div key={index} className="border rounded p-3 bg-white">
-              <div className="font-medium text-blue-600">{result.section}: {result.title}</div>
-              <div className="text-sm text-gray-500 mb-2">Pages: {result.pages.join(", ")}</div>
-              <p className="text-gray-700 text-sm mt-1 line-clamp-3">
-                {result.content.length > 300
-                  ? `${result.content.substring(0, 300)}...`
-                  : result.content}
-              </p>
-              <button
-                className="mt-2 text-sm text-blue-500 hover:underline"
-                onClick={() => window.alert("Full document viewer will be implemented in a future update.")}
+        <ul className="divide-y divide-rv-border mt-2" aria-label="Search results">
+          {results.map((result: SearchResult, idx: number) => (
+            <li key={result.section + "-" + result.pages.join("-") + "-" + idx} className="py-3">
+              <a
+                href={`#page-${result.pages[0]}`}
+                className="text-rv-link hover:underline focus:underline focus:outline-none"
+                tabIndex={0}
+                aria-label={`Jump to documentation section: ${result.title}`}
               >
-                View Full Section
-              </button>
-            </div>
+                <span className="font-medium text-rv-heading">{result.title}</span>
+              </a>
+              <span className="ml-2 text-xs text-rv-muted">(Section: {result.section}, Page{result.pages.length > 1 ? "s" : ""}: {result.pages.join(", ")})</span>
+              {result.content && (
+                <p className="text-sm text-rv-muted mt-1" style={{ wordBreak: "break-word" }}>
+                  {result.content.length > 350 ? result.content.slice(0, 350) + "…" : result.content}
+                </p>
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

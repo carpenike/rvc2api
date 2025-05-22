@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { SideNav } from "./components";
 import { useWebSocket } from "./hooks";
 import "./index.css";
+import Layout from "./layout/Layout";
 import {
   CanSniffer,
   Dashboard,
@@ -15,7 +16,8 @@ import {
   UnknownPgns,
   UnmappedEntries
 } from "./pages";
-import { WS_URL } from "./utils/config";
+import "./styles/themes.css";
+import { getWebSocketUrl } from "./utils/config";
 
 /**
  * Main application component
@@ -36,6 +38,57 @@ function App() {
   const [_wsMessages, setWsMessages] = useState<unknown[]>([]);
 
   /**
+   * Helper function to dispatch custom events for cross-component communication
+   *
+   * @param eventName - The name of the custom event to dispatch
+   * @param detail - The data to include with the event
+   */
+  const dispatchCustomEvent = useCallback((
+    eventName: string,
+    detail: Record<string, unknown>
+  ): void => {
+    const event = new CustomEvent(eventName, { detail });
+    window.dispatchEvent(event);
+  }, []);
+
+  // Memoize WebSocket options to prevent unnecessary re-renders
+  const wsOptions = useMemo(
+    () => ({
+      onMessage: (data: unknown) => {
+        console.log("WebSocket message:", data);
+        try {
+          // Try to parse the data if it's a string
+          const parsedData = typeof data === "string" ? JSON.parse(data) : data;
+
+          // Handle different message types
+          if (parsedData.type === "can_message") {
+            // Update relevant state based on message type
+            dispatchCustomEvent("can-message-received", parsedData);
+          } else if (parsedData.type === "light_status") {
+            // Dispatch light status update event
+            dispatchCustomEvent("light-status-update", parsedData);
+          }
+        } catch (err) {
+          console.error("Error parsing WebSocket message:", err);
+        }
+      },
+      onOpen: () => {
+        console.log("WebSocket connection opened successfully!");
+      },
+      onClose: () => {
+        console.log("WebSocket connection closed");
+      },
+      onError: (error: unknown) => {
+        console.error("WebSocket error:", error);
+        console.error("WebSocket URL:", getWebSocketUrl("/api/ws"));
+      },
+      reconnectInterval: 2000,
+      reconnectAttempts: 10
+    }),
+    [dispatchCustomEvent]
+  );
+
+  /**
    * WebSocket connection setup with status monitoring and message handling
    */
   const {
@@ -43,29 +96,7 @@ function App() {
     messages,
     // Keep sendMessage available for future custom commands implementation
     sendMessage: _sendMessage
-  } = useWebSocket(WS_URL, {
-    onMessage: (data: unknown) => {
-      console.log("WebSocket message:", data);
-      try {
-        // Try to parse the data if it's a string
-        const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-
-        // Handle different message types
-        if (parsedData.type === "can_message") {
-          // Update relevant state based on message type
-          dispatchCustomEvent("can-message-received", parsedData);
-        } else if (parsedData.type === "light_status") {
-          // Dispatch light status update event
-          dispatchCustomEvent("light-status-update", parsedData);
-        }
-      } catch (err) {
-        console.error("Error parsing WebSocket message:", err);
-      }
-    },
-    onError: (error) => {
-      console.error("WebSocket error:", error);
-    }
-  });
+  } = useWebSocket("/api/ws", wsOptions);
 
   /**
    * Handle WebSocket message storage and dispatch WebSocket status events
@@ -76,21 +107,7 @@ function App() {
 
     // Dispatch WebSocket status change event
     dispatchCustomEvent("ws-status-change", { status: wsStatus });
-  }, [messages, wsStatus]);
-
-  /**
-   * Helper function to dispatch custom events for cross-component communication
-   *
-   * @param eventName - The name of the custom event to dispatch
-   * @param detail - The data to include with the event
-   */
-  const dispatchCustomEvent = (
-    eventName: string,
-    detail: Record<string, unknown>
-  ): void => {
-    const event = new CustomEvent(eventName, { detail });
-    window.dispatchEvent(event);
-  };
+  }, [messages, wsStatus, dispatchCustomEvent]);
 
   /**
    * Gets the current view identifier from the route path
@@ -103,57 +120,31 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-rv-background text-rv-text">
-      {/* Top header - desktop only */}
-      <div className="hidden lg:flex bg-rv-surface text-rv-text px-6 py-4 items-center justify-between shadow-lg rounded-xl mb-4 mx-4 mt-4">
-        <div className="flex items-center">
-          <span className="text-xl font-bold">RVC2API</span>
-        </div>
-
-        {/* WebSocket status indicator */}
-        <div className="flex items-center space-x-2">
-          <span>WebSocket:</span>
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              wsStatus === "open"
-                ? "bg-rv-success/20 text-rv-success"
-                : wsStatus === "connecting"
-                ? "bg-rv-warning/20 text-rv-warning"
-                : "bg-rv-error/20 text-rv-error"
-            }`}
-          >
-            {wsStatus}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden min-h-0 px-0 lg:px-4 relative">
+    <Layout wsStatus={wsStatus}>
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar Navigation */}
-        <SideNav currentView={getCurrentView()} wsStatus={wsStatus} />
-
+        <div className="z-40">
+          <SideNav currentView={getCurrentView()} wsStatus={wsStatus} />
+        </div>
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto lg:ml-16">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/lights" element={<Lights />} />
-            <Route path="/mapping" element={<DeviceMapping />} />
-            <Route path="/spec" element={<RvcSpec />} />
-            <Route path="/documentation" element={<DocumentationPage />} />
-            <Route path="/unmapped" element={<UnmappedEntries />} />
-            <Route path="/unknownPgns" element={<UnknownPgns />} />
-            <Route path="/canSniffer" element={<CanSniffer />} />
-            <Route path="/networkMap" element={<NetworkMap />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto min-h-0">
+          <div className="overflow-y-auto h-full">
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/lights" element={<Lights />} />
+              <Route path="/mapping" element={<DeviceMapping />} />
+              <Route path="/spec" element={<RvcSpec />} />
+              <Route path="/documentation" element={<DocumentationPage />} />
+              <Route path="/unmapped" element={<UnmappedEntries />} />
+              <Route path="/unknownPgns" element={<UnknownPgns />} />
+              <Route path="/canSniffer" element={<CanSniffer />} />
+              <Route path="/networkMap" element={<NetworkMap />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </div>
         </main>
       </div>
-
-      {/* Footer - desktop only */}
-      <footer className="hidden lg:flex bg-rv-surface text-rv-text/60 text-xs p-4 mx-4 mb-4 justify-between items-center rounded-xl shadow-lg">
-        <span>rvc2api React UI</span>
-        <span>© {new Date().getFullYear()}</span>
-      </footer>
-    </div>
+    </Layout>
   );
 }
 

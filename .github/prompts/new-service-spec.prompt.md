@@ -12,7 +12,7 @@ tools: ['context7']
 - **Author(s):** [Name(s)]
 - **Related ADR:** [Link, if applicable]
 
-**Summary:**  
+**Summary:**
 [Briefly describe what this service does and why it is needed.]
 
 This template helps you define a new service or feature for the rvc2api project. Use this as a starting point to clearly articulate what you want to build before implementation begins. When completed, the specification will be saved to `/docs/specs/<service-name>.md` for review and implementation.

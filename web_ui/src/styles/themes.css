@@ -1,0 +1,89 @@
+/* Theme Variables: Modern, Accessible, Comprehensive */
+
+:root {
+  /* Light theme (default) */
+  --color-primary: 59 130 246; /* blue-500 */
+  --color-primary-hover: 37 99 235; /* blue-600 */
+  --color-primary-active: 29 78 216; /* blue-700 */
+
+  --color-secondary: 139 92 246; /* violet-500 */
+  --color-secondary-hover: 124 58 237; /* violet-600 */
+  --color-secondary-active: 109 40 217; /* violet-700 */
+
+  --color-accent: 249 115 22; /* orange-600 */
+  --color-accent-hover: 234 88 12; /* orange-700 */
+  --color-accent-active: 194 65 12; /* orange-800 */
+
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 234 179 8; /* yellow-500 */
+  --color-error: 239 68 68; /* red-500 */
+
+  --color-background: 255 255 255; /* white */
+  --color-surface: 248 250 252; /* slate-50 */
+  --color-surface-elevated: 255 255 255; /* white with shadow */
+
+  --color-border: 226 232 240; /* slate-200 */
+  --color-border-hover: 203 213 225; /* slate-300 */
+
+  --color-text: 15 23 42; /* slate-900 */
+  --color-text-muted: 71 85 105; /* slate-600 */
+  --color-text-disabled: 148 163 184; /* slate-400 */
+
+  --color-neutral-50: 248 250 252; /* slate-50 */
+  --color-neutral-100: 241 245 249; /* slate-100 */
+  --color-neutral-200: 226 232 240; /* slate-200 */
+  --color-neutral-300: 203 213 225; /* slate-300 */
+  --color-neutral-400: 148 163 184; /* slate-400 */
+  --color-neutral-500: 100 116 139; /* slate-500 */
+  --color-neutral-600: 71 85 105; /* slate-600 */
+  --color-neutral-700: 51 65 85; /* slate-700 */
+  --color-neutral-800: 30 41 59; /* slate-800 */
+  --color-neutral-900: 15 23 42; /* slate-900 */
+  --color-neutral-950: 2 6 23; /* slate-950 */
+}
+
+html.theme-dark, [data-theme="dark"], .dark {
+  /* Dark theme */
+  --color-primary: 59 130 246; /* blue-500 */
+  --color-primary-hover: 96 165 250; /* blue-400 */
+  --color-primary-active: 147 197 253; /* blue-300 */
+
+  --color-secondary: 139 92 246; /* violet-500 */
+  --color-secondary-hover: 167 139 250; /* violet-400 */
+  --color-secondary-active: 196 181 253; /* violet-300 */
+
+  --color-accent: 249 115 22; /* orange-600 */
+  --color-accent-hover: 251 146 60; /* orange-400 */
+  --color-accent-active: 253 186 116; /* orange-300 */
+
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 234 179 8; /* yellow-500 */
+  --color-error: 239 68 68; /* red-500 */
+
+  --color-background: 15 23 42; /* slate-900 */
+  --color-surface: 30 41 59; /* slate-800 */
+  --color-surface-elevated: 51 65 85; /* slate-700 */
+
+  --color-border: 51 65 85; /* slate-700 */
+  --color-border-hover: 71 85 105; /* slate-600 */
+
+  --color-text: 248 250 252; /* slate-50 */
+  --color-text-muted: 203 213 225; /* slate-300 */
+  --color-text-disabled: 100 116 139; /* slate-500 */
+
+  --color-neutral-950: 248 250 252; /* slate-50 */
+  --color-neutral-900: 241 245 249; /* slate-100 */
+  --color-neutral-800: 226 232 240; /* slate-200 */
+  --color-neutral-700: 203 213 225; /* slate-300 */
+  --color-neutral-600: 148 163 184; /* slate-400 */
+  --color-neutral-500: 100 116 139; /* slate-500 */
+  --color-neutral-400: 71 85 105; /* slate-600 */
+  --color-neutral-300: 51 65 85; /* slate-700 */
+  --color-neutral-200: 30 41 59; /* slate-800 */
+  --color-neutral-100: 15 23 42; /* slate-900 */
+  --color-neutral-50: 2 6 23; /* slate-950 */
+}
+
+html, body {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}

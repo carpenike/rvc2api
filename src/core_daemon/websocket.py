@@ -93,22 +93,25 @@ async def broadcast_to_clients(text: str):
 async def websocket_endpoint(ws: WebSocket):
     """
     WebSocket endpoint: push every new payload as JSON.
+    Keeps the connection alive even if the client sends nothing.
     """
     await ws.accept()
     clients.add(ws)
-    # WS_CLIENTS.set(len(clients)) # Update count if metrics are handled here
     logger.info(f"WebSocket client connected: {ws.client.host}:{ws.client.port}")
     try:
         while True:
-            await ws.receive_text()  # Keep connection alive, handle incoming messages if needed
-    except WebSocketDisconnect:
+            await asyncio.sleep(60)  # Keep connection alive, no need for client to send
+    except WebSocketDisconnect as e:
         clients.discard(ws)
-        # WS_CLIENTS.set(len(clients)) # Update count
-        logger.info(f"WebSocket client disconnected: {ws.client.host}:{ws.client.port}")
+        logger.info(
+            f"WebSocket client disconnected: {ws.client.host}:{ws.client.port} "
+            f"(code={getattr(e, 'code', None)}, reason={getattr(e, 'reason', None)})"
+        )
     except Exception as e:
         clients.discard(ws)
-        # WS_CLIENTS.set(len(clients)) # Update count
-        logger.error(f"WebSocket error for client {ws.client.host}:{ws.client.port}: {e}")
+        logger.error(
+            f"WebSocket error for client {ws.client.host}:{ws.client.port}: {e}", exc_info=True
+        )
 
 
 async def websocket_logs_endpoint(ws: WebSocket):

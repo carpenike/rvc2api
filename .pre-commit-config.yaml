@@ -52,7 +52,60 @@ repos:
         types: [file]
         args: ["--fix", "--config", "eslint.config.js", "."]
         exclude: |
-          (^site/|^web_ui/(dist|dist-ssr|node_modules|.vite|.vite-temp|site|docs/_build|assets/javascripts/workers/|CNAME|objects.inv|sitemap.xml|index.html|404.html))
+          (?x)^(
+            site/
+            | web_ui/(dist|dist-ssr|node_modules|\.vite|\.vite-temp|site|docs/_build|assets/javascripts/workers/)
+            | CNAME
+            | objects\.inv
+            | sitemap\.xml
+            | index\.html
+            | 404\.html
+            | \.venv
+            | venv
+            | \.env
+            | \.cache
+            | \.mypy_cache
+            | \.pytest_cache
+            | \.ruff_cache
+            | \.tox
+            | \.nox
+            | \.eggs
+            | \.idea
+            | \.vscode
+            | \.devcontainer
+            | devcontainer
+            | \.devcontainer/home-cache
+            | lib
+            | bin
+            | site-packages
+            | usr
+            | opt
+            | lib64
+            | include
+            | share
+            | pyvenv\.cfg
+            | pyc
+            | pyo
+            | __pycache__
+            | virtualenv
+            | env
+            | ENV
+            | build
+            | tmp
+            | temp
+            | logs?
+            | output
+            | coverage
+            | \.history
+            | \.DS_Store
+            | Thumbs\.db
+            | desktop\.ini
+            | npm-debug\.log
+            | yarn-error\.log
+            | pnpm-debug\.log
+            | pip-log\.txt
+            | pip-delete-this-directory\.txt
+          )
         additional_dependencies:
           - eslint@9.25.0
           - eslint-plugin-react-hooks@5.2.0

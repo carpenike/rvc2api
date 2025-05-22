@@ -31,7 +31,7 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import ResponseValidationError
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 # Import application state variables and initialization function
@@ -67,7 +67,7 @@ from core_daemon.feature_manager import startup_all as feature_startup_all
 from core_daemon.github_update_checker import update_checker
 
 # Import the middleware
-from core_daemon.middleware import prometheus_http_middleware
+from core_daemon.middleware import configure_cors, prometheus_http_middleware
 from core_daemon.websocket import WebSocketLogHandler
 from rvc_decoder import decode_payload, load_config_data
 
@@ -188,6 +188,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # ── Add CORS middleware (see core_daemon/middleware.py for details) ──
+    configure_cors(app)
+
     # ── Static files for API documentation ───────────────────────────────────────────
     static_paths = get_static_paths()
     static_dir = static_paths["static_dir"]
@@ -244,15 +247,15 @@ def create_app() -> FastAPI:
         return PlainTextResponse(f"Validation error: {exc}", status_code=500)
 
     # ── API Health Check Route ─────────────────────────────────────────────────────
-    @app.get("/api/health", response_class=PlainTextResponse)
-    async def api_health() -> PlainTextResponse:
+    @app.get("/api/health")
+    async def api_health() -> JSONResponse:
         """
         Health check endpoint for API monitoring.
 
         Returns:
-            PlainTextResponse: A plain text response indicating the API is running
+            JSONResponse: A JSON response indicating the API is running
         """
-        return PlainTextResponse("API is running", status_code=200)
+        return JSONResponse({"status": "ok"}, status_code=200)
 
     # ── API Routers ────────────────────────────────────────────────────────────
     app.include_router(api_router_can, prefix="/api")

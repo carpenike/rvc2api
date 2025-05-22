@@ -49,3 +49,39 @@ export function truncate(str: string, maxLength = 50): string {
   if (str.length <= maxLength) return str;
   return `${str.substring(0, maxLength - 3)}...`;
 }
+
+/**
+ * Format a number using the current locale (for theme-adaptive UIs)
+ * @param value The number to format
+ * @param options Intl.NumberFormat options
+ * @returns Locale-formatted string
+ */
+export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+  if (typeof value !== "number" || isNaN(value)) return "";
+  return value.toLocaleString(undefined, options);
+}
+
+/**
+ * Format a number as a percentage string (e.g., 42.5%)
+ * @param value The number to format (0-100)
+ * @param decimals Number of decimal places (default: 1)
+ * @returns Formatted percentage string
+ */
+export function formatPercentage(value: number, decimals = 1): string {
+  if (typeof value !== "number" || isNaN(value)) return "";
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Convert a number (0xRRGGBB) to a CSS hex color string (e.g., #AABBCC)
+ * Use with theme CSS variables for theme-adaptive coloring.
+ * @param num The color number
+ * @returns CSS hex color string
+ */
+export function formatHexColor(num: number): string {
+  if (typeof num !== "number" || isNaN(num)) return "#000000";
+  return `#${num.toString(16).padStart(6, "0").toUpperCase()}`;
+}
+
+// Note: For theme-adaptive coloring in UI, prefer using CSS variables (see THEME_COLORS in config.ts)
+// and apply them via className or style, not hardcoded hex values.

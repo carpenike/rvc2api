@@ -61,6 +61,7 @@ export interface LightStatus {
   type: string;
   location?: string;
   last_updated: string;
+  brightness?: number;
 }
 
 export interface CanMessage {
@@ -85,4 +86,24 @@ export interface DeviceMapping {
   function_instance?: number;
   status?: "active" | "inactive";
   last_seen?: string;
+}
+
+export interface CanInterfaceStats {
+  name: string;
+  state?: string | null;
+  bitrate?: number | null;
+  sample_point?: number | null;
+  tx_packets?: number | null;
+  rx_packets?: number | null;
+  tx_bytes?: number | null;
+  rx_bytes?: number | null;
+  tx_errors?: number | null;
+  rx_errors?: number | null;
+  bus_errors?: number | null;
+  restarts?: number | null;
+  notes?: string | null;
+}
+
+export interface AllCanStats {
+  interfaces: Record<string, CanInterfaceStats>;
 }

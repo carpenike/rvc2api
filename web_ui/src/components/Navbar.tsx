@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -44,22 +45,31 @@ export function Navbar(props: NavbarProps) {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
-    <nav className="bg-rv-surface text-rv-text px-4 py-3 rounded-xl mb-6 shadow-lg">
+    <nav
+      className="bg-rv-surface text-rv-text px-4 py-3 rounded-xl mb-6 shadow-lg border border-rv-border transition-colors duration-200"
+      aria-label="Main navigation"
+      role="navigation"
+      data-testid="navbar"
+    >
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
-          <span className="text-xl font-bold mr-8">RVC2API</span>
+          <span className="text-xl font-bold mr-8 text-rv-heading">RVC2API</span>
 
           {/* Desktop menu */}
-          <div className="hidden md:flex space-x-4">
+          <div className="hidden md:flex space-x-4" role="menubar">
             {navItems.map((item) => (
               <Link
                 key={item.id}
                 to={item.path}
-                className={`px-3 py-2 rounded-lg transition-colors ${
+                className={clsx(
+                  "px-3 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-rv-primary transition-colors duration-150",
                   currentView === item.id
-                    ? "bg-rv-primary text-white"
-                    : "hover:bg-rv-surface/80"
-                }`}
+                    ? "bg-rv-primary/20 text-rv-primary"
+                    : "hover:bg-rv-primary/10 hover:text-rv-primary text-rv-text"
+                )}
+                aria-current={currentView === item.id ? "page" : undefined}
+                role="menuitem"
+                tabIndex={0}
               >
                 {item.label}
               </Link>
@@ -68,60 +78,58 @@ export function Navbar(props: NavbarProps) {
         </div>
 
         {/* Mobile menu button */}
-        <div className="md:hidden">
-          <button
-            onClick={toggleMenu}
-            className="focus:outline-none"
-            aria-label="Toggle menu"
+        <button
+          className="md:hidden p-2 rounded focus:outline-none focus:ring-2 focus:ring-rv-primary text-rv-text"
+          onClick={toggleMenu}
+          aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isOpen}
+          aria-controls="mobile-nav-menu"
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {isOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
-        </div>
+            {isOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
       </div>
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden mt-3 pt-3 border-t border-rv-surface/20">
-          <div className="flex flex-col space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.id}
-                to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={`px-3 py-2 rounded-lg transition-colors ${
-                  currentView === item.id
-                    ? "bg-rv-primary text-white"
-                    : "hover:bg-rv-surface/80"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+        <div
+          id="mobile-nav-menu"
+          className="md:hidden mt-2 bg-rv-surface border border-rv-border rounded-lg shadow-lg p-4"
+          role="menu"
+        >
+          {navItems.map((item) => (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={clsx(
+                "block px-3 py-2 rounded-lg font-medium mb-1 focus:outline-none focus:ring-2 focus:ring-rv-primary transition-colors duration-150",
+                currentView === item.id
+                  ? "bg-rv-primary/20 text-rv-primary"
+                  : "hover:bg-rv-primary/10 hover:text-rv-primary text-rv-text"
+              )}
+              aria-current={currentView === item.id ? "page" : undefined}
+              role="menuitem"
+              tabIndex={0}
+              onClick={() => setIsOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
       )}
+      {props.children}
     </nav>
   );
 }

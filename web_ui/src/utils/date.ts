@@ -8,13 +8,13 @@
 export function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("default", {
+    return new Intl.DateTimeFormat(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric"
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
     }).format(date);
   } catch (error) {
     console.error("Error formatting date:", error);
@@ -34,7 +34,7 @@ export function timeAgo(dateString: string): string {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return `${diffInSeconds} seconds ago`;
+      return `${diffInSeconds} second${diffInSeconds === 1 ? "" : "s"} ago`;
     }
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);

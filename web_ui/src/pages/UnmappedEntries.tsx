@@ -52,77 +52,53 @@ export function UnmappedEntries() {
   }
 
   return (
-    <section className="space-y-6">
-      <h1 className="text-3xl font-bold">Unmapped Entries</h1>
-
-      {error && (
-        <div className="bg-rv-error/20 text-rv-error p-4 rounded-xl mb-6">
-          Error loading unmapped entries: {error}
-        </div>
-      )}
-
-      <div className="mb-4 flex justify-between items-center">
-        <div>
-          <Badge>
-            {unmappedEntries.length} unmapped{" "}
-            {unmappedEntries.length === 1 ? "entry" : "entries"}
-          </Badge>
-        </div>
-        <button
-          className="px-4 py-2 bg-rv-primary/20 text-rv-primary hover:bg-rv-primary/30 rounded-lg"
-          onClick={() => setUnmappedEntries([])}
-        >
-          Refresh
-        </button>
-      </div>
-
-      {unmappedEntries.length > 0 ? (
-        <div className="space-y-4">
-          {unmappedEntries.map((entry, index) => (
-            <Card key={index} title={`DGN: ${entry.dgn || "Unknown"}`}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Raw Data</h3>
-                  <pre className="bg-rv-background/50 p-3 rounded-lg overflow-auto text-xs">
-                    {JSON.stringify(entry.raw_data || entry, null, 2)}
-                  </pre>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Details</h3>
-                  <dl className="grid grid-cols-3 gap-2 text-sm">
-                    <dt className="text-rv-text/70">Source:</dt>
-                    <dd className="col-span-2">
-                      {entry.source_address || "Unknown"}
-                    </dd>
-
-                    <dt className="text-rv-text/70">Priority:</dt>
-                    <dd className="col-span-2">
-                      {entry.priority || "Unknown"}
-                    </dd>
-
-                    <dt className="text-rv-text/70">Timestamp:</dt>
-                    <dd className="col-span-2">
-                      {entry.timestamp || "Unknown"}
-                    </dd>
-
-                    <dt className="text-rv-text/70">Data Length:</dt>
-                    <dd className="col-span-2">
-                      {entry.data ? entry.data.length : "Unknown"} bytes
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : !loading ? (
-        <div className="bg-rv-surface p-8 rounded-xl text-center">
-          <p className="text-xl">No unmapped entries found</p>
-          <p className="text-rv-text/60 mt-2">
-            All CAN messages have been successfully mapped to known entities.
-          </p>
-        </div>
-      ) : null}
-    </section>
+    <div className="px-4 py-6 max-w-5xl mx-auto">
+      <Card className="bg-[var(--color-bg)] border border-[var(--color-border)] shadow-md">
+        <h1 className="text-2xl font-bold mb-4 text-[var(--color-text)]">Unmapped RV-C Entries</h1>
+        <p className="mb-6 text-[var(--color-muted)]">
+          The following entries were received on the RV-C network but could not be mapped to known DGNs or device types. This may indicate new, custom, or unsupported messages.
+        </p>
+        {error && (
+          <div className="text-red-600 bg-red-50 border border-red-200 rounded p-4 my-4" role="alert">
+            Error loading unmapped entries: {error}
+          </div>
+        )}
+        {!loading && unmappedEntries.length === 0 && !error && (
+          <div className="italic text-[var(--color-muted)]">No unmapped entries detected.</div>
+        )}
+        {!loading && unmappedEntries.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-1">
+              <thead>
+                <tr className="bg-[var(--color-bg-muted)]">
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">DGN</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Source Address</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Priority</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Timestamp</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unmappedEntries.map((entry, idx) => (
+                  <tr key={entry.dgn ?? idx} className="hover:bg-[var(--color-primary)/10]">
+                    <td className="px-4 py-2 font-mono text-[var(--color-text)]">
+                      <Badge className="bg-[var(--color-primary)] text-white">{entry.dgn ?? "-"}</Badge>
+                    </td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.source_address ?? "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.priority ?? "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">
+                      {Array.isArray(entry.data) && entry.data.length > 0
+                        ? entry.data.map((b) => b.toString(16).padStart(2, "0")).join(" ")
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }

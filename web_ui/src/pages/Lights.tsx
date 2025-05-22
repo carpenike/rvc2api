@@ -1,279 +1,179 @@
-import { useState, useEffect } from "react";
-import { Card, Toggle, Button, Alert, Badge } from "../components";
-import { fetchLights, setLightState, setAllLights } from "../api/endpoints";
+import { useEffect, useState } from "react";
+import type { LightCommand } from "../api/endpoints";
+import { fetchLights, setLightState } from "../api/endpoints";
+import type { LightStatus } from "../api/types";
+import { Alert, Badge, Card, Loading } from "../components";
 
-/**
- * Light interface defining the structure of a light device
- */
-interface Light {
-  /** Unique identifier for the light */
-  id: string;
-
-  /** Display name for the light */
-  name: string;
-
-  /** Current state of the light (on/off) */
-  state: boolean;
-
-  /** Type of light (e.g., 'interior', 'exterior') */
-  type?: string;
-
-  /** Physical location of the light in the RV */
-  location?: string;
-
-  /** Brightness level from 0-100 if supported */
-  brightness?: number;
-
-  /** Color value if the light supports color changes */
-  color?: string;
+// Backend entity type for lights (extends LightStatus with capabilities)
+interface LightEntity extends LightStatus {
+  capabilities?: string[];
+  friendly_name?: string;
+  suggested_area?: string;
+  groups?: string[];
 }
 
-/**
- * Lights page component
- *
- * Displays and controls the RV lighting system, allowing users to
- * view the status of lights and toggle them individually or in groups.
- * Lights are organized by location for easier management.
- *
- * @returns The Lights page component
- */
+// Local Light type for UI
+interface Light {
+  id: string;
+  name: string;
+  state: "on" | "off";
+  capabilities: string[];
+  brightness?: number;
+  location?: string;
+  groups?: string[];
+}
+
 export function Lights() {
-  /** List of all lights from the API */
-  const [lights, setLights] = useState<Light[]>([]);
-
-  /** Loading state for the API call */
+  const [groupedLights, setGroupedLights] = useState<Record<string, Light[]>>({});
   const [loading, setLoading] = useState(false);
-
-  /** Error state for failed API calls */
   const [error, setError] = useState<string | null>(null);
 
-  /** Lights organized by location for grouped display */
-  const [groupedLights, setGroupedLights] = useState<Record<string, Light[]>>({});
+  // Map backend entity to Light type
+  function mapEntityToLight(entity: LightEntity): Light {
+    return {
+      id: entity.id,
+      name: entity.friendly_name || entity.name || entity.id,
+      state: entity.state ? "on" : "off",
+      capabilities: entity.capabilities ?? [],
+      brightness: entity.brightness,
+      location: entity.suggested_area || entity.location || "Unknown",
+      groups: entity.groups || []
+    };
+  }
 
+  // Fetch lights on mount
   useEffect(() => {
     setLoading(true);
     setError(null);
     fetchLights()
-      .then((data) => {
-        setLights(data);
-        // Group lights by location for better organization
-        const grouped = data.reduce((acc: Record<string, Light[]>, light: Light) => {
+      .then((data: LightStatus[]) => {
+        // data is an array of entities, map to LightEntity and then to Light
+        const lightsArr: Light[] = (data as LightEntity[]).map(mapEntityToLight);
+        // Group by location
+        const grouped = lightsArr.reduce((acc: Record<string, Light[]>, light: Light) => {
           const location = light.location || "Unknown";
-          if (!acc[location]) {
-            acc[location] = [];
-          }
+          if (!acc[location]) acc[location] = [];
           acc[location].push(light);
           return acc;
         }, {});
         setGroupedLights(grouped);
       })
-      .catch((e) => setError(e.message))
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  /**
-   * Handles toggling an individual light on or off
-   *
-   * @param lightId - The ID of the light to toggle
-   * @param isOn - The new state to set (true for on, false for off)
-   */
-  const handleToggleLight = (lightId: string, isOn: boolean) => {
-    // Update local state immediately for responsive UI
-    setLights(prevLights =>
-      prevLights.map(light =>
-        light.id === lightId ? { ...light, state: isOn } : light
-      )
-    );
-
-    // Also update the grouped lights
-    setGroupedLights(prev => {
-      const newGrouped = { ...prev };
-      Object.keys(newGrouped).forEach(location => {
-        newGrouped[location] = newGrouped[location].map(light =>
-          light.id === lightId ? { ...light, state: isOn } : light
-        );
-      });
-      return newGrouped;
-    });
-
-    // Send API request to update light state (now uses correct endpoint)
-    setLightState(lightId, isOn).catch((err: Error) => {
-      setError(err.message);
-      // Optionally revert UI state if error
-    });
-  };
-
-  /**
-   * Handles toggling all lights on or off
-   *
-   * @param isOn - The new state to set for all lights
-   */
-  const handleToggleAllLights = (isOn: boolean) => {
-    setAllLights(isOn)
-      .then((updatedLights) => {
-        setLights(updatedLights);
-        // Regroup after update
-        const grouped = updatedLights.reduce((acc: Record<string, Light[]>, light: Light) => {
-          const location = light.location || "Unknown";
-          if (!acc[location]) {
-            acc[location] = [];
+  // Toggle a single light (with optional brightness)
+  const handleToggle = (light: Light) => {
+    const newState = light.state === "on" ? "off" : "on";
+    const command: LightCommand = { command: "set", state: newState };
+    if (light.capabilities.includes("brightness") && light.brightness !== undefined) {
+      command.brightness = light.brightness;
+    }
+    setLightState(light.id, command)
+      .then(() => {
+        setGroupedLights((prev) => {
+          const updated: Record<string, Light[]> = {};
+          for (const [loc, lights] of Object.entries(prev)) {
+            updated[loc] = lights.map((l) =>
+              l.id === light.id ? { ...l, state: newState } : l
+            );
           }
-          acc[location].push(light);
-          return acc;
-        }, {});
-        setGroupedLights(grouped);
+          return updated;
+        });
       })
-      .catch((err: Error) => setError(err.message));
+      .catch((e: Error) => setError(e.message));
   };
 
-  if (loading) {
-    return (
-      <section>
-        <h1 className="text-3xl font-bold mb-6">RV-C Lights</h1>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rv-primary"></div>
-        </div>
-      </section>
-    );
-  }
+  // Handle brightness change
+  const handleBrightnessChange = (light: Light, value: number) => {
+    const command: LightCommand = { command: "set", state: "on", brightness: value };
+    setLightState(light.id, command)
+      .then(() => {
+        setGroupedLights((prev) => {
+          const updated: Record<string, Light[]> = {};
+          for (const [loc, lights] of Object.entries(prev)) {
+            updated[loc] = lights.map((l) =>
+              l.id === light.id ? { ...l, brightness: value, state: "on" } : l
+            );
+          }
+          return updated;
+        });
+      })
+      .catch((e: Error) => setError(e.message));
+  };
 
-  if (error) {
-    return (
-      <section>
-        <h1 className="text-3xl font-bold mb-6">RV-C Lights</h1>
-        <Alert
-          variant="error"
-          title="Error Loading Lights"
-          onDismiss={() => setError(null)}
-        >
-          {error}
-        </Alert>
-      </section>
-    );
-  }
+  if (loading) return <Loading />;
+  if (error) return <Alert variant="error">{error}</Alert>;
 
   return (
-    <section>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-bold">RV-C Lights</h1>
-
-        <div className="flex space-x-2">
-          <Button
-            variant="primary"
-            onClick={() => handleToggleAllLights(true)}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            All Lights On
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => handleToggleAllLights(false)}
-          >
-            All Lights Off
-          </Button>
-        </div>
-      </div>
-
-      {/* Error notification */}
-      {error && (
-        <Alert
-          variant="error"
-          title="Error"
-          className="mb-4"
-          onDismiss={() => setError(null)}
-        >
-          {error}
-        </Alert>
-      )}
-
-      {lights.length === 0 ? (
-        <Card>
-          <div className="p-8 text-center">
-            <svg className="w-16 h-16 mx-auto text-rv-text/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <p className="text-rv-text/70">No lights found in the system.</p>
-          </div>
-        </Card>
+    <div className="px-4 py-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Lights</h1>
+      {Object.keys(groupedLights).length === 0 ? (
+        <Alert variant="info">No lights found.</Alert>
       ) : (
-        <div className="space-y-6">
-          {/* Lights Summary */}
-          <Card className="mb-4">
-            <div className="flex flex-wrap items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Lights Overview</h3>
-                <p className="text-rv-text/70">
-                  {lights.filter(l => l.state).length} of {lights.length} lights are currently on
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
-                {Object.keys(groupedLights).map(location => (
-                  <Badge
-                    key={location}
-                    variant="primary"
-                    className="px-3 py-1"
-                  >
-                    {location}: {groupedLights[location].filter(l => l.state).length}/{groupedLights[location].length}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          {/* Lights grouped by location */}
-          {Object.entries(groupedLights).map(([location, locationLights]) => (
-            <Card
-              key={location}
-              title={
-                <div className="flex justify-between items-center">
-                  <span>{location}</span>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="secondary"
-                      className="py-1 px-3 text-sm"
-                      onClick={() => locationLights.forEach(light => handleToggleLight(light.id, true))}
-                    >
-                      All On
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="py-1 px-3 text-sm"
-                      onClick={() => locationLights.forEach(light => handleToggleLight(light.id, false))}
-                    >
-                      All Off
-                    </Button>
-                  </div>
-                </div>
-              }
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {locationLights.map((light) => (
+        Object.entries(groupedLights).map(([location, lights]) => (
+          <div key={location} className="mb-8">
+            <h2 className="text-lg font-semibold mb-3">{location}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {lights.map((light) => {
+                const isOn = light.state === "on";
+                const hasBrightness = light.capabilities.includes("brightness");
+                return (
                   <div
                     key={light.id}
-                    className={`relative bg-rv-surface/50 p-4 rounded-xl flex items-center justify-between light-card ${
-                      light.state ? "on" : ""
-                    }`}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={isOn}
+                    aria-label={`Toggle ${light.name}`}
+                    onClick={() => handleToggle(light)}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleToggle(light);
+                      }
+                    }}
+                    className="outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-600 rounded-xl"
                   >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{light.name || light.id}</span>
-                      {light.type && (
-                        <span className="text-xs text-rv-text/70">{light.type}</span>
-                      )}
-                    </div>
-                    <Toggle
-                      isOn={light.state}
-                      onToggle={(isOn) => handleToggleLight(light.id, isOn)}
-                      size="md"
-                    />
+                    <Card
+                      className={`transition-all cursor-pointer select-none flex flex-col items-center p-6 border rounded-xl shadow-md
+                        ${isOn
+                          ? "bg-primary-100 dark:bg-primary-900 border-primary-400 dark:border-primary-700 shadow-lg scale-105"
+                          : "bg-background dark:bg-background border-gray-200 dark:border-gray-700 shadow"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-2 mb-2 w-full justify-between">
+                        <span className="font-medium text-lg">{light.name}</span>
+                        {hasBrightness && (
+                          <Badge variant="primary">Brightness</Badge>
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col items-center justify-center w-full">
+                        <span className={`text-2xl font-bold ${isOn ? "text-primary-700 dark:text-primary-200" : "text-gray-400 dark:text-gray-500"}`}>{isOn ? "On" : "Off"}</span>
+                        {hasBrightness && (
+                          <div className="w-full mt-4">
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={light.brightness ?? 0}
+                              onChange={(e) => handleBrightnessChange(light, Number(e.target.value))}
+                              className="w-full accent-primary-500 h-2 rounded-lg appearance-none bg-primary-200 dark:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                              aria-label={`Set brightness for ${light.name}`}
+                              style={{ zIndex: 1, position: "relative" }}
+                            />
+                            <div className="text-xs text-right mt-1 text-primary-700 dark:text-primary-200">{light.brightness ?? 0}%</div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
                   </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
+                );
+              })}
+            </div>
+          </div>
+        ))
       )}
-    </section>
+    </div>
   );
 }

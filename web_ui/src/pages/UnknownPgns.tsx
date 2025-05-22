@@ -52,86 +52,49 @@ export function UnknownPgns() {
   }
 
   return (
-    <section className="space-y-6">
-      <h1 className="text-3xl font-bold">Unknown PGNs</h1>
-
-      {error && (
-        <div className="bg-rv-error/20 text-rv-error p-4 rounded-xl mb-6">
-          Error loading unknown PGNs: {error}
-        </div>
-      )}
-
-      <div className="mb-4 flex justify-between items-center">
-        <div>
-          <Badge>
-            {unknownPgns.length} unknown{" "}
-            {unknownPgns.length === 1 ? "PGN" : "PGNs"}
-          </Badge>
-        </div>
-        <button
-          className="px-4 py-2 bg-rv-primary/20 text-rv-primary hover:bg-rv-primary/30 rounded-lg"
-          onClick={() => setUnknownPgns([])}
-        >
-          Refresh
-        </button>
-      </div>
-
-      {unknownPgns.length > 0 ? (
-        <div className="space-y-4">
-          {unknownPgns.map((pgn, index) => (
-            <Card key={index} title={`PGN: ${pgn.pgn || pgn.id || "Unknown"}`}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Occurrences</h3>
-                  <div className="bg-rv-background/50 p-3 rounded-lg">
-                    <div className="flex justify-between">
-                      <span>First seen:</span>
-                      <span>{pgn.first_seen || "Unknown"}</span>
-                    </div>
-                    <div className="flex justify-between mt-2">
-                      <span>Last seen:</span>
-                      <span>{pgn.last_seen || "Unknown"}</span>
-                    </div>
-                    <div className="flex justify-between mt-2">
-                      <span>Count:</span>
-                      <span>{pgn.occurrence_count || "Unknown"}</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Sample Data</h3>
-                  <pre className="bg-rv-background/50 p-3 rounded-lg overflow-auto text-xs h-32">
-                    {JSON.stringify(pgn.sample_data || pgn, null, 2)}
-                  </pre>
-                </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-lg font-medium mb-2">Source Addresses</h3>
-                <div className="flex flex-wrap gap-2">
-                  {pgn.source_addresses ? (
-                    pgn.source_addresses.map((src: number, i: number) => (
-                      <Badge key={i} variant="secondary">
-                        SA: {src}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-rv-text/60">
-                      No source address data
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : !loading ? (
-        <div className="bg-rv-surface p-8 rounded-xl text-center">
-          <p className="text-xl">No unknown PGNs found</p>
-          <p className="text-rv-text/60 mt-2">
-            All received PGNs are recognized by the system.
-          </p>
-        </div>
-      ) : null}
-    </section>
+    <div className="px-4 py-6 max-w-5xl mx-auto">
+      <Card className="bg-[var(--color-bg)] border border-[var(--color-border)] shadow-md">
+        <h1 className="text-2xl font-bold mb-4 text-[var(--color-text)]">Unknown PGNs</h1>
+        <p className="mb-6 text-[var(--color-muted)]">
+          The following Parameter Group Numbers (PGNs) have been observed on the RV-C network but are not recognized by the system. This may indicate missing protocol support or new/undocumented messages.
+        </p>
+        {error && (
+          <div className="text-red-600 bg-red-50 border border-red-200 rounded p-4 my-4" role="alert">
+            Error loading unknown PGNs: {error}
+          </div>
+        )}
+        {!loading && unknownPgns.length === 0 && !error && (
+          <div className="italic text-[var(--color-muted)]">No unknown PGNs detected.</div>
+        )}
+        {!loading && unknownPgns.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-1">
+              <thead>
+                <tr className="bg-[var(--color-bg-muted)]">
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">PGN</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Count</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">First Seen</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Last Seen</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Source Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unknownPgns.map((pgn) => (
+                  <tr key={pgn.pgn} className="hover:bg-[var(--color-primary)/10]">
+                    <td className="px-4 py-2 font-mono text-[var(--color-text)]">
+                      <Badge className="bg-[var(--color-primary)] text-white">{pgn.pgn}</Badge>
+                    </td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.occurrence_count ?? "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.first_seen ? new Date(pgn.first_seen).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.last_seen ? new Date(pgn.last_seen).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-[var(--color-text)]">{Array.isArray(pgn.source_addresses) && pgn.source_addresses.length > 0 ? pgn.source_addresses.join(", ") : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }

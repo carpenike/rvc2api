@@ -1,13 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="theme-default">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <title>RVC2API Dashboard</title>
+    <!-- Prevent theme flash on initial load -->
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem("rv-theme") || "system";
+        console.log("Initial theme from localStorage:", savedTheme);
+
+        // Handle system theme preference
+        if (savedTheme === "system") {
+          if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.classList.remove("theme-default");
+            document.documentElement.classList.add("theme-dark");
+            document.documentElement.setAttribute("data-theme", "dark");
+            console.log("Applied system dark theme");
+          } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+            document.documentElement.classList.remove("theme-default");
+            document.documentElement.classList.add("theme-light");
+            document.documentElement.setAttribute("data-theme", "light");
+            console.log("Applied system light theme");
+          }
+        } else {
+          // Set saved theme
+          document.documentElement.classList.remove("theme-default");
+          document.documentElement.classList.add(`theme-${savedTheme}`);
+          document.documentElement.setAttribute("data-theme", savedTheme);
+          console.log("Applied saved theme:", savedTheme);
+        }
+
+        // Debug helper for theme switching (available in console)
+        window.debugTheme = function() {
+          const html = document.documentElement;
+          console.log("Current theme class:", Array.from(html.classList).filter(c => c.startsWith('theme-')));
+          console.log("Current data-theme:", html.getAttribute("data-theme"));
+          console.log("CSS variables:", {
+            primary: getComputedStyle(document.documentElement).getPropertyValue('--rv-primary'),
+            background: getComputedStyle(document.documentElement).getPropertyValue('--rv-background'),
+            text: getComputedStyle(document.documentElement).getPropertyValue('--rv-text')
+          });
+        };
+
+        // Call it once on load
+        setTimeout(window.debugTheme, 100);
+      })();
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="bg-rv-background h-screen overflow-hidden">
+    <div id="root" class="h-screen"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -28,6 +28,16 @@ export function NetworkMap() {
   const width = 800;
   const height = 600;
 
+  // Type guard for optional x/y coordinates
+  function hasXY(node: unknown): node is { x: number; y: number } {
+    return (
+      typeof node === "object" &&
+      node !== null &&
+      typeof (node as Record<string, unknown>).x === "number" &&
+      typeof (node as Record<string, unknown>).y === "number"
+    );
+  }
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -53,111 +63,95 @@ export function NetworkMap() {
   // Draw network map when data changes
   useEffect(() => {
     if (!networkData || !canvasRef.current) return;
-
-    // This is a placeholder for actual visualization logic
-    // In a real implementation, you'd use a library like D3.js or custom canvas drawing
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Set background
-    ctx.fillStyle = "#1E293B"; // rv-background color
+    // Theme-adaptive background
+    ctx.fillStyle =
+      getComputedStyle(document.documentElement).getPropertyValue("--color-bg") || "#fff";
     ctx.fillRect(0, 0, width, height);
 
-    // Draw network nodes and connections
+    // Draw edges
     if (networkData.nodes && networkData.edges) {
-      // Draw placeholder message until actual visualization is implemented
-      ctx.fillStyle = "#F8FAFC"; // rv-text color
-      ctx.font = "24px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        "Network Visualization (Placeholder)",
-        width / 2,
-        height / 2 - 20
-      );
-      ctx.font = "16px sans-serif";
-      ctx.fillText(
-        "Actual implementation would use D3.js or similar",
-        width / 2,
-        height / 2 + 20
-      );
-      ctx.fillText(
-        `${networkData.nodes.length} nodes and ${networkData.edges.length} connections detected`,
-        width / 2,
-        height / 2 + 50
-      );
+      ctx.strokeStyle =
+        getComputedStyle(document.documentElement).getPropertyValue("--color-border") || "#888";
+      ctx.lineWidth = 2;
+      networkData.edges.forEach((edge) => {
+        const from = networkData.nodes?.find((n) => n.id === edge.source);
+        const to = networkData.nodes?.find((n) => n.id === edge.target);
+        if (
+          from &&
+          to &&
+          typeof from.address === "number" &&
+          typeof to.address === "number"
+        ) {
+          const fromX = hasXY(from)
+            ? from.x
+            : width / 2 + 200 * Math.cos((from.address / 256) * 2 * Math.PI);
+          const fromY = hasXY(from)
+            ? from.y
+            : height / 2 + 200 * Math.sin((from.address / 256) * 2 * Math.PI);
+          const toX = hasXY(to)
+            ? to.x
+            : width / 2 + 200 * Math.cos((to.address / 256) * 2 * Math.PI);
+          const toY = hasXY(to)
+            ? to.y
+            : height / 2 + 200 * Math.sin((to.address / 256) * 2 * Math.PI);
+          ctx.beginPath();
+          ctx.moveTo(fromX, fromY);
+          ctx.lineTo(toX, toY);
+          ctx.stroke();
+        }
+      });
+
+      // Draw nodes
+      networkData.nodes.forEach((node) => {
+        const x = hasXY(node)
+          ? node.x
+          : width / 2 + 200 * Math.cos((node.address / 256) * 2 * Math.PI);
+        const y = hasXY(node)
+          ? node.y
+          : height / 2 + 200 * Math.sin((node.address / 256) * 2 * Math.PI);
+        ctx.beginPath();
+        ctx.arc(x, y, 24, 0, 2 * Math.PI);
+        ctx.fillStyle = node.status === "active"
+          ? getComputedStyle(document.documentElement).getPropertyValue("--color-primary") || "#2563eb"
+          : getComputedStyle(document.documentElement).getPropertyValue("--color-muted") || "#d1d5db";
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-border") || "#888";
+        ctx.stroke();
+
+        // Node label
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-text") || "#111";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(node.name || String(node.id), x, y + 28);
+      });
     }
   }, [networkData]);
 
-  if (loading && !networkData) {
-    return <Loading message="Loading network map data..." />;
-  }
-
   return (
-    <section className="space-y-6">
-      <h1 className="text-3xl font-bold">Network Map</h1>
-
-      {error && (
-        <div className="bg-rv-error/20 text-rv-error p-4 rounded-xl mb-6">
-          Error loading network map: {error}
-        </div>
-      )}
-
-      <Card title="Network Visualization">
-        <div className="flex justify-center">
+    <div className="px-4 py-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Network Map</h1>
+      <Card className="p-4 bg-background dark:bg-background border border-border dark:border-border shadow-md">
+        {loading && <Loading />}
+        {error && <div className="text-error-600 dark:text-error-400">{error}</div>}
+        <div className="flex justify-center items-center">
           <canvas
             ref={canvasRef}
             width={width}
             height={height}
-            className="border border-rv-surface/30 rounded-lg max-w-full"
-          ></canvas>
+            className="rounded-lg border border-border bg-background dark:bg-background"
+            style={{ width: "100%", maxWidth: width, height }}
+            aria-label="RV-C Network Topology"
+          />
         </div>
       </Card>
-
-      <Card title="Network Statistics">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-rv-surface/30 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Devices</h3>
-            <p className="text-3xl font-bold text-rv-primary">
-              {networkData?.nodes?.length || 0}
-            </p>
-            <p className="text-sm text-rv-text/70 mt-1">
-              Total devices on network
-            </p>
-          </div>
-
-          <div className="p-4 bg-rv-surface/30 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Connections</h3>
-            <p className="text-3xl font-bold text-rv-accent">
-              {networkData?.edges?.length || 0}
-            </p>
-            <p className="text-sm text-rv-text/70 mt-1">Active data pathways</p>
-          </div>
-
-          <div className="p-4 bg-rv-surface/30 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Status</h3>
-            <p className="text-3xl font-bold text-rv-success">
-              {networkData ? "Active" : "Unknown"}
-            </p>
-            <p className="text-sm text-rv-text/70 mt-1">Network availability</p>
-          </div>
-        </div>
-      </Card>
-
-      <div className="text-center text-sm text-rv-text/50 mt-8">
-        <p>
-          Note: This is a simplified network visualization. For detailed
-          diagnostics, use the CAN Sniffer.
-        </p>
-        <p>
-          Last updated:{" "}
-          {networkData?.timestamp
-            ? new Date(networkData.timestamp).toLocaleString()
-            : "Never"}
-        </p>
-      </div>
-    </section>
+    </div>
   );
 }

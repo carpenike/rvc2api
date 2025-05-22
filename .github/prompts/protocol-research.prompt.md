@@ -13,7 +13,7 @@ tools: ['perplexity_ask']
 - **Related ADR/Spec:** [Link, if applicable]
 - **Intended Audience:** [e.g., developers, hardware engineers]
 
-**Summary:**  
+**Summary:**
 [Briefly describe what is being researched and why.]
 
 This guide provides a structured approach to researching RV protocols, hardware interfaces, or features before implementing them in rvc2api.

@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 
 interface LoadingProps {
@@ -18,11 +19,19 @@ export function Loading({
   const sizeClasses = {
     sm: "h-6 w-6 border-2",
     md: "h-10 w-10 border-2",
-    lg: "h-16 w-16 border-3"
+    lg: "h-16 w-16 border-4"
   };
 
   const spinner = (
-    <div className={`animate-spin rounded-full ${sizeClasses[size]} border-t-rv-primary border-b-rv-primary border-r-transparent border-l-transparent`}></div>
+    <div
+      className={clsx(
+        "animate-spin rounded-full border-t-rv-primary border-b-rv-primary border-r-transparent border-l-transparent",
+        sizeClasses[size]
+      )}
+      role="status"
+      aria-label="Loading"
+      data-testid="loading-spinner"
+    />
   );
 
   // For small loading spinners without messages, just return the spinner
@@ -34,9 +43,9 @@ export function Loading({
   if (fullPage) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-rv-background/80 backdrop-blur-sm z-50">
-        <div className="flex flex-col items-center p-8 rounded-xl">
+        <div className="flex flex-col items-center p-8 rounded-xl bg-rv-surface shadow-lg">
           {spinner}
-          {message && <p className="mt-4 text-rv-text/90 text-lg">{message}</p>}
+          {message && <p className="mt-4 text-rv-text/90 text-lg" aria-live="polite">{message}</p>}
           {children}
         </div>
       </div>
@@ -45,9 +54,9 @@ export function Loading({
 
   // Default loading component
   return (
-    <div className={`flex flex-col items-center justify-center p-6 ${className}`}>
+    <div className={clsx("flex flex-col items-center justify-center p-6", className)}>
       {spinner}
-      {message && <p className="mt-2 text-rv-text/70">{message}</p>}
+      {message && <p className="mt-2 text-rv-text/70" aria-live="polite">{message}</p>}
       {children}
     </div>
   );

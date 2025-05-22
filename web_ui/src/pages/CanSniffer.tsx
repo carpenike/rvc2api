@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card } from "../components";
 
@@ -54,9 +55,6 @@ export function CanSniffer() {
   /** Current filter text */
   const [filter, setFilter] = useState("");
 
-  /** Field to apply the filter against */
-  const [filterField, setFilterField] = useState<keyof CanMessage>("name");
-  const [autoScroll, setAutoScroll] = useState(true);
   const [messageLimit, setMessageLimit] = useState(100);
 
   const fetchMessages = useCallback(async () => {
@@ -89,27 +87,6 @@ export function CanSniffer() {
     return () => clearInterval(interval);
   }, [isLive, fetchMessages]);
 
-  /**
-   * Scrolls the message container to the bottom
-   * Used for auto-scrolling when new messages arrive
-   */
-  const scrollToBottom = useCallback(() => {
-    const container = document.getElementById("can-messages-container");
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }, []);
-
-  // Call scrollToBottom when messages change, if auto-scroll is enabled
-  useEffect(() => {
-    if (autoScroll) {
-      scrollToBottom();
-    }
-  }, [messages, autoScroll, scrollToBottom]);
-
-  /**
-   * Toggles live message updates on/off
-   */
   const toggleLive = () => {
     setIsLive(prev => !prev);
   };
@@ -118,11 +95,14 @@ export function CanSniffer() {
     setMessages([]);
   };
 
-  const filteredMessages = messages.filter(msg => {
-    if (!filter) return true;
-    const value = msg[filterField]?.toString().toLowerCase() || "";
-    return value.includes(filter.toLowerCase());
-  });
+  const filteredMessages = filter
+    ? messages.filter((msg) =>
+        msg.name.toLowerCase().includes(filter.toLowerCase()) ||
+        msg.pgn.toLowerCase().includes(filter.toLowerCase()) ||
+        msg.dgn.toLowerCase().includes(filter.toLowerCase()) ||
+        msg.arb_id.toLowerCase().includes(filter.toLowerCase())
+      )
+    : messages;
 
   const exportCSV = () => {
     const headers = Object.keys(filteredMessages[0] || {}).join(",");
@@ -145,154 +125,110 @@ export function CanSniffer() {
   };
 
   return (
-    <section className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">CAN Sniffer</h1>
-        <div className="space-x-2">
-          <Button
-            variant={isLive ? "primary" : "ghost"}
-            onClick={toggleLive}
-          >
-            {isLive ? "Live • Stop" : "Start Live Feed"}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={clearMessages}
-          >
-            Clear
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={exportCSV}
-            disabled={filteredMessages.length === 0}
-          >
-            Export CSV
-          </Button>
-        </div>
-      </div>
-
-      <Card>
-        <div className="mb-4 flex flex-wrap gap-2 items-center">
-          <div className="flex items-center space-x-2">
-            <label htmlFor="filter-field" className="text-sm">Filter by:</label>
-            <select
-              id="filter-field"
-              value={filterField}
-              onChange={(e) => setFilterField(e.target.value as keyof CanMessage)}
-              className="bg-rv-surface border border-rv-surface/80 text-rv-text rounded-lg px-2 py-1 text-sm"
+    <main className="p-4 md:p-8 bg-rv-surface min-h-screen" aria-label="CAN Sniffer page">
+      <Card className="max-w-6xl mx-auto bg-rv-surface shadow-md rounded-lg p-4 md:p-6">
+        <header className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between">
+          <h1 className="text-2xl font-bold text-rv-text mb-2 md:mb-0" id="can-sniffer-heading">
+            CAN Sniffer
+          </h1>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant={isLive ? "primary" : "secondary"}
+              aria-label={isLive ? "Pause live updates" : "Resume live updates"}
+              onClick={toggleLive}
+              data-testid="toggle-live-btn"
             >
-              <option value="pgn">PGN</option>
-              <option value="dgn">DGN</option>
-              <option value="name">Name</option>
-              <option value="arb_id">Arb ID</option>
-              <option value="dir">Direction</option>
-            </select>
+              {isLive ? "Pause" : "Resume"}
+            </Button>
+            <Button
+              variant="ghost"
+              aria-label="Clear messages"
+              onClick={clearMessages}
+              data-testid="clear-btn"
+            >
+              Clear
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={exportCSV}
+              disabled={filteredMessages.length === 0}
+              aria-label="Export messages to CSV"
+              data-testid="export-csv-btn"
+            >
+              Export CSV
+            </Button>
           </div>
-          <div className="flex-grow">
-            <input
-              type="text"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder={`Filter by ${filterField}...`}
-              className="bg-rv-surface border border-rv-surface/80 text-rv-text rounded-lg px-3 py-1 w-full"
-            />
-          </div>
-          <label className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoScroll}
-              onChange={() => setAutoScroll(prev => !prev)}
-              className="sr-only peer"
-            />
-            <div className="relative w-9 h-5 bg-rv-surface/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-rv-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rv-primary"></div>
-            <span className="ms-3 text-sm font-medium text-gray-300">Auto-scroll</span>
+        </header>
+        <div className="mb-4 flex flex-col md:flex-row md:items-center gap-2">
+          <label htmlFor="can-filter" className="text-rv-text font-medium">
+            Filter:
           </label>
+          <input
+            id="can-filter"
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-rv-surface border border-rv-border rounded-md px-2 py-1 text-sm text-rv-text focus:outline-none focus:ring-2 focus:ring-rv-primary"
+            placeholder="Name, PGN, DGN, or Arb ID"
+            aria-label="Filter CAN messages"
+            data-testid="filter-input"
+          />
         </div>
-
-        {loading && messages.length === 0 && (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rv-primary"></div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8" role="status" aria-live="polite" data-testid="loading-state">
+            <span className="text-rv-text">Loading CAN messages…</span>
           </div>
-        )}
-
-        {error && (
-          <div className="bg-rv-error/20 p-4 rounded-lg border border-rv-error/30 text-rv-text">
-            <p className="font-semibold">Error loading CAN messages</p>
-            <p className="text-sm mt-1">{error}</p>
+        ) : error ? (
+          <div className="flex items-center justify-center py-8" role="alert" aria-live="assertive" data-testid="error-state">
+            <span className="text-rv-error font-semibold">{error}</span>
           </div>
-        )}
-
-        {!loading && filteredMessages.length === 0 && !error && (
-          <p className="text-rv-text/70 py-4 text-center">No CAN messages found.</p>
-        )}
-
-        {filteredMessages.length > 0 && (
-          <div className="rounded-lg border border-rv-surface overflow-hidden">
-            <div
-              className="overflow-x-auto overflow-y-auto max-h-[60vh]"
-              id="can-messages-container"
-            >
-              <table className="min-w-full divide-y divide-rv-surface/80">
-                <thead className="bg-rv-surface/70 sticky top-0">
+        ) : (
+          <section aria-labelledby="can-sniffer-heading">
+            <div className="overflow-x-auto rounded-md border border-rv-border bg-rv-surface">
+              <table className="min-w-full text-sm text-rv-text" aria-label="CAN messages table" data-testid="can-table">
+                <caption className="sr-only">CAN messages</caption>
+                <thead className="bg-rv-muted">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Dir
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      PGN
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      DGN
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Arb ID
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Data
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-rv-text/70 uppercase tracking-wider">
-                      Decoded
-                    </th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Time</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Dir</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">PGN</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">DGN</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Name</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Arb ID</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Data</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Decoded</th>
                   </tr>
                 </thead>
-                <tbody className="bg-rv-background/20 divide-y divide-rv-surface/40">
-                  {filteredMessages.map((msg, index) => (
-                    <tr
-                      key={index}
-                      className={`text-xs hover:bg-rv-surface/20 transition-colors ${
-                        msg.dir === "TX" ? "text-rv-primary/80" : ""
-                      }`}
-                    >
-                      <td className="px-3 py-2 whitespace-nowrap font-mono">{msg.time}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          msg.dir === "TX"
-                            ? "bg-rv-success/20 text-rv-success"
-                            : "bg-rv-primary/20 text-rv-primary"
-                        }`}>
-                          {msg.dir}
-                        </span>
+                <tbody>
+                  {filteredMessages.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center text-rv-muted py-6" data-testid="no-messages-row">
+                        No CAN messages to display.
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap font-mono">{msg.pgn}</td>
-                      <td className="px-3 py-2 whitespace-nowrap font-mono">{msg.dgn}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{msg.name}</td>
-                      <td className="px-3 py-2 whitespace-nowrap font-mono">{msg.arb_id}</td>
-                      <td className="px-3 py-2 whitespace-nowrap font-mono">{msg.data}</td>
-                      <td className="px-3 py-2 break-all font-mono max-w-sm">{msg.decoded}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredMessages.map((msg, i) => (
+                      <tr
+                        key={i}
+                        className={clsx(i % 2 === 0 ? "bg-rv-surface" : "bg-rv-muted/50")}
+                        data-testid="can-row"
+                      >
+                        <td className="px-2 py-1 whitespace-nowrap">{msg.time}</td>
+                        <td className={clsx("px-2 py-1 font-mono", msg.dir === "TX" ? "text-rv-primary" : "text-rv-secondary")}>{msg.dir}</td>
+                        <td className="px-2 py-1 font-mono">{msg.pgn}</td>
+                        <td className="px-2 py-1 font-mono">{msg.dgn}</td>
+                        <td className="px-2 py-1">{msg.name}</td>
+                        <td className="px-2 py-1 font-mono">{msg.arb_id}</td>
+                        <td className="px-2 py-1 font-mono">{msg.data}</td>
+                        <td className="px-2 py-1">{msg.decoded}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         )}
-
         <div className="mt-4 flex justify-between items-center text-xs text-rv-text/60">
           <div>
             Showing {filteredMessages.length} of {messages.length} messages
@@ -314,6 +250,6 @@ export function CanSniffer() {
           </div>
         </div>
       </Card>
-    </section>
+    </main>
   );
 }

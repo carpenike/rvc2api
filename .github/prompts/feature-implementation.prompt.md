@@ -13,7 +13,7 @@ tools: ['context7']
 - **Related Spec:** [Link to `/docs/specs/feature-xyz.md`]
 - **Related ADR:** [Link, if applicable]
 
-**Summary:**  
+**Summary:**
 [Briefly describe the feature and its purpose.]
 
 ---

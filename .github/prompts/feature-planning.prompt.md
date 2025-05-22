@@ -12,7 +12,7 @@ tools: ['context7']
 - **Author(s):** [Name(s)]
 - **Related ADR:** [Link, if applicable]
 
-**Summary:**  
+**Summary:**
 [Briefly describe the feature and its purpose.]
 
 ---

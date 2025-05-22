@@ -2,10 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles extending Tailwind */
+/*
+  Theme-adaptive custom styles using CSS variables for all color roles.
+  All color-related properties use rgba(var(--rv-*-rgb), <alpha>) for theme support,
+  with Tailwind color as a fallback for legacy browsers or initial load.
+*/
 @layer components {
   .card {
-    @apply bg-rv-surface text-rv-text rounded-xl p-5 shadow-lg border border-rv-surface/40;
+    @apply bg-rv-surface text-rv-text rounded-xl p-4 shadow-lg border w-full;
+    border-color: rgba(var(--rv-surface-rgb, 51,65,85), 0.4);
   }
 
   .btn {
@@ -13,15 +18,27 @@
   }
 
   .btn-primary {
-    @apply btn bg-rv-primary hover:bg-rv-primary/80 text-white shadow-sm shadow-rv-primary/30;
+    @apply btn bg-rv-primary text-white shadow-sm;
+    box-shadow: 0 1px 2px 0 rgba(var(--rv-primary-rgb,59,130,246),0.3);
+  }
+  .btn-primary:hover {
+    background-color: rgba(var(--rv-primary-rgb,59,130,246),0.8);
   }
 
   .btn-secondary {
-    @apply btn bg-rv-secondary hover:bg-rv-secondary/80 text-white shadow-sm shadow-rv-secondary/30;
+    @apply btn bg-rv-secondary text-white shadow-sm;
+    box-shadow: 0 1px 2px 0 rgba(var(--rv-secondary-rgb,16,185,129),0.3);
+  }
+  .btn-secondary:hover {
+    background-color: rgba(var(--rv-secondary-rgb,16,185,129),0.8);
   }
 
   .btn-accent {
-    @apply btn bg-rv-accent hover:bg-rv-accent/80 text-white shadow-sm shadow-rv-accent/30;
+    @apply btn bg-rv-accent text-white shadow-sm;
+    box-shadow: 0 1px 2px 0 rgba(var(--rv-accent-rgb,139,92,246),0.3);
+  }
+  .btn-accent:hover {
+    background-color: rgba(var(--rv-accent-rgb,139,92,246),0.8);
   }
 
   .light-card {
@@ -29,52 +46,22 @@
   }
 
   .light-card.on {
-    @apply shadow-[0_0_15px_rgba(59,130,246,0.5)];
+    box-shadow: 0 0 15px rgba(var(--rv-primary-rgb,59,130,246),0.5);
   }
-
   .light-card.on::before {
     content: "";
-    @apply absolute inset-0 bg-gradient-to-br from-rv-primary/20 to-transparent rounded-xl pointer-events-none;
+    @apply absolute inset-0 rounded-xl pointer-events-none;
+    background: linear-gradient(135deg, rgba(var(--rv-primary-rgb,59,130,246),0.2) 0%, transparent 100%);
   }
 }
 
 body {
-  @apply bg-rv-background text-rv-text min-h-screen;
+  background-color: var(--rv-background, #f8fafc);
+  color: var(--rv-text, #222);
+  min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+/*
+  Note: For full theme adaptability, define all --rv-*-rgb and --rv-* variables in your global theme file or Tailwind config.
+  Use semantic color names for all UI elements and avoid hardcoded hex values.
+*/

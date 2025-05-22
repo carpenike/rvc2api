@@ -6,9 +6,9 @@
  */
 import { handleApiResponse } from "./index";
 import type {
+    AllCanStats,
     AppHealth,
     CanMessage,
-    CanStatus,
     DeviceMapping,
     LightStatus,
     NetworkMapData,
@@ -34,27 +34,63 @@ export async function fetchAppHealth(): Promise<AppHealth> {
 }
 
 // CAN interface status
-export async function fetchCanStatus(): Promise<CanStatus> {
+export async function fetchCanStatus(): Promise<AllCanStats> {
   const response = await fetch(`${API_BASE}/can/status`, defaultOptions);
-  return handleApiResponse<CanStatus>(response);
+  return handleApiResponse<AllCanStats>(response);
 }
 
 // Light control
 export async function fetchLights(): Promise<LightStatus[]> {
   // Updated to use the correct backend endpoint and query param
   const response = await fetch(`${API_BASE}/entities?device_type=light`, defaultOptions);
-  return handleApiResponse<LightStatus[]>(response);
+  const data: unknown = await handleApiResponse(response);
+  // Map backend fields to LightStatus interface
+  const normalize = (item: Record<string, unknown>): LightStatus => {
+    let brightness: number | undefined = undefined;
+    const raw = item.raw as Record<string, unknown> | undefined;
+    if (typeof item.brightness === "number") {
+      brightness = item.brightness as number;
+    } else if (raw && typeof raw.operating_status === "number") {
+      brightness = Math.round(Math.max(0, Math.min(100, (raw.operating_status as number / 200) * 100)));
+    }
+    return {
+      id: (item.id as string) || (item.entity_id as string) || "",
+      name: (item.name as string) || (item.friendly_name as string) || (item.id as string) || (item.entity_id as string) || "Unknown",
+      instance: (item.instance as number) ?? 0,
+      zone: (item.zone as number) ?? 0,
+      state: typeof item.state === "boolean" ? (item.state as boolean) : item.state === "on",
+      type: (item.type as string) || (item.device_type as string) || "",
+      location: (item.location as string) || (item.suggested_area as string) || "",
+      last_updated: (item.last_updated as string) || "",
+      brightness
+    };
+  };
+  if (Array.isArray(data)) {
+    return data.map(normalize);
+  }
+  if (data && typeof data === "object") {
+    // If backend returns an object keyed by id, convert to array
+    return Object.values(data as Record<string, unknown>).map(item => normalize(item as Record<string, unknown>));
+  }
+  return [];
+}
+
+export interface LightCommand {
+  command: string;
+  state?: string;
+  brightness?: number;
+  [key: string]: unknown;
 }
 
 export async function setLightState(
   id: string,
-  state: boolean
+  command: LightCommand
 ): Promise<LightStatus> {
   // Updated to use the correct backend endpoint and method
   const response = await fetch(`${API_BASE}/entities/${id}/control`, {
     ...defaultOptions,
     method: "POST",
-    body: JSON.stringify({ state })
+    body: JSON.stringify(command)
   });
   return handleApiResponse<LightStatus>(response);
 }
@@ -65,7 +101,7 @@ export async function setAllLights(state: boolean): Promise<LightStatus[]> {
   const results: LightStatus[] = [];
   for (const light of lights) {
     try {
-      const updated = await setLightState(light.id, state);
+      const updated = await setLightState(light.id, { command: "set_state", state: state ? "on" : "off" });
       results.push(updated);
     } catch {
       // Optionally handle errors per light

@@ -14,7 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
 from core_daemon.app_state import get_can_sniffer_grouped
-from core_daemon.can_manager import can_tx_queue
+from core_daemon.can_manager import buses, can_tx_queue
 from core_daemon.models import AllCANStats, CANInterfaceStats
 from core_daemon.websocket import network_map_ws_endpoint
 
@@ -216,7 +216,8 @@ async def get_can_interfaces_pyroute2() -> list[str]:
 @api_router_can.get("/can/status", response_model=AllCANStats)
 async def get_can_status():
     """
-    Retrieves detailed status for all CAN interfaces using pyroute2.
+    Retrieves detailed status for all CAN interfaces the service is listening on.
+    Combines pyroute2 stats (if available) with the actual set of active interfaces.
     On non-Linux platforms, returns a platform-specific message.
     """
     interfaces_data: dict[str, CANInterfaceStats] = {}
@@ -227,56 +228,64 @@ async def get_can_status():
         msg = f"CAN bus not supported on {platform_name} platform - pyroute2 requires Linux"
         logger.debug(msg)
         # Return a placeholder entry so the UI has something to display
-        interfaces_data["dummy_interface"] = CANInterfaceStats(
-            name="dummy_interface", state=f"Unsupported/{platform_name}", notes=msg
-        )
+        for iface in buses:
+            interfaces_data[iface] = CANInterfaceStats(
+                name=iface, state="Listening (no pyroute2)", notes=msg
+            )
+        if not interfaces_data:
+            interfaces_data["dummy_interface"] = CANInterfaceStats(
+                name="dummy_interface", state=f"Unsupported/{platform_name}", notes=msg
+            )
         return AllCANStats(interfaces=interfaces_data)
 
     # Linux platform with pyroute2 available
     try:
-        if IPRoute is None:
-            logger.debug("Cannot access CAN interfaces: IPRoute is None (import failed)")
-            return AllCANStats(interfaces={})
-
+        pyroute2_stats = {}
         with IPRoute() as ipr:
-            # Get all links and then filter for CAN, or get CAN links directly
-            # This ensures we have the full link object for stats, not just names.
             can_links = ipr.get_links(kind="can")
-
-            if not can_links:
-                logger.info("No CAN interfaces found with pyroute2.")
-                return AllCANStats(interfaces={})
-
             for link in can_links:
                 interface_name = link.get_attr("IFLA_IFNAME")
                 try:
-                    # The 'link' object already contains most of the info.
                     parsed_stats = get_stats_from_pyroute2_link(link)
-                    interfaces_data[interface_name] = parsed_stats
+                    pyroute2_stats[interface_name] = parsed_stats
                 except Exception as e:
                     logger.exception(
                         f"Exception processing interface {interface_name} with pyroute2: {e}"
                     )
-                    interfaces_data[interface_name] = CANInterfaceStats(
+                    pyroute2_stats[interface_name] = CANInterfaceStats(
                         name=interface_name, state="Exception/Pyroute2Error"
                     )
-
-        if not interfaces_data and can_links:  # Should only happen if all parsing failed
+        # Merge: for every interface the service is listening on, prefer pyroute2 stats if available
+        for iface in buses:
+            if iface in pyroute2_stats:
+                interfaces_data[iface] = pyroute2_stats[iface]
+                interfaces_data[iface].notes = (interfaces_data[iface].notes or "") + " (listening)"
+            else:
+                interfaces_data[iface] = CANInterfaceStats(
+                    name=iface,
+                    state="Listening",
+                    notes="Interface in use by rvc2api, not found by pyroute2",
+                )
+        # Optionally, also report pyroute2 CAN interfaces not in buses (for diagnostics)
+        for iface in pyroute2_stats:
+            if iface not in interfaces_data:
+                interfaces_data[iface] = pyroute2_stats[iface]
+                interfaces_data[iface].notes = (
+                    interfaces_data[iface].notes or ""
+                ) + " (not in use by rvc2api)"
+        if not interfaces_data and can_links:
             logger.warning(
                 "CAN interfaces found but failed to retrieve status for all using pyroute2."
             )
-            # Populate with minimal error state if all parsing failed
             for link_obj in can_links:
                 ifname = link_obj.get_attr("IFLA_IFNAME")
                 if ifname not in interfaces_data:
                     interfaces_data[ifname] = CANInterfaceStats(
                         name=ifname, state="Error/ParseFailure"
                     )
-
     except Exception as e:
         logger.error(f"Failed to get CAN status using pyroute2: {e}", exc_info=True)
-        # This would be a more global error, like failing to open the netlink socket.
-        return AllCANStats(interfaces={})  # Or raise HTTPException
+        return AllCANStats(interfaces={})
 
     return AllCANStats(interfaces=interfaces_data)
 

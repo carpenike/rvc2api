@@ -9,6 +9,7 @@ import time
 from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import metrics used by the middleware
 from core_daemon.metrics import HTTP_LATENCY, HTTP_REQUESTS
@@ -41,3 +42,23 @@ async def prometheus_http_middleware(
     HTTP_REQUESTS.labels(method=method, endpoint=path, status_code=status).inc()
     HTTP_LATENCY.labels(method=method, endpoint=path).observe(latency)
     return response
+
+
+def configure_cors(app):
+    """
+    Add CORS middleware to the FastAPI app for development and production.
+    Allows React frontend and other clients to access the API.
+    """
+    origins = [
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:8000",  # Same-origin
+        "http://localhost",
+        "http://localhost:8080",
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )

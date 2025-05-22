@@ -91,6 +91,7 @@ nav:
           - Frontend Architecture: architecture/frontend.md
       - Development:
           - Frontend Development: frontend-development.md
+          - Frontend Theming: frontend-theming.md
           - API Integration: api/frontend-integration.md
           - Enhanced Dev Environment: enhanced-dev-environment.md
           - MCP Tools Setup: mcp-tools-setup.md
