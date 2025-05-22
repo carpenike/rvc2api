@@ -1,154 +1,130 @@
 ---
 mode: 'agent'
-description: 'Guide for making and documenting architectural decisions'
+description: 'Template for documenting and guiding architectural decisions'
 tools: ['context7']
 ---
 
-# Architectural Decision Guide
+# Architectural Decision Record (ADR) Template
 
-This guide helps you make and document architectural decisions for the rvc2api project, ensuring they align with project goals and best practices. When completed, the architectural decision record (ADR) will be saved to `/docs/specs/adr-<decision-topic>.md` for review and implementation.
-
----
-
-## 1. Decision Context
-
-### 1.1. Problem Statement
-- What architectural decision needs to be made?
-- What problem are we trying to solve?
-- Why is this decision important?
-
-### 1.2. Current Architecture
-- What is the current state of the relevant components?
-- What constraints or limitations exist in the current system?
-- Use `@context7` to analyze the affected code and understand patterns
-
-### 1.3. Requirements and Goals
-- What must this architectural decision achieve?
-- What are the non-functional requirements (performance, scalability, etc.)?
-- What are the long-term maintainability goals?
+This template guides you in making and documenting a single architectural decision for the rvc2api project. Each ADR should be clear, focused, and traceable, providing enough context and rationale for future reference and team alignment. Save the completed ADR to `/docs/specs/adr-<decision-topic>.md` (e.g., `adr-event-driven-messaging.md`).
 
 ---
 
-## 2. Options Analysis
+## Metadata
 
-### 2.1. Option 1: [Name]
-- Description of the approach
-- Pros:
-  - [List advantages]
-- Cons:
-  - [List disadvantages]
-- Implementation complexity: [Low/Medium/High]
-- Long-term maintenance implications: [Description]
-
-### 2.2. Option 2: [Name]
-- Description of the approach
-- Pros:
-  - [List advantages]
-- Cons:
-  - [List disadvantages]
-- Implementation complexity: [Low/Medium/High]
-- Long-term maintenance implications: [Description]
-
-[Add more options as needed]
+- **Title:** [Concise decision name, e.g., "Adopt Event-Driven Messaging"]
+- **Status:** [Proposed | Accepted | Rejected | Superseded]
+- **Date:** [YYYY-MM-DD]
+- **Version:** [e.g., 1.0]
+- **Author(s):** [Name(s)]
+- **Approver(s):** [Name(s), if applicable]
 
 ---
 
-## 3. Decision
+## 1. Context and Problem Statement
 
-### 3.1. Chosen Approach
-- Which option is being selected?
-- Why is this option the best choice?
-- What were the key deciding factors?
-
-### 3.2. Implementation Strategy
-- How will this be implemented?
-- What are the key components or changes needed?
-- Which files/modules will be affected?
-
-### 3.3. Migration Path
-- How will we transition from the current state?
-- What steps are needed to implement this change?
-- Will this be a breaking change for existing code?
+- **Background:**  
+  Briefly describe the business or technical context that led to this decision.
+- **Problem/Opportunity:**  
+  What architectural challenge or opportunity does this ADR address?
+- **Relevant Requirements:**  
+  List key functional and non-functional requirements (e.g., scalability, maintainability, performance).
+- **Current State:**  
+  Summarize the current architecture and constraints. Use `@context7` for code analysis if needed.
 
 ---
 
-## 4. Technical Details
+## 2. Decision Drivers
 
-### 4.1. Components and Interactions
-- What are the key components involved?
-- How do these components interact?
-- What are the data flows?
-
-### 4.2. API Changes
-- What changes to public APIs are needed?
-- How will these affect consumers?
-
-### 4.3. Data Model Changes
-- What changes to data models are needed?
-- How will data migrations be handled (if needed)?
+- What factors are most important in making this decision?  
+  (e.g., business goals, technical constraints, team expertise, regulatory requirements)
 
 ---
 
-## 5. Validation and Testing
+## 3. Considered Options
 
-### 5.1. Validation Approach
-- How will we validate this architectural decision?
-- What metrics or indicators will be used?
+For each option, provide:
 
-### 5.2. Testing Strategy
-- How will the changes be tested?
-- What types of tests are needed (unit, integration, performance)?
+- **Option Name:**  
+  - **Description:**  
+    Briefly explain the approach.
+  - **Pros:**  
+    - [Advantage 1]
+    - [Advantage 2]
+  - **Cons:**  
+    - [Disadvantage 1]
+    - [Disadvantage 2]
+  - **Implementation Complexity:** [Low | Medium | High]
+  - **Long-term Maintenance:**  
+    Briefly describe implications.
 
----
-
-## 6. Risks and Mitigations
-
-### 6.1. Identified Risks
-- What risks come with this approach?
-- What are the potential failure modes?
-
-### 6.2. Mitigation Strategies
-- How will each risk be mitigated?
-- What fallback options exist?
+(Duplicate this section for each option you wish to document.)
 
 ---
 
-## 7. Future Considerations
+## 4. Decision Outcome
 
-### 7.1. Future Evolution
-- How might this architecture evolve in the future?
-- What additional capabilities could be added?
-
-### 7.2. Technical Debt
-- What technical debt might be incurred?
-- How and when should this be addressed?
-
----
-
-## 8. Implementation Plan
-
-### 8.1. Phases
-- What are the implementation phases?
-- What are the dependencies between phases?
-
-### 8.2. Timeline
-- What is the estimated timeline for implementation?
-- What are the key milestones?
+- **Chosen Option:**  
+  Clearly state which option is selected.
+- **Rationale:**  
+  Explain why this option was chosen over the alternatives, referencing decision drivers.
+- **Confidence Level:** [High | Medium | Low]  
+  (Optional, but recommended for transparency.)
 
 ---
 
-## 9. References and Research
+## 5. Consequences
 
-### 9.1. Internal References
-- What existing code or patterns should be referenced?
-- What similar solutions exist within the codebase?
-
-### 9.2. External References
-- What external resources informed this decision?
-- What industry best practices are being followed?
+- **Positive Impacts:**  
+  - [Benefit 1]
+  - [Benefit 2]
+- **Negative Impacts / Trade-offs:**  
+  - [Drawback 1]
+  - [Drawback 2]
+- **Follow-up Actions:**  
+  List any required next steps, additional ADRs, or review plans.
 
 ---
 
-## Output
+## 6. Implementation Plan
 
-Once this architectural decision record is complete, save it to `/docs/specs/adr-<decision-topic>.md` where `<decision-topic>` is a kebab-case name descriptive of the decision (e.g., `adr-websocket-architecture.md` or `adr-state-management-pattern.md`). This document will serve as a record of the decision-making process and guide implementation.
+- **Phases and Milestones:**  
+  Outline the steps or phases for implementation, with dependencies if relevant.
+- **Migration Path:**  
+  How will the transition from the current state occur? Is this a breaking change?
+- **Affected Components:**  
+  List major files, modules, or APIs impacted.
+
+---
+
+## 7. Validation and Testing
+
+- **Validation Approach:**  
+  How will you confirm the decision meets requirements?
+- **Testing Strategy:**  
+  What tests are needed (unit, integration, performance, etc.)?
+
+---
+
+## 8. Risks and Mitigations
+
+- **Identified Risks:**  
+  - [Risk 1]
+  - [Risk 2]
+- **Mitigation Strategies:**  
+  - [Mitigation 1]
+  - [Mitigation 2]
+
+---
+
+## 9. References
+
+- **Internal References:**  
+  Link to related ADRs, code, or documentation.
+- **External References:**  
+  Cite relevant standards, articles, or best practices.
+
+---
+
+> **Note:**  
+> Each ADR should address a single architectural decision. Update the status as the decision progresses (Proposed, Accepted, Rejected, Superseded). Keep records concise, assertive, and factual. For broader design guides or ideation, link to supplemental documentation.
