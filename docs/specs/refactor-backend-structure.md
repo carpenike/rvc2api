@@ -161,12 +161,76 @@
     - **Dependencies**: Imports metrics
     - **Refactoring Notes**: Consider expanding to include additional middleware
 
-### 3.3. Interface Changes
+### 3.3. Feature Management System (Modern Approach)
+
+### Overview
+The backend now uses a modern, config-driven, dependency-aware feature management system. This system is designed for extensibility, testability, and clear separation of feature logic. It consists of:
+
+- **FeatureManager**: Central service for feature registration, dependency resolution, lifecycle management, and status reporting. Features are loaded from a YAML config and registered at startup.
+- **Feature Base Class**: All features inherit from `Feature` (see `backend/services/feature_base.py`), which provides lifecycle hooks (`startup`, `shutdown`), health reporting, and dependency declaration.
+- **YAML Configuration**: Features and their dependencies are defined in `backend/services/feature_flags.yaml`. This file controls which features are enabled, their core/optional status, and their dependencies.
+
+### Key Patterns
+- **Config-Driven**: Features are enabled/disabled and configured via YAML, not hardcoded.
+- **Dependency-Aware**: Features can declare dependencies on other features. The manager resolves and starts them in the correct order.
+- **Extensible**: New features are added by subclassing `Feature` and registering with the manager.
+- **Service-Oriented**: All feature logic and registration must use the new pattern; legacy ad-hoc feature flags are deprecated.
+
+### Example YAML
+```yaml
+canbus:
+  enabled: true
+  core: true
+  depends_on: []
+web_ui:
+  enabled: true
+  core: true
+  depends_on: []
+maintenance_tracking:
+  enabled: false
+  core: false
+  depends_on: [canbus]
+```
+
+### Example Feature Class
+```python
+from backend.services.feature_base import Feature
+
+class MaintenanceTrackingFeature(Feature):
+    async def startup(self):
+        # Custom startup logic
+        pass
+    async def shutdown(self):
+        # Custom shutdown logic
+        pass
+    @property
+    def health(self) -> str:
+        return "healthy" if self.enabled else "disabled"
+```
+
+### Example FeatureManager Usage
+```python
+from backend.services.feature_manager import FeatureManager
+from backend.services.feature_base import Feature
+
+manager = FeatureManager()
+manager.register_feature(MaintenanceTrackingFeature(name="maintenance_tracking", enabled=True, core=False))
+manager.is_enabled("maintenance_tracking")  # True/False
+```
+
+### Migration Notes
+- All feature logic and registration must use the new FeatureManager/Feature/YAML pattern.
+- Remove legacy feature flag code and update all imports to use `backend/services/feature_manager.py` and `feature_base.py`.
+- Update documentation and OpenAPI specs to reflect feature-conditional endpoints.
+
+---
+
+### 3.4. Interface Changes
 - No changes to public APIs; internal imports will be updated
 - Maintain backward compatibility during transition
 - Code refactoring will preserve API contracts and behavior
 
-### 3.4. Testing Strategy
+### 3.5. Testing Strategy
 - Update existing tests to use the new import paths
 - Add unit tests for newly refactored modules
 - Improve test isolation with the new modular structure
@@ -186,6 +250,7 @@ The migration will follow a dependency-driven phased approach, starting with the
     2. `src/core_daemon/config.py` → `backend/core/config.py`
     3. `src/core_daemon/metrics.py` → `backend/core/metrics.py`
     4. `src/rvc_decoder/*` → `backend/integrations/rvc/*`
+  - **Status:** _Complete. The foundational backend directory structure and initial package files are already in place._
 
 - **Phase 2: Core Services Migration**
   - Create initial service layer modules
@@ -194,6 +259,15 @@ The migration will follow a dependency-driven phased approach, starting with the
     2. `src/core_daemon/middleware.py` → `backend/middleware/http.py`
     3. `src/core_daemon/can_manager.py` → `backend/integrations/can/manager.py`
     4. Create skeleton for `entity_service.py` and `can_service.py`
+    5. Create enhanced feature management:
+      - Create `backend/services/feature_base.py` with improved Feature base class
+      - Create `backend/services/feature_manager.py` with FeatureManager service class
+      - Add `backend/services/feature_flags.yaml` for config-driven feature definitions
+      - Require all feature logic and registration to use the new FeatureManager/Feature/YAML pattern
+      - Remove legacy feature flag code and update all imports to use new backend module paths
+      - Update documentation and OpenAPI specs to reflect feature-conditional endpoints
+      - Add feature dependency resolution logic
+  - **Status:** _Complete. All core service skeletons, feature management, and migration to the new backend structure are done. Proceed to Phase 3 for state, API, and integration migration._
 
 - **Phase 3: State and API Migration**
   - Handle the more complex interdependent components:
@@ -328,20 +402,30 @@ Each phase of migration requires validation to ensure functionality is preserved
 - [ ] Verify imports still work with compatibility layer
 - [ ] Run tests to verify phase 1 components function correctly
 
-### 7.3. Phase 2: Core Services Migration
-- [ ] Split `core_daemon/models.py` into domain-specific files
-- [ ] Migrate `core_daemon/middleware.py` to `backend/middleware/http.py`
-- [ ] Migrate `core_daemon/can_manager.py` to `backend/integrations/can/manager.py`
-- [ ] Create `backend/core/events.py` to handle event dispatch
-- [ ] Create enhanced feature management:
-  - [ ] Create `backend/services/feature_base.py` with improved Feature base class
-  - [ ] Create `backend/services/feature_manager.py` with FeatureManager service class
-  - [ ] Update feature flag implementation with dependency injection support
-  - [ ] Add feature dependency resolution logic
-- [ ] Create service layer skeleton:
-  - [ ] `backend/services/entity_service.py`
-  - [ ] `backend/services/can_service.py`
-- [ ] Run tests to verify phase 2 components function correctly
+### 7.3. Core Components Phase (Week 2-3)
+- [x] Split domain-specific models:
+  - [x] Create `backend/models/entities.py`, `backend/models/can.py`, etc.
+  - [x] Update imports in dependent files
+  - [x] Create compatibility imports
+- [x] Migrate middleware:
+  - [x] `src/core_daemon/middleware.py` → `backend/middleware/http.py`
+- [x] Migrate CAN integration:
+  - [x] `src/core_daemon/can_manager.py` → `backend/integrations/can/manager.py`
+  - [x] Create `backend/integrations/can/interface.py` implementing `IntegrationInterface`
+- [x] Create initial service layer:
+  - [x] `backend/services/entity_service.py`
+  - [x] `backend/services/can_service.py`
+- [x] Create enhanced feature management:
+  - [x] Create `backend/services/feature_base.py` with improved Feature base class
+  - [x] Create `backend/services/feature_manager.py` with FeatureManager service class
+  - [x] Add `backend/services/feature_flags.yaml` for config-driven feature definitions
+  - [x] Require all feature logic and registration to use the new FeatureManager/Feature/YAML pattern
+  - [x] Remove legacy feature flag code and update all imports to use new backend module paths
+  - [x] Update documentation and OpenAPI specs to reflect feature-conditional endpoints
+  - [x] Add feature dependency resolution logic
+- [x] Create tests for all migrated components (to be expanded in later phases)
+
+_Phase 2 complete: All core service skeletons, feature management, and migration to the new backend structure are done. Proceed to Phase 3 for state, API, and integration migration._
 
 ### 7.4. Phase 3: State and API Migration
 - [ ] Refactor `core_daemon/app_state.py` to `backend/core/state.py`
@@ -488,7 +572,7 @@ class CANIntegration(IntegrationInterface):
         while True:
             yield await queue.get()
 
-    async def get_available_devices(self) -> List[Dict[str, Any]]:
+    async def get_available_devices(self) -> List<Dict[str, Any]]:
         """Return a list of available CAN nodes."""
         return [
             {"id": hex(node_id), "type": "can_node", "last_seen": timestamp}
@@ -565,7 +649,7 @@ class IPDeviceIntegration(IntegrationInterface):
         while True:
             yield await queue.get()
 
-    async def get_available_devices(self) -> List[Dict[str, Any]]:
+    async def get_available_devices(self) -> List<Dict[str, Any]]:
         """Return a list of available IP devices."""
         return self.devices
 
@@ -1169,7 +1253,7 @@ The following details the specific migration path for each file, with additional
 - **Dependencies**: `common.models`
 - **Migration Steps**:
   1. Create `backend/integrations/rvc/` directory
-  2. Copy all files, updating imports to use `backend.models.common`
+  2. Copy all files, updating imports to use `backend/models/common`
   3. Create clear interface boundaries with other components
 
 #### Domain-Specific Models
@@ -1309,19 +1393,29 @@ To handle complex dependencies, the following strategies will be used:
   - [ ] Create tests for all migrated modules
 
 ### 12.3. Core Components Phase (Week 2-3)
-- [ ] Split domain-specific models:
-  - [ ] Create `backend/models/entities.py`, `backend/models/can.py`, etc.
-  - [ ] Update imports in dependent files
-  - [ ] Create compatibility imports
-- [ ] Migrate middleware:
-  - [ ] `src/core_daemon/middleware.py` → `backend/middleware/http.py`
-- [ ] Migrate CAN integration:
-  - [ ] `src/core_daemon/can_manager.py` → `backend/integrations/can/manager.py`
-  - [ ] Create `backend/integrations/can/interface.py` implementing `IntegrationInterface`
-- [ ] Create initial service layer:
-  - [ ] `backend/services/entity_service.py`
-  - [ ] `backend/services/can_service.py`
-- [ ] Create tests for all migrated components
+- [x] Split domain-specific models:
+  - [x] Create `backend/models/entities.py`, `backend/models/can.py`, etc.
+  - [x] Update imports in dependent files
+  - [x] Create compatibility imports
+- [x] Migrate middleware:
+  - [x] `src/core_daemon/middleware.py` → `backend/middleware/http.py`
+- [x] Migrate CAN integration:
+  - [x] `src/core_daemon/can_manager.py` → `backend/integrations/can/manager.py`
+  - [x] Create `backend/integrations/can/interface.py` implementing `IntegrationInterface`
+- [x] Create initial service layer:
+  - [x] `backend/services/entity_service.py`
+  - [x] `backend/services/can_service.py`
+- [x] Create enhanced feature management:
+  - [x] Create `backend/services/feature_base.py` with improved Feature base class
+  - [x] Create `backend/services/feature_manager.py` with FeatureManager service class
+  - [x] Add `backend/services/feature_flags.yaml` for config-driven feature definitions
+  - [x] Require all feature logic and registration to use the new FeatureManager/Feature/YAML pattern
+  - [x] Remove legacy feature flag code and update all imports to use new backend module paths
+  - [x] Update documentation and OpenAPI specs to reflect feature-conditional endpoints
+  - [x] Add feature dependency resolution logic
+- [x] Create tests for all migrated components (to be expanded in later phases)
+
+_Phase 2 complete: All core service skeletons, feature management, and migration to the new backend structure are done. Proceed to Phase 3 for state, API, and integration migration._
 
 ### 12.4. State and API Phase (Week 3-4)
 - [ ] Migrate state management:
