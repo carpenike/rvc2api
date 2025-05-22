@@ -87,6 +87,10 @@ include = [
 # The React frontend (web_ui/) is managed separately through npm
 # See web_ui/README.md and docs/frontend-development.md for details
 
+[tool.poetry.group.dev.dependencies]
+pyyaml = "^6.0.2"
+ruff = "^0.11.10"
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = ["--import-mode=importlib"]
