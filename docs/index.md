@@ -68,6 +68,7 @@ This documentation is organized into several sections:
 - [**Architecture**](architecture/overview.md): System design and component organization
   - [Backend Architecture](architecture/backend.md): Python API components
   - [Frontend Architecture](architecture/frontend.md): React UI components
+  - [Feature Flags](../architecture/feature-flags.md): Backend feature flag system and configuration
 - [**Development Guides**](frontend-development.md): In-depth development instructions
 
 ## Contributing

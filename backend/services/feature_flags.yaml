@@ -1,0 +1,23 @@
+# Feature flag definitions for rvc2api backend
+#
+# This YAML file defines all available features, their enabled state, and dependencies.
+#
+# Naming convention: use descriptive, positive, boolean-style names (e.g., enable_x, show_y)
+#
+# Example:
+# enable_bulk_actions:
+#   enabled: true
+#   depends_on:
+#     - enable_admin_panel
+
+canbus:
+  enabled: true
+  core: true
+  depends_on: []
+
+web_ui:
+  enabled: true
+  core: true
+  depends_on: []
+
+# Add additional features below as needed
