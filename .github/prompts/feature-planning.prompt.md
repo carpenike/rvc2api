@@ -6,7 +6,14 @@ tools: ['context7']
 
 # Feature Planning Guide
 
-This guide helps you plan a new feature for the rvc2api project by breaking down the process into manageable steps and considerations. When completed, the plan will be saved to `/docs/specs/<feature-name>.md` for review and implementation.
+- **Feature Name:** [Concise name]
+- **Status:** [Proposed | In Planning | Approved]
+- **Date:** [YYYY-MM-DD]
+- **Author(s):** [Name(s)]
+- **Related ADR:** [Link, if applicable]
+
+**Summary:**  
+[Briefly describe the feature and its purpose.]
 
 ---
 
