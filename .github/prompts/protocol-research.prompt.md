@@ -6,6 +6,16 @@ tools: ['perplexity_ask']
 
 # RV Protocol Research Guide
 
+- **Research Topic:** [Concise title]
+- **Status:** [Proposed | In Progress | Complete]
+- **Date:** [YYYY-MM-DD]
+- **Author(s):** [Name(s)]
+- **Related ADR/Spec:** [Link, if applicable]
+- **Intended Audience:** [e.g., developers, hardware engineers]
+
+**Summary:**  
+[Briefly describe what is being researched and why.]
+
 This guide provides a structured approach to researching RV protocols, hardware interfaces, or features before implementing them in rvc2api.
 
 ---
