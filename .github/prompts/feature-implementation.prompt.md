@@ -6,7 +6,15 @@ tools: ['context7']
 
 # Feature Implementation Guide
 
-This guide will help you implement a new feature for the rvc2api project following our established patterns and best practices. Use this after you've created a feature specification in `/docs/specs/` to guide the actual implementation process.
+- **Feature Name:** [Concise name]
+- **Status:** [Proposed | In Progress | Completed]
+- **Date:** [YYYY-MM-DD]
+- **Author(s):** [Name(s)]
+- **Related Spec:** [Link to `/docs/specs/feature-xyz.md`]
+- **Related ADR:** [Link, if applicable]
+
+**Summary:**  
+[Briefly describe the feature and its purpose.]
 
 ---
 
