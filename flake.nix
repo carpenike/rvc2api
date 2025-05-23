@@ -233,7 +233,7 @@ EOF
             pythonPackages.langchain
             pythonPackages."langchain-openai"
             pythonPackages.pymupdf  # PyMuPDF, imported as fitz
-            pythonPackages."faiss-cpu"
+            pythonPackages."faiss"
             pkgs.nodejs_20
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop
@@ -252,9 +252,9 @@ EOF
         };
 
         apps = {
-          precommit = flake-utils.lib.mkApp {
+          precommit = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "precommit";
+              name = "precommit";
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 export SKIP=djlint
@@ -262,22 +262,34 @@ EOF
                 poetry run pre-commit run --all-files
               '';
             };
+          }) // {
+            meta = {
+              description = "Run pre-commit checks across the repo";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
 
-          test = flake-utils.lib.mkApp {
+          test = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "test";
+              name = "test";
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 poetry install --no-root
                 poetry run pytest
               '';
             };
+          }) // {
+            meta = {
+              description = "Run unit tests";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
 
-          lint = flake-utils.lib.mkApp {
+          lint = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "lint";
+              name = "lint";
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 # Backend linting
@@ -293,11 +305,17 @@ EOF
                 fi
               '';
             };
+          }) // {
+            meta = {
+              description = "Run Python and frontend linters";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
 
-          format = flake-utils.lib.mkApp {
+          format = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "format";
+              name = "format";
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 # Backend formatting
@@ -311,11 +329,17 @@ EOF
                 fi
               '';
             };
+          }) // {
+            meta = {
+              description = "Format Python and frontend code";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
 
-          build-frontend = flake-utils.lib.mkApp {
+          build-frontend = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "build-frontend";
+              name = "build-frontend";
               runtimeInputs = [ pkgs.nodejs_20 ];
               text = ''
                 if [ ! -d "web_ui" ]; then
@@ -333,12 +357,17 @@ EOF
                 echo "To deploy, copy the dist directory to your webserver"
               '';
             };
+          }) // {
+            meta = {
+              description = "Build the frontend (React) application";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
 
-          # single "nix run .#ci entrypoint for CI
-          ci = flake-utils.lib.mkApp {
+          ci = (flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
-              name          = "ci";
+              name = "ci";
               runtimeInputs = [ pkgs.poetry pkgs.nodejs_20 ];
               text = ''
                 set -e
@@ -370,6 +399,12 @@ EOF
                 fi
               '';
             };
+          }) // {
+            meta = {
+              description = "Run the full CI suite (pre-commit, tests, lint, build)";
+              maintainers = [ "carpenike" ];
+              license = pkgs.lib.licenses.asl20;
+            };
           };
         };
 
@@ -385,8 +420,10 @@ EOF
           '';
         };
       in {
-        packages.rvc2api = rvc2apiPackage;
-        defaultPackage   = self.packages.${system}.rvc2api;
+        packages = {
+          rvc2api = rvc2apiPackage;
+          default = rvc2apiPackage;
+        };
 
         devShells = {
           default = devShell;
