@@ -34,6 +34,9 @@ jobs:
       - name: "Perform Nix flake ci"
         run: nix run .#ci
 
+      # - name: "Run tests separately for better caching"
+      #   run: nix run .#test
+
       - name: "Build rvc2api package (for Cachix caching)"
         run: nix build .#rvc2api
 
