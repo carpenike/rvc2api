@@ -6,12 +6,43 @@ applyTo: "**"
 
 ## Dependency Management
 
-- poetry (Python dependencies in pyproject.toml)
+-## Development Workflow Consistency
+
+### Reproducible Development
+
+- **GitHub Actions CI** uses `nix run .#ci`
+- **Local Nix apps** provide identical environments to CI
+- **VS Code tasks** include Nix-based options for consistency
+- **Pre-commit hooks** run the same tools as CI via `.pre-commit-config.yaml`
+
+### Pre-commit Best Practices
+
+```bash
+# For automatic Git hooks (recommended for daily development)
+poetry run pre-commit install
+
+# For manual checks with reproducible environment
+nix run .#precommit  # Matches CI exactly
+
+# For full CI reproduction locally
+nix run .#ci         # Complete CI suite
+```
+
+The `.pre-commit-config.yaml` file defines **what** checks to run, while `nix run .#precommit` provides a **reproducible environment** to run them.
+
+### Recommended Workflow
+
+1. **Setup once**: `poetry run pre-commit install` (enables Git hooks)
+2. **Daily development**: Let Git hooks run automatically
+3. **Before pushing**: Run `nix run .#precommit` to match CI
+4. **Debugging CI failures**: Use `nix run .#ci` to reproduce CI locallyn dependencies in pyproject.toml)
 - npm (JavaScript dependencies in web_ui/package.json)
 - nix (reproducible environments via flake)
 - Version-locked dependencies
 
 ## Backend Dev Commands
+
+### Traditional Method (Poetry)
 
 ```bash
 poetry run python src/core_daemon/main.py  # Run server
@@ -20,6 +51,18 @@ poetry run ruff format src  # Format
 poetry run ruff check .  # Lint
 npx pyright src  # Type checking
 ```
+
+### Nix Apps (Reproducible - matches CI exactly)
+
+```bash
+nix run .#ci        # Full CI suite (pre-commit + tests + linting)
+nix run .#precommit # Pre-commit checks only
+nix run .#test      # Run pytest
+nix run .#lint      # Run Ruff + Pyright + frontend linting
+nix run .#format    # Format code (Ruff + ESLint --fix)
+```
+
+> **💡 Recommendation**: Use Nix apps for reproducible results that match CI.
 
 ## Frontend Dev Commands
 
@@ -51,7 +94,7 @@ cp .env.example .env
 
 ## VS Code Tasks
 
-This project has extensive VS Code task configurations that streamline development workflows.
+This project has extensive VS Code task configurations that streamline development workflows, including Nix-based tasks for reproducibility.
 
 For detailed information about available tasks, see [vscode-tasks.instructions.md](vscode-tasks.instructions.md).
 
@@ -60,3 +103,18 @@ You can access tasks through:
 - Command Palette (Ctrl+Shift+P or ⌘+Shift+P on macOS) → "Tasks: Run Task"
 - Terminal menu → Run Task
 - Quick access with Ctrl+Shift+B or ⌘+Shift+B for default build tasks
+
+## Development Workflow Consistency
+
+### Reproducible Development
+
+- **GitHub Actions CI** uses `nix run .#ci`
+- **Local Nix apps** provide identical environments to CI
+- **VS Code tasks** include Nix-based options for consistency
+- **Pre-commit hooks** run the same tools as CI
+
+### Recommended Workflow
+
+1. **For daily development**: Use VS Code tasks or Poetry/npm commands
+2. **Before committing**: Run `nix run .#precommit` or `nix run .#ci`
+3. **For debugging CI failures**: Use `nix run .#ci` to reproduce CI locally
