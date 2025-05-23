@@ -53,6 +53,13 @@ jobs:
           poetry run mkdocs build
           touch site/.nojekyll
 
+      - name: Remove symlinks from site directory
+        run: |
+          find site -type l -exec rm -v {} +
+
+      - name: Check site directory size
+        run: du -sh site
+
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
