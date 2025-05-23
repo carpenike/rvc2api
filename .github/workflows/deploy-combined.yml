@@ -63,6 +63,11 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Configure git user for mike
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Deploy versioned documentation with mike
         run: |
           poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
