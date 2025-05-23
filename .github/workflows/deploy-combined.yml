@@ -70,7 +70,7 @@ jobs:
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
-          name: docs-site
+          name: github-pages
           path: _site
 
       - name: Deploy to GitHub Pages
