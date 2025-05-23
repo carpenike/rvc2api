@@ -73,9 +73,21 @@ jobs:
         run: |
           git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
+      - name: Stash generated OpenAPI files
+        run: |
+          # Add generated files to git tracking temporarily
+          git add docs/api/openapi.json docs/api/openapi.yaml || echo "OpenAPI files not found"
+          # Stash any changes to avoid conflicts when switching branches
+          git stash push -m "Temporary stash of generated OpenAPI files" || echo "Nothing to stash"
+
       - name: Fetch gh-pages branch
         run: |
           git fetch origin gh-pages:gh-pages || echo "No gh-pages branch yet"
+
+      - name: Restore generated OpenAPI files
+        run: |
+          # Restore the stashed OpenAPI files for documentation build
+          git stash pop || echo "Nothing to restore from stash"
 
       - name: Deploy versioned documentation with mike
         run: |
@@ -87,11 +99,3 @@ jobs:
             poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
             poetry run mike set-default --push latest
           fi
-
-      - name: Ensure .nojekyll is present on gh-pages
-        run: |
-          git checkout gh-pages
-          touch .nojekyll
-          git add .nojekyll
-          git commit -m "Add .nojekyll for GitHub Pages" || echo "No changes to commit"
-          git push origin gh-pages
