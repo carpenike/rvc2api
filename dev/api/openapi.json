@@ -14,16 +14,14 @@
     "/api/health": {
       "get": {
         "summary": "Api Health",
-        "description": "Health check endpoint for API monitoring.\n\nReturns:\n    PlainTextResponse: A plain text response indicating the API is running",
+        "description": "Health check endpoint for API monitoring.\n\nReturns:\n    JSONResponse: A JSON response indicating the API is running",
         "operationId": "api_health_api_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -33,7 +31,7 @@
     "/api/can/status": {
       "get": {
         "summary": "Get Can Status",
-        "description": "Retrieves detailed status for all CAN interfaces using pyroute2.\nOn non-Linux platforms, returns a platform-specific message.",
+        "description": "Retrieves detailed status for all CAN interfaces the service is listening on.\nCombines pyroute2 stats (if available) with the actual set of active interfaces.\nOn non-Linux platforms, returns a platform-specific message.",
         "operationId": "get_can_status_api_can_status_get",
         "responses": {
           "200": {

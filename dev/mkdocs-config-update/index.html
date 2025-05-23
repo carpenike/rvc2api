@@ -6,7 +6,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for the rvc2api project" name="description"/>
-<link href="http://localhost:8000/dev/mkdocs-config-update/" rel="canonical"/>
+<link href="https://carpenike.github.io/rvc2api/latest/mkdocs-config-update/" rel="canonical"/>
 <link href="../documentation-updates-summary/" rel="prev"/>
 <link href="../react-migration-summary/" rel="next"/>
 <link href="../assets/images/favicon.png" rel="icon"/>
@@ -349,6 +349,22 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../mixed-chunking-strategies/">
+<span class="md-ellipsis">
+    Mixed Chunking Strategies
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../pdf-processing-guide/">
+<span class="md-ellipsis">
+    PDF Processing Guide
+    
+  </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -419,6 +435,14 @@
 <a class="md-nav__link" href="../enabling-github-pages/">
 <span class="md-ellipsis">
     Enabling GitHub Pages
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../version-management/">
+<span class="md-ellipsis">
+    Version Management
     
   </span>
 </a>
@@ -497,6 +521,14 @@
 <a class="md-nav__link" href="../frontend-development/">
 <span class="md-ellipsis">
     Frontend Development
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../frontend-theming/">
+<span class="md-ellipsis">
+    Frontend Theming
     
   </span>
 </a>
@@ -828,6 +860,22 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../documentation-versioning-update/">
+<span class="md-ellipsis">
+    Versioning Updates
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../version-management/">
+<span class="md-ellipsis">
+    Version Management
+    
+  </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -876,29 +924,39 @@
 <p>This document summarizes the changes made to the MkDocs configuration structure to improve documentation building and organization, including the addition of Mermaid diagram support and documentation reorganization.</p>
 <h2 id="changes-implemented">Changes Implemented<a class="headerlink" href="#changes-implemented" title="Permanent link">¶</a></h2>
 <ol>
-<li><strong>Moved <code>mkdocs.yml</code> from <code>/docs</code> directory to project root</strong>:</li>
-<li>This is a standard best practice for MkDocs projects</li>
+<li>
+<p><strong>Moved <code>mkdocs.yml</code> from <code>/docs</code> directory to project root</strong>:</p>
+</li>
+<li>
+<p>This is a standard best practice for MkDocs projects</p>
+</li>
 <li>
 <p>It resolves issues with the docs directory being both the configuration location and source directory</p>
 </li>
 <li>
 <p><strong>Updated path configurations in mkdocs.yml</strong>:</p>
 </li>
-<li>Changed <code>docs_dir</code> from <code>.</code> to <code>docs</code> (pointing to the docs directory from project root)</li>
+<li>
+<p>Changed <code>docs_dir</code> from <code>.</code> to <code>docs</code> (pointing to the docs directory from project root)</p>
+</li>
 <li>
 <p>Changed <code>site_dir</code> from <code>../site</code> to <code>site</code> (site output in project root)</p>
 </li>
 <li>
 <p><strong>Added missing dependency</strong>:</p>
 </li>
-<li>Added <code>mkdocs-autorefs = "^0.5.0"</code> to <code>pyproject.toml</code></li>
+<li>
+<p>Added <code>mkdocs-autorefs = "^0.5.0"</code> to <code>pyproject.toml</code></p>
+</li>
 <li>
 <p>This dependency was needed for proper reference linking in documentation</p>
 </li>
 <li>
 <p><strong>Updated VS Code tasks to reference the new mkdocs.yml location</strong>:</p>
 </li>
-<li>Updated "Server: Serve Documentation" task</li>
+<li>
+<p>Updated "Server: Serve Documentation" task</p>
+</li>
 <li>Updated "Build: Documentation" task</li>
 <li>Updated "API: Update Documentation" task</li>
 <li>
@@ -907,7 +965,9 @@
 <li>
 <p><strong>Fixed YAML lint errors</strong>:</p>
 </li>
-<li>Updated the <code>!!python/name:</code> tag format in the superfences configuration</li>
+<li>
+<p>Updated the <code>!!python/name:</code> tag format in the superfences configuration</p>
+</li>
 <li>Changed from <code>format: !!python/name:pymdownx.superfences.fence_code_format</code> to <code>format: "pymdownx.superfences.fence_code_format"</code></li>
 <li>
 <p>This preserves functionality while resolving VS Code YAML lint warnings</p>
@@ -915,7 +975,9 @@
 <li>
 <p><strong>Added Mermaid Diagram Support</strong>:</p>
 </li>
-<li>Added <code>mkdocs-mermaid2-plugin</code> to the project dependencies</li>
+<li>
+<p>Added <code>mkdocs-mermaid2-plugin</code> to the project dependencies</p>
+</li>
 <li>Configured the mermaid plugin in the plugins section of mkdocs.yml</li>
 <li>Created comprehensive diagram guidelines in the documentation instructions</li>
 <li>
@@ -934,7 +996,7 @@
 <ol>
 <li><strong>System Architecture</strong>: Comprehensive component diagram in <code>architecture/overview.md</code></li>
 <li><strong>Backend Architecture</strong>: Component flow chart in <code>architecture/backend.md</code></li>
-<li><strong>WebSocket Communication</strong>: Sequence diagram in <code>api/websocket.md</code> </li>
+<li><strong>WebSocket Communication</strong>: Sequence diagram in <code>api/websocket.md</code></li>
 <li><strong>Frontend API Integration</strong>: Sequence diagram in <code>api/frontend-integration.md</code></li>
 <li><strong>Environment Variables</strong>: Configuration flow diagram in <code>environment-variable-integration.md</code></li>
 <li><strong>Frontend Architecture</strong>: Component diagram in <code>architecture/frontend.md</code></li>
@@ -1038,69 +1100,5 @@ poetry<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> 
 </div>
 <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
 <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
-<script>document$.subscribe(() => {
-            window.update_swagger_ui_iframe_height = function (id) {
-                var iFrameID = document.getElementById(id);
-                if (iFrameID) {
-                    full_height = (iFrameID.contentWindow.document.body.scrollHeight + 80) + "px";
-                    iFrameID.height = full_height;
-                    iFrameID.style.height = full_height;
-                }
-            }
-        
-            let iframe_id_list = []
-            var iframes = document.getElementsByClassName("swagger-ui-iframe");
-            for (var i = 0; i < iframes.length; i++) { 
-                iframe_id_list.push(iframes[i].getAttribute("id"))
-            }
-        
-            let ticking = true;
-            
-            document.addEventListener('scroll', function(e) {
-                if (!ticking) {
-                    window.requestAnimationFrame(()=> {
-                        let half_vh = window.innerHeight/2;
-                        for(var i = 0; i < iframe_id_list.length; i++) {
-                            let element = document.getElementById(iframe_id_list[i])
-                            if(element==null){
-                                return
-                            }
-                            let diff = element.getBoundingClientRect().top
-                            if(element.contentWindow.update_top_val){
-                                element.contentWindow.update_top_val(half_vh - diff)
-                            }
-                        }
-                        ticking = false;
-                    });
-                    ticking = true;
-                }
-            });
-        
-            const dark_scheme_name = "slate"
-            
-            window.scheme = document.body.getAttribute("data-md-color-scheme")
-            const options = {
-                attributeFilter: ['data-md-color-scheme'],
-            };
-            function color_scheme_callback(mutations) {
-                for (let mutation of mutations) {
-                    if (mutation.attributeName === "data-md-color-scheme") {
-                        scheme = document.body.getAttribute("data-md-color-scheme")
-                        var iframe_list = document.getElementsByClassName("swagger-ui-iframe")
-                        for(var i = 0; i < iframe_list.length; i++) {
-                            var ele = iframe_list.item(i);
-                            if (ele) {
-                                if (scheme === dark_scheme_name) {
-                                    ele.contentWindow.enable_dark_mode();
-                                } else {
-                                    ele.contentWindow.disable_dark_mode();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            observer = new MutationObserver(color_scheme_callback);
-            observer.observe(document.body, options);
-            })</script></body>
+</body>
 </html>
