@@ -17,10 +17,20 @@
   ],
   "rebaseWhen": "behind-base-branch",
   "dependencyDashboard": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "vulnerability"],
+    "addLabels": ["urgent"],
+    "assignees": ["@carpenike"]
+  },
+  "configMigration": true,
+  "stabilityDays": 3,
+  "prCreation": "not-pending",
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": false,
-    "recreateWhen": "always"
+    "automerge": true,
+    "recreateWhen": "always",
+    "schedule": ["before 6am on Monday"]
   },
   "packageRules": [
     {
@@ -28,6 +38,42 @@
         "pin"
       ],
       "groupName": "Pin all dependencies"
+    },
+    {
+      "description": "GitHub Actions - automerge and group",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": true,
+      "addLabels": ["github-actions"]
+    },
+    {
+      "description": "Security updates - high priority, no automerge",
+      "matchPackageNames": [
+        "/.*(security|cve|vuln).*/",
+        "/^fastapi$/",
+        "/^uvicorn$/",
+        "/^python-can$/"
+      ],
+      "addLabels": ["security", "urgent"],
+      "automerge": false,
+      "minimumReleaseAge": "0 days",
+      "assignees": ["@carpenike"]
+    },
+    {
+      "description": "Python core dependencies - careful handling",
+      "matchManagers": ["poetry"],
+      "matchDepTypes": ["dependencies"],
+      "matchPackageNames": [
+        "/^fastapi$/",
+        "/^uvicorn$/",
+        "/^python-can$/",
+        "/^pydantic$/",
+        "/^langchain-/"
+      ],
+      "groupName": "core python dependencies",
+      "addLabels": ["python", "core"],
+      "minimumReleaseAge": "7 days",
+      "assignees": ["@carpenike"]
     },
     {
       "matchManagers": [
@@ -42,7 +88,7 @@
       ],
       "matchPackageNames": [
         "/black/",
-        "/flake8/",
+        "/ruff/",
         "/mypy/",
         "/pytest/",
         "/pre-commit/"
@@ -61,9 +107,6 @@
       "groupName": "python dependencies (non-major)",
       "addLabels": [
         "python"
-      ],
-      "matchPackageNames": [
-        "*"
       ]
     },
     {
@@ -76,9 +119,6 @@
       "addLabels": [
         "python",
         "major"
-      ],
-      "matchPackageNames": [
-        "*"
       ]
     },
     {
@@ -109,34 +149,11 @@
         "dev-tools"
       ],
       "matchPackageNames": [
-        "/black/",
-        "/flake8/",
+        "/ruff/",
         "/mypy/",
         "/pytest/",
-        "/pre-commit/"
-      ]
-    },
-    {
-      "matchManagers": [
-        "poetry"
-      ],
-      "matchDepTypes": [
-        "dev"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "addLabels": [
-        "python",
-        "dev-tools",
-        "major"
-      ],
-      "matchPackageNames": [
-        "/black/",
-        "/flake8/",
-        "/mypy/",
-        "/pytest/",
-        "/pre-commit/"
+        "/pre-commit/",
+        "/djlint/"
       ]
     },
     {
@@ -150,17 +167,25 @@
       ]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
-      "groupName": "TypeScript type definitions",
-      "addLabels": [
-        "typescript",
-        "types"
-      ],
+      "description": "React ecosystem - careful handling",
+      "matchManagers": ["npm"],
+      "groupName": "React core packages",
+      "addLabels": ["frontend", "react"],
+      "minimumReleaseAge": "7 days",
       "matchPackageNames": [
-        "/^@types//"
+        "/^react$/",
+        "/^react-dom$/",
+        "/^react-router/",
+        "/^@tanstack\/react-query$/"
       ]
+    },
+    {
+      "description": "TypeScript definitions - safe to automerge",
+      "matchManagers": ["npm"],
+      "groupName": "TypeScript type definitions",
+      "addLabels": ["typescript", "types"],
+      "automerge": true,
+      "matchPackageNames": ["/^@types//"]
     },
     {
       "matchManagers": [
@@ -171,6 +196,7 @@
         "frontend",
         "linting"
       ],
+      "automerge": true,
       "matchPackageNames": [
         "/^eslint/",
         "/eslint-plugin-/"
@@ -185,48 +211,49 @@
         "frontend",
         "testing"
       ],
+      "automerge": true,
       "matchPackageNames": [
         "/jest/",
         "/^@testing-library//"
       ]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
-      "groupName": "TypeScript packages",
-      "addLabels": [
-        "frontend",
-        "typescript"
-      ],
+      "description": "Development tools - safe automerge for minor/patch",
+      "matchManagers": ["npm", "poetry"],
+      "matchDepTypes": ["devDependencies", "dev"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "addLabels": ["dev-tools"]
+    },
+    {
+      "description": "Build tools - group and careful handling",
+      "matchManagers": ["npm"],
+      "groupName": "Build tools",
+      "addLabels": ["frontend", "build-tools"],
+      "minimumReleaseAge": "3 days",
       "matchPackageNames": [
+        "/vite/",
+        "/^@vitejs//",
         "/typescript/",
         "/^typescript-/"
       ]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
-      "groupName": "Vite packages",
-      "addLabels": [
-        "frontend",
-        "build-tools"
-      ],
+      "description": "Documentation tools",
+      "matchManagers": ["poetry"],
+      "groupName": "Documentation tools",
+      "addLabels": ["documentation"],
       "matchPackageNames": [
-        "/vite/",
-        "/^@vitejs//"
+        "/mkdocs/",
+        "/^mkdocs-/",
+        "/^mkdocstrings/"
       ]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
+      "description": "CSS and styling tools",
+      "matchManagers": ["npm"],
       "groupName": "CSS tooling",
-      "addLabels": [
-        "frontend",
-        "styling"
-      ],
+      "addLabels": ["frontend", "styling"],
       "matchPackageNames": [
         "/tailwindcss/",
         "/postcss/",
@@ -262,87 +289,27 @@
         "ui-components"
       ],
       "matchPackageNames": [
-        "/^@headlessui//",
-        "/^@heroicons//"
+        "/lucide-react/",
+        "/clsx/"
       ]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "addLabels": [
-        "javascript",
-        "non-major"
-      ]
+      "description": "Major updates - careful review required",
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["major-update"],
+      "minimumReleaseAge": "14 days",
+      "assignees": ["@carpenike"]
     },
     {
-      "matchManagers": [
-        "npm"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "addLabels": [
-        "javascript",
-        "major"
-      ],
-      "minimumReleaseAge": "14 days"
-    },
-    {
-      "description": "Automerge safe dev updates (npm devDependencies, pre-commit hooks, python dev tools)",
-      "matchManagers": [
-        "npm",
-        "pre-commit",
-        "poetry"
-      ],
-      "matchDepTypes": [
-        "devDependencies",
-        "dev"
-      ],
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
+      "description": "Lock file maintenance scheduling",
+      "matchManagers": ["npm", "poetry"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "schedule": ["before 6am on Monday"],
       "automerge": true
     },
     {
-      "description": "Assign reviewers for backend/frontend updates",
-      "matchManagers": [
-        "poetry"
-      ],
-      "reviewers": [
-        "@backend-team"
-      ]
-    },
-    {
-      "matchManagers": [
-        "npm"
-      ],
-      "reviewers": [
-        "@frontend-team"
-      ]
-    },
-    {
-      "description": "Label likely security updates (pattern match)",
-      "addLabels": [
-        "security",
-        "urgent"
-      ],
-      "automerge": false,
-      "matchPackageNames": [
-        "/.*(security|cve|vuln).*/"
-      ]
-    },
-    {
       "description": "Ignore prereleases by default",
-      "matchManagers": [
-        "npm",
-        "poetry"
-      ],
+      "matchManagers": ["npm", "poetry", "nix"],
       "ignoreUnstable": true
     }
   ],
