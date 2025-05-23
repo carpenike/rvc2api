@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: github-pages
-          path: site/*
+          path: ./site
 
   deploy:
     environment:
@@ -95,13 +95,6 @@ jobs:
         with:
           name: github-pages
           path: _site
-
-      - name: Move site files to root of _site (if needed)
-        run: |
-          if [ -d "_site/site" ]; then
-            mv _site/site/* _site/
-            rmdir _site/site
-          fi
 
       - name: Deploy to GitHub Pages
         id: deployment
