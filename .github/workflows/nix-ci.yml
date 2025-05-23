@@ -13,7 +13,6 @@ jobs:
   ci:
     name: "Full CI (pre-commit, tests, lints, lock-check)"
     runs-on: ubuntu-latest
-    environment: default
 
     steps:
       - name: "Checkout repository"
@@ -39,7 +38,6 @@ jobs:
     name: Nix flake checks & build
     needs: ci
     runs-on: ubuntu-latest
-    environment: default
 
     steps:
       - name: "Checkout repository"
