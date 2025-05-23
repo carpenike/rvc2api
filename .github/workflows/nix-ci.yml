@@ -34,6 +34,9 @@ jobs:
       - name: "Perform Nix flake ci"
         run: nix run .#ci
 
+      - name: "Build rvc2api package (for Cachix caching)"
+        run: nix build .#rvc2api
+
   flake-build:
     name: Nix flake checks & build
     needs: ci
@@ -56,5 +59,8 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           skipPush: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Run all flake checks (includes lock‑check from checks, and will build rvc2api)
+      - name: Run all flake checks (includes lock‑check from checks)
         run: nix flake check
+
+      - name: Build rvc2api package (for Cachix caching)
+        run: nix build .#rvc2api
