@@ -1,101 +1,41 @@
-name: Deploy Documentation to GitHub Pages
+name: Deploy MkDocs
 
 on:
   push:
     branches:
       - main
     tags:
-      - "v*"
-  workflow_dispatch:
+      - '*'
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  build-docs:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-
+          python-version: 3.12
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          key: mkdocs-deps-${{ hashFiles('requirements.txt') }}
+          path: ~/.cache/pip
       - name: Install dependencies
         run: |
-          poetry install --with dev
-
+          pip install mkdocs-material
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Generate OpenAPI schema
         run: |
           poetry run python scripts/export_openapi.py
-
-      - name: Determine documentation version
-        id: get_version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION="dev"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_REF: ${{ github.ref }}
-
-      - name: Configure git user for mike
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Configure git for GitHub Actions token
-        run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-
-      - name: Stash generated OpenAPI files
-        run: |
-          # Add generated files to git tracking temporarily
-          git add docs/api/openapi.json docs/api/openapi.yaml || echo "OpenAPI files not found"
-          # Stash any changes to avoid conflicts when switching branches
-          git stash push -m "Temporary stash of generated OpenAPI files" || echo "Nothing to stash"
-
-      - name: Fetch gh-pages branch
-        run: |
-          git fetch origin gh-pages:gh-pages || echo "No gh-pages branch yet"
-
-      - name: Restore generated OpenAPI files
-        run: |
-          # Restore the stashed OpenAPI files for documentation build
-          git stash pop || echo "Nothing to restore from stash"
-
-      - name: Deploy versioned documentation with mike
-        run: |
-          if [[ "${{ steps.get_version.outputs.version }}" == "dev" ]]; then
-            poetry run mike deploy --push --update-aliases dev latest
-            poetry run mike set-default --push latest
-          else
-            # For tagged releases, deploy the version and update latest alias
-            poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
-            poetry run mike set-default --push latest
-          fi
+      - name: Deploy documentation
+        run: mkdocs gh-deploy --force

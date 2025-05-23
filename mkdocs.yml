@@ -1,6 +1,12 @@
 site_name: rvc2api Documentation
 site_description: Documentation for the rvc2api project
 site_url: https://carpenike.github.io/rvc2api
+repo_url: https://github.com/carpenike/rvc2api
+edit_uri: edit/main/docs/
+
+# If using a custom domain, ensure a CNAME file exists in docs/ with your domain name
+
+use_directory_urls: true
 
 docs_dir: docs
 site_dir: site
@@ -44,18 +50,9 @@ plugins:
             show_if_no_docstring: true
   - swagger-ui-tag
   - mermaid2
-  - mike:
-      version_selector: true
-      canonical_version: latest
-      alias_type: copy
-      # redirect_template: null
 
 extra_css:
   - stylesheets/extra.css
-
-extra:
-  version:
-    provider: mike
 
 nav:
   - Home: index.md
@@ -85,7 +82,6 @@ nav:
           - Debian Repository: debian-repository.md
           - GitHub Pages: github-pages-deployment.md
           - Enabling GitHub Pages: enabling-github-pages.md
-          - Version Management: version-management.md
 
   - Developer Guide:
       - Architecture:
@@ -117,13 +113,6 @@ nav:
       - MkDocs Configuration Update: mkdocs-config-update.md
       - React Migration Summary: react-migration-summary.md
       - Diagrams Test: test-mermaid.md
-      - Documentation Versioning: mkdocs-versioning.md
-      - Versioning Integration: mkdocs-versioning-integration.md
-      - Verifying Versioning: verifying-versioned-documentation.md
-      - Versioning with Release-Please: versioning-with-release-please.md
-      - Versioning Fixes: docs-versioning-fixes.md
-      - Versioning Updates: documentation-versioning-update.md
-      - Unified Version Management: version-management.md
 
   - Specs:
       - React Frontend Migration: specs/refactor-web-ui-to-react.md
