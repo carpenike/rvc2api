@@ -57,6 +57,10 @@ jobs:
         run: |
           find site -type l -exec rm -v {} +
 
+      - name: Remove hidden files from site directory
+        run: |
+          find site -name '.*' -type f -delete
+
       - name: Check site directory size
         run: du -sh site
 
@@ -68,11 +72,15 @@ jobs:
         run: |
           find site -type f -links +1 -exec ls -li {} +
 
+      - name: List all files and permissions in site directory (debug)
+        run: |
+          find site -exec ls -l {} +
+
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
           name: github-pages
-          path: ./site
+          path: site/*
 
   deploy:
     environment:
