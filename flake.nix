@@ -84,6 +84,8 @@
             pythonPackages.python-dotenv # Uvicorn standard extra
             pythonPackages.watchfiles # Uvicorn standard extra
             pythonPackages.httpx  # Added for uptimerobot feature
+            pythonPackages.langchain-core
+            pythonPackages.langchain-community
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
           ] ++ [
