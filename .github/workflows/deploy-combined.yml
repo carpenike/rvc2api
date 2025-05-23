@@ -56,12 +56,14 @@ jobs:
       - name: Determine documentation version
         id: get_version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
             VERSION="dev"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REF: ${{ github.ref }}
 
       - name: Configure git user for mike
         run: |
@@ -71,6 +73,10 @@ jobs:
       - name: Configure git for GitHub Actions token
         run: |
           git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+      - name: Fetch gh-pages branch
+        run: |
+          git fetch origin gh-pages:gh-pages || echo "No gh-pages branch yet"
 
       - name: Deploy versioned documentation with mike
         run: |
