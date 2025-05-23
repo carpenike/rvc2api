@@ -194,7 +194,7 @@ EOF
             echo "  • poetry run pytest           # Run tests"
             echo "  • poetry run ruff check .     # Lint"
             echo "  • poetry run ruff format src  # Format"
-            echo "  • npx pyright src             # Type checking"
+            echo "  • poetry run pyright src      # Type checking"
             echo ""
             echo "💡 Frontend commands:"
             echo "  • cd web_ui && npm install    # Install frontend dependencies"
@@ -283,7 +283,7 @@ EOF
                 # Backend linting
                 poetry install --no-root
                 poetry run ruff check .
-                npx pyright src
+                poetry run pyright src
 
                 # Frontend linting (if web_ui directory exists)
                 if [ -d "web_ui" ]; then
@@ -356,17 +356,17 @@ EOF
 
                 poetry run pre-commit run --all-files
                 poetry run ruff check .
-                npx pyright src
+                poetry run pyright src
                 poetry run djlint src/core_daemon/web_ui/templates --check
 
                 # Frontend checks
                 if [ -d "web_ui" ]; then
                   echo "🔍 Running frontend checks..."
                   cd web_ui
-                  # npm run lint removed (handled by pre-commit)
-                  echo "🏗️ Testing build process..."
+                  npm run lint
+                  npm run typecheck
                   npm run build
-                  echo "✅ Frontend checks passed"
+                  cd ..
                 fi
               '';
             };
