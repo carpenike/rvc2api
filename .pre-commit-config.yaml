@@ -43,78 +43,16 @@ repos:
         stages: [pre-commit]
         files: ^src/core_daemon/web_ui/templates/
 
-  # Frontend linting
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.56.0
+  # Frontend linting (local, uses project node_modules)
+  - repo: local
     hooks:
       - id: eslint
-        files: ^web_ui/src/.*\.(js|ts|tsx)$
-        types: [file]
-        args: ["--fix", "--config", "eslint.config.js", "."]
-        exclude: |
-          (?x)^(
-            site/
-            | web_ui/(dist|dist-ssr|node_modules|\.vite|\.vite-temp|site|docs/_build|assets/javascripts/workers/)
-            | CNAME
-            | objects\.inv
-            | sitemap\.xml
-            | index\.html
-            | 404\.html
-            | \.venv
-            | venv
-            | \.env
-            | \.cache
-            | \.mypy_cache
-            | \.pytest_cache
-            | \.ruff_cache
-            | \.tox
-            | \.nox
-            | \.eggs
-            | \.idea
-            | \.vscode
-            | \.devcontainer
-            | devcontainer
-            | \.devcontainer/home-cache
-            | lib
-            | bin
-            | site-packages
-            | usr
-            | opt
-            | lib64
-            | include
-            | share
-            | pyvenv\.cfg
-            | pyc
-            | pyo
-            | __pycache__
-            | virtualenv
-            | env
-            | ENV
-            | build
-            | tmp
-            | temp
-            | logs?
-            | output
-            | coverage
-            | \.history
-            | \.DS_Store
-            | Thumbs\.db
-            | desktop\.ini
-            | npm-debug\.log
-            | yarn-error\.log
-            | pnpm-debug\.log
-            | pip-log\.txt
-            | pip-delete-this-directory\.txt
-          )
-        additional_dependencies:
-          - eslint@9.25.0
-          - eslint-plugin-react-hooks@5.2.0
-          - eslint-plugin-react-refresh@0.4.19
-          - typescript@5.8.3
-          - typescript-eslint@8.30.1
-          - "@eslint/js@9.26.0"
-          - globals@16.0.0
-          - eslint-plugin-jsdoc@50.6.17
+        name: eslint (web_ui)
+        entry: npm run lint
+        language: system
+        types_or: [javascript, ts, tsx]
+        pass_filenames: false
+        working_directory: web_ui
 
   # Poetry check (local)
   - repo: local
