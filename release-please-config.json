@@ -2,7 +2,10 @@
   "packages": {
     ".": {
       "package-name": "rvc2api",
-      "release-type": "python"
+      "release-type": "python",
+      "extra-files": [
+        "VERSION"
+      ]
     }
   },
   "bootstrap-sha": "cf499397bf55133e0987c824d805949967841080",
