@@ -13,6 +13,38 @@ This file documents the VS Code tasks configuration for the `rvc2api` project. T
 - Alternatively, use the shortcut Ctrl+Shift+B or ⌘+Shift+B on macOS to run the default build task
 - Tasks can also be run from the Terminal menu → Run Task
 
+## Task Organization
+
+Tasks are organized into logical categories with clear naming conventions:
+
+- **Server Tasks**: Development servers and documentation
+- **Daily Development Tasks**: Fast Poetry/npm-based tasks for quick iterations
+- **CI/Reproducible Tasks**: Nix-based tasks that match CI environment exactly
+- **Build Tasks**: Production builds
+- **Frontend Tasks**: Individual frontend development tasks
+- **Development Environment**: Environment setup and maintenance
+- **Dependency Management**: Package management
+- **API and Documentation**: Schema and docs generation
+- **System and vCAN**: Low-level system tasks
+- **MCP and Status**: Tooling status and management
+
+## Development Workflow Recommendations
+
+### For Daily Development (Fast Iteration)
+Use the "Dev:" prefixed tasks for quick feedback:
+- `Dev: Run Tests (Quick)` - Fast Poetry-based test runs
+- `Dev: Format Code (Quick)` - Quick Ruff formatting
+- `Dev: Lint Backend (Quick)` - Fast linting
+- `Dev: Run Pre-commit (Quick)` - Quick pre-commit checks
+
+### For CI Parity and Release Prep
+Use the "CI:" prefixed tasks to match the exact CI environment:
+- `CI: Run Tests (Nix)` - Reproducible test environment
+- `CI: Run Linters (Nix)` - Full linting suite
+- `CI: Format Code (Nix)` - Full formatting (backend + frontend)
+- `CI: Run Pre-commit (Nix)` - Exact CI pre-commit environment
+- `CI: Full Suite (Nix)` - Complete CI reproduction
+
 ## Task Categories
 
 ### Server Tasks
@@ -22,19 +54,36 @@ This file documents the VS Code tasks configuration for the `rvc2api` project. T
 | `Server: Start Backend`              | Start the FastAPI backend server        | `poetry run python src/core_daemon/main.py` |
 | `Server: Start Frontend Dev Server`  | Start the Vite development server       | `cd web_ui && npm run dev`                  |
 | `Server: Start Full Dev Environment` | Start both backend and frontend servers | _Compound task_                             |
-| `Server: Serve Documentation`        | Preview documentation with mkdocs serve | `cd docs && mkdocs serve`                   |
+| `Server: Serve Documentation`        | Preview documentation with mkdocs serve | `poetry run mkdocs serve`                   |
 
-### Backend Tasks
+### Daily Development Tasks (Fast)
 
-| Task Name                          | Description                    | Command                                         |
-| ---------------------------------- | ------------------------------ | ----------------------------------------------- |
-| `Backend: Run Tests`               | Run pytest tests               | `poetry run pytest`                             |
-| `Backend: Run Tests with Coverage` | Run tests with coverage report | `poetry run pytest --cov=src --cov-report=term` |
-| `Backend: Format Code (Ruff)`      | Format Python code             | `poetry run ruff format src`                    |
-| `Backend: Lint (Ruff)`             | Check code with ruff linter    | `poetry run ruff check .`                       |
-| `Backend: Type Check (Pyright)`    | Run Pyright type checker       | `npx pyright src`                               |
-| `Backend: Quality Check All`       | Run all code quality checks    | _Compound task_                                 |
-| `Backend: Clean`                   | Remove Python cache files      | _Clean script_                                  |
+| Task Name                      | Description                    | Command                                         |
+| ------------------------------ | ------------------------------ | ----------------------------------------------- |
+| `Dev: Run Tests (Quick)`       | Fast pytest tests               | `poetry run pytest`                             |
+| `Dev: Run Tests with Coverage` | Tests with coverage report | `poetry run pytest --cov=src --cov-report=term` |
+| `Dev: Format Code (Quick)`     | Quick Python formatting       | `poetry run ruff format src`                    |
+| `Dev: Lint Backend (Quick)`    | Quick backend linting          | `poetry run ruff check .`                       |
+| `Dev: Type Check (Quick)`      | Quick type checking            | `poetry run pyright src`                        |
+| `Dev: Run Pre-commit (Quick)`  | Quick pre-commit checks        | `poetry run pre-commit run --all-files`         |
+
+### CI/Reproducible Tasks (Nix)
+
+| Task Name                   | Description                             | Command                       |
+| --------------------------- | --------------------------------------- | ----------------------------- |
+| `CI: Run Tests (Nix)`       | Tests in reproducible environment       | `nix run .#test`              |
+| `CI: Run Linters (Nix)`     | Full linting suite (backend + frontend) | `nix run .#lint`              |
+| `CI: Format Code (Nix)`     | Full formatting (backend + frontend)    | `nix run .#format`            |
+| `CI: Run Pre-commit (Nix)`  | Pre-commit in CI environment            | `nix run .#precommit`         |
+| `CI: Full Suite (Nix)`      | Complete CI reproduction                 | `nix run .#ci`                |
+
+### Build Tasks
+
+| Task Name                  | Description                               | Command                       |
+| -------------------------- | ----------------------------------------- | ----------------------------- |
+| `Build: Frontend (npm)`    | Build frontend with npm                   | `cd web_ui && npm run build`  |
+| `Build: Frontend (Nix)`    | Build frontend in reproducible environment | `nix run .#build-frontend`    |
+| `Build: Documentation`     | Build MkDocs documentation               | `poetry run mkdocs build`     |
 
 ### Frontend Tasks
 
@@ -45,37 +94,16 @@ This file documents the VS Code tasks configuration for the `rvc2api` project. T
 | `Frontend: Fix Style Issues`     | Fix style issues             | `cd web_ui && npm run fix:style`      |
 | `Frontend: Fix Interface Issues` | Fix interface parsing issues | `cd web_ui && npm run fix:interfaces` |
 | `Frontend: Type Check`           | Run TypeScript type checking | `cd web_ui && npm run typecheck`      |
-| `Frontend: Quality Check All`    | Run all code quality checks  | _Compound task_                       |
 | `Frontend: Clean`                | Remove build artifacts       | _Clean script_                        |
 
-### Build Tasks
+### Development Environment
 
-| Task Name              | Description         | Command                      |
-| ---------------------- | ------------------- | ---------------------------- |
-| `Build: Frontend`      | Build the frontend  | `cd web_ui && npm run build` |
-| `Build: Documentation` | Build documentation | `cd docs && mkdocs build`    |
+| Task Name                 | Description                    | Command                   |
+| ------------------------- | ------------------------------ | ------------------------- |
+| `Dev: Enter Nix Shell`    | Enter Nix development shell    | `nix develop`             |
+| `Dev: Clean All`          | Remove all cache files         | _Clean script_            |
 
-### API Documentation Tasks
-
-| Task Name                    | Description                              | Command                                                                  |
-| ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------ |
-| `API: Export OpenAPI Schema` | Export OpenAPI schema to JSON/YAML files | `poetry run python scripts/export_openapi.py`                            |
-| `API: Update Documentation`  | Export OpenAPI schema and rebuild docs   | `poetry run python scripts/export_openapi.py && cd docs && mkdocs build` |
-
-### Development Environment Tasks
-
-| Task Name                    | Description                     | Command                      |
-| ---------------------------- | ------------------------------- | ---------------------------- |
-| `Dev: Enter Nix Shell`       | Enter the Nix development shell | `nix develop`                |
-| `Dev: Run Pre-commit Checks` | Run all pre-commit hooks        | `pre-commit run --all-files` |
-
-### MCP Tools Tasks
-
-| Task Name                      | Description                 | Command            |
-| ------------------------------ | --------------------------- | ------------------ | --- | ------------------- |
-| `MCP: Restart Context7 Server` | Restart the Context7 server | `pkill -f context7 |     | true && context7 &` |
-
-### Dependency Management Tasks
+### Dependency Management
 
 | Task Name               | Description                  | Command                   |
 | ----------------------- | ---------------------------- | ------------------------- |
@@ -83,12 +111,38 @@ This file documents the VS Code tasks configuration for the `rvc2api` project. T
 | `Deps: Lock Poetry`     | Lock Poetry dependencies     | `poetry lock --no-update` |
 | `Deps: Update Frontend` | Update frontend dependencies | `cd web_ui && npm update` |
 
-### System Status Tasks
+### API and Documentation Tasks
 
-| Task Name                 | Description                      | Command         |
-| ------------------------- | -------------------------------- | --------------- |
-| `Status: Check MCP Tools` | Check MCP tool processes         | _Shell command_ |
-| `Status: Backend Info`    | Show Python version and packages | _Shell command_ |
+| Task Name                    | Description                              | Command                                                                  |
+| ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| `API: Export OpenAPI Schema` | Export OpenAPI schema to JSON/YAML files | `poetry run python scripts/export_openapi.py`                            |
+| `API: Update Documentation`  | Export OpenAPI schema and rebuild docs   | `poetry run python scripts/export_openapi.py && poetry run mkdocs build` |
+
+### Documentation Tasks
+
+| Task Name                           | Description                      | Command                        |
+| ----------------------------------- | -------------------------------- | ------------------------------ |
+| `Docs: List Versions`               | List available doc versions      | `./scripts/docs_version.sh list` |
+| `Docs: Deploy Current Version`      | Deploy current version           | `./scripts/docs_version.sh deploy` |
+| `Docs: Deploy Dev Version`          | Deploy development version       | `./scripts/docs_version.sh deploy-dev` |
+| `Docs: Set Default Version`         | Set default documentation version | `./scripts/docs_version.sh set-default` |
+| `Docs: Serve Versioned Documentation` | Serve versioned documentation   | `./scripts/docs_version.sh serve` |
+
+### System and vCAN Tasks
+
+| Task Name                       | Description                            | Command                                |
+| ------------------------------- | -------------------------------------- | -------------------------------------- |
+| `System: Setup Colima vcan`     | Set up vcan interfaces in Colima VM   | `scripts/setup_colima_vcan.sh`        |
+| `System: Ensure vcan Interfaces` | Ensure vcan interfaces are available  | `scripts/ensure_vcan_interfaces.sh`   |
+| `System: Test vCAN Setup`       | Test vCAN setup by sending/receiving  | `poetry run python dev_tools/test_vcan_setup.py` |
+
+### MCP and Status Tasks
+
+| Task Name                      | Description                      | Command                    |
+| ------------------------------ | -------------------------------- | -------------------------- |
+| `MCP: Restart Context7 Server` | Restart the Context7 server     | `pkill -f context7 \|\| true; context7 &` |
+| `Status: Check MCP Tools`      | Check MCP tool processes         | _Process check script_     |
+| `Status: Backend Info`         | Show Python version and packages | _Version and package info_ |
 
 ## Customizing Tasks
 
@@ -101,7 +155,28 @@ If you need to modify or add tasks:
 
 ## Best Practices
 
-- Use `Server: Start Full Dev Environment` for daily development
-- Run code quality tasks before committing changes
-- Use `Backend: Quality Check All` and `Frontend: Quality Check All` to ensure all checks pass
-- Keep the task configuration clean and organized by category
+### Daily Development Workflow
+1. Use `Server: Start Full Dev Environment` to start both backend and frontend
+2. Use "Dev:" prefixed tasks for quick feedback during development:
+   - `Dev: Run Tests (Quick)` for fast test runs
+   - `Dev: Format Code (Quick)` for quick formatting
+   - `Dev: Lint Backend (Quick)` for fast linting
+   - `Dev: Run Pre-commit (Quick)` before committing
+
+### CI Parity and Release Preparation
+1. Use "CI:" prefixed tasks to ensure your code matches the CI environment:
+   - `CI: Run Tests (Nix)` for reproducible test environment
+   - `CI: Run Linters (Nix)` for full linting suite (backend + frontend)
+   - `CI: Full Suite (Nix)` for complete CI reproduction
+2. Always run CI tasks before opening pull requests
+
+### Code Quality
+- Run pre-commit checks before committing changes
+- Use both quick (Poetry/npm) and reproducible (Nix) versions based on context
+- Keep task configuration clean and organized by category
+- Frontend tasks handle TypeScript, ESLint, and interface fixes
+
+### Environment Management
+- Use `Dev: Enter Nix Shell` for reproducible development environment
+- Use system tasks to set up vCAN interfaces for testing
+- Monitor MCP tools status for optimal development experience
