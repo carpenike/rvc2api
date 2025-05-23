@@ -46,8 +46,8 @@ plugins:
   - mike:
       version_selector: true
       canonical_version: latest
-      alias_type: symlink
-      redirect_template: null
+      alias_type: redirect
+      # redirect_template: null
 
 extra_css:
   - stylesheets/extra.css
