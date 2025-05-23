@@ -633,6 +633,24 @@
       Using Pre-commit
     </span>
 </a>
+<nav aria-label="Using Pre-commit" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#traditional-method-poetry">
+<span class="md-ellipsis">
+      Traditional Method (Poetry)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#nix-based-method-reproducible">
+<span class="md-ellipsis">
+      Nix-based Method (Reproducible)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -661,6 +679,31 @@
       Local Development
     </span>
 </a>
+<nav aria-label="Local Development" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#vs-code-tasks">
+<span class="md-ellipsis">
+      VS Code Tasks
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#nix-apps-recommended-for-reproducibility">
+<span class="md-ellipsis">
+      Nix Apps (Recommended for Reproducibility)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#poetrynpm-commands-traditional">
+<span class="md-ellipsis">
+      Poetry/npm Commands (Traditional)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#adding-new-checks">
@@ -702,6 +745,14 @@
 <a class="md-nav__link" href="../poetry2nix-integration/">
 <span class="md-ellipsis">
     Poetry2Nix Integration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../dependency-management-scripts/">
+<span class="md-ellipsis">
+    Dependency Management Scripts
     
   </span>
 </a>
@@ -963,6 +1014,7 @@
 <li>Poetry lock file validation</li>
 </ol>
 <h3 id="using-pre-commit">Using Pre-commit<a class="headerlink" href="#using-pre-commit" title="Permanent link">¶</a></h3>
+<h4 id="traditional-method-poetry">Traditional Method (Poetry)<a class="headerlink" href="#traditional-method-poetry" title="Permanent link">¶</a></h4>
 <div class="highlight"><pre><span></span><code><span class="c1"># Install pre-commit hooks</span>
 poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
 
@@ -972,6 +1024,26 @@ poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="
 <span class="c1"># Run a specific hook</span>
 poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>run<span class="w"> </span>ruff-format<span class="w"> </span>--all-files
 </code></pre></div>
+<h4 id="nix-based-method-reproducible">Nix-based Method (Reproducible)<a class="headerlink" href="#nix-based-method-reproducible" title="Permanent link">¶</a></h4>
+<p>For maximum reproducibility and consistency with CI:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Run pre-commit checks (same as CI)</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#precommit
+
+<span class="c1"># Run full CI suite (includes pre-commit + tests + linting)</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#ci
+
+<span class="c1"># Run individual components</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#lint<span class="w">    </span><span class="c1"># Ruff + Pyright + ESLint</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#format<span class="w">  </span><span class="c1"># Format code with Ruff + ESLint --fix</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#test<span class="w">    </span><span class="c1"># Run pytest</span>
+</code></pre></div>
+<blockquote>
+<p><strong>💡 Best Practice</strong>:
+- Install Git hooks once: <code>poetry run pre-commit install</code>
+- Use Nix apps for CI-matching checks: <code>nix run .#precommit</code>
+- The <code>.pre-commit-config.yaml</code> defines <strong>what</strong> to check
+- The Nix apps provide <strong>reproducible environments</strong> to run the checks</p>
+</blockquote>
 <h2 id="github-actions-configuration">GitHub Actions Configuration<a class="headerlink" href="#github-actions-configuration" title="Permanent link">¶</a></h2>
 <p>The project uses GitHub Actions to automate CI/CD processes.</p>
 <h3 id="available-workflows">Available Workflows<a class="headerlink" href="#available-workflows" title="Permanent link">¶</a></h3>
@@ -1014,15 +1086,41 @@ poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="
 <li>Creates release pull requests</li>
 </ol>
 <h2 id="local-development">Local Development<a class="headerlink" href="#local-development" title="Permanent link">¶</a></h2>
-<p>For day-to-day development, you can use VS Code tasks to run common operations:</p>
+<p>For day-to-day development, you have several options:</p>
+<h3 id="vs-code-tasks">VS Code Tasks<a class="headerlink" href="#vs-code-tasks" title="Permanent link">¶</a></h3>
+<p>Use VS Code tasks for common operations:</p>
 <ul>
 <li><strong>Start Backend Server</strong>: Run the FastAPI server</li>
 <li><strong>Start Frontend Dev Server</strong>: Run the Vite development server</li>
 <li><strong>Run Tests</strong>: Execute pytest</li>
-<li><strong>Format Code</strong>: Run Black formatter</li>
-<li><strong>Lint (Ruff)</strong>: Run Ruff linter</li>
+<li><strong>Format Code</strong>: Run code formatters</li>
+<li><strong>Lint</strong>: Run linters and type checkers</li>
 <li><strong>Build Frontend</strong>: Create production frontend build</li>
 </ul>
+<h3 id="nix-apps-recommended-for-reproducibility">Nix Apps (Recommended for Reproducibility)<a class="headerlink" href="#nix-apps-recommended-for-reproducibility" title="Permanent link">¶</a></h3>
+<p>Use Nix apps for reproducible development that matches CI exactly:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Quality checks (same as CI)</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#ci<span class="w">        </span><span class="c1"># Full CI suite</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#precommit<span class="w"> </span><span class="c1"># Pre-commit checks only</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#lint<span class="w">      </span><span class="c1"># Linting (Ruff + Pyright + ESLint)</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#format<span class="w">    </span><span class="c1"># Code formatting</span>
+
+<span class="c1"># Testing and building</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#test<span class="w">           </span><span class="c1"># Run pytest</span>
+nix<span class="w"> </span>run<span class="w"> </span>.#build-frontend<span class="w"> </span><span class="c1"># Build React app</span>
+</code></pre></div>
+<h3 id="poetrynpm-commands-traditional">Poetry/npm Commands (Traditional)<a class="headerlink" href="#poetrynpm-commands-traditional" title="Permanent link">¶</a></h3>
+<p>Or use traditional package manager commands:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Backend</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest
+poetry<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>.
+poetry<span class="w"> </span>run<span class="w"> </span>pyright<span class="w"> </span>src
+
+<span class="c1"># Frontend (from web_ui/ directory)</span>
+npm<span class="w"> </span>run<span class="w"> </span>dev
+npm<span class="w"> </span>run<span class="w"> </span>build
+npm<span class="w"> </span>run<span class="w"> </span>lint
+</code></pre></div>
 <h2 id="adding-new-checks">Adding New Checks<a class="headerlink" href="#adding-new-checks" title="Permanent link">¶</a></h2>
 <p>To add new checks to the pre-commit configuration:</p>
 <ol>

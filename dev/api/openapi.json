@@ -4,12 +4,6 @@
     "title": "rvc2api",
     "version": "0.1.0"
   },
-  "servers": [
-    {
-      "url": "/",
-      "description": "RV-C to API Bridge"
-    }
-  ],
   "paths": {
     "/api/health": {
       "get": {
