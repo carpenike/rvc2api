@@ -257,7 +257,7 @@ EOF
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 export SKIP=djlint
-                poetry install --no-root
+                poetry install --no-root --with dev
                 poetry run pre-commit run --all-files
               '';
             };
@@ -341,7 +341,7 @@ EOF
               runtimeInputs = [ pkgs.poetry ];
               text = ''
                 export SKIP=djlint
-                poetry install --no-root
+                poetry install --no-root --with dev
                 poetry check --lock --no-interaction
                 poetry run pre-commit run --all-files --hook-stage commit
                 poetry run ruff check .
