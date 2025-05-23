@@ -68,6 +68,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Configure git for GitHub Actions token
+        run: |
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
       - name: Deploy versioned documentation with mike
         run: |
           poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
