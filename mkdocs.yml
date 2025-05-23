@@ -1,5 +1,6 @@
 site_name: rvc2api Documentation
 site_description: Documentation for the rvc2api project
+site_url: https://carpenike.github.io/rvc2api
 
 docs_dir: docs
 site_dir: site
