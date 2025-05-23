@@ -60,6 +60,14 @@ jobs:
       - name: Check site directory size
         run: du -sh site
 
+      - name: List all symlinks in site directory (debug)
+        run: |
+          find site -type l
+
+      - name: List all files with more than one hard link (debug)
+        run: |
+          find site -type f -links +1 -exec ls -li {} +
+
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
@@ -79,6 +87,13 @@ jobs:
         with:
           name: github-pages
           path: _site
+
+      - name: Move site files to root of _site (if needed)
+        run: |
+          if [ -d "_site/site" ]; then
+            mv _site/site/* _site/
+            rmdir _site/site
+          fi
 
       - name: Deploy to GitHub Pages
         id: deployment
