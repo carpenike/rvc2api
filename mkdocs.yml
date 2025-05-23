@@ -47,7 +47,7 @@ plugins:
   - mike:
       version_selector: true
       canonical_version: latest
-      alias_type: redirect
+      alias_type: copy
       # redirect_template: null
 
 extra_css:
