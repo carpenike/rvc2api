@@ -19,18 +19,27 @@
   "dependencyDashboard": true,
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["security", "vulnerability"],
-    "addLabels": ["urgent"],
-    "assignees": ["@carpenike"]
+    "labels": [
+      "security",
+      "vulnerability"
+    ],
+    "addLabels": [
+      "urgent"
+    ],
+    "assignees": [
+      "@carpenike"
+    ]
   },
   "configMigration": true,
-  "stabilityDays": 3,
+  "minimumReleaseAge": "3 days",
   "prCreation": "not-pending",
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,
     "recreateWhen": "always",
-    "schedule": ["before 6am on Monday"]
+    "schedule": [
+      "before 6am on Monday"
+    ]
   },
   "packageRules": [
     {
@@ -41,10 +50,14 @@
     },
     {
       "description": "GitHub Actions - automerge and group",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "GitHub Actions",
       "automerge": true,
-      "addLabels": ["github-actions"]
+      "addLabels": [
+        "github-actions"
+      ]
     },
     {
       "description": "Security updates - high priority, no automerge",
@@ -54,15 +67,24 @@
         "/^uvicorn$/",
         "/^python-can$/"
       ],
-      "addLabels": ["security", "urgent"],
+      "addLabels": [
+        "security",
+        "urgent"
+      ],
       "automerge": false,
       "minimumReleaseAge": "0 days",
-      "assignees": ["@carpenike"]
+      "assignees": [
+        "@carpenike"
+      ]
     },
     {
       "description": "Python core dependencies - careful handling",
-      "matchManagers": ["poetry"],
-      "matchDepTypes": ["dependencies"],
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
       "matchPackageNames": [
         "/^fastapi$/",
         "/^uvicorn$/",
@@ -71,9 +93,14 @@
         "/^langchain-/"
       ],
       "groupName": "core python dependencies",
-      "addLabels": ["python", "core"],
+      "addLabels": [
+        "python",
+        "core"
+      ],
       "minimumReleaseAge": "7 days",
-      "assignees": ["@carpenike"]
+      "assignees": [
+        "@carpenike"
+      ]
     },
     {
       "matchManagers": [
@@ -168,24 +195,36 @@
     },
     {
       "description": "React ecosystem - careful handling",
-      "matchManagers": ["npm"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "React core packages",
-      "addLabels": ["frontend", "react"],
+      "addLabels": [
+        "frontend",
+        "react"
+      ],
       "minimumReleaseAge": "7 days",
       "matchPackageNames": [
         "/^react$/",
         "/^react-dom$/",
         "/^react-router/",
-        "/^@tanstack\/react-query$/"
+        "/^@tanstack/react-query$/"
       ]
     },
     {
       "description": "TypeScript definitions - safe to automerge",
-      "matchManagers": ["npm"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "TypeScript type definitions",
-      "addLabels": ["typescript", "types"],
+      "addLabels": [
+        "typescript",
+        "types"
+      ],
       "automerge": true,
-      "matchPackageNames": ["/^@types//"]
+      "matchPackageNames": [
+        "/^@types//"
+      ]
     },
     {
       "matchManagers": [
@@ -219,17 +258,33 @@
     },
     {
       "description": "Development tools - safe automerge for minor/patch",
-      "matchManagers": ["npm", "poetry"],
-      "matchDepTypes": ["devDependencies", "dev"],
-      "matchUpdateTypes": ["patch", "minor"],
+      "matchManagers": [
+        "npm",
+        "poetry"
+      ],
+      "matchDepTypes": [
+        "devDependencies",
+        "dev"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
       "automerge": true,
-      "addLabels": ["dev-tools"]
+      "addLabels": [
+        "dev-tools"
+      ]
     },
     {
       "description": "Build tools - group and careful handling",
-      "matchManagers": ["npm"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "Build tools",
-      "addLabels": ["frontend", "build-tools"],
+      "addLabels": [
+        "frontend",
+        "build-tools"
+      ],
       "minimumReleaseAge": "3 days",
       "matchPackageNames": [
         "/vite/",
@@ -240,9 +295,13 @@
     },
     {
       "description": "Documentation tools",
-      "matchManagers": ["poetry"],
+      "matchManagers": [
+        "poetry"
+      ],
       "groupName": "Documentation tools",
-      "addLabels": ["documentation"],
+      "addLabels": [
+        "documentation"
+      ],
       "matchPackageNames": [
         "/mkdocs/",
         "/^mkdocs-/",
@@ -251,9 +310,14 @@
     },
     {
       "description": "CSS and styling tools",
-      "matchManagers": ["npm"],
+      "matchManagers": [
+        "npm"
+      ],
       "groupName": "CSS tooling",
-      "addLabels": ["frontend", "styling"],
+      "addLabels": [
+        "frontend",
+        "styling"
+      ],
       "matchPackageNames": [
         "/tailwindcss/",
         "/postcss/",
@@ -295,21 +359,38 @@
     },
     {
       "description": "Major updates - careful review required",
-      "matchUpdateTypes": ["major"],
-      "addLabels": ["major-update"],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "addLabels": [
+        "major-update"
+      ],
       "minimumReleaseAge": "14 days",
-      "assignees": ["@carpenike"]
+      "assignees": [
+        "@carpenike"
+      ]
     },
     {
       "description": "Lock file maintenance scheduling",
-      "matchManagers": ["npm", "poetry"],
-      "matchUpdateTypes": ["lockFileMaintenance"],
-      "schedule": ["before 6am on Monday"],
+      "matchManagers": [
+        "npm",
+        "poetry"
+      ],
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
+      ],
+      "schedule": [
+        "before 6am on Monday"
+      ],
       "automerge": true
     },
     {
       "description": "Ignore prereleases by default",
-      "matchManagers": ["npm", "poetry", "nix"],
+      "matchManagers": [
+        "npm",
+        "poetry",
+        "nix"
+      ],
       "ignoreUnstable": true
     }
   ],
