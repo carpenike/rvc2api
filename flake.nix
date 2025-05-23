@@ -227,13 +227,14 @@ EOF
             pythonPackages.python-dotenv
             pythonPackages.watchfiles
             pythonPackages.pytest-asyncio
-            pkgs.pyright  # For Python type checking
+            pkgs.pyright
 
             # --- Dev Tools dependencies for CI ---
             pythonPackages.langchain
             pythonPackages."langchain-openai"
             pythonPackages.pymupdf  # PyMuPDF, imported as fitz
             pythonPackages."faiss-cpu"
+            pkgs.nodejs_20
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
