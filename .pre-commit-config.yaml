@@ -48,11 +48,10 @@ repos:
     hooks:
       - id: eslint
         name: eslint (web_ui)
-        entry: npm run lint
+        entry: bash -c 'cd web_ui && npm run lint'
         language: system
-        types_or: [javascript, ts, tsx]
         pass_filenames: false
-        working_directory: web_ui
+        files: ^web_ui/
 
   # Poetry check (local)
   - repo: local

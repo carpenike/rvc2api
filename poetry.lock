@@ -3143,6 +3143,18 @@ files = [
 ]
 
 [[package]]
+name = "run-in-subdirectory"
+version = "1.0.1"
+description = "A command-line utility for running commands in subdirectories (e.g. in a monorepo) with a set of pre-commit hooks"
+optional = false
+python-versions = ">=3.8,<4.0"
+groups = ["dev"]
+files = [
+    {file = "run_in_subdirectory-1.0.1-py3-none-any.whl", hash = "sha256:cd8fd52a5754d539d6edede24e9383bd63e32df408f65351ccfb993e3a129fa7"},
+    {file = "run_in_subdirectory-1.0.1.tar.gz", hash = "sha256:3fb900d71e91a827e78e92169f551206def054a43918d25190b7bd8e46ed398d"},
+]
+
+[[package]]
 name = "setuptools"
 version = "80.8.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -4150,4 +4162,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "ab79fa5e928701aad0988887e43f412406c12ebca941c6895d56cc787e7ef748"
+content-hash = "c725c6d4fd29ed9fa8889b4b85276fdceabb41be79e7a83d3fd20693ed19ae1f"

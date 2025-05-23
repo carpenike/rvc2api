@@ -81,6 +81,7 @@ setuptools = ">=80.8.0"
 openai = ">=1.80.0"
 langchain-openai = ">=0.3.17"
 pyyaml = "^6.0.2"
+run-in-subdirectory = "^1.0.1"
 
 [tool.poetry.group.devtools.dependencies]
 pymupdf = "==1.23.26"

@@ -345,7 +345,16 @@ EOF
                 export SKIP=djlint
                 poetry install --no-root --with dev
                 poetry check --lock --no-interaction
-                poetry run pre-commit run --all-files --hook-stage commit
+
+                # Frontend deps must be installed before pre-commit
+                if [ -d "web_ui" ]; then
+                  echo "🔍 Installing frontend dependencies..."
+                  cd web_ui
+                  npm ci
+                  cd ..
+                fi
+
+                poetry run pre-commit run --all-files
                 poetry run ruff check .
                 npx pyright src
                 poetry run djlint src/core_daemon/web_ui/templates --check
@@ -354,9 +363,7 @@ EOF
                 if [ -d "web_ui" ]; then
                   echo "🔍 Running frontend checks..."
                   cd web_ui
-                  npm ci
-                  echo "🧪 Running lint checks..."
-                  npm run lint
+                  # npm run lint removed (handled by pre-commit)
                   echo "🏗️ Testing build process..."
                   npm run build
                   echo "✅ Frontend checks passed"
