@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry-core>=1.8.0"]
+requires = [ "poetry-core>=1.8.0",]
 build-backend = "poetry.core.masonry.api"
 
 [project]
@@ -8,30 +8,17 @@ version = "0.1.0"
 description = "CAN-bus web service exposing RV-C network data via HTTP & WebSocket"
 readme = "README.md"
 license = "MIT"
-authors = [{ name = "Ryan Holt", email = "ryan@ryanholt.net" }]
-keywords = ["can", "rv-c", "websocket", "fastapi"]
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: POSIX :: Linux",
-]
-urls = { Homepage = "https://github.com/carpenike/rvc2api", Repository = "https://github.com/carpenike/rvc2api" }
+keywords = [ "can", "rv-c", "websocket", "fastapi",]
+classifiers = [ "Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: POSIX :: Linux",]
 requires-python = ">=3.12,<4.0"
+dependencies = [ "fastapi>=0.115", "uvicorn[standard]>=0.34", "python-can>=4.0", "pydantic>=2.9", "pyyaml>=6.0", "prometheus_client>=0.21.0", "coloredlogs>=15.0", "pyroute2>=0.7.10,<0.9.0", "langchain-community>=0.3",]
+[[project.authors]]
+name = "Ryan Holt"
+email = "ryan@ryanholt.net"
 
-dependencies = [
-  "fastapi>=0.115",
-  "uvicorn[standard]>=0.34",
-  "python-can>=4.0",
-  "pydantic>=2.9",
-  "pyyaml>=6.0",
-  "prometheus_client>=0.21.0",
-  "coloredlogs>=15.0",
-  "jinja2>=3.1.4",
-  "pyroute2>=0.7.10,<0.9.0",
-  "langchain-community>=0.3",
-  "langchain-core>=0.3",
-  "pluggy>=1.0.0"
-]
+[project.urls]
+Homepage = "https://github.com/carpenike/rvc2api"
+Repository = "https://github.com/carpenike/rvc2api"
 
 [project.scripts]
 rvc2api-daemon = "core_daemon.main:main"
@@ -39,28 +26,70 @@ rvc2api-console = "console_client.console:main"
 frontend-build = "scripts.build_frontend:main"
 
 [tool.poetry]
-# Only keep Poetry-specific settings here (none in your current file).
+include = [ "src/core_daemon/static/**/*", "src/core_daemon/web_ui/static/**/*", "src/core_daemon/web_ui/templates/**/*", "src/rvc_decoder/config/*",]
+[[tool.poetry.packages]]
+include = "common"
+from = "src"
 
-# src layout
-packages = [
-  { include = "common", from = "src" },
-  { include = "core_daemon", from = "src" },
-  { include = "rvc_decoder", from = "src" },
-]
+[[tool.poetry.packages]]
+include = "core_daemon"
+from = "src"
 
-# Explicitly include package data like templates and static files
-include = [
-  "src/core_daemon/static/**/*",
-  "src/core_daemon/web_ui/static/**/*",
-  "src/core_daemon/web_ui/templates/**/*",
-  "src/rvc_decoder/config/*"
-]
+[[tool.poetry.packages]]
+include = "rvc_decoder"
+from = "src"
 
-# The React frontend (web_ui/) is managed separately through npm
-# See web_ui/README.md and docs/frontend-development.md for details
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pyright]
+include = [ "src",]
+exclude = [ "**/node_modules", "**/__pycache__", ".venv",]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = true
+pythonVersion = "3.12"
+reportIncompatibleMethodOverride = false
+reportArgumentType = "none"
+stubPath = "typings"
+
+[tool.pytest.ini_options]
+pythonpath = [ "src",]
+addopts = [ "--import-mode=importlib",]
+testpaths = [ "tests",]
+
+[tool.ruff.format]
+line-ending = "lf"
+indent-style = "space"
+quote-style = "double"
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "B", "C4", "SIM", "TCH", "TID", "UP", "W", "N", "C90", "RUF",]
+ignore = [ "E203", "E501", "C901",]
+unfixable = [ "F401", "F841",]
+exclude = [ ".git", "__pycache__", ".venv", "build", "dist", "*.egg-info",]
+
+[tool.ruff.lint.isort]
+known-first-party = [ "common", "core_daemon", "rvc_decoder",]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [ "E501",]
+"typings/fastapi/__init__.py" = [ "N802", "N818",]
+"typings/fastapi/__init__.pyi" = [ "N802", "N818",]
+"typings/fastapi/params.py" = [ "N802",]
+"typings/fastapi/params.pyi" = [ "N802",]
+"typings/**/*.py" = [ "TID252",]
+"typings/**/*.pyi" = [ "TID252",]
+"src/core_daemon/uptimerobot.py" = [ "F401", "E902",]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"
+pytest-mock = ">=3.10.0"
 mypy = ">=1.10"
 ruff = "^0.11.10"
 black = ">=25.0.0"
@@ -83,57 +112,9 @@ langchain-openai = ">=0.3.17"
 pyyaml = "^6.0.2"
 run-in-subdirectory = "^1.0.1"
 pyright = "^1.1.401"
+toml = "^0.10.2"
+deptry = "^0.23.0"
 
 [tool.poetry.group.devtools.dependencies]
 pymupdf = "==1.23.26"
 faiss-cpu = ">=1.7.4"
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-addopts = ["--import-mode=importlib"]
-testpaths = ["tests"]
-
-[tool.ruff]
-line-length = 100
-target-version = "py312"
-
-[tool.ruff.format]
-line-ending = "lf"
-indent-style = "space"
-quote-style = "double"
-
-[tool.ruff.lint]
-select = [
-  "E", "F", "I", "B", "C4", "SIM", "TCH", "TID", "UP", "W", "N", "C90", "RUF"
-]
-ignore = ["E203", "E501", "C901"]
-unfixable = ["F401", "F841"]
-exclude = [".git", "__pycache__", ".venv", "build", "dist", "*.egg-info"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["common", "core_daemon", "rvc_decoder"]
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["E501"]
-"typings/fastapi/__init__.py" = ["N802", "N818"]
-"typings/fastapi/__init__.pyi" = ["N802", "N818"]
-"typings/fastapi/params.py" = ["N802"]
-"typings/fastapi/params.pyi" = ["N802"]
-"typings/**/*.py" = ["TID252"]
-"typings/**/*.pyi" = ["TID252"]
-"src/core_daemon/uptimerobot.py" = ["F401", "E902"]
-
-[tool.pyright]
-include = ["src"]
-exclude = ["**/node_modules", "**/__pycache__", ".venv"]
-typeCheckingMode = "basic"
-reportMissingImports = true
-reportMissingTypeStubs = false
-reportUnusedImport = true
-pythonVersion = "3.12"
-reportIncompatibleMethodOverride = false
-reportArgumentType = "none"
-stubPath = "typings"

@@ -77,15 +77,21 @@
 
           nativeBuildInputs = with pythonPackages; [ poetry-core ];
           propagatedBuildInputs = [
+            pythonPackages.coloredlogs
             pythonPackages.fastapi
-            pythonPackages.uvicorn  # Base uvicorn
-            pythonPackages.websockets # Uvicorn standard extra
-            pythonPackages.httptools  # Uvicorn standard extra
-            pythonPackages.python-dotenv # Uvicorn standard extra
-            pythonPackages.watchfiles # Uvicorn standard extra
-            pythonPackages.httpx  # Added for uptimerobot feature
-            pythonPackages.langchain-core
+            pythonPackages.httptools
+            pythonPackages.httpx
             pythonPackages.langchain-community
+            pythonPackages.langchain-core
+            pythonPackages.prometheus_client
+            pythonPackages.pydantic
+            pythonPackages.pyroute2
+            pythonPackages.python-can
+            pythonPackages.python-dotenv
+            pythonPackages.pyyaml
+            pythonPackages.uvicorn
+            pythonPackages.watchfiles
+            pythonPackages.websockets
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
           ] ++ [

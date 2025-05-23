@@ -102,6 +102,7 @@ nav:
           - ESLint TypeScript Config: eslint-typescript-config.md
       - Build System:
           - Poetry2Nix Integration: poetry2nix-integration.md
+          - Dependency Management Scripts: dependency-management-scripts.md
           - GitHub Actions: github-actions.md
           - GitHub Actions Summary: github-actions-summary.md
       - Contributing:

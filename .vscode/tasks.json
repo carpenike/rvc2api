@@ -1,640 +1,97 @@
 {
-  "$schema": "https://schema.vscode.dev/vscode-tasks.schema.json",
+  "$schema": "vscode://schemas/tasks",
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Server: Start Backend",
+      "label": "Deps: Check For Unused Dependencies",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run python src/core_daemon/main.py",
-      "isBackground": true,
-      "problemMatcher": [
-        {
-          "pattern": [
-            {
-              "regexp": ".",
-              "file": 1,
-              "location": 2,
-              "message": 3
-            }
-          ],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": ".*INFO:.*Application startup complete.*",
-            "endsPattern": "^.*Error.*$"
-          }
-        }
-      ],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": false,
-        "focus": false
-      },
-      "group": "build"
-    },
-    {
-      "label": "Server: Start Frontend Dev Server",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run dev",
-      "isBackground": true,
-      "problemMatcher": [
-        {
-          "pattern": [
-            {
-              "regexp": ".",
-              "file": 1,
-              "location": 2,
-              "message": 3
-            }
-          ],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": ".*VITE.*Local:.*",
-            "endsPattern": "^.*Error.*$"
-          }
-        }
-      ],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": false,
-        "focus": false
-      },
-      "group": "build"
-    },
-    {
-      "label": "Server: Start Full Dev Environment",
-      "dependsOn": [
-        "Server: Start Backend",
-        "Server: Start Frontend Dev Server"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
-    },
-    {
-      "label": "Server: Serve Documentation",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run mkdocs serve",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true,
-        "focus": false
-      },
-      "problemMatcher": [
-        {
-          "pattern": [
-            {
-              "regexp": ".",
-              "file": 1,
-              "location": 2,
-              "message": 3
-            }
-          ],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": ".*Serving on.*",
-            "endsPattern": "^.*Error.*$"
-          }
-        }
-      ]
-    },
-
-    {
-      "label": "Dev: Run Tests (Quick)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run pytest",
+      "command": "cd ${workspaceFolder} && poetry run deptry . | grep 'DEP002' | grep 'defined as a dependency but not used'",
       "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": {
-        "name": "pytest",
-        "pattern": {
-          "regexp": "^(.+):(\\d+):\\s+(\\w+):\\s+(.+)$",
-          "file": 1,
-          "line": 2,
-          "severity": 3,
-          "message": 4
-        }
-      }
+      "isBackground": false
     },
     {
-      "label": "Dev: Run Tests with Coverage",
+      "label": "Deps: Detect Unused Dependencies",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run pytest --cov=src --cov-report=term",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": {
-        "name": "pytest",
-        "pattern": {
-          "regexp": "^(.+):(\\d+):\\s+(\\w+):\\s+(.+)$",
-          "file": 1,
-          "line": 2,
-          "severity": 3,
-          "message": 4
-        }
-      }
-    },
-    {
-      "label": "Dev: Format Code (Quick)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run ruff format src",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "problemMatcher": {
-        "name": "ruff-format-generic",
-        "pattern": {
-          "regexp": "^(.+?):(\\d+):(\\d+): (.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "message": 4,
-          "severity": "error"
-        }
-      }
-    },
-    {
-      "label": "Dev: Lint Backend (Quick)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run ruff check .",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/detect_unused_dependencies.py",
       "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": {
-        "name": "ruff",
-        "pattern": {
-          "regexp": "^(.+):(\\d+):(\\d+):\\s+(\\w+):\\s+(.+)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        }
-      }
+      "detail": "Detect unused dependencies in pyproject.toml"
     },
     {
-      "label": "Dev: Type Check (Quick)",
+      "label": "Deps: Check Unused Dependencies (CI Mode)",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run pyright src",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/detect_unused_dependencies.py --check",
       "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": {
-        "name": "pyright",
-        "pattern": {
-          "regexp": "^(.+?):(\\d+):(\\d+) - (error|warning): (.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        }
-      }
+      "detail": "Check for unused dependencies and exit with error if found"
     },
     {
-      "label": "Dev: Run Pre-commit (Quick)",
+      "label": "Deps: Show Unused Dependencies (Dry Run)",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run pre-commit run --all-files",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "CI: Run Tests (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#test",
-      "group": "test",
-      "detail": "Run tests using Nix app (reproducible environment)",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true,
-        "focus": true
-      }
-    },
-    {
-      "label": "CI: Run Linters (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#lint",
-      "group": "test",
-      "detail": "Run Python and frontend linters using Nix app",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "CI: Format Code (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#format",
-      "group": "none",
-      "detail": "Format Python and frontend code using Nix app",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "CI: Run Pre-commit (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#precommit",
-      "group": "test",
-      "detail": "Run pre-commit checks using Nix app",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      }
-    },
-    {
-      "label": "CI: Full Suite (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#ci",
-      "group": "test",
-      "detail": "Run complete CI suite using Nix app",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      }
-    },
-
-    {
-      "label": "Build: Frontend (npm)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run build",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "problemMatcher": ["$tsc"]
-    },
-    {
-      "label": "Build: Frontend (Nix)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix run .#build-frontend",
-      "group": "build",
-      "detail": "Build frontend using Nix app (reproducible Node.js environment)",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Build: Documentation",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run mkdocs build",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "Frontend: Lint (ESLint)",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run lint",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/detect_unused_dependencies.py --dry-run",
       "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": ["$eslint-stylish"]
+      "detail": "Show what would be changed without modifying files"
     },
     {
-      "label": "Frontend: Fix Lint Issues",
+      "label": "Deps: Remove Unused Dependencies",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run lint:fix",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Frontend: Fix Style Issues",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run fix:style",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Frontend: Fix Interface Issues",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run fix:interfaces",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Frontend: Type Check",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run typecheck",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/detect_unused_dependencies.py --fix",
       "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": ["$tsc"]
+      "detail": "Automatically remove unused dependencies from pyproject.toml"
     },
     {
-      "label": "Frontend: Clean",
+      "label": "Deps: Sync Dependencies",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && rm -rf node_modules/.vite dist",
-      "group": "none",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/sync_dependencies.py",
+      "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "Dev: Enter Nix Shell",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && nix develop",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new",
-        "focus": true
-      }
+      "detail": "Synchronize dependencies between pyproject.toml and flake.nix"
     },
     {
-      "label": "Dev: Clean All",
+      "label": "Deps: Check Dependencies Sync (CI Mode)",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && find . -type d -name __pycache__ -exec rm -rf {} +; find . -type d -name .pytest_cache -exec rm -rf {} +; find . -type d -name .ruff_cache -exec rm -rf {} +; find . -name '*.pyc' -delete",
-      "group": "none",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/sync_dependencies.py --check",
+      "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
       },
-      "problemMatcher": []
+      "detail": "Check if dependencies are in sync and exit with error if not"
     },
-
     {
-      "label": "Deps: Update Poetry",
+      "label": "Deps: Preview Dependencies Sync (Dry Run)",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry update",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/sync_dependencies.py --dry-run",
+      "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "clear": true
-      }
-    },
-    {
-      "label": "Deps: Lock Poetry",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry lock --no-update",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Deps: Update Frontend",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm update",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-
-    {
-      "label": "API: Export OpenAPI Schema",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
       },
-      "problemMatcher": []
-    },
-    {
-      "label": "API: Update Documentation",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py && poetry run mkdocs build",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "Docs: List Versions",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh list",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Docs: Deploy Current Version",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh deploy",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Docs: Deploy Dev Version",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh deploy-dev",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Docs: Set Default Version",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh set-default",
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Docs: Serve Versioned Documentation",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh serve",
-      "isBackground": true,
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true,
-        "focus": true
-      },
-      "problemMatcher": [
-        {
-          "pattern": [
-            {
-              "regexp": ".",
-              "file": 1,
-              "location": 2,
-              "message": 3
-            }
-          ],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": ".*Serving on.*",
-            "endsPattern": "^.*Error.*$"
-          }
-        }
-      ]
-    },
-
-    {
-      "label": "System: Setup Colima vcan",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && chmod +x scripts/setup_colima_vcan.sh && scripts/setup_colima_vcan.sh",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true,
-        "focus": false
-      },
-      "group": "none",
-      "detail": "Set up vcan interfaces in Colima VM"
-    },
-    {
-      "label": "System: Ensure vcan Interfaces",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && chmod +x scripts/ensure_vcan_interfaces.sh && scripts/ensure_vcan_interfaces.sh",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true,
-        "focus": false
-      },
-      "group": "none",
-      "detail": "Ensure vcan interfaces are available in container"
-    },
-    {
-      "label": "System: Test vCAN Setup",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && poetry run python dev_tools/test_vcan_setup.py",
-      "group": "none",
-      "detail": "Test vCAN setup by sending and receiving a message",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true,
-        "focus": false
-      }
-    },
-
-    {
-      "label": "MCP: Restart Context7 Server",
-      "type": "shell",
-      "command": "pkill -f context7 || true; cd ${workspaceFolder} && context7 &",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "silent",
-        "panel": "shared",
-        "close": true
-      }
-    },
-    {
-      "label": "Status: Check MCP Tools",
-      "type": "shell",
-      "command": "echo 'Checking MCP tool processes:' && ps aux | grep -E 'context7|perplexity|github' | grep -v grep || echo 'No MCP tool processes found'",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "Status: Backend Info",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && echo 'Python version:' && poetry run python --version && echo '\\nInstalled packages:' && poetry show",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      }
+      "detail": "Preview what dependencies would be synchronized without making changes"
     }
   ]
 }
