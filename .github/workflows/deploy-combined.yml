@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --only dev
+          poetry install --with dev
 
       - name: Generate OpenAPI schema
         run: |
