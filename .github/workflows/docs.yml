@@ -79,27 +79,19 @@ jobs:
 
       - name: Deploy versioned documentation with mike
         run: |
-          poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
-          poetry run mike set-default --push latest
+          if [[ "${{ steps.get_version.outputs.version }}" == "dev" ]]; then
+            poetry run mike deploy --push --update-aliases dev latest
+            poetry run mike set-default --push latest
+          else
+            # For tagged releases, deploy the version and update latest alias
+            poetry run mike deploy --push --update-aliases "${{ steps.get_version.outputs.version }}" latest
+            poetry run mike set-default --push latest
+          fi
 
-      - name: Ensure .nojekyll is present
-        run: touch site/.nojekyll
-
-      - name: Upload documentation artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
-
-  deploy:
-    needs: build-docs
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Ensure .nojekyll is present on gh-pages
+        run: |
+          git checkout gh-pages
+          touch .nojekyll
+          git add .nojekyll
+          git commit -m "Add .nojekyll for GitHub Pages" || echo "No changes to commit"
+          git push origin gh-pages
