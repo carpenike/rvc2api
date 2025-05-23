@@ -338,8 +338,9 @@ EOF
           ci = flake-utils.lib.mkApp {
             drv = pkgs.writeShellApplication {
               name          = "ci";
-              runtimeInputs = [ pkgs.poetry ];
+              runtimeInputs = [ pkgs.poetry pkgs.nodejs_20 ];
               text = ''
+                set -e
                 export SKIP=djlint
                 poetry install --no-root --with dev
                 poetry check --lock --no-interaction
