@@ -57,6 +57,9 @@ jobs:
           poetry run mkdocs build
           touch site/.nojekyll
 
+      - name: List built site contents
+        run: ls -lR site/
+
       - name: Determine documentation version
         id: get_version
         run: |
