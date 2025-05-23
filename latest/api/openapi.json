@@ -1,0 +1,1845 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "rvc2api",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Api Health",
+        "description": "Health check endpoint for API monitoring.\n\nReturns:\n    JSONResponse: A JSON response indicating the API is running",
+        "operationId": "api_health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/can/status": {
+      "get": {
+        "summary": "Get Can Status",
+        "description": "Retrieves detailed status for all CAN interfaces the service is listening on.\nCombines pyroute2 stats (if available) with the actual set of active interfaces.\nOn non-Linux platforms, returns a platform-specific message.",
+        "operationId": "get_can_status_api_can_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllCANStats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queue": {
+      "get": {
+        "summary": "Get Queue Status",
+        "description": "Return the current status of the CAN transmit queue.\n\nProvides the current number of items in the `can_tx_queue` and its\nmaximum configured size.\n\nReturns:\n    A dictionary with \"length\" (current queue size) and \"maxsize\"\n    (maximum queue size, or \"unbounded\").",
+        "operationId": "get_queue_status_api_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Queue Status Api Queue Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/can-sniffer": {
+      "get": {
+        "summary": "Get Can Sniffer",
+        "description": "Returns the latest CAN messages (RX and TX, all types, deduplicated by source/PGN/instance).",
+        "operationId": "get_can_sniffer_api_can_sniffer_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/can-sniffer-control": {
+      "get": {
+        "summary": "Get Can Sniffer Control",
+        "description": "Returns grouped CAN command/control sniffer pairs with confidence (legacy view).",
+        "operationId": "get_can_sniffer_control_api_can_sniffer_control_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/can-sniffer-log-debug": {
+      "get": {
+        "summary": "Get Can Sniffer Log Debug",
+        "description": "Returns the last 20 entries in the raw CAN sniffer log for debugging.",
+        "operationId": "get_can_sniffer_log_debug_api_can_sniffer_log_debug_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network-map": {
+      "get": {
+        "summary": "Get Network Map",
+        "description": "Returns all observed CAN source addresses, with decoded info if available.",
+        "operationId": "get_network_map_api_network_map_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/canbus-scan": {
+      "post": {
+        "summary": "Start Canbus Scan",
+        "description": "Initiates a CANbus scan (PGN 59904 requests for Address Claimed, Product ID,\nand Software Version). Results will be streamed to clients via WebSocket.",
+        "operationId": "start_canbus_scan_api_canbus_scan_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/healthz": {
+      "get": {
+        "summary": "Healthz",
+        "description": "Liveness probe with feature health aggregation.",
+        "operationId": "healthz_api_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/readyz": {
+      "get": {
+        "summary": "Readyz",
+        "description": "Readiness probe: 200 once at least one frame decoded, else 503.",
+        "operationId": "readyz_api_readyz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "summary": "Metrics",
+        "description": "Prometheus metrics endpoint.",
+        "operationId": "metrics_api_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/device_mapping": {
+      "get": {
+        "summary": "Get Device Mapping Config Content Api",
+        "operationId": "get_device_mapping_config_content_api_api_config_device_mapping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/rvc_spec_metadata": {
+      "get": {
+        "summary": "Get Rvc Spec Metadata",
+        "description": "Returns metadata (version and spec_document URL) from the rvc.json spec file.",
+        "operationId": "get_rvc_spec_metadata_api_config_rvc_spec_metadata_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/rvc_spec": {
+      "get": {
+        "summary": "Get Rvc Spec Config Content Api",
+        "operationId": "get_rvc_spec_config_content_api_api_config_rvc_spec_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status/server": {
+      "get": {
+        "summary": "Get Server Status",
+        "description": "Returns basic server status information.",
+        "operationId": "get_server_status_api_status_server_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status/application": {
+      "get": {
+        "summary": "Get Application Status",
+        "description": "Returns application-specific status information.",
+        "operationId": "get_application_status_api_status_application_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status/latest_release": {
+      "get": {
+        "summary": "Get Latest Github Release",
+        "description": "Returns the latest GitHub release version and metadata as checked by the background task.\n\nResponse example:\n    {\n        \"latest_version\": \"0.2.0\",\n        \"last_checked\": 1715600000.0,\n        \"last_success\": 1715600000.0,\n        \"error\": null,\n        \"latest_release_info\": {\n            \"tag_name\": \"v0.2.0\",\n            \"name\": \"Release v0.2.0\",\n            \"body\": \"Release notes...\",\n            \"html_url\": \"https://github.com/owner/repo/releases/tag/v0.2.0\",\n            \"published_at\": \"2025-05-13T12:00:00Z\",\n            \"created_at\": \"2025-05-12T18:00:00Z\",\n            \"assets\": [\n                {\"name\": \"asset.zip\", \"browser_download_url\": \"...\", \"size\": 1234,\n                \"download_count\": 42}\n            ],\n            \"tarball_url\": \"...\",\n            \"zipball_url\": \"...\",\n            \"prerelease\": false,\n            \"draft\": false,\n            \"author\": {\"login\": \"octocat\", \"html_url\": \"https://github.com/octocat\"},\n            \"discussion_url\": \"...\"\n        }\n    }",
+        "operationId": "get_latest_github_release_api_status_latest_release_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubUpdateStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status/force_update_check": {
+      "post": {
+        "summary": "Force Github Update Check",
+        "description": "Forces an immediate GitHub update check and returns the new status.\nThis triggers the backend to fetch the latest release from GitHub now\n(not waiting for the next poll).",
+        "operationId": "force_github_update_check_api_status_force_update_check_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubUpdateStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/docs/status": {
+      "get": {
+        "tags": [
+          "documentation"
+        ],
+        "summary": "Get Search Status",
+        "description": "Get the status of the vector search service.\n\nReturns:\n    Dictionary with status information and configuration",
+        "operationId": "get_search_status_api_docs_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Search Status Api Docs Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/docs/search": {
+      "get": {
+        "tags": [
+          "documentation"
+        ],
+        "summary": "Search Documentation",
+        "description": "Search the RV-C documentation using vector-based semantic search.\n\nArgs:\n    query: Natural language search query\n    k: Number of results to return (between 1 and 10)\n\nReturns:\n    List of search results with content and metadata\n\nRaises:\n    HTTPException: If search fails or service is unavailable",
+        "operationId": "search_documentation_api_docs_search_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Search query string",
+              "title": "Query"
+            },
+            "description": "Search query string"
+          },
+          {
+            "name": "k",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "description": "Number of results to return",
+              "default": 3,
+              "title": "K"
+            },
+            "description": "Number of results to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Search Documentation Api Docs Search Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/entities": {
+      "get": {
+        "summary": "List Entities",
+        "description": "Return all entities, optionally filtered by device_type and/or area.\n\nArgs:\n    device_type: Optional filter by entity device_type.\n    area: Optional filter by entity suggested_area.\n\nReturns:\n    A dictionary of entities matching the filter criteria.",
+        "operationId": "list_entities_api_entities_get",
+        "parameters": [
+          {
+            "name": "device_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Device Type"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/Entity"
+                  },
+                  "title": "Response List Entities Api Entities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/entities/ids": {
+      "get": {
+        "summary": "List Entity Ids",
+        "description": "Return all known entity IDs.",
+        "operationId": "list_entity_ids_api_entities_ids_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Entity Ids Api Entities Ids Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/entities/{entity_id}": {
+      "get": {
+        "summary": "Get Entity",
+        "description": "Return the latest value for one entity.\n\nArgs:\n    entity_id: The ID of the entity to retrieve.\n\nRaises:\n    HTTPException: If the entity is not found.\n\nReturns:\n    The entity object.",
+        "operationId": "get_entity_api_entities__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/entities/{entity_id}/history": {
+      "get": {
+        "summary": "Get History",
+        "description": "Return the history of an entity.\n\nArgs:\n    entity_id: The ID of the entity to retrieve history for.\n    since: Optional Unix timestamp to filter entries newer than this.\n    limit: Optional limit on the number of points to return.\n\nRaises:\n    HTTPException: If the entity is not found.\n\nReturns:\n    A list of entity history entries.",
+        "operationId": "get_history_api_entities__entity_id__history_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Unix timestamp; only entries newer than this",
+              "title": "Since"
+            },
+            "description": "Unix timestamp; only entries newer than this"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max number of points to return",
+              "default": 1000,
+              "title": "Limit"
+            },
+            "description": "Max number of points to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Entity"
+                  },
+                  "title": "Response Get History Api Entities  Entity Id  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/unmapped_entries": {
+      "get": {
+        "summary": "Get Unmapped Entries Api",
+        "description": "Return all DGN/instance pairs that were seen on the bus but not mapped in device_mapping.yml.\n\nReturns:\n    A dictionary of unmapped DGN/instance pairs.",
+        "operationId": "get_unmapped_entries_api_api_unmapped_entries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/UnmappedEntryModel"
+                  },
+                  "type": "object",
+                  "title": "Response Get Unmapped Entries Api Api Unmapped Entries Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/unknown_pgns": {
+      "get": {
+        "summary": "Get Unknown Pgns Api",
+        "description": "Return all CAN messages whose PGN (from arbitration ID) was not found in the rvc.json spec.\n\nReturns:\n    A dictionary of unknown PGNs.",
+        "operationId": "get_unknown_pgns_api_api_unknown_pgns_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/UnknownPGNEntry"
+                  },
+                  "type": "object",
+                  "title": "Response Get Unknown Pgns Api Api Unknown Pgns Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "summary": "Metadata",
+        "description": "Expose groupable dimensions:\n- type        (device_type)\n- area        (suggested_area)\n- capability  (defined in mapping)\n- command     (derived from capabilities)\n- groups      (defined in mapping)\n\nReturns:\n    A dictionary of metadata about available entity types, areas, capabilities, and commands.",
+        "operationId": "metadata_api_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object",
+                  "title": "Response Metadata Api Meta Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/entities/{entity_id}/control": {
+      "post": {
+        "summary": "Control Entity",
+        "description": "Control a light entity based on the provided command.\n\nThis endpoint allows setting the state (on/off) and brightness of a light,\ntoggling its state, or adjusting its brightness up or down.\n\nArgs:\n    entity_id: The ID of the light entity to control.\n    cmd: The control command, specifying the desired action.\n         - `command`: \"set\", \"toggle\", \"brightness_up\", \"brightness_down\".\n         - `state`: \"on\" or \"off\" (used with \"set\").\n         - `brightness`: 0-100 (used with \"set\").\n\nRaises:\n    HTTPException:\n        - 400: If the entity is not controllable as a light, or if the command is invalid\n               (e.g., invalid state, missing parameters for a command).\n        - 404: If the entity_id is not found.\n        - 500: If there's an error sending the CAN command.\n\nReturns:\n    ControlEntityResponse: An object detailing the command sent, the resulting\n                           state, brightness, and a description of the action performed.",
+        "operationId": "control_entity_api_entities__entity_id__control_post",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlCommand",
+                "examples": {
+                  "turn_on": {
+                    "summary": "Turn light on",
+                    "value": {
+                      "command": "set",
+                      "state": "on"
+                    }
+                  },
+                  "turn_off": {
+                    "summary": "Turn light off",
+                    "value": {
+                      "command": "set",
+                      "state": "off"
+                    }
+                  },
+                  "set_brightness": {
+                    "summary": "Set brightness to 75%",
+                    "value": {
+                      "command": "set",
+                      "state": "on",
+                      "brightness": 75
+                    }
+                  },
+                  "toggle": {
+                    "summary": "Toggle current state",
+                    "value": {
+                      "command": "toggle"
+                    }
+                  },
+                  "brightness_up": {
+                    "summary": "Increase brightness by 10%",
+                    "value": {
+                      "command": "brightness_up"
+                    }
+                  },
+                  "brightness_down": {
+                    "summary": "Decrease brightness by 10%",
+                    "value": {
+                      "command": "brightness_down"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlEntityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AllCANStats": {
+        "properties": {
+          "interfaces": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CANInterfaceStats"
+            },
+            "type": "object",
+            "title": "Interfaces"
+          }
+        },
+        "type": "object",
+        "required": [
+          "interfaces"
+        ],
+        "title": "AllCANStats",
+        "description": "Statistics for all CAN interfaces."
+      },
+      "CANInterfaceStats": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "restart_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restart Ms"
+          },
+          "bitrate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bitrate"
+          },
+          "sample_point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Point"
+          },
+          "tq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tq"
+          },
+          "prop_seg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prop Seg"
+          },
+          "phase_seg1": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase Seg1"
+          },
+          "phase_seg2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase Seg2"
+          },
+          "sjw": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sjw"
+          },
+          "brp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brp"
+          },
+          "clock": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "tx_packets": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tx Packets"
+          },
+          "rx_packets": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rx Packets"
+          },
+          "tx_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tx Bytes"
+          },
+          "rx_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rx Bytes"
+          },
+          "tx_errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tx Errors"
+          },
+          "rx_errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rx Errors"
+          },
+          "bus_errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bus Errors"
+          },
+          "restarts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restarts"
+          },
+          "link/can": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link/Can"
+          },
+          "promiscuity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promiscuity"
+          },
+          "allmulti": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allmulti"
+          },
+          "minmtu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minmtu"
+          },
+          "maxmtu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxmtu"
+          },
+          "parentbus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentbus"
+          },
+          "parentdev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentdev"
+          },
+          "error_warning": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Warning"
+          },
+          "error_passive": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Passive"
+          },
+          "bus_off": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bus Off"
+          },
+          "raw_details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CANInterfaceStats",
+        "description": "Statistics for a CAN interface."
+      },
+      "ControlCommand": {
+        "properties": {
+          "command": {
+            "type": "string",
+            "title": "Command"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State",
+            "description": "Target state: 'on' or 'off'. Required only for 'set' command."
+          },
+          "brightness": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brightness",
+            "description": "Brightness percent (0-100). Only used when command is 'set' and state is 'on'."
+          }
+        },
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "title": "ControlCommand",
+        "description": "Defines the structure for sending control commands to an entity, typically a light."
+      },
+      "ControlEntityResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "entity_id": {
+            "type": "string",
+            "title": "Entity Id"
+          },
+          "command": {
+            "type": "string",
+            "title": "Command"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "brightness": {
+            "type": "integer",
+            "title": "Brightness"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "entity_id",
+          "command",
+          "state",
+          "brightness",
+          "action"
+        ],
+        "title": "ControlEntityResponse",
+        "description": "Response model for individual entity control commands, confirming the action taken."
+      },
+      "Entity": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "title": "Entity Id"
+          },
+          "value": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Value"
+          },
+          "raw": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Raw"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "timestamp": {
+            "type": "number",
+            "title": "Timestamp"
+          },
+          "suggested_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Area",
+            "default": "Unknown"
+          },
+          "device_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Type",
+            "default": "unknown"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities",
+            "default": []
+          },
+          "friendly_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Friendly Name"
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "value",
+          "raw",
+          "state",
+          "timestamp"
+        ],
+        "title": "Entity",
+        "description": "Represents the state and metadata of a monitored RV-C entity."
+      },
+      "GitHubReleaseAsset": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "browser_download_url": {
+            "type": "string",
+            "title": "Browser Download Url"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "download_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "browser_download_url"
+        ],
+        "title": "GitHubReleaseAsset",
+        "description": "Represents a downloadable asset attached to a GitHub release."
+      },
+      "GitHubReleaseInfo": {
+        "properties": {
+          "tag_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "html_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "assets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GitHubReleaseAsset"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets"
+          },
+          "tarball_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tarball Url"
+          },
+          "zipball_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zipball Url"
+          },
+          "prerelease": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prerelease"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "discussion_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discussion Url"
+          }
+        },
+        "type": "object",
+        "title": "GitHubReleaseInfo",
+        "description": "Represents metadata about a GitHub release for update checking."
+      },
+      "GitHubUpdateStatus": {
+        "properties": {
+          "latest_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version"
+          },
+          "last_checked": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Checked"
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latest_release_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GitHubReleaseInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repo"
+          },
+          "api_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Url"
+          }
+        },
+        "type": "object",
+        "title": "GitHubUpdateStatus",
+        "description": "Represents the status and metadata of the latest GitHub release as cached by the server."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "SuggestedMapping": {
+        "properties": {
+          "instance": {
+            "type": "string",
+            "title": "Instance"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "suggested_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Area"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance",
+          "name"
+        ],
+        "title": "SuggestedMapping",
+        "description": "Provides a suggested mapping for an unmapped device instance\nbased on existing configurations."
+      },
+      "UnknownPGNEntry": {
+        "properties": {
+          "arbitration_id_hex": {
+            "type": "string",
+            "title": "Arbitration Id Hex"
+          },
+          "first_seen_timestamp": {
+            "type": "number",
+            "title": "First Seen Timestamp"
+          },
+          "last_seen_timestamp": {
+            "type": "number",
+            "title": "Last Seen Timestamp"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "last_data_hex": {
+            "type": "string",
+            "title": "Last Data Hex"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arbitration_id_hex",
+          "first_seen_timestamp",
+          "last_seen_timestamp",
+          "count",
+          "last_data_hex"
+        ],
+        "title": "UnknownPGNEntry",
+        "description": "Represents a CAN message whose PGN (from arbitration ID) is not in the rvc.json spec."
+      },
+      "UnmappedEntryModel": {
+        "properties": {
+          "pgn_hex": {
+            "type": "string",
+            "title": "Pgn Hex"
+          },
+          "pgn_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pgn Name",
+            "description": "The human-readable name of the PGN (from arbitration ID), if known from the spec."
+          },
+          "dgn_hex": {
+            "type": "string",
+            "title": "Dgn Hex"
+          },
+          "dgn_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dgn Name",
+            "description": "The human-readable name of the DGN, if known from the spec."
+          },
+          "instance": {
+            "type": "string",
+            "title": "Instance"
+          },
+          "last_data_hex": {
+            "type": "string",
+            "title": "Last Data Hex"
+          },
+          "decoded_signals": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decoded Signals"
+          },
+          "first_seen_timestamp": {
+            "type": "number",
+            "title": "First Seen Timestamp"
+          },
+          "last_seen_timestamp": {
+            "type": "number",
+            "title": "Last Seen Timestamp"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SuggestedMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestions"
+          },
+          "spec_entry": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec Entry",
+            "description": "The raw rvc.json spec entry used for decoding, if PGN was known."
+          }
+        },
+        "type": "object",
+        "required": [
+          "pgn_hex",
+          "dgn_hex",
+          "instance",
+          "last_data_hex",
+          "first_seen_timestamp",
+          "last_seen_timestamp",
+          "count"
+        ],
+        "title": "UnmappedEntryModel",
+        "description": "Represents an RV-C message that could not be mapped to a configured entity."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

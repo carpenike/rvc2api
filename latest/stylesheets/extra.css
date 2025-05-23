@@ -1,0 +1,151 @@
+/* Custom styles for rvc2api documentation */
+
+/* Highlight API endpoints */
+.endpoint {
+  background-color: #f8f9fa;
+  border-left: 4px solid #007bff;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 0 4px 4px 0;
+}
+
+.endpoint code {
+  background-color: #e9ecef;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+
+/* API method badges */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  margin-right: 8px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.badge-get {
+  background-color: #61affe;
+  color: white;
+}
+
+.badge-post {
+  background-color: #49cc90;
+  color: white;
+}
+
+.badge-put {
+  background-color: #fca130;
+  color: white;
+}
+
+.badge-delete {
+  background-color: #f93e3e;
+  color: white;
+}
+
+.badge-patch {
+  background-color: #50e3c2;
+  color: white;
+}
+
+/* Command examples */
+.command-example {
+  background-color: #2d2d2d;
+  color: #f8f8f2;
+  padding: 10px 15px;
+  margin: 15px 0;
+  border-radius: 5px;
+  position: relative;
+}
+
+.command-example::before {
+  content: "$ ";
+  color: #a6e22e;
+}
+
+/* Response examples */
+.response-example {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 5px;
+}
+
+/* Tables */
+th {
+  background-color: #f1f3f4;
+}
+
+/* API parameters */
+.param-required {
+  color: #e53935;
+  font-weight: bold;
+}
+
+.param-optional {
+  color: #7a7a7a;
+}
+
+/* Code blocks */
+pre {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* Status codes */
+.status-success {
+  color: #2e7d32;
+}
+
+.status-error {
+  color: #c62828;
+}
+
+.status-warning {
+  color: #f9a825;
+}
+
+/* Entity type tags */
+.entity-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-right: 5px;
+}
+
+.entity-light {
+  background-color: #ffecb3;
+}
+
+.entity-tank {
+  background-color: #bbdefb;
+}
+
+.entity-temperature {
+  background-color: #ffcdd2;
+}
+
+.entity-generator {
+  background-color: #c8e6c9;
+}
+
+/* Admonitions for important notes */
+.admonition.important {
+  border-left-color: #f44336;
+}
+
+.admonition.api {
+  border-left-color: #2196f3;
+}
+
+.admonition.example {
+  border-left-color: #4caf50;
+}

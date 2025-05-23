@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RV-C PGN Spec Schema",
+  "description": "Schema for RV-C CANbus PGN specification (rvc.json) in dictionary format with both decimal and hex PGN fields.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "version",
+    "pgns"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URL to the JSON Schema for validation."
+    },
+    "version": {
+      "type": "string",
+      "description": "Version string or ISO date of the spec file."
+    },
+    "pgns": {
+      "type": "object",
+      "description": "Dictionary of PGN definitions, keyed by stringified PGN (decimal or hex).",
+      "patternProperties": {
+        "^([0-9]+|0x[0-9A-Fa-f]+)$": {
+          "type": "object",
+          "required": [
+            "id",
+            "pgn",
+            "signals"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "PGN as integer (decimal)."
+            },
+            "pgn": {
+              "type": "string",
+              "pattern": "^0x[0-9A-Fa-f]+$",
+              "description": "PGN as hex string (e.g., 0x1F513)."
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional: Human-readable PGN name."
+            },
+            "signals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "start_bit",
+                  "length"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "start_bit": {
+                    "type": "integer"
+                  },
+                  "length": {
+                    "type": "integer"
+                  },
+                  "byte_order": {
+                    "type": "string",
+                    "enum": [
+                      "big_endian",
+                      "little_endian"
+                    ],
+                    "default": "big_endian"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "scale": {
+                    "type": "number"
+                  },
+                  "offset": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "enum": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": true
+              },
+              "description": "List of signal definitions for this PGN."
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
