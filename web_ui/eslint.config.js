@@ -19,7 +19,12 @@ export default [
       "src/core_daemon/web_ui/**/*.ts",
       "src/core_daemon/web_ui/**/*.tsx",
       "src/core_daemon/web_ui/**/*.jsx",
-      // Exclude build and node_modules in web_ui
+      // Exclude build and node_modules (both relative and absolute paths)
+      "dist/**",
+      "dist-ssr/**",
+      "node_modules/**",
+      ".vite/**",
+      ".vite-temp/**",
       "web_ui/dist/**",
       "web_ui/dist-ssr/**",
       "web_ui/node_modules/**",
