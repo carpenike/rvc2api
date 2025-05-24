@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Core Daemon",
+      "name": "Python: RVC2API Backend",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/src/core_daemon/main.py",
+      "program": "${workspaceFolder}/run_server.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },

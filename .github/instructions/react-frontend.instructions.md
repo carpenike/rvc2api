@@ -80,14 +80,6 @@ Only use `@perplexity` for general concepts not related to specific library APIs
 
 > **Important**: For any React, TypeScript, Vite, or Tailwind questions, always use `@context7` first to avoid outdated or hallucinated APIs.
 
-## See Also
-
-- [TypeScript Code Style](typescript-code-style.instructions.md) - Detailed TypeScript/React coding guidelines
-- [ESLint/TypeScript Config](eslint-typescript-config.instructions.md) - Configuration details
-- [VS Code Tasks](vscode-tasks.instructions.md) - Development workflow automation
-- [MCP Tools](mcp-tools.instructions.md) - Context-aware AI assistance
-- [Pull Request Expectations](pull-requests.instructions.md) - Code submission guidelines
-
 ## API Integration
 
 ### REST API Example
@@ -133,7 +125,7 @@ const connectWebSocket = () => {
 
 ## Development Process
 
-1. Run backend: `poetry run python src/core_daemon/main.py`
+1. Run backend: `poetry run python run_server.py`
 2. Run frontend: `cd web_ui && npm run dev`
 3. Access development server at http://localhost:5173
 

@@ -4,11 +4,11 @@
 # Default owners for everything
 *       @carpenike
 
-# Core daemon components
-/src/core_daemon/     @carpenike
+# Backend components (new architecture)
+/backend/             @carpenike
 
 # Web UI components
-/src/core_daemon/web_ui/     @carpenike
+/web_ui/              @carpenike
 
 # RV-C decoding logic
 /src/rvc_decoder/     @carpenike

@@ -9,11 +9,11 @@ applyTo: "**/*.py"
 - **Python Version**: 3.12+
 - **Tool**: Ruff (replacing Flake8, Black, isort)
 - **Commands**:
-  - Format: `poetry run ruff format src`
+  - Format: `poetry run ruff format backend`
   - Lint: `poetry run ruff check .`
 - **Line Length**: 100 characters
 - **Type Checking**: Pyright (basic mode)
-  - Command: `npx pyright src`
+  - Command: `npx pyright backend`
   - Configuration in pyrightconfig.json and pyproject.toml
 - **Import Order**: stdlib → third-party → local
 - **Line Endings**: LF (Unix style)

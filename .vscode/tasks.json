@@ -3,11 +3,389 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Server: Start Backend",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python run_server.py",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Start the FastAPI backend server",
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Start Frontend Dev Server",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run dev",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Start the Vite development server",
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Start Full Dev Environment",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Server: Start Backend",
+        "Server: Start Frontend Dev Server"
+      ],
+      "detail": "Start both backend and frontend servers",
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Serve Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run mkdocs serve",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Preview documentation with mkdocs serve",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: Run Tests (Quick)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run pytest",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Fast pytest tests",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Dev: Run Tests with Coverage",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run pytest --cov=backend --cov-report=term",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Tests with coverage report",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Dev: Format Code (Quick)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run ruff format backend",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Quick Python formatting",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: Lint Backend (Quick)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run ruff check .",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Quick backend linting",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Dev: Type Check (Quick)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run pyright backend",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Quick type checking",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Dev: Run Pre-commit (Quick)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run pre-commit run --all-files",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Quick pre-commit checks",
+      "problemMatcher": []
+    },
+    {
+      "label": "CI: Run Tests (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#test",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Tests in reproducible environment",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "CI: Run Linters (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#lint",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Full linting suite (backend + frontend)",
+      "problemMatcher": []
+    },
+    {
+      "label": "CI: Format Code (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#format",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Full formatting (backend + frontend)",
+      "problemMatcher": []
+    },
+    {
+      "label": "CI: Run Pre-commit (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#precommit",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Pre-commit in CI environment",
+      "problemMatcher": []
+    },
+    {
+      "label": "CI: Full Suite (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#ci",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Complete CI reproduction",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: Frontend (npm)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Build frontend with npm",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build: Frontend (Nix)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix run .#build-frontend",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Build frontend in reproducible environment",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build: Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run mkdocs build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Build MkDocs documentation",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Lint (ESLint)",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run lint",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run ESLint",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Frontend: Fix Lint Issues",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run lint:fix",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Fix lint issues",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Frontend: Fix Style Issues",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run fix:style",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Fix style issues",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Fix Interface Issues",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run fix:interfaces",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Fix interface parsing issues",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Type Check",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm run typecheck",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run TypeScript type checking",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Frontend: Clean",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && rm -rf dist node_modules/.vite",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Remove build artifacts",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: Enter Nix Shell",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && nix develop",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Enter Nix development shell",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: Clean All",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && rm -rf .pytest_cache .ruff_cache .mypy_cache __pycache__ && cd web_ui && rm -rf dist node_modules/.vite",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Remove all cache files",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deps: Update Poetry",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry update",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Update Poetry dependencies",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deps: Lock Poetry",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry lock --no-update",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Lock Poetry dependencies",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deps: Update Frontend",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/web_ui && npm update",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Update frontend dependencies",
+      "problemMatcher": []
+    },
+    {
       "label": "Deps: Check For Unused Dependencies",
       "type": "shell",
       "command": "cd ${workspaceFolder} && poetry run deptry . | grep 'DEP002' | grep 'defined as a dependency but not used'",
       "group": "test",
-      "isBackground": false
+      "isBackground": false,
+      "detail": "Check for unused dependencies"
     },
     {
       "label": "Deps: Detect Unused Dependencies",
@@ -92,6 +470,176 @@
         "clear": true
       },
       "detail": "Preview what dependencies would be synchronized without making changes"
+    },
+    {
+      "label": "API: Export OpenAPI Schema",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Export OpenAPI schema to JSON/YAML files",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "API: Update Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python scripts/export_openapi.py && poetry run mkdocs build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Export OpenAPI schema and rebuild docs",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Docs: List Versions",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh list",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "List available doc versions",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docs: Deploy Current Version",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh deploy",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Deploy current version",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docs: Deploy Dev Version",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh deploy-dev",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Deploy development version",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docs: Set Default Version",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh set-default",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Set default documentation version",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docs: Serve Versioned Documentation",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && ./scripts/docs_version.sh serve",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Serve versioned documentation",
+      "problemMatcher": []
+    },
+    {
+      "label": "System: Setup Colima vcan",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && scripts/setup_colima_vcan.sh",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Set up vcan interfaces in Colima VM",
+      "problemMatcher": []
+    },
+    {
+      "label": "System: Ensure vcan Interfaces",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && scripts/ensure_vcan_interfaces.sh",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Ensure vcan interfaces are available",
+      "problemMatcher": []
+    },
+    {
+      "label": "System: Test vCAN Setup",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && poetry run python dev_tools/test_vcan_setup.py",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Test vCAN setup by sending/receiving",
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "MCP: Restart Context7 Server",
+      "type": "shell",
+      "command": "pkill -f context7 || true; context7 &",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Restart the Context7 server",
+      "problemMatcher": []
+    },
+    {
+      "label": "Status: Check MCP Tools",
+      "type": "shell",
+      "command": "ps aux | grep -E '(context7|perplexity)' | grep -v grep",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Check MCP tool processes",
+      "problemMatcher": []
+    },
+    {
+      "label": "Status: Backend Info",
+      "type": "shell",
+      "command": "cd ${workspaceFolder} && echo 'Python Version:' && python --version && echo 'Poetry Version:' && poetry --version && echo 'Installed Packages:' && poetry show --tree",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Show Python version and packages",
+      "problemMatcher": []
     }
   ]
 }

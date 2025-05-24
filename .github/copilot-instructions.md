@@ -33,10 +33,10 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 
 `rvc2api` is a Python-based API and WebSocket service for RV-C (Recreational Vehicle Controller Area Network) systems:
 
-- **FastAPI backend daemon** with WebSocket support
+- **FastAPI backend** with WebSocket support (migrated to `backend/` structure)
 - **React frontend** with TypeScript and Vite
 - **RV-C decoder** for CANbus messages
-- **Modular architecture** with clear separation of concerns
+- **Service-oriented architecture** with clear separation of concerns
 - **Typed code** with Pydantic models and full type hints
 - **API Documentation** with MkDocs, Material theme, and OpenAPI integration
 
@@ -45,7 +45,7 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 ### Python
 
 - **Version**: 3.12+
-- **Formatting**: black (line length: 100)
+- **Formatting**: ruff format (line length: 100)
 - **Linting**: ruff (configured in pyproject.toml)
 - **Type Checking**: pyright (basic mode, configured in pyrightconfig.json)
 - **Import Order**: Group as stdlib → third-party → local
@@ -67,7 +67,7 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 
 - **Monorepo Flat Config**: ESLint is configured at the repo root (`eslint.config.js`) and imports the frontend config (`web_ui/eslint.config.js`) for monorepo compatibility. Always run ESLint and pre-commit from the repo root.
 - **TypeScript Project References**: The frontend uses strict TypeScript project references (`tsconfig.json`, `tsconfig.app.json`, `tsconfig.test.json`, etc.) for modularity and performance. ESLint is pointed to the correct `tsconfig.eslint.json` using absolute paths.
-- **Legacy Code Exclusion**: All legacy and legacy-adjacent files (e.g., `src/core_daemon/web_ui/`) are excluded from linting and type checking using robust absolute ignore patterns in ESLint config and pre-commit hooks. This ensures only modern, maintained code is checked.
+- **Legacy Code Exclusion**: ESLint configuration excludes build artifacts and cache files using robust absolute ignore patterns in ESLint config and pre-commit hooks. This ensures only source code is checked.
 - **Pre-commit Integration**: The `.pre-commit-config.yaml` runs ESLint from the repo root, using the root config and correct args. It is set up to ignore legacy files and only check relevant frontend code.
 - **Troubleshooting**:
   - If ESLint or pre-commit reports config or parsing errors, check that you are running from the repo root and that ignore patterns are absolute.
@@ -78,11 +78,10 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 
 ## Core Architecture
 
-- `src/common/`: Shared models and utilities
-- `src/core_daemon/`: FastAPI app, WebSockets, state management
+- `src/common/`: Shared models and utilities (Pydantic models, type definitions)
 - `src/rvc_decoder/`: DGN decoding, mappings, instance management
+- `backend/`: FastAPI app, API routes, services, and business logic
 - `web_ui/`: React frontend with TypeScript, Vite, and Tailwind CSS
-- `backend/`: (Future) Restructured backend components
 
 ## Deployment Architecture
 
@@ -92,10 +91,12 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 
 ## Code Patterns
 
-- **FastAPI routes**: Organized by domain in `api_routers/` using APIRouter
-- **WebSockets**: Used for real-time updates in `websocket.py`
-- **State management**: Centralized in `app_state.py`
-- **Configuration**: Environment variables with Pydantic Settings
+- **FastAPI routes**: Organized by domain in `backend/api/routers/` using APIRouter
+- **Router Configuration**: Uses FastAPI dependency injection via `backend/api/router_config.py`
+- **WebSockets**: Used for real-time updates in `backend/websocket/handlers.py`
+- **State management**: Centralized in `backend/core/state.py`
+- **Configuration**: Environment variables with Pydantic Settings in `backend/core/config.py`
+- **Services**: Business logic organized in `backend/services/` by domain
 - **Error handling**: Structured exceptions with proper logging
 - **Testing**: pytest with mocked CANbus interfaces
 - **React Components**: Organized by feature in the `web_ui/src/` directory

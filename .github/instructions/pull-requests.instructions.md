@@ -8,8 +8,8 @@ applyTo: "**"
 - Docs (inline or markdown) updated
 - All code quality checks pass:
   - Linting (`ruff check .`)
-  - Type checking (`pyright src`)
-  - Formatting (`ruff format src`)
+  - Type checking (`pyright backend`)
+  - Formatting (`ruff format backend`)
 - Scoped, focused change
 - Reference design intent or research if needed
 

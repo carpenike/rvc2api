@@ -6,25 +6,32 @@ applyTo: "**"
 
 `rvc2api`: Python API/WebSocket service for RV-C CANbus systems:
 
-- FastAPI backend daemon with WebSocket support
+- FastAPI backend with WebSocket support
 - React frontend with TypeScript and Vite
 - Console client
 - RV-C decoder
 
-## Structure
+## Current Structure
 
-- `src/common/`: Models, utilities
-- `src/console_client/`: CLI
-- `src/core_daemon/`: FastAPI, frontend, settings
-- `src/rvc_decoder/`: DGN decoding, mappings
+- `src/common/`: Shared models and utilities (Pydantic models, type definitions)
+- `src/rvc_decoder/`: DGN decoding, mappings, instance management
+- `backend/`: FastAPI app, API routes, services, and business logic
+  - `backend/main.py`: FastAPI application entry point
+  - `backend/core/`: Core application components (config, state, dependencies)
+  - `backend/services/`: Business logic services (entity, CAN, RV-C)
+  - `backend/api/routers/`: API endpoint routers
+  - `backend/websocket/`: WebSocket management
+  - `backend/integrations/`: Protocol integrations
+  - `backend/models/`: Domain models
+- `web_ui/`: React frontend with TypeScript, Vite, and Tailwind CSS
 
-## Future Structure
+## Migration Complete
 
-- `src/core_daemon/` → `backend/` (FastAPI, API routes)
-- `src/rvc_decoder/` → `backend/integrations/rvc/`
-- Business logic → `backend/services/`
-- Config → `backend/settings/`
-- Prepares for Victron Modbus integration
+The migration from `src/core_daemon/` to `backend/` has been completed. The new structure provides:
+- Service-oriented architecture with clear separation of concerns
+- Improved maintainability and testability
+- Better organization for future integrations (e.g., Victron Modbus)
+- Production-ready backend structure
 
 # API Endpoint Design Decision
 

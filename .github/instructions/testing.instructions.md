@@ -6,7 +6,7 @@ applyTo: "tests/**/*.py"
 
 - Use `pytest` and `pytest-asyncio` for async test coverage
 - Tests should mirror source file paths:
-  - `tests/core_daemon/test_config.py` → `src/core_daemon/config.py`
+  - `tests/backend/test_config.py` → `backend/core/config.py`
 - Mock CANbus, Modbus, or filesystem access in unit tests
 - Add a brief docstring explaining each test's intent
 - Ensure test code passes linting and type checking requirements

@@ -40,7 +40,7 @@ This guide provides a structured approach to adding support for new RV-C DGNs (D
 
 ### 2.2. Device Mapping
 - How should this DGN be mapped to user-friendly names?
-- What changes are needed to `device_mapping.yml`?
+- What changes are needed to `coach_mapping.default.yml`?
 - Are there instance-specific or coach-specific mappings needed?
 
 ### 2.3. Entity Representation
@@ -59,7 +59,7 @@ This guide provides a structured approach to adding support for new RV-C DGNs (D
 - [ ] Document the DGN format in comments
 
 ### 3.2. Device Mapping Updates
-- [ ] Update `src/rvc_decoder/config/device_mapping.yml` with friendly names
+- [ ] Update `src/rvc_decoder/config/coach_mapping.default.yml` with friendly names
 - [ ] Add any category groupings
 - [ ] Define any custom display formats
 

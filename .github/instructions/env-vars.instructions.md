@@ -9,7 +9,7 @@ applyTo: "**/*.py"
 ### @context7 Use Cases
 - Find configuration patterns: `@context7 environment variable loading`
 - See settings schemas: `@context7 Pydantic settings model`
-- Check YAML structures: `@context7 device_mapping.yml structure`
+- Check YAML structures: `@context7 coach_mapping.default.yml structure`
 - Review config access: `@context7 get_canbus_config usage`
 
 ### @perplexity Use Cases

@@ -124,7 +124,7 @@ def send_command(command: str) -> bool:
 ```
 
 - Include **module-level docstrings** summarizing file purpose.
-- Document YAML schemas in comments when used (e.g., `device_mapping.yml`).
+- Document YAML schemas in comments when used (e.g., `coach_mapping.default.yml`).
 
 ## Error Handling
 

@@ -45,7 +45,7 @@ The `.pre-commit-config.yaml` file defines **what** checks to run, while `nix ru
 ### Traditional Method (Poetry)
 
 ```bash
-poetry run python src/core_daemon/main.py  # Run server
+poetry run python run_server.py  # Run server
 poetry run pytest  # Tests
 poetry run ruff format src  # Format
 poetry run ruff check .  # Lint
@@ -88,7 +88,7 @@ cp .env.example .env
 
 ## Running Both Frontend and Backend
 
-1. Start the backend server: `poetry run python src/core_daemon/main.py`
+1. Start the backend server: `poetry run python run_server.py`
 2. In a separate terminal: `cd web_ui && npm run dev`
 3. Access the frontend at http://localhost:5173
 

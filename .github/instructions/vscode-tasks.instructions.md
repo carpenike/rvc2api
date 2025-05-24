@@ -51,7 +51,7 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 
 | Task Name                            | Description                             | Command                                     |
 | ------------------------------------ | --------------------------------------- | ------------------------------------------- |
-| `Server: Start Backend`              | Start the FastAPI backend server        | `poetry run python src/core_daemon/main.py` |
+| `Server: Start Backend`              | Start the FastAPI backend server        | `poetry run python run_server.py` |
 | `Server: Start Frontend Dev Server`  | Start the Vite development server       | `cd web_ui && npm run dev`                  |
 | `Server: Start Full Dev Environment` | Start both backend and frontend servers | _Compound task_                             |
 | `Server: Serve Documentation`        | Preview documentation with mkdocs serve | `poetry run mkdocs serve`                   |
@@ -61,7 +61,7 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 | Task Name                      | Description                    | Command                                         |
 | ------------------------------ | ------------------------------ | ----------------------------------------------- |
 | `Dev: Run Tests (Quick)`       | Fast pytest tests               | `poetry run pytest`                             |
-| `Dev: Run Tests with Coverage` | Tests with coverage report | `poetry run pytest --cov=src --cov-report=term` |
+| `Dev: Run Tests with Coverage` | Tests with coverage report | `poetry run pytest --cov=backend --cov-report=term` |
 | `Dev: Format Code (Quick)`     | Quick Python formatting       | `poetry run ruff format src`                    |
 | `Dev: Lint Backend (Quick)`    | Quick backend linting          | `poetry run ruff check .`                       |
 | `Dev: Type Check (Quick)`      | Quick type checking            | `poetry run pyright src`                        |
@@ -180,3 +180,27 @@ If you need to modify or add tasks:
 - Use `Dev: Enter Nix Shell` for reproducible development environment
 - Use system tasks to set up vCAN interfaces for testing
 - Monitor MCP tools status for optimal development experience
+
+## Important: JSON Compliance
+
+VS Code configuration files (`.vscode/tasks.json`, `.vscode/launch.json`, etc.) must be valid JSON:
+
+- **No Comments**: JSON files cannot contain `//` comments, even though VS Code editor may display them
+- **Pre-commit Validation**: Our pre-commit hooks validate JSON syntax and will fail if comments are present
+- **File Extensions**: Use `.jsonc` for JSON with comments, or `.json` for strict JSON compliance
+
+### Common Issues
+
+1. **Comments in JSON**: Remove all `// comment` lines from `.vscode/tasks.json`
+2. **Trailing Commas**: Ensure no trailing commas in JSON objects/arrays
+3. **Syntax Validation**: Use `python -m json.tool file.json` to validate JSON syntax
+
+### Example Fix
+```diff
+- // This is a comment that breaks JSON compliance
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ...existing tasks...
+  ]
+}
