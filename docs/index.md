@@ -38,7 +38,7 @@ cd web_ui && npm install
 Start the backend:
 
 ```bash
-poetry run python src/core_daemon/main.py
+poetry run python run_server.py
 ```
 
 Start the frontend (in a separate terminal):

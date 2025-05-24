@@ -114,7 +114,7 @@ cd /workspace
 cp .env.devcontainer .env
 
 # Start the backend server
-poetry run python src/core_daemon/main.py
+poetry run python run_server.py
 ```
 
 ## Running the Frontend

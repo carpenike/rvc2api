@@ -22,7 +22,7 @@ import platform
 import sys
 
 # Import the functions from the module directly
-from src.core_daemon.config import get_available_can_interfaces, get_canbus_config
+from backend.core.config import get_available_can_interfaces, get_canbus_config
 
 # Add the parent directory to the Python path to allow imports from src
 sys.path.insert(0, os.path.abspath("."))

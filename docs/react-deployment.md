@@ -85,7 +85,7 @@ During development:
 
 1. Run the FastAPI backend:
    ```
-   poetry run python src/core_daemon/main.py
+   poetry run python run_server.py
    ```
 
 2. Run the React dev server:

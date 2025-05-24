@@ -450,7 +450,7 @@ paths:
     get:
       summary: Get Unmapped Entries Api
       description: "Return all DGN/instance pairs that were seen on the bus but not\
-        \ mapped in device_mapping.yml.\n\nReturns:\n    A dictionary of unmapped\
+        \ mapped in coach_mapping.default.yml.\n\nReturns:\n    A dictionary of unmapped\
         \ DGN/instance pairs."
       operationId: get_unmapped_entries_api_api_unmapped_entries_get
       responses:

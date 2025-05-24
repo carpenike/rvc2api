@@ -26,7 +26,7 @@ The project includes a Nix flake that provides a fully configured development en
    - All necessary development tools
 
 3. Start developing:
-   - Backend: `poetry run python src/core_daemon/main.py`
+   - Backend: `poetry run python run_server.py`
    - Frontend: `cd web_ui && npm run dev`
 
 ### Benefits
@@ -69,7 +69,7 @@ If you don't want to use Nix, you can use Poetry directly to manage the Python e
 3. Start the backend server:
 
    ```bash
-   poetry run python src/core_daemon/main.py
+   poetry run python run_server.py
    ```
 
 4. Start the frontend development server:

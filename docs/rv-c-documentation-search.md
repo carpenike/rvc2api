@@ -96,7 +96,7 @@ This will:
 Start or restart the FastAPI server to load the new index:
 
 ```bash
-poetry run python src/core_daemon/main.py
+poetry run python run_server.py
 ```
 
 ## Using the Documentation Search

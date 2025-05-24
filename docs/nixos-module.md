@@ -153,7 +153,7 @@ rvc2api = {
 
     # Or specify custom mapping paths
     # rvcSpecPath = "/path/to/custom/rvc.json";
-    # deviceMappingPath = "/path/to/custom/device_mapping.yml";
+    # deviceMappingPath = "/path/to/custom/coach_mapping.default.yml";
 
     # User coach information
     userCoachInfoPath = "/path/to/coach_info.yml";

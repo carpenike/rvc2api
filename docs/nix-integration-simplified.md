@@ -35,7 +35,7 @@ This document explains the changes to the Nix integration in rvc2api:
 
 2. Run Python commands through Poetry:
    ```bash
-   poetry run python src/core_daemon/main.py
+   poetry run python run_server.py
    poetry run pytest
    ```
 
