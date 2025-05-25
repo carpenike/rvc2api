@@ -4,7 +4,7 @@ applyTo: "**/*.{ts,tsx,js,jsx}"
 
 # TypeScript/JavaScript Code Style Guidelines
 
-> **Note**: This file covers TypeScript/JavaScript coding standards and best practices. For ESLint configuration details, troubleshooting, and monorepo setup, see [eslint-typescript-config.instructions.md](eslint-typescript-config.instructions.md).
+> **Note**: This file covers TypeScript/JavaScript coding standards and best practices.
 
 ## Linting & Code Quality
 

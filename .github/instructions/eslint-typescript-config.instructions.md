@@ -4,7 +4,7 @@ applyTo: "**/web_ui/**"
 
 # ESLint and TypeScript Configuration
 
-> **Note**: This file focuses on ESLint/TypeScript configuration and troubleshooting. For TypeScript coding standards, best practices, and style guidelines, see [typescript-code-style.instructions.md](typescript-code-style.instructions.md).
+> **Note**: This file focuses on ESLint/TypeScript configuration and troubleshooting.
 
 ## ESLint Setup
 
