@@ -165,10 +165,3 @@ export default [
   },
 ];
 ```
-
-## See Also
-
-- [TypeScript Code Style](typescript-code-style.instructions.md) - Coding standards and best practices
-- [React Frontend Architecture](react-frontend.instructions.md) - Overall frontend architecture
-- [VS Code Tasks](vscode-tasks.instructions.md) - Tasks for ESLint and TypeScript checking
-- [MCP Tools](mcp-tools.instructions.md) - Using @context7 for TypeScript/React questions

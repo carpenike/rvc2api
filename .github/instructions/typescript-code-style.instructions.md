@@ -90,10 +90,3 @@ Only use `@perplexity` for general concepts not related to specific library APIs
 - Investigate general concepts: `@perplexity React performance optimization`
 
 > **Important**: For any React, TypeScript, or frontend library questions, always use `@context7` first to avoid outdated or hallucinated APIs.
-
-## See Also
-
-- [React Frontend Architecture](react-frontend.instructions.md)
-- [ESLint/TypeScript Configuration](eslint-typescript-config.instructions.md)
-- [MCP Tools](mcp-tools.instructions.md)
-- [VS Code Tasks](vscode-tasks.instructions.md)

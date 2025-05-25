@@ -91,7 +91,6 @@ from src.core_daemon.config import Settings
 
 - **Response Models**: Define and use Pydantic models for all request/response schemas
 - **Generate OpenAPI**: Update OpenAPI schema when changing endpoints (`API: Export OpenAPI Schema` task)
-- **See Documentation Guide**: Refer to [Documentation Guidelines](documentation.instructions.md) for complete details
 
 ## Best Practices
 
@@ -128,10 +127,3 @@ Only use `@perplexity` for general concepts not related to specific library APIs
 - Investigate general concepts: `@perplexity Python performance optimization`
 
 > **Important**: For any Python, FastAPI, or Pydantic questions, always use `@context7` first to avoid outdated or hallucinated APIs.
-
-## See Also
-
-- [Python Backend Architecture](python-backend.instructions.md)
-- [VS Code Tasks](vscode-tasks.instructions.md)
-- [MCP Tools](mcp-tools.instructions.md)
-- [Pull Request Expectations](pull-requests.instructions.md)

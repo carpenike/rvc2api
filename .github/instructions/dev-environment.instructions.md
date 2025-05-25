@@ -96,8 +96,6 @@ cp .env.example .env
 
 This project has extensive VS Code task configurations that streamline development workflows, including Nix-based tasks for reproducibility.
 
-For detailed information about available tasks, see [vscode-tasks.instructions.md](.github/instructions/vscode-tasks.instructions.md).
-
 You can access tasks through:
 
 - Command Palette (Ctrl+Shift+P or ⌘+Shift+P on macOS) → "Tasks: Run Task"

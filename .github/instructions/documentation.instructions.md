@@ -174,9 +174,3 @@ The following VS Code tasks are available for working with documentation:
 - **Follow Consistent Structure**: Use the established structure for new documentation.
 - **Test Documentation Accuracy**: Validate that examples and descriptions are accurate.
 - **Write for the Target Audience**: Keep in mind who will be using the documentation (e.g., frontend developers, API users).
-
-## See Also
-
-- [VS Code Tasks](vscode-tasks.instructions.md)
-- [Python Code Style](python-code-style.instructions.md)
-- [MCP Tools](mcp-tools.instructions.md)
