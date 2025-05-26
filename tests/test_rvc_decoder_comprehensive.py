@@ -10,9 +10,11 @@ This test suite verifies:
 6. End-to-end decoder functionality
 """
 
+import glob
 import json
 import os
 import tempfile
+from pathlib import Path
 
 import pytest
 import yaml
@@ -26,6 +28,48 @@ from backend.integrations.rvc.decode import (
     load_config_data,
     record_missing_dgn,
 )
+
+
+def discover_coach_mapping_files():
+    """Dynamically discover all coach mapping YAML files in the config directory."""
+    config_directory = "/workspace/backend/integrations/rvc/config"
+
+    # Find all .yml and .yaml files in the config directory
+    yaml_pattern = os.path.join(config_directory, "*.yml")
+    yaml_files = glob.glob(yaml_pattern)
+
+    # Also check for .yaml extension
+    yaml_pattern_alt = os.path.join(config_directory, "*.yaml")
+    yaml_files.extend(glob.glob(yaml_pattern_alt))
+
+    # Filter out non-mapping files (keep only coach mapping files)
+    mapping_files = []
+    for filepath in yaml_files:
+        filename = os.path.basename(filepath)
+        # Include files with 'mapping' in name or coach-specific naming patterns
+        if filename.endswith((".yml", ".yaml")) and (
+            "mapping" in filename.lower()
+            or
+            # Match coach-specific patterns like "YYYY_Make_Model.yml"
+            (len(filename.split("_")) >= 3 and filename[:4].isdigit())
+        ):
+            mapping_files.append(filepath)
+
+    # If no mapping files found by pattern, fall back to known coach files
+    if not mapping_files:
+        potential_files = [
+            os.path.join(config_directory, "coach_mapping.default.yml"),
+            os.path.join(config_directory, "2021_Entegra_Aspire_44R.yml"),
+        ]
+        mapping_files = [f for f in potential_files if os.path.exists(f)]
+
+    # Always include any test files with 'test' in the name
+    test_pattern = os.path.join(config_directory, "*test*.yml")
+    test_files = glob.glob(test_pattern)
+    mapping_files.extend(test_files)
+
+    # Convert to Path objects and remove duplicates
+    return [Path(f) for f in set(mapping_files)]
 
 
 class TestRVCJsonStructure:
@@ -121,19 +165,50 @@ class TestCoachMappingFiles:
     """Test coach mapping file structure and validation."""
 
     @pytest.fixture
-    def default_mapping_path(self):
-        """Get path to default mapping file."""
-        return "/workspace/backend/integrations/rvc/config/coach_mapping.default.yml"
+    def config_directory(self):
+        """Get path to the config directory containing mapping files."""
+        return "/workspace/backend/integrations/rvc/config"
 
     @pytest.fixture
-    def entegra_mapping_path(self):
-        """Get path to Entegra mapping file."""
-        return "/workspace/backend/integrations/rvc/config/2021_Entegra_Aspire_44R.yml"
+    def mapping_files(self, config_directory):
+        """Dynamically discover all coach mapping YAML files in the config directory."""
+        # Find all .yml and .yaml files in the config directory
+        yaml_pattern = os.path.join(config_directory, "*.yml")
+        yaml_files = glob.glob(yaml_pattern)
 
-    @pytest.fixture
-    def mapping_files(self, default_mapping_path, entegra_mapping_path):
-        """Get all mapping file paths."""
-        return [default_mapping_path, entegra_mapping_path]
+        # Also check for .yaml extension
+        yaml_pattern_alt = os.path.join(config_directory, "*.yaml")
+        yaml_files.extend(glob.glob(yaml_pattern_alt))
+
+        # Filter out non-mapping files (keep only coach mapping files)
+        mapping_files = []
+        for filepath in yaml_files:
+            filename = os.path.basename(filepath)
+            # Include files with 'mapping' in name or coach-specific naming patterns
+            if filename.endswith((".yml", ".yaml")) and (
+                "mapping" in filename.lower()
+                or
+                # Match coach-specific patterns like "YYYY_Make_Model.yml"
+                (len(filename.split("_")) >= 3 and filename[:4].isdigit())
+            ):
+                mapping_files.append(filepath)
+
+        # If no mapping files found by pattern, fall back to known coach files
+        if not mapping_files:
+            potential_files = [
+                os.path.join(config_directory, "coach_mapping.default.yml"),
+                os.path.join(config_directory, "2021_Entegra_Aspire_44R.yml"),
+            ]
+            mapping_files = [f for f in potential_files if os.path.exists(f)]
+
+        # Ensure we have at least the default mapping file for testing
+        if not mapping_files:
+            raise FileNotFoundError(
+                f"No coach mapping files found in {config_directory}. "
+                "Expected at least coach_mapping.default.yml"
+            )
+
+        return sorted(mapping_files)  # Sort for consistent test ordering
 
     def test_mapping_file_structure(self, mapping_files):
         """Test that mapping files have required structure."""
@@ -208,70 +283,113 @@ class TestDGNMappingConsistency:
     """Test consistency between RVC spec and coach mappings."""
 
     @pytest.fixture
-    def config_data(self):
-        """Load configuration data."""
-        return load_config_data()
+    def config_directory(self):
+        """Get path to the config directory containing mapping files."""
+        return "/workspace/backend/integrations/rvc/config"
 
-    def test_dgn_pairs_exist_in_spec(self, config_data):
+    @pytest.fixture
+    def mapping_files(self, config_directory):
+        """Dynamically discover all coach mapping YAML files in the config directory."""
+        # Find all .yml and .yaml files in the config directory
+        yaml_pattern = os.path.join(config_directory, "*.yml")
+        yaml_files = glob.glob(yaml_pattern)
+
+        # Also check for .yaml extension
+        yaml_pattern_alt = os.path.join(config_directory, "*.yaml")
+        yaml_files.extend(glob.glob(yaml_pattern_alt))
+
+        # Filter out non-mapping files (keep only coach mapping files)
+        mapping_files = []
+        for filepath in yaml_files:
+            filename = os.path.basename(filepath)
+            # Include files with 'mapping' in name or coach-specific naming patterns
+            if filename.endswith((".yml", ".yaml")) and (
+                "mapping" in filename.lower()
+                or
+                # Match coach-specific patterns like "YYYY_Make_Model.yml"
+                (len(filename.split("_")) >= 3 and filename[:4].isdigit())
+            ):
+                mapping_files.append(filepath)
+
+        # If no mapping files found by pattern, fall back to known coach files
+        if not mapping_files:
+            potential_files = [
+                os.path.join(config_directory, "coach_mapping.default.yml"),
+                os.path.join(config_directory, "2021_Entegra_Aspire_44R.yml"),
+            ]
+            mapping_files = [f for f in potential_files if os.path.exists(f)]
+
+        # Always include any test files with 'test' in the name
+        test_pattern = os.path.join(config_directory, "*test*.yml")
+        test_files = glob.glob(test_pattern)
+        mapping_files.extend(test_files)
+
+        # Convert to Path objects and remove duplicates
+        return [Path(f) for f in set(mapping_files)]
+
+    @pytest.fixture
+    def spec_data(self):
+        """Load RVC spec data once for all tests."""
+        spec_file = Path("/workspace/backend/integrations/rvc/config/rvc.json")
+        with open(spec_file, encoding="utf-8") as f:
+            rvc_spec = json.load(f)
+
+        # Create hex to ID mapping (matching original load_config_data format)
+        pgn_hex_to_id_map = {}
+        for pgn_id, pgn_data in rvc_spec["pgns"].items():
+            pgn_hex = pgn_data.get("pgn", "")
+            if pgn_hex:
+                # Map hex string to integer ID (matching original format)
+                pgn_hex_to_id_map[pgn_hex] = int(pgn_id)
+
+        return pgn_hex_to_id_map
+
+    def test_dgn_pairs_exist_in_spec(self, mapping_files, spec_data):
         """Test that all DGN pairs reference valid PGNs in the spec."""
-        (
-            dgn_dict,
-            spec_meta,
-            mapping_dict,
-            entity_map,
-            entity_ids,
-            inst_map,
-            unique_instances,
-            pgn_hex_to_name_map,
-            dgn_pairs,
-            coach_info,
-        ) = config_data
+        pgn_hex_to_name_map = spec_data
 
-        for cmd_dgn, status_dgn in dgn_pairs.items():
-            cmd_pgn = f"0x{cmd_dgn}"
-            status_pgn = f"0x{status_dgn}"
+        for mapping_path in mapping_files:
+            with open(mapping_path, encoding="utf-8") as f:
+                mapping = yaml.safe_load(f)
 
-            # Both PGNs should exist in the spec
-            assert cmd_pgn in pgn_hex_to_name_map, f"Command PGN {cmd_pgn} not found in spec"
-            assert status_pgn in pgn_hex_to_name_map, f"Status PGN {status_pgn} not found in spec"
+            dgn_pairs = mapping.get("dgn_pairs", {})
 
-    def test_mapping_dgns_exist_in_spec(self, config_data):
+            for cmd_dgn, status_dgn in dgn_pairs.items():
+                cmd_pgn = f"0x{cmd_dgn}"
+                status_pgn = f"0x{status_dgn}"
+
+                # Both PGNs should exist in the spec
+                assert (
+                    cmd_pgn in pgn_hex_to_name_map
+                ), f"Command PGN {cmd_pgn} not found in spec (file: {mapping_path.name})"
+                assert (
+                    status_pgn in pgn_hex_to_name_map
+                ), f"Status PGN {status_pgn} not found in spec (file: {mapping_path.name})"
+
+    def test_mapping_dgns_exist_in_spec(self, mapping_files, spec_data):
         """Test that all mapping DGNs exist in the spec."""
-        (
-            dgn_dict,
-            spec_meta,
-            mapping_dict,
-            entity_map,
-            entity_ids,
-            inst_map,
-            unique_instances,
-            pgn_hex_to_name_map,
-            dgn_pairs,
-            coach_info,
-        ) = config_data
+        pgn_hex_to_name_map = spec_data
 
-        mapped_dgns = set()
-        for dgn_hex, _instance_id in mapping_dict:
-            mapped_dgns.add(dgn_hex)
+        for mapping_path in mapping_files:
+            with open(mapping_path, encoding="utf-8") as f:
+                mapping = yaml.safe_load(f)
 
-        for dgn_hex in mapped_dgns:
-            pgn = f"0x{dgn_hex}"
-            assert pgn in pgn_hex_to_name_map, f"Mapped DGN {dgn_hex} not found in spec"
+            # Find DGN mapping entries (not special sections)
+            dgn_keys = [
+                k
+                for k in mapping
+                if not k.startswith("_") and k not in ["coach_info", "dgn_pairs", "templates"]
+            ]
 
-    def test_dgn_calculation_consistency(self, config_data):
+            for dgn_hex in dgn_keys:
+                pgn = f"0x{dgn_hex}"
+                assert (
+                    pgn in pgn_hex_to_name_map
+                ), f"Mapped DGN {dgn_hex} not found in spec (file: {mapping_path.name})"
+
+    def test_dgn_calculation_consistency(self, spec_data):
         """Test that DGN calculations are consistent."""
-        (
-            dgn_dict,
-            spec_meta,
-            mapping_dict,
-            entity_map,
-            entity_ids,
-            inst_map,
-            unique_instances,
-            pgn_hex_to_name_map,
-            dgn_pairs,
-            coach_info,
-        ) = config_data
+        pgn_hex_to_name_map = spec_data
 
         # Test a few known DGNs
         test_cases = [

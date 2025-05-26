@@ -75,7 +75,6 @@ templates:
       friendly_name: Entrance Door Lock
       suggested_area: Entrance
       interface: can1
-      status_dgn: "1FEDC"
       group_mask: "0x7C"
       <<: *lock
 
@@ -352,11 +351,3 @@ templates:
       groups:
         - "exterior"
       <<: *switchable_light
-
-# Lock Status (DGN 1FEDC likely corresponds to RVC_LOCK_STATUS)
-1FEDC:
-  default:
-    - entity_id: entrance_door_lock
-      friendly_name: Entrance Door Lock
-      suggested_area: Entrance
-      <<: *lock
