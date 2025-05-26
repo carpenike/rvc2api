@@ -21,31 +21,27 @@ Homepage = "https://github.com/carpenike/rvc2api"
 Repository = "https://github.com/carpenike/rvc2api"
 
 [project.scripts]
-rvc2api-daemon = "core_daemon.main:main"
+rvc2api-daemon = "backend.main:main"
 rvc2api-console = "console_client.console:main"
 frontend-build = "scripts.build_frontend:main"
 
 [tool.poetry]
-include = [ "src/core_daemon/static/**/*", "src/core_daemon/web_ui/static/**/*", "src/core_daemon/web_ui/templates/**/*", "src/rvc_decoder/config/*",]
+include = [ "backend/**/*", "web_ui/dist/**/*", "src/common/**/*"]
+
 [[tool.poetry.packages]]
 include = "common"
 from = "src"
 
 [[tool.poetry.packages]]
-include = "core_daemon"
-from = "src"
-
-[[tool.poetry.packages]]
-include = "rvc_decoder"
-from = "src"
+include = "backend"
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
 
 [tool.pyright]
-include = [ "src",]
-exclude = [ "**/node_modules", "**/__pycache__", ".venv",]
+include = [ "backend", "src/common"]
+exclude = [ "**/node_modules", "**/__pycache__", ".venv"]
 typeCheckingMode = "basic"
 reportMissingImports = true
 reportMissingTypeStubs = false
@@ -56,9 +52,9 @@ reportArgumentType = "none"
 stubPath = "typings"
 
 [tool.pytest.ini_options]
-pythonpath = [ "src",]
-addopts = [ "--import-mode=importlib",]
-testpaths = [ "tests",]
+pythonpath = [ "backend", "src"]
+addopts = [ "--import-mode=importlib"]
+testpaths = [ "tests"]
 
 [tool.ruff.format]
 line-ending = "lf"
@@ -72,7 +68,7 @@ unfixable = [ "F401", "F841",]
 exclude = [ ".git", "__pycache__", ".venv", "build", "dist", "*.egg-info",]
 
 [tool.ruff.lint.isort]
-known-first-party = [ "common", "core_daemon", "rvc_decoder",]
+known-first-party = [ "common", "backend"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
@@ -85,7 +81,6 @@ ban-relative-imports = "all"
 "typings/fastapi/params.pyi" = [ "N802",]
 "typings/**/*.py" = [ "TID252",]
 "typings/**/*.pyi" = [ "TID252",]
-"src/core_daemon/uptimerobot.py" = [ "F401", "E902",]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"

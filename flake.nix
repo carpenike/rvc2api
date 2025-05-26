@@ -165,7 +165,7 @@
             pkgs.zlib
           ];
           shellHook = ''
-            export PYTHONPATH=$PWD/src:$PYTHONPATH
+            export PYTHONPATH=$PWD:$PYTHONPATH
             # Helper: run poetry with Nix's libstdc++ only for Python invocations
             poetry() {
               LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} command poetry "$@"
@@ -198,11 +198,11 @@ EOF
             echo "🐚 Entered rvc2api devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
             echo "💡 Backend commands:"
             echo "  • poetry install              # Install Python dependencies (now always uses correct LD_LIBRARY_PATH)"
-            echo "  • poetry run python src/core_daemon/main.py  # Run API server"
+            echo "  • poetry run python run_server.py  # Run API server"
             echo "  • poetry run pytest           # Run tests"
             echo "  • poetry run ruff check .     # Lint"
-            echo "  • poetry run ruff format src  # Format"
-            echo "  • poetry run pyright src      # Type checking"
+            echo "  • poetry run ruff format backend  # Format"
+            echo "  • poetry run pyright backend  # Type checking"
             echo ""
             echo "💡 Frontend commands:"
             echo "  • cd web_ui && npm install    # Install frontend dependencies"
@@ -251,7 +251,7 @@ EOF
             pkgs.iproute2
           ];
           shellHook = ''
-            export PYTHONPATH=$PWD/src:$PYTHONPATH
+            export PYTHONPATH=$PWD:$PYTHONPATH
             echo "🧪 Entered CI shell with vcan support"
             sudo modprobe vcan  || true
             sudo ip link add dev vcan0 type vcan  || true
@@ -303,7 +303,7 @@ EOF
                 # Backend linting
                 poetry install --no-root
                 poetry run ruff check .
-                poetry run pyright src
+                poetry run pyright backend
 
                 # Frontend linting (if web_ui directory exists)
                 if [ -d "web_ui" ]; then
@@ -328,7 +328,7 @@ EOF
               text = ''
                 # Backend formatting
                 poetry install --no-root
-                poetry run ruff format src
+                poetry run ruff format backend
 
                 # Frontend formatting (if web_ui directory exists)
                 if [ -d "web_ui" ]; then
@@ -393,8 +393,7 @@ EOF
 
                 poetry run pre-commit run --all-files
                 poetry run ruff check .
-                poetry run pyright src
-                poetry run djlint src/core_daemon/web_ui/templates --check
+                poetry run pyright backend
 
                 # Frontend checks
                 if [ -d "web_ui" ]; then
@@ -525,16 +524,16 @@ EOF
             deviceMappingPath = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
-              description = "Override path to device_mapping.yml or a model-specific mapping file. If not set, uses modelSelector if provided.";
+              description = "Override path to coach_mapping.default.yml or a model-specific mapping file. If not set, uses modelSelector if provided.";
             };
 
             modelSelector = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
               description = ''
-                Model selector for device mapping file. Example: "2021_Entegra_Aspire_44R" will use
+                Model selector for coach mapping file. Example: "2021_Entegra_Aspire_44R" will use
                 "${config.rvc2api.package}/share/rvc2api/mappings/" + config.rvc2api.settings.modelSelector + ".yml" as the mapping file if deviceMappingPath is not set.
-                If both are unset, falls back to device_mapping.yml.
+                If both are unset, falls back to coach_mapping.default.yml.
               '';
             };
 
@@ -643,7 +642,7 @@ EOF
                   "${config.rvc2api.package}/lib/python3.12/site-packages/rvc_decoder/config/" +
                   config.rvc2api.settings.modelSelector + ".yml"
                 else
-                  "${config.rvc2api.package}/lib/python3.12/site-packages/rvc_decoder/config/device_mapping.yml";
+                  "${config.rvc2api.package}/lib/python3.12/site-packages/rvc_decoder/config/coach_mapping.default.yml";
 
               # User coach info path
               RVC2API_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)

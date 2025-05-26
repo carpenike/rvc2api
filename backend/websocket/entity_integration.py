@@ -9,7 +9,6 @@ between the event bus and WebSocket notifications.
 import logging
 from typing import Any
 
-from backend.core.events import get_event_bus
 from backend.core.state import AppState
 from backend.websocket.handlers import get_websocket_manager
 
@@ -48,7 +47,7 @@ def setup_entity_websocket_integration(app_state: AppState) -> None:
     """
     Set up integration between entity state updates and WebSockets.
 
-    Subscribes to the 'entity_state_updated' event and routes updates to WebSocket clients.
+    This is a placeholder for future integration between entity state and WebSocket broadcasting.
 
     Args:
         app_state (AppState): The application state instance.
@@ -56,10 +55,10 @@ def setup_entity_websocket_integration(app_state: AppState) -> None:
     Example:
         >>> setup_entity_websocket_integration(app_state)
     """
-    get_event_bus().subscribe("entity_state_updated", _handle_entity_state_updated)
-    logger.info("Entity WebSocket integration set up")
+    logger.info("Entity WebSocket integration set up (placeholder)")
 
 
+# Legacy event handler - kept for potential future use
 async def _handle_entity_state_updated(data: dict[str, Any]) -> None:
     """
     Handle entity state update events.

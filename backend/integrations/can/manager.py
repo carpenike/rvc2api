@@ -17,14 +17,9 @@ import can
 from can.bus import BusABC
 from can.exceptions import CanInterfaceNotImplementedError
 
-from backend.services.app_state import (
-    add_can_sniffer_entry,
-    add_pending_command,
-    decoder_map,
-    get_controller_source_addr,
-)
-from backend.services.metrics import CAN_TX_QUEUE_LENGTH
-from backend.services.rvc_decoder import decode_payload
+from backend.core.metrics import get_can_tx_queue_length
+from backend.core.state import AppState
+from backend.integrations.rvc import decode_payload
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +27,7 @@ can_tx_queue: asyncio.Queue[tuple[can.Message, str]] = asyncio.Queue()
 buses: dict[str, BusABC] = {}
 
 
-async def can_writer() -> None:
+async def can_writer(app_state: AppState) -> None:
     """
     Continuously dequeues messages from can_tx_queue and sends them over the CAN bus.
     Handles sending each message twice as per RV-C specification.
@@ -41,7 +36,10 @@ async def can_writer() -> None:
     default_bustype = os.getenv("CAN_BUSTYPE", "socketcan")
     while True:
         msg, interface_name = await can_tx_queue.get()
-        CAN_TX_QUEUE_LENGTH.set(can_tx_queue.qsize())
+        try:
+            get_can_tx_queue_length().set(can_tx_queue.qsize())
+        except RuntimeError as e:
+            logger.warning(f"Failed to update queue length metric: {e}")
         try:
             bus = buses.get(interface_name)
             if not bus:
@@ -78,7 +76,7 @@ async def can_writer() -> None:
                 )
                 # --- CAN Sniffer Logging (TX, ALL messages) ---
                 now = time.time()
-                entry = decoder_map.get(msg.arbitration_id)
+                entry = app_state.decoder_map.get(msg.arbitration_id)
                 instance = None
                 decoded = None
                 raw = None
@@ -89,7 +87,9 @@ async def can_writer() -> None:
                 except Exception:
                     pass
                 source_addr = msg.arbitration_id & 0xFF
-                origin = "self" if source_addr == get_controller_source_addr() else "other"
+                origin = (
+                    "self" if source_addr == app_state.get_controller_source_addr() else "other"
+                )
                 sniffer_entry = {
                     "timestamp": now,
                     "direction": "tx",
@@ -105,8 +105,8 @@ async def can_writer() -> None:
                     "source_addr": source_addr,
                     "origin": origin,
                 }
-                add_can_sniffer_entry(sniffer_entry)
-                add_pending_command(sniffer_entry)
+                app_state.add_can_sniffer_entry(sniffer_entry)
+                app_state.add_pending_command(sniffer_entry)
                 await asyncio.sleep(0.05)  # RV-C spec: send commands twice
                 bus.send(msg)
                 logger.info(
@@ -127,4 +127,7 @@ async def can_writer() -> None:
             )
         finally:
             can_tx_queue.task_done()
-            CAN_TX_QUEUE_LENGTH.set(can_tx_queue.qsize())
+            try:
+                get_can_tx_queue_length().set(can_tx_queue.qsize())
+            except RuntimeError as e:
+                logger.warning(f"Failed to update queue length metric: {e}")

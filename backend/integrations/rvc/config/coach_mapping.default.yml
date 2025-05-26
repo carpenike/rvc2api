@@ -1,0 +1,43 @@
+# RV-C Device Mapping Default (Fallback)
+#
+# This file provides a fallback mapping for RV-C Data Group Numbers (DGNs) and Instance IDs
+# to device/entity metadata, used when no coach-specific mapping is found.
+#
+# Structure and required fields are identical to coach-specific mapping files.
+#
+# Required top-level keys:
+#   - coach_info: with year, make, model, trim (all as strings, can be 'Generic' or 'Unknown')
+#   - dgn_pairs: at least one example mapping
+#   - templates: at least one template (e.g., switchable_light)
+#   - at least one DGN mapping (e.g., 1FEDB)
+
+coach_info:
+  year: "0000"
+  make: Generic
+  model: Generic
+  trim: Default
+  notes: Default fallback mapping for unknown or unsupported coaches
+
+dgn_pairs:
+  1FEDB: 1FEDA # Example command/status pair
+
+templates:
+  switchable_light: &switchable_light
+    device_type: light
+    capabilities: [on_off]
+  dimmable_light: &dimmable_light
+    device_type: light
+    capabilities: [on_off, brightness]
+  lock: &lock
+    device_type: lock
+    capabilities: [lock_unlock]
+
+1FEDB:
+  default:
+    - entity_id: generic_light
+      friendly_name: Generic Light
+      suggested_area: Main
+      interface: can1
+      status_dgn: "1FEDA"
+      group_mask: "0x7C"
+      <<: *switchable_light

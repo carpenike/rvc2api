@@ -2,9 +2,15 @@
 API routers package.
 
 This package contains the FastAPI routers for different API domains.
+Each router is responsible for a specific area of functionality and delegates
+business logic to appropriate services.
 """
 
-__all__ = []
+from backend.api.routers import can, config, docs, entities
 
-# Re-export routers for easier imports
-# Removed maintenance_router import due to missing module
+__all__ = [
+    "can",
+    "config",
+    "docs",
+    "entities",
+]

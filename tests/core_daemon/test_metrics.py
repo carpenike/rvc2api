@@ -7,10 +7,9 @@ This module verifies:
 - The absence of labels for unlabeled metrics.
 """
 
-from prometheus_client import Counter, Gauge, Histogram
-
 # Import the metrics from the module to be tested
 from core_daemon import metrics
+from prometheus_client import Counter, Gauge, Histogram
 
 
 def test_metric_definitions():

@@ -9,7 +9,6 @@ with the event system.
 import logging
 from typing import Any
 
-from backend.core.events import get_event_bus
 from backend.core.state import AppState, app_state, initialize_app_state
 from backend.services.feature_manager import FeatureManager
 
@@ -40,15 +39,10 @@ def setup_app_state(
     # Initialize the app_state singleton
     state_feature = initialize_app_state(feature_manager, config)
 
-    # Subscribe to relevant events
-    event_bus = get_event_bus()
-    event_bus.subscribe("entity_state_updated", _handle_entity_state_update)
-    event_bus.subscribe("network_map_updated", _handle_network_map_update)
-
     # Setup WebSocket broadcast integration
     # This will be implemented once we migrate the WebSocket functionality
 
-    logger.info("AppState feature initialized and registered with event system")
+    logger.info("AppState feature initialized")
 
     return state_feature
 

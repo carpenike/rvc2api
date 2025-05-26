@@ -23,13 +23,13 @@ import yaml
 
 def setup_python_path() -> None:
     """
-    Add the src directory to the Python path if not already present.
+    Add the backend directory to the Python path if not already present.
     """
     script_dir = Path(__file__).resolve().parent
-    src_dir = str(script_dir.parent / "src")
-    if src_dir not in sys.path:
-        sys.path.insert(0, src_dir)
-        print(f"[INFO] Added {src_dir} to PYTHONPATH")
+    backend_dir = str(script_dir.parent)  # Root directory containing backend/
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+        print(f"[INFO] Added {backend_dir} to PYTHONPATH")
 
 
 def export_openapi_schema(output_dir: Path) -> int:
@@ -45,9 +45,9 @@ def export_openapi_schema(output_dir: Path) -> int:
     try:
         setup_python_path()
         try:
-            from core_daemon.main import create_app
+            from backend.main import create_app
         except Exception:
-            print("[ERROR] Could not import create_app from core_daemon.main:")
+            print("[ERROR] Could not import create_app from backend.main:")
             traceback.print_exc()
             return 1
         print("[INFO] Initializing FastAPI app...")

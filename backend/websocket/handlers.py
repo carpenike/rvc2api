@@ -17,7 +17,6 @@ from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from backend.core.events import get_event_bus
 from backend.core.state import AppState
 from backend.services.feature_base import Feature
 
@@ -81,15 +80,8 @@ class WebSocketManager(Feature):
         self.background_tasks: set[asyncio.Task] = set()
 
     async def startup(self) -> None:
-        """Configure event subscriptions and initialize WebSocket handlers."""
+        """Initialize WebSocket handlers."""
         logger.info("Starting WebSocket manager")
-
-        # Subscribe to events using get_event_bus()
-        event_bus = get_event_bus()
-        event_bus.subscribe("entity_state_updated", self._handle_entity_update)
-        event_bus.subscribe("network_map_updated", self._handle_network_map_update)
-        event_bus.subscribe("feature_status_changed", self._handle_feature_status_update)
-        event_bus.subscribe("can_sniffer_group", self._handle_can_sniffer_group)
 
         # If we have app_state, wire up the broadcast function
         if self._app_state:
@@ -202,67 +194,6 @@ class WebSocketManager(Feature):
             features_status (list[dict[str, Any]]): The features status data to broadcast
         """
         await self.broadcast_json_to_clients(self.features_clients, features_status)
-
-    # ── Event Handlers ─────────────────────────────────────────────────────────
-
-    async def _handle_entity_update(self, data: dict[str, Any]) -> None:
-        """
-        Handle entity state update events.
-
-        Args:
-            data (dict[str, Any]): Event data containing entity information
-        """
-        entity_id = data.get("entity_id")
-        payload = data.get("payload")
-        if entity_id and payload:
-            await self.broadcast_to_data_clients({"entity_id": entity_id, "data": payload})
-
-    async def _handle_network_map_update(self, data: dict[str, Any]) -> None:
-        """
-        Handle network map update events.
-
-        Args:
-            data (dict[str, Any]): Event data containing network map information
-        """
-        network_map = data.get("network_map")
-        if not network_map and self._app_state:
-            network_map = {"devices": [], "source_addresses": []}
-        if network_map:
-            await self.broadcast_network_map(network_map)
-
-    async def _handle_feature_status_update(self, data: dict[str, Any]) -> None:
-        """
-        Handle feature status update events.
-
-        Args:
-            data (dict[str, Any]): Event data containing feature status information
-        """
-        features_status = data.get("features")
-        feature_manager = data.get("feature_manager")
-        if not features_status and feature_manager is not None:
-            features_status = [
-                {
-                    "name": feature.name,
-                    "enabled": feature.enabled,
-                    "core": feature.core,
-                    "config": feature.config,
-                    "health": feature.health,
-                }
-                for feature in feature_manager.get_all_features().values()
-            ]
-        if features_status:
-            await self.broadcast_features_status(features_status)
-
-    async def _handle_can_sniffer_group(self, data: dict[str, Any]) -> None:
-        """
-        Handle CAN sniffer group events.
-
-        Args:
-            data (dict[str, Any]): Event data containing CAN sniffer group information
-        """
-        group = data.get("group")
-        if group:
-            await self.broadcast_can_sniffer_group(group)
 
     # ── WebSocket Endpoints ─────────────────────────────────────────────────────
 

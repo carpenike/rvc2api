@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable
 from fastapi import Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from core_daemon.metrics import HTTP_LATENCY, HTTP_REQUESTS
+from backend.core.metrics import get_http_latency, get_http_requests
 
 
 async def prometheus_http_middleware(
@@ -33,8 +33,14 @@ async def prometheus_http_middleware(
     path = request.url.path
     method = request.method
     status = response.status_code
-    HTTP_REQUESTS.labels(method=method, endpoint=path, status_code=status).inc()
-    HTTP_LATENCY.labels(method=method, endpoint=path).observe(latency)
+
+    # Get metrics and record values
+    http_requests = get_http_requests()
+    http_latency = get_http_latency()
+
+    http_requests.labels(method=method, endpoint=path, status_code=status).inc()
+    http_latency.labels(method=method, endpoint=path).observe(latency)
+
     return response
 
 

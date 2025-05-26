@@ -9,17 +9,34 @@ This page provides an overview of the rvc2api backend architecture, focusing on 
 The backend consists of several key components:
 
 ```text
+backend/                  # Main backend application
+├── api/                  # API layer
+│   ├── routers/          # FastAPI route handlers
+│   ├── dependencies.py   # Dependency injection functions
+│   └── router_config.py  # Router configuration
+├── core/                 # Core utilities
+│   ├── config.py         # Application configuration
+│   ├── state.py          # Application state management
+│   ├── logging_config.py # Logging configuration
+│   ├── metrics.py        # Prometheus metrics
+│   └── version.py        # Version information
+├── services/             # Business logic services
+│   ├── feature_manager.py # Feature flag management
+│   ├── config_service.py  # Configuration service
+│   └── entity_service.py  # Entity management service
+├── integrations/         # External integrations
+│   ├── can/              # CAN bus integration
+│   └── rvc/              # RV-C protocol integration
+├── websocket/            # WebSocket handlers
+│   └── handlers.py       # WebSocket endpoint handlers
+├── models/               # Data models
+│   ├── entities.py       # Entity data models
+│   └── responses.py      # API response models
+├── middleware/           # HTTP middleware
+│   └── http.py           # Request/response middleware
+└── main.py               # Application entry point
 src/
 ├── common/               # Shared models and utilities
-├── core_daemon/          # FastAPI application
-│   ├── api_routers/      # API route handlers
-│   ├── services/         # Business logic services
-│   ├── models.py         # Pydantic models for API
-│   ├── app_state.py      # Shared application state
-│   ├── can_manager.py    # CAN bus integration
-│   ├── config.py         # Configuration handling
-│   ├── websocket.py      # WebSocket handlers
-│   └── main.py           # Main entry point
 └── rvc_decoder/          # RV-C protocol decoder
 ```
 

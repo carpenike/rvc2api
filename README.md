@@ -23,13 +23,13 @@ This project uses the [VERSION](./VERSION) file as the single source of truth fo
   - `api_routers/`: Contains FastAPI routers for different API endpoints (CAN, entities, config).
 - **RV-C Decoder (`src/rvc_decoder/`):**
   - `decode.py`: Contains the logic for decoding RV-C messages based on PGNs and SPNs, using configuration files from `config/`.
-  - `config/`: Contains `rvc.json` (RV-C specification details) and `device_mapping.yml` (custom device name mappings).
+  - `config/`: Contains `rvc.json` (RV-C specification details) and `coach_mapping.default.yml` (custom device name mappings).
 - **React Frontend (`web_ui/`):**
   - Modern React SPA built with Vite and Tailwind CSS
   - Communicates with the backend via REST API and WebSockets
   - See [Frontend Development Guide](docs/frontend-development.md) for details
-- **Console Client (`src/console_client/`):**
-  - `console.py`: A command-line tool for interacting with the `rvc2api` daemon.
+- **Console Client:**
+  - Command-line tool for interacting with the `rvc2api` daemon (planned)
 
 ## Documentation
 
@@ -112,7 +112,7 @@ For quick start:
       poetry run python run_server.py
 
       # Direct module execution (for development):
-      poetry run python src/core_daemon/main.py
+      poetry run python run_server.py
       ```
 
       The API server will typically start on `http://localhost:8000` (or as configured).
@@ -127,9 +127,9 @@ For quick start:
 
     - **Console Client:**
       ```bash
-      poetry run python src/console_client/console.py --help
+      # Console client not yet implemented - use the web frontend instead
+      # Future: poetry run rvc2api-console --help
       ```
-      Follow the client's help instructions to connect to the daemon.
 
 ## RV-C Documentation Search
 

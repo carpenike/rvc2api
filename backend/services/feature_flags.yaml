@@ -10,14 +10,66 @@
 #   depends_on:
 #     - enable_admin_panel
 
-canbus:
+# Core infrastructure features
+entity_manager:
   enabled: true
   core: true
   depends_on: []
+  description: "Entity state management and configuration service"
 
-web_ui:
+app_state:
   enabled: true
   core: true
-  depends_on: []
+  depends_on: [entity_manager]
+  description: "Application state management service (legacy compatibility)"
 
-# Add additional features below as needed
+websocket:
+  enabled: true
+  core: true
+  depends_on: [app_state]
+  description: "WebSocket connection management for real-time updates"
+
+# CAN bus and protocol features
+can_interface:
+  enabled: true
+  core: true
+  depends_on: [app_state]
+  description: "CAN bus interface capability"
+
+can_feature:
+  enabled: true
+  core: true
+  depends_on: [can_interface]
+  description: "CANBus feature for device communication"
+
+rvc:
+  enabled: true
+  core: true
+  depends_on: [can_interface]
+  description: "RV-C protocol integration for recreational vehicle systems"
+
+# API Documentation
+api_docs:
+  enabled: true
+  core: true
+  depends_on: [websocket]
+  description: "API documentation endpoints including Swagger UI and search functionality"
+
+# Optional features
+pushover:
+  enabled: false
+  core: false
+  depends_on: []
+  description: "Pushover notification service integration"
+
+uptimerobot:
+  enabled: false
+  core: false
+  depends_on: []
+  description: "UptimeRobot monitoring service integration"
+
+github_update_checker:
+  enabled: true
+  core: false
+  depends_on: []
+  description: "GitHub update checker service for application updates"

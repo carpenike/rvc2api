@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any
 
-from backend.core.events import get_event_bus
+from backend.integrations.rvc import decode_payload, load_config_data
 from backend.services.feature_base import Feature
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class CANBusFeature(Feature):
 
     def __init__(
         self,
-        name: str = "can_bus",
+        name: str = "can_feature",
         enabled: bool = True,
         core: bool = True,
         config: dict[str, Any] | None = None,
@@ -37,7 +37,7 @@ class CANBusFeature(Feature):
         Initialize the CAN bus feature.
 
         Args:
-            name: Feature name (default: "can_bus")
+            name: Feature name (default: "can_feature")
             enabled: Whether the feature is enabled (default: True)
             core: Whether this is a core feature (default: True)
             config: Configuration options (default: None)
@@ -76,6 +76,14 @@ class CANBusFeature(Feature):
         self._task: asyncio.Task | None = None
         self._simulation_task: asyncio.Task | None = None
 
+        # RVC decoder data - will be loaded on startup
+        self.decoder_map: dict[int, dict] = {}
+        self.device_lookup: dict[tuple[str, str], dict] = {}
+        self.status_lookup: dict[tuple[str, str], dict] = {}
+        self.pgn_hex_to_name_map: dict[str, str] = {}
+        self.raw_device_mapping: dict = {}
+        self.entity_id_lookup: dict[str, dict] = {}
+
     async def startup(self) -> None:
         """
         Start CAN bus listeners and message processing.
@@ -83,6 +91,65 @@ class CANBusFeature(Feature):
         This method is called automatically by the FeatureManager.
         """
         logger.info("Starting CAN bus feature")
+
+        # Load RVC decoder configuration
+        try:
+            logger.info("Loading RVC decoder configuration")
+
+            # Get settings to pass environment variable paths
+            from backend.core.config import get_settings
+
+            settings = get_settings()
+
+            # Convert Path objects to strings if they exist
+            spec_path = str(settings.can_spec_path) if settings.can_spec_path else None
+            map_path = str(settings.can_map_path) if settings.can_map_path else None
+
+            logger.info(f"Using RVC spec path: {spec_path}")
+            logger.info(f"Using device mapping path: {map_path}")
+
+            config_result = load_config_data(
+                rvc_spec_path_override=spec_path, device_mapping_path_override=map_path
+            )
+            (
+                self.decoder_map,
+                _spec_meta,  # metadata about the spec file
+                _mapping_dict,  # mapping data organized by (dgn_hex, instance)
+                _entity_map,  # entity mapping data
+                _entity_ids,  # set of entity IDs
+                self.entity_id_lookup,  # entity ID to config lookup
+                _light_command_info,  # light command information
+                self.pgn_hex_to_name_map,  # PGN hex to name mapping
+                _dgn_pairs,  # DGN pairs
+                _coach_info,  # coach information
+            ) = config_result
+
+            # Extract additional lookup tables from mapping dict
+            # This is needed for device and status lookups
+            for (dgn_hex, instance), device_config in _mapping_dict.items():
+                self.device_lookup[(dgn_hex.upper(), str(instance))] = device_config
+
+            # Copy entity map to device lookup for compatibility
+            for (dgn_hex, instance), device_config in _entity_map.items():
+                self.device_lookup[(dgn_hex.upper(), str(instance))] = device_config
+
+            # Build status lookup from device lookup for devices with status_dgn
+            for (_dgn_hex, instance), device_config in self.device_lookup.items():
+                status_dgn = device_config.get("status_dgn")
+                if status_dgn:
+                    self.status_lookup[(status_dgn.upper(), str(instance))] = device_config
+
+            # Store raw device mapping for unmapped entry suggestions
+            self.raw_device_mapping = config_result[1]  # This is the device_mapping dict
+
+            logger.info(
+                f"Loaded RVC configuration: {len(self.decoder_map)} decoders, "
+                f"{len(self.device_lookup)} device mappings"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to load RVC decoder configuration: {e}")
+            logger.warning("CAN bus feature will run without RVC decoding capabilities")
 
         if self.config["simulate"]:
             # Start simulation mode
@@ -223,45 +290,62 @@ class CANBusFeature(Feature):
         Process an incoming CAN message.
 
         This method would be called by the CAN bus listener when a message is received.
-        It processes the message and publishes events as needed.
+        It processes the message using RVC decoding for logging and analysis.
 
         Args:
             msg: The CAN message as a dictionary with keys like arbitration_id, data, etc.
         """
-        event_bus = get_event_bus()
-        if not event_bus:
-            return
-
         try:
             # Extract message data
             arbitration_id = msg.get("arbitration_id")
             data = msg.get("data")
-            timestamp = msg.get("timestamp", time.time())
+            _ = msg.get("timestamp", time.time())  # Keep for potential future use
 
             if arbitration_id is None or data is None:
                 logger.warning("Received invalid CAN message")
                 return
 
+            # Convert data to bytes if it's not already
+            if isinstance(data, str):
+                data = bytes.fromhex(data)
+            elif not isinstance(data, bytes):
+                logger.warning(f"Unexpected data type: {type(data)}")
+                return
+
             # Log the message at debug level
-            logger.debug(
-                f"CAN message received: "
-                f"id=0x{arbitration_id:x}, data={data.hex() if isinstance(data, bytes) else data}"
-            )
+            logger.debug(f"CAN message received: id=0x{arbitration_id:x}, data={data.hex()}")
 
-            # Publish raw CAN message event
-            event_bus.publish(
-                "can_message_received",
-                {
-                    "arbitration_id": arbitration_id,
-                    "data": data.hex() if isinstance(data, bytes) else data,
-                    "timestamp": timestamp,
-                },
-            )
+            # Try to decode the message using RVC decoder
+            if self.decoder_map and arbitration_id in self.decoder_map:
+                try:
+                    entry = self.decoder_map[arbitration_id]
+                    decoded_data, raw_data = decode_payload(entry, data)
 
-            # Here we could add additional processing, like:
-            # - Decoding the message using RV-C decoders
-            # - Updating entity states based on the decoded message
-            # - Publishing more specific events
+                    # Extract DGN and instance for device lookup
+                    dgn_hex = entry.get("dgn_hex")
+                    instance = raw_data.get("instance") if raw_data else None
+
+                    logger.debug(
+                        f"Decoded CAN message: DGN={dgn_hex}, instance={instance}, "
+                        f"decoded={decoded_data}, raw={raw_data}"
+                    )
+
+                    # Check if this maps to a known device/entity
+                    if dgn_hex and instance is not None:
+                        device_key = (dgn_hex.upper(), str(instance))
+                        device_config = self.device_lookup.get(device_key)
+
+                        if device_config:
+                            entity_id = device_config.get("entity_id")
+                            if entity_id:
+                                logger.debug(f"Mapped to entity: {entity_id}")
+                        else:
+                            logger.debug(f"Unmapped device: {dgn_hex}:{instance}")
+
+                except Exception as decode_error:
+                    logger.error(f"Error decoding CAN message: {decode_error}")
+            else:
+                logger.debug(f"No decoder found for arbitration ID 0x{arbitration_id:x}")
 
         except Exception as e:
             logger.error(f"Error processing CAN message: {e}")
@@ -314,40 +398,90 @@ class CANBusFeature(Feature):
         """
         Simulate CAN messages for testing purposes.
 
-        This method generates simulated CAN messages at regular intervals.
+        This method generates simulated CAN messages at regular intervals,
+        using actual decoder definitions when available.
         """
         logger.info("Starting CAN message simulation")
 
         # Counter for cycling through different message types
         counter = 0
 
+        # Get a list of available decoders for more realistic simulation
+        available_decoders = list(self.decoder_map.keys()) if self.decoder_map else []
+
         while self._is_running:
             try:
                 await asyncio.sleep(1.0)  # 1 message per second
 
-                # Generate a simulated message based on the counter
-                msg_type = counter % 4
+                # If we have decoders, use real PGN IDs, otherwise use hardcoded ones
+                if available_decoders:
+                    # Use real decoder entries
+                    decoder_key = available_decoders[counter % len(available_decoders)]
+                    entry = self.decoder_map[decoder_key]
 
-                if msg_type == 0:
-                    # Simulate a temperature message (DGN 1FEA5 / 130725)
-                    arbitration_id = 0x1FEA5
-                    # Temperature of 72.5°F (22.5°C)
-                    data = bytes([0x02, 0x01, 0x00, 0x00, 0xE1, 0x01, 0x00, 0xFF])
-                elif msg_type == 1:
-                    # Simulate a battery state message (DGN 1FFFD / 131069)
-                    arbitration_id = 0x1FFFD
-                    # Battery at 80% charge
-                    data = bytes([0x01, 0x50, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF])
-                elif msg_type == 2:
-                    # Simulate a light status message (DGN 1FEED / 130797)
-                    arbitration_id = 0x1FEED
-                    # Light is on
-                    data = bytes([0x01, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                    arbitration_id = decoder_key
+                    entry_length = entry.get("length", 8)
+
+                    # Generate semi-realistic data based on the entry's signals
+                    data = bytearray(entry_length)
+                    if "signals" in entry:
+                        for signal in entry["signals"]:
+                            try:
+                                start_bit = signal.get("start_bit", 0)
+                                length = signal.get("length", 8)
+
+                                # Generate a reasonable value for the signal
+                                if signal.get("name", "").lower() in ["instance"]:
+                                    # Instance fields should be 0-255
+                                    value = counter % 256
+                                elif signal.get("name", "").lower() in [
+                                    "operating_status",
+                                    "status",
+                                ]:
+                                    # Status fields - alternate between 0 and some value
+                                    value = (counter % 2) * 128
+                                else:
+                                    # Other fields - some variation
+                                    value = (counter * 17) % (1 << min(length, 16))
+
+                                # Set the bits in the data array
+                                byte_offset = start_bit // 8
+                                if byte_offset < len(data):
+                                    data[byte_offset] = value & 0xFF
+                            except Exception as e:
+                                logger.debug(f"Error generating signal data: {e}")
+                    else:
+                        # No signals defined, use some default pattern
+                        for i in range(entry_length):
+                            data[i] = (counter + i * 13) % 256
+
+                    data = bytes(data)
+                    logger.debug(f"Simulating message from decoder: {entry.get('name', 'Unknown')}")
+
                 else:
-                    # Simulate a tank level message (DGN 1FF9D / 130973)
-                    arbitration_id = 0x1FF9D
-                    # Tank at 65% capacity
-                    data = bytes([0x01, 0x41, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF])
+                    # Fallback to hardcoded simulation messages
+                    msg_type = counter % 4
+
+                    if msg_type == 0:
+                        # Simulate a temperature message (DGN 1FEA5 / 130725)
+                        arbitration_id = 0x1FEA5
+                        # Temperature of 72.5°F (22.5°C)
+                        data = bytes([0x02, 0x01, 0x00, 0x00, 0xE1, 0x01, 0x00, 0xFF])
+                    elif msg_type == 1:
+                        # Simulate a battery state message (DGN 1FFFD / 131069)
+                        arbitration_id = 0x1FFFD
+                        # Battery at 80% charge
+                        data = bytes([0x01, 0x50, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF])
+                    elif msg_type == 2:
+                        # Simulate a light status message (DGN 1FEED / 130797)
+                        arbitration_id = 0x1FEED
+                        # Light is on
+                        data = bytes([0x01, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                    else:
+                        # Simulate a tank level message (DGN 1FF9D / 130973)
+                        arbitration_id = 0x1FF9D
+                        # Tank at 65% capacity
+                        data = bytes([0x01, 0x41, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF])
 
                 # Process the simulated message
                 await self._process_message(
@@ -370,14 +504,14 @@ class CANBusFeature(Feature):
 
 
 # Singleton instance and accessor functions
-_can_bus_feature: CANBusFeature | None = None
+_can_feature: CANBusFeature | None = None
 
 
-def initialize_can_bus_feature(
+def initialize_can_feature(
     config: dict[str, Any] | None = None,
 ) -> CANBusFeature:
     """
-    Initialize the CAN bus feature singleton.
+    Initialize the CAN feature singleton.
 
     Args:
         config: Optional configuration dictionary
@@ -385,29 +519,29 @@ def initialize_can_bus_feature(
     Returns:
         The initialized CANBusFeature instance
     """
-    global _can_bus_feature
+    global _can_feature
 
-    if _can_bus_feature is None:
-        _can_bus_feature = CANBusFeature(
+    if _can_feature is None:
+        _can_feature = CANBusFeature(
             config=config,
         )
 
-    return _can_bus_feature
+    return _can_feature
 
 
-def get_can_bus_feature() -> CANBusFeature:
+def get_can_feature() -> CANBusFeature:
     """
-    Get the CAN bus feature singleton instance.
+    Get the CAN feature singleton instance.
 
     Returns:
         The CANBusFeature instance
 
     Raises:
-        RuntimeError: If the CAN bus feature has not been initialized
+        RuntimeError: If the CAN feature has not been initialized
     """
-    if _can_bus_feature is None:
+    if _can_feature is None:
         raise RuntimeError(
-            "CAN bus feature has not been initialized. Call initialize_can_bus_feature() first."
+            "CAN feature has not been initialized. Call initialize_can_feature() first."
         )
 
-    return _can_bus_feature
+    return _can_feature

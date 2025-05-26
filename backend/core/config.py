@@ -8,14 +8,14 @@ with environment variable integration and typed configuration options.
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
 class LoggingSettings(BaseModel):
     """Logging configuration settings."""
 
-    level: str = "INFO"
+    level: str = Field(default="INFO")
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     log_to_file: bool = False
     log_file: Path | None = None
@@ -24,9 +24,17 @@ class LoggingSettings(BaseModel):
 class CANBusSettings(BaseModel):
     """CAN bus configuration settings."""
 
-    bustype: str = "socketcan"
-    channels: list[str] = ["vcan0"]
-    bitrate: int = 250000
+    bustype: str = Field(default="socketcan")
+    channels: list[str] = Field(default=["vcan0"])
+    bitrate: int = Field(default=250000)
+
+    @field_validator("channels", mode="before")
+    @classmethod
+    def parse_channels(cls, v):
+        """Parse comma-separated channels from environment variable."""
+        if isinstance(v, str):
+            return [channel.strip() for channel in v.split(",")]
+        return v
 
 
 class MaintenanceSettings(BaseModel):
@@ -67,12 +75,20 @@ class Settings(BaseSettings):
     root_path: str = ""
 
     # File paths
-    can_spec_path: Path | None = None
-    can_map_path: Path | None = None
+    can_spec_path: Path | None = Field(default=None, alias="CAN_SPEC_PATH")
+    can_map_path: Path | None = Field(default=None, alias="CAN_MAP_PATH")
     static_dir: Path = Path("static")
 
     # CAN bus settings
     canbus: CANBusSettings = Field(default_factory=CANBusSettings)
+
+    # CAN bus environment variable overrides
+    can_channels: str | None = Field(default=None, alias="CAN_CHANNELS")
+    can_bustype: str | None = Field(default=None, alias="CAN_BUSTYPE")
+    can_bitrate: int | None = Field(default=None, alias="CAN_BITRATE")
+
+    # Logging environment variable overrides
+    log_level: str | None = Field(default=None, alias="LOG_LEVEL")
 
     # Feature flags
     features: FeatureFlags = Field(default_factory=FeatureFlags)
@@ -93,35 +109,52 @@ class Settings(BaseSettings):
     # CORS settings
     cors_origins: list[str] = ["*"]
 
-    class Config:
-        """Pydantic configuration."""
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "env_nested_delimiter": "__",
+        "extra": "ignore",  # Allow extra fields without validation errors
+    }
 
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        env_nested_delimiter = "__"
+    # Example: FEATURES__ENABLE_MAINTENANCE_TRACKING=1
 
-        # Example: FEATURES__ENABLE_MAINTENANCE_TRACKING=1
-
-    @root_validator(pre=False)
-    def setup_derived_settings(self, values: dict) -> dict:
+    @model_validator(mode="after")
+    def setup_derived_settings(self) -> "Settings":
         """
         Set up settings that depend on other settings.
 
-        Args:
-            values: Current settings values
-
         Returns:
-            Updated settings values
+            Updated settings instance
         """
         # Configure maintenance settings if feature is enabled
-        if (
-            values.get("features")
-            and values["features"].enable_maintenance_tracking
-            and not values.get("maintenance")
-        ):
-            values["maintenance"] = MaintenanceSettings()
+        if self.features and self.features.enable_maintenance_tracking and not self.maintenance:
+            self.maintenance = MaintenanceSettings()
 
-        return values
+        # Override CAN bus settings from environment variables
+        canbus_overrides = {}
+        if self.can_channels is not None:
+            canbus_overrides["channels"] = [
+                channel.strip() for channel in self.can_channels.split(",")
+            ]
+        if self.can_bustype is not None:
+            canbus_overrides["bustype"] = self.can_bustype
+        if self.can_bitrate is not None:
+            canbus_overrides["bitrate"] = self.can_bitrate
+
+        if canbus_overrides:
+            # Create new CANBusSettings with overrides
+            current_canbus = self.canbus.model_dump()
+            current_canbus.update(canbus_overrides)
+            self.canbus = CANBusSettings(**current_canbus)
+
+        # Override logging settings from environment variables
+        if self.log_level is not None:
+            # Create new LoggingSettings with override
+            current_logging = self.logging.model_dump()
+            current_logging["level"] = self.log_level
+            self.logging = LoggingSettings(**current_logging)
+
+        return self
 
 
 # Create cached singleton settings instance

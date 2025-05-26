@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-Simple entry point to run the rvc2api server.
+Entry point to run the rvc2api backend server.
 
-This script ensures proper module resolution by adding the necessary
-paths to PYTHONPATH before importing the main module.
+This script runs the modernized backend using the new FastAPI application
+structure with proper service-oriented architecture.
 """
-import sys
-from pathlib import Path
+import logging
 
-from core_daemon.main import main
+import uvicorn
 
-# Add the src directory to the path
-src_dir = str(Path(__file__).parent / "src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
+from backend.core.config import get_settings
+from backend.core.logging_config import configure_logging, setup_early_logging
 
 if __name__ == "__main__":
-    main()
+    # Set up early logging before anything else
+    setup_early_logging()
+
+    # Get settings and configure comprehensive logging
+    settings = get_settings()
+    configure_logging(settings.logging)
+
+    logger = logging.getLogger(__name__)
+    logger.info("Starting rvc2api backend server")
+
+    # Run the modernized backend
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

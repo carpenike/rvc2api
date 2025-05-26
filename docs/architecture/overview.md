@@ -75,9 +75,15 @@ The project follows a monorepo structure:
 
 ```text
 rvc2api/
-├── src/                  # Python backend code
+├── backend/              # Python backend application
+│   ├── api/              # FastAPI routers and endpoints
+│   ├── core/             # Core configuration and utilities
+│   ├── services/         # Business logic services
+│   ├── integrations/     # External integrations (CAN, etc.)
+│   ├── websocket/        # WebSocket handlers
+│   └── models/           # Data models and schemas
+├── src/                  # Shared components
 │   ├── common/           # Shared models and utilities
-│   ├── core_daemon/      # FastAPI application
 │   └── rvc_decoder/      # RV-C protocol decoder
 ├── web_ui/               # React frontend
 │   ├── src/              # Frontend source code
