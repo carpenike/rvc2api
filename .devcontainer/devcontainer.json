@@ -27,9 +27,14 @@
     "WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
     "PYTHONPATH": "${containerWorkspaceFolder}:${containerEnv:PYTHONPATH}",
     "NODE_OPTIONS": "--openssl-legacy-provider",
+    "NIX_PATH": "/home/vscode/.nix-defexpr/channels",
     "PERPLEXITY_API_KEY": "${localEnv:PERPLEXITY_API_KEY}",
     "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_PERSONAL_ACCESS_TOKEN}",
     "MAGIC_API_KEY": "${localEnv:MAGIC_API_KEY}"
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   "postCreateCommand": "./.devcontainer/scripts/specific-setup.sh",
@@ -38,8 +43,6 @@
 
   "mounts": [
     "source=rvc2api-nix-store,target=/nix,type=volume",
-    "source=rvc2api-nix-defexpr,target=/home/vscode/.nix-defexpr,type=volume",
-    "source=rvc2api-direnv,target=/home/vscode/.direnv,type=volume",
     "source=${localWorkspaceFolder}/.devcontainer/home-cache,target=/home/vscode/.cache,type=bind,consistency=cached"
   ],
 
@@ -54,8 +57,19 @@
         "ms-python.debugpy",
         "bradlc.vscode-tailwindcss",
         "charliermarsh.ruff",
-        "dbaeumer.vscode-eslint"
-      ]
+        "dbaeumer.vscode-eslint",
+        "tamasfe.even-better-toml",
+        "microsoft.vscode-markdown",
+        "executablebookproject.myst-highlight"
+      ],
+      "settings": {
+        "nix.enableLanguageServer": true,
+        "direnv.executable": "/home/vscode/.nix-profile/bin/direnv",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.python"
+        }
+      }
     }
-  }
+  },
+  "forwardPorts": [8000]
 }
