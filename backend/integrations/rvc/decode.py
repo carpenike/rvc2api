@@ -152,7 +152,7 @@ def load_config_data(
     # Process DGN dictionary
     dgn_dict = {}
     pgn_hex_to_name_map = {}
-    dgn_pairs = {}
+    rvc_spec_dgn_pairs = {}
 
     for pgn_name, pgn_entry in rvc_spec["pgns"].items():
         pgn = int(pgn_entry["pgn"], 16)
@@ -160,10 +160,13 @@ def load_config_data(
         dgn = (priority << 18) | pgn
         dgn_dict[dgn] = pgn_entry
         pgn_hex_to_name_map[pgn_entry["pgn"]] = pgn_name
-        dgn_pairs[pgn_entry["pgn"]] = {
+        rvc_spec_dgn_pairs[pgn_entry["pgn"]] = {
             "dgn": dgn,
             "name": pgn_name,
         }
+
+    # Extract dgn_pairs from device mapping (command PGN -> status PGN mapping)
+    dgn_pairs = device_mapping.get("dgn_pairs", {})
 
     # Extract spec metadata
     spec_meta = {

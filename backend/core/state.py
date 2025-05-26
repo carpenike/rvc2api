@@ -315,6 +315,8 @@ class AppState(Feature):
         if dgn_pairs_val:
             self.known_command_status_pairs.clear()
             for cmd_dgn, status_dgn in dgn_pairs_val.items():
+                # dgn_pairs_val contains command PGN -> status PGN string mappings from YAML
+                # Store the mapping of command DGN to status DGN for legacy compatibility
                 self.known_command_status_pairs[cmd_dgn.upper()] = status_dgn.upper()
 
         logger.info("Application state populated from configuration data.")
