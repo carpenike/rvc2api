@@ -171,7 +171,11 @@ async def root():
 async def health_check(request: Request):
     """Health check endpoint."""
     app_state = get_app_state(request)
-    return {"status": "healthy", "entities": len(app_state.state), "services": "operational"}
+    return {
+        "status": "healthy",
+        "entities": len(app_state.entity_manager.get_entity_ids()),
+        "services": "operational",
+    }
 
 
 def main():

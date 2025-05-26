@@ -296,8 +296,9 @@ async def _send_light_can_command(
         await broadcast_to_clients(text)
 
         # --- Fallback: Log TX sniffer entry and add to pending_commands for grouping ---
-        from core_daemon.app_state import add_can_sniffer_entry, add_pending_command, decoder_map
         from rvc_decoder.decode import decode_payload
+
+        from core_daemon.app_state import add_can_sniffer_entry, add_pending_command, decoder_map
 
         entry = decoder_map.get(msg.arbitration_id)
         now = time.time()

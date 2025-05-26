@@ -34,9 +34,8 @@ import logging
 import os
 from unittest.mock import MagicMock, call, patch
 
-import pytest
-
 import core_daemon.config as config_module  # To reset global paths
+import pytest
 from core_daemon.config import (
     configure_logger,
     get_actual_paths,

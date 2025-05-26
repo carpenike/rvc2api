@@ -135,12 +135,15 @@ async def healthz(request: Request) -> JSONResponse:
 async def readyz(request: Request) -> JSONResponse:
     """Readiness probe: 200 once at least one frame decoded, else 503."""
     app_state = get_app_state(request)
-    ready = len(app_state.state) > 0
+    ready = len(app_state.entity_manager.get_entity_ids()) > 0
     code = 200 if ready else 503
 
     return JSONResponse(
         status_code=code,
-        content={"status": "ready" if ready else "pending", "entities": len(app_state.state)},
+        content={
+            "status": "ready" if ready else "pending",
+            "entities": len(app_state.entity_manager.get_entity_ids()),
+        },
     )
 
 
@@ -197,7 +200,7 @@ async def get_application_status(request: Request) -> dict[str, Any]:
     config_status = await config_service.get_config_status()
 
     # Basic check for CAN listeners (simple proxy: if entities exist, listeners likely ran)
-    can_listeners_active = len(app_state.state) > 0
+    can_listeners_active = len(app_state.entity_manager.get_entity_ids()) > 0
 
     return {
         "status": "ok",
@@ -205,8 +208,8 @@ async def get_application_status(request: Request) -> dict[str, Any]:
         "rvc_spec_file_path": config_status.get("spec_path"),
         "device_mapping_file_loaded": config_status["mapping_loaded"],
         "device_mapping_file_path": config_status.get("mapping_path"),
-        "known_entity_count": len(app_state.entity_id_lookup),
-        "active_entity_state_count": len(app_state.state),
+        "known_entity_count": len(app_state.entity_manager.get_entity_ids()),
+        "active_entity_state_count": len(app_state.entity_manager.get_entity_ids()),
         "unmapped_entry_count": len(app_state.unmapped_entries),
         "unknown_pgn_count": len(app_state.unknown_pgns),
         "can_listeners_status": "likely_active" if can_listeners_active else "unknown_or_inactive",
@@ -391,7 +394,7 @@ async def websocket_status_endpoint(websocket: WebSocket) -> None:
             config_status = await config_service.get_config_status()
 
             # Basic check for CAN listeners (simple proxy: if entities exist, listeners likely ran)
-            can_listeners_active = len(app_state.state) > 0
+            can_listeners_active = len(app_state.entity_manager.get_entity_ids()) > 0
 
             application_status = {
                 "status": "ok",
@@ -399,8 +402,8 @@ async def websocket_status_endpoint(websocket: WebSocket) -> None:
                 "rvc_spec_file_path": config_status.get("spec_path"),
                 "device_mapping_file_loaded": config_status["mapping_loaded"],
                 "device_mapping_file_path": config_status.get("mapping_path"),
-                "known_entity_count": len(app_state.entity_id_lookup),
-                "active_entity_state_count": len(app_state.state),
+                "known_entity_count": len(app_state.entity_manager.get_entity_ids()),
+                "active_entity_state_count": len(app_state.entity_manager.get_entity_ids()),
                 "unmapped_entry_count": len(app_state.unmapped_entries),
                 "unknown_pgn_count": len(app_state.unknown_pgns),
                 "can_listeners_status": "likely_active"

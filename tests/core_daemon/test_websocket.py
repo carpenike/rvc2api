@@ -19,11 +19,10 @@ import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import FastAPI, WebSocket
-from fastapi.testclient import TestClient
-
 from core_daemon import websocket
 from core_daemon.websocket import WebSocketLogHandler, broadcast_to_clients
+from fastapi import FastAPI, WebSocket
+from fastapi.testclient import TestClient
 
 # Import metrics and clear them if they were to be used
 # from core_daemon.metrics import WS_CLIENTS, WS_MESSAGES

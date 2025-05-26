@@ -10,8 +10,6 @@ This module verifies the correct behavior of various data models, including:
 """
 
 import pytest
-from pydantic import ValidationError
-
 from core_daemon.models import (
     AllCANStats,
     BulkLightControlResponse,
@@ -23,6 +21,7 @@ from core_daemon.models import (
     UnknownPGNEntry,
     UnmappedEntryModel,
 )
+from pydantic import ValidationError
 
 
 def test_entity_model_success():

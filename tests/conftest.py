@@ -5,7 +5,7 @@ from httpx import AsyncClient
 # Assuming 'app' is the FastAPI instance from your main application module
 # and 'app_state' and 'can_manager' are objects accessible from that module's scope
 # or are attributes of the 'app' instance itself.
-from core_daemon.main import app
+from backend.main import app
 
 
 @pytest.fixture(scope="session")
@@ -76,7 +76,7 @@ def reset_app_state_globals():
     Automatically reset all global state variables in app_state before each test.
     Ensures test isolation for all tests using app_state.
     """
-    import core_daemon.app_state as app_state
+    import backend.core.state as app_state
 
     app_state.state = {}
     app_state.history = {}

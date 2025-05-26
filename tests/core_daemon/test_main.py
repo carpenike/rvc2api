@@ -247,9 +247,8 @@ def test_validation_exception_handler(
     It verifies that when a response fails Pydantic validation, the handler
     catches the exception and returns a 500 status code with an appropriate error message.
     """
-    from pydantic import BaseModel
-
     from core_daemon.main import app  # app is still needed here to add a route
+    from pydantic import BaseModel
 
     # Define a dummy route that can cause a ResponseValidationError
     # This is tricky because ResponseValidationError is usually raised by FastAPI internally

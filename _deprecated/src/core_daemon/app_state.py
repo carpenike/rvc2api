@@ -14,12 +14,12 @@ from collections.abc import Callable
 from typing import Any
 
 from fastapi import WebSocket  # Added WebSocket for type hinting
+from rvc_decoder.decode import load_config_data  # Changed from rvc_load_and_process_device_mapping
 
 # Import metrics that are directly related to the state managed here
 from core_daemon.config import CONTROLLER_SOURCE_ADDR
 from core_daemon.metrics import ENTITY_COUNT, HISTORY_SIZE_GAUGE
 from core_daemon.models import UnknownPGNEntry, UnmappedEntryModel
-from rvc_decoder.decode import load_config_data  # Changed from rvc_load_and_process_device_mapping
 
 # To avoid circular imports, initialize this to None. Will be set in main.py
 broadcast_can_sniffer_group = None  # Will be set by core_daemon.main at runtime

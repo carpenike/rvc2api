@@ -9,12 +9,11 @@ This module verifies that the `prometheus_http_middleware` correctly:
 """
 
 import pytest
+from core_daemon.metrics import HTTP_LATENCY, HTTP_REQUESTS
+from core_daemon.middleware import prometheus_http_middleware
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
-
-from core_daemon.metrics import HTTP_LATENCY, HTTP_REQUESTS
-from core_daemon.middleware import prometheus_http_middleware
 
 
 # Reset metrics before each test to ensure isolation

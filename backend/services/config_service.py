@@ -47,8 +47,8 @@ class ConfigService:
 
         summary = {
             "entities": {
-                "total_configured": len(self.app_state.entity_id_lookup),
-                "light_entities": len(self.app_state.light_entity_ids),
+                "total_configured": len(self.app_state.entity_manager.get_entity_ids()),
+                "light_entities": len(self.app_state.entity_manager.get_light_entity_ids()),
                 "device_types": self._get_unique_device_types(),
                 "areas": self._get_unique_areas(),
             },
@@ -119,23 +119,27 @@ class ConfigService:
             Entity configuration data
         """
         if entity_id:
-            if entity_id not in self.app_state.entity_id_lookup:
+            entity = self.app_state.entity_manager.get_entity(entity_id)
+            if not entity:
                 raise ValueError(f"Entity '{entity_id}' not found in configuration")
             return {
                 "entity_id": entity_id,
-                "configuration": self.app_state.entity_id_lookup[entity_id],
-                "is_light": entity_id in self.app_state.light_command_info,
-                "light_info": self.app_state.light_command_info.get(entity_id),
+                "configuration": entity.config,
+                "is_light": entity.config.get("device_type") == "light",
+                "light_info": entity.config
+                if entity.config.get("device_type") == "light"
+                else None,
             }
         else:
             # Return summary of all entities
             entities = {}
-            for eid, config in self.app_state.entity_id_lookup.items():
+            for eid, entity in self.app_state.entity_manager.get_all_entities().items():
+                config = entity.config
                 entities[eid] = {
                     "device_type": config.get("device_type"),
                     "suggested_area": config.get("suggested_area"),
                     "capabilities": config.get("capabilities", []),
-                    "is_light": eid in self.app_state.light_command_info,
+                    "is_light": config.get("device_type") == "light",
                 }
             return {"entities": entities}
 
@@ -173,25 +177,28 @@ class ConfigService:
         warnings = []
 
         # Check if basic configuration is present
-        if not self.app_state.entity_id_lookup:
+        if not self.app_state.entity_manager.get_entity_ids():
             issues.append("No entities configured")
 
-        if not self.app_state.light_command_info:
+        light_entities = self.app_state.entity_manager.filter_entities(device_type="light")
+        if not light_entities:
             warnings.append("No controllable lights configured")
 
         # Check for entities without required fields
-        for entity_id, config in self.app_state.entity_id_lookup.items():
+        for entity_id, entity in self.app_state.entity_manager.get_all_entities().items():
+            config = entity.config
             if not config.get("device_type"):
                 warnings.append(f"Entity '{entity_id}' missing device_type")
             if not config.get("suggested_area"):
                 warnings.append(f"Entity '{entity_id}' missing suggested_area")
 
         # Check light configurations
-        for light_id, light_info in self.app_state.light_command_info.items():
-            if not light_info.get("dgn"):
-                issues.append(f"Light '{light_id}' missing DGN")
-            if not light_info.get("interface"):
-                issues.append(f"Light '{light_id}' missing interface")
+        for light_id, light_entity in light_entities.items():
+            light_config = light_entity.config
+            if not light_config.get("command_dgn"):
+                issues.append(f"Light '{light_id}' missing command DGN")
+            if not light_config.get("instance"):
+                issues.append(f"Light '{light_id}' missing instance")
 
         # Check decoder configuration
         decoder_map = getattr(self.app_state, "decoder_map", {})
@@ -205,8 +212,8 @@ class ConfigService:
             "summary": {
                 "total_issues": len(issues),
                 "total_warnings": len(warnings),
-                "entities_configured": len(self.app_state.entity_id_lookup),
-                "lights_configured": len(self.app_state.light_command_info),
+                "entities_configured": len(self.app_state.entity_manager.get_entity_ids()),
+                "lights_configured": len(self.app_state.entity_manager.get_light_entity_ids()),
             },
         }
 
@@ -285,8 +292,8 @@ class ConfigService:
     def _get_unique_device_types(self) -> list[str]:
         """Get list of unique device types from entity configuration."""
         device_types = set()
-        for config in self.app_state.entity_id_lookup.values():
-            device_type = config.get("device_type")
+        for entity in self.app_state.entity_manager.get_all_entities().values():
+            device_type = entity.config.get("device_type")
             if device_type:
                 device_types.add(device_type)
         return sorted(device_types)
@@ -294,8 +301,8 @@ class ConfigService:
     def _get_unique_areas(self) -> list[str]:
         """Get list of unique areas from entity configuration."""
         areas = set()
-        for config in self.app_state.entity_id_lookup.values():
-            area = config.get("suggested_area")
+        for entity in self.app_state.entity_manager.get_all_entities().values():
+            area = entity.config.get("suggested_area")
             if area:
                 areas.add(area)
         return sorted(areas)
@@ -303,8 +310,9 @@ class ConfigService:
     def _get_configured_interfaces(self) -> list[str]:
         """Get list of configured CAN interfaces from light command info."""
         interfaces = set()
-        for light_info in self.app_state.light_command_info.values():
-            interface = light_info.get("interface")
+        light_entities = self.app_state.entity_manager.filter_entities(device_type="light")
+        for light_entity in light_entities.values():
+            interface = light_entity.config.get("interface")
             if interface:
                 interfaces.add(interface)
         return sorted(interfaces)

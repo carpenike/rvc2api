@@ -19,7 +19,6 @@ from can.exceptions import CanInterfaceNotImplementedError
 
 from backend.core.metrics import get_can_tx_queue_length
 from backend.core.state import AppState
-from backend.integrations.rvc import decode_payload
 
 logger = logging.getLogger(__name__)
 
@@ -76,16 +75,12 @@ async def can_writer(app_state: AppState) -> None:
                 )
                 # --- CAN Sniffer Logging (TX, ALL messages) ---
                 now = time.time()
-                entry = app_state.decoder_map.get(msg.arbitration_id)
+                # Note: Decoder functionality moved to RVC integration feature
+                # For now, we'll log without decoding to maintain functionality
+                entry = None
                 instance = None
                 decoded = None
                 raw = None
-                try:
-                    if entry:
-                        decoded, raw = decode_payload(entry, msg.data)
-                        instance = raw.get("instance") if raw else None
-                except Exception:
-                    pass
                 source_addr = msg.arbitration_id & 0xFF
                 origin = (
                     "self" if source_addr == app_state.get_controller_source_addr() else "other"

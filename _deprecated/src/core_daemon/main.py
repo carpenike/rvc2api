@@ -34,6 +34,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from rvc_decoder import decode_payload, load_config_data
 
 # Import application state variables and initialization function
 from core_daemon import app_state  # Import the module itself
@@ -70,7 +71,6 @@ from core_daemon.github_update_checker import update_checker
 # Import the middleware
 from core_daemon.middleware import configure_cors, prometheus_http_middleware
 from core_daemon.websocket import WebSocketLogHandler
-from rvc_decoder import decode_payload, load_config_data
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logger = configure_logger()

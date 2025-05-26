@@ -21,6 +21,9 @@ from typing import Any
 
 import can
 
+# Imports from rvc_decoder
+from rvc_decoder import decode_payload  # Assuming this is accessible
+
 # Imports from app_state
 from core_daemon.app_state import (
     add_can_sniffer_entry,
@@ -56,9 +59,6 @@ from core_daemon.models import (
 
 # Imports from websocket
 from core_daemon.websocket import broadcast_to_clients
-
-# Imports from rvc_decoder
-from rvc_decoder import decode_payload  # Assuming this is accessible
 
 logger = logging.getLogger(__name__)
 

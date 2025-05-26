@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 import can  # Import the 'can' module itself
 import pytest
 from can.exceptions import CanError, CanInterfaceNotImplementedError
-
 from core_daemon import can_manager
 
 

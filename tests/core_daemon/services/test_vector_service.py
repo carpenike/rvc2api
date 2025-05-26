@@ -9,7 +9,6 @@ import os
 from unittest import mock
 
 import pytest
-
 from core_daemon.services.vector_service import (
     DEFAULT_EMBEDDING_MODEL,
     VectorService,

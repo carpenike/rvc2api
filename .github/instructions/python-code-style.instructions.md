@@ -46,7 +46,7 @@ from fastapi import APIRouter, Depends
 
 # Local imports
 from src.common.models import Entity
-from src.core_daemon.config import Settings
+from backend.core.config import Settings
 ```
 
 ## API Documentation

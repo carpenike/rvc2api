@@ -9,9 +9,10 @@ It is a core feature of the backend, supporting initialization, updates, and acc
 import asyncio
 import contextlib
 import logging
-import time
-from collections import deque
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from backend.models.common import CoachInfo
 
 from backend.core.entity_manager import EntityManager
 from backend.services.feature_base import Feature
@@ -51,14 +52,16 @@ class AppState(Feature):
         # Entity manager for unified entity state management
         self.entity_manager = EntityManager()
 
-        # Maintain legacy state dictionaries for backward compatibility
-        self.state: dict[str, dict[str, Any]] = {}
-        self.history_duration: int = 24 * 3600  # seconds
+        # Configuration and mapping data
+        self.raw_device_mapping: dict[str, Any] = {}
+        self.pgn_hex_to_name_map: dict[str, str] = {}
+        self.coach_info: CoachInfo | None = None
         self.max_history_length: int = 1000
-        self.history: dict[str, deque[dict[str, Any]]] = {}
+        self.history_duration: int = 24 * 3600  # 24 hours in seconds
+
+        # Non-entity state (these are not duplicated in EntityManager)
         self.unmapped_entries: dict[str, Any] = {}
         self.unknown_pgns: dict[str, Any] = {}
-        self.last_known_brightness_levels: dict[str, int] = {}
         self.config_data: dict[str, Any] = config or {}
         self.background_tasks: set[Any] = set()
         self.pending_commands: list[Any] = []
@@ -67,15 +70,11 @@ class AppState(Feature):
         self.can_sniffer_grouped: list[Any] = []
         self.last_seen_by_source_addr: dict[Any, Any] = {}
         self.can_command_sniffer_log: list[Any] = []
-        self.entity_id_lookup: dict[Any, Any] = {}
-        self.light_command_info: dict[Any, Any] = {}
-        self.device_lookup: dict[Any, Any] = {}
-        self.status_lookup: dict[Any, Any] = {}
 
     def __repr__(self) -> str:
         return (
-            f"<AppState(state_keys={list(self.state.keys())}, "
-            f"history_keys={list(self.history.keys())}, "
+            f"<AppState(entities={len(self.entity_manager.get_entity_ids())}, "
+            f"light_entities={len(self.entity_manager.get_light_entity_ids())}, "
             f"unmapped_entries={len(self.unmapped_entries)}, "
             f"unknown_pgns={len(self.unknown_pgns)})>"
         )
@@ -219,179 +218,46 @@ class AppState(Feature):
         """Returns the current CAN command/control sniffer log."""
         return list(self.can_command_sniffer_log)
 
-    def initialize_app_from_config(self, config_data_tuple, decode_payload_function) -> None:
-        """
-        Initializes all configuration-derived application state.
-        """
-        (
-            decoder_map_val,
-            raw_device_mapping_val,
-            device_lookup_val,
-            status_lookup_val,
-            light_entity_ids_set_val,
-            entity_id_lookup_val,
-            light_command_info_val,
-            pgn_hex_to_name_map_val,
-            dgn_pairs_val,
-            coach_info_val,
-        ) = config_data_tuple
-
-        # Store in legacy dictionaries for backward compatibility
-        self.entity_id_lookup.clear()
-        self.entity_id_lookup.update(entity_id_lookup_val)
-
-        self.light_command_info.clear()
-        self.light_command_info.update(light_command_info_val)
-
-        self.device_lookup.clear()
-        self.device_lookup.update(device_lookup_val)
-
-        self.status_lookup.clear()
-        self.status_lookup.update(status_lookup_val)
-
-        self.decoder_map = decoder_map_val
-        self.raw_device_mapping = raw_device_mapping_val
-        self.pgn_hex_to_name_map = pgn_hex_to_name_map_val
-        self.coach_info = coach_info_val
-
-        self.light_entity_ids = sorted(light_entity_ids_set_val)
-
-        if dgn_pairs_val:
-            self.known_command_status_pairs.clear()
-            for cmd_dgn, status_dgn in dgn_pairs_val.items():
-                self.known_command_status_pairs[cmd_dgn.upper()] = status_dgn.upper()
-
-        logger.info("Application state populated from configuration data.")
-
-        # Update the entity manager with loaded entities
-        self.entity_manager.bulk_load_entities(self.entity_id_lookup)
-
-        # Initialize history deques for backward compatibility
-        self.initialize_history_deques()
-
-        # Initialize light states in both new and legacy systems
-        self.entity_manager.preseed_light_states(decode_payload_function, self.device_lookup)
-        self.preseed_light_states(decode_payload_function)
-
-        logger.info("Global app state dictionaries populated.")
-
-        # Sync state dictionary from entity manager to ensure API endpoints work
-        self._sync_state_from_entity_manager()
-
     def get_last_known_brightness(self, entity_id) -> int:
         """
         Retrieves the last known brightness for a given light entity.
         """
-        return self.last_known_brightness_levels.get(entity_id, 100)
+        entity = self.entity_manager.get_entity(entity_id)
+        if entity and entity.last_known_brightness is not None:
+            return entity.last_known_brightness
+        return 100  # Default brightness
 
     def set_last_known_brightness(self, entity_id, brightness) -> None:
         """
         Sets the last known brightness for a given light entity.
         """
-        self.last_known_brightness_levels[entity_id] = brightness
-
-    def initialize_history_deques(self) -> None:
-        """Initializes the history dictionary with empty deques for each entity ID."""
-        for eid in self.entity_id_lookup:
-            if eid not in self.history:
-                self.history[eid] = deque(maxlen=self.max_history_length)
-        logger.info("History deques initialized for all entities.")
+        entity = self.entity_manager.get_entity(entity_id)
+        if entity:
+            entity.last_known_brightness = brightness
 
     def update_entity_state_and_history(self, entity_id, payload_to_store) -> None:
         """
-        Updates the state and history for a given entity.
-
-        This method updates both the legacy state dictionaries and the new EntityManager.
+        Updates the state and history for a given entity using the EntityManager.
         """
-        # Update the legacy state dictionary
-        self.state[entity_id] = payload_to_store
-
-        # Update history in legacy system
-        if entity_id in self.history:
-            history_deque = self.history[entity_id]
-            history_deque.append(payload_to_store)
-            current_time = payload_to_store.get("timestamp", time.time())
-            cutoff = current_time - self.history_duration
-            while history_deque and history_deque[0]["timestamp"] < cutoff:
-                history_deque.popleft()
-        else:
-            self.history[entity_id] = deque([payload_to_store], maxlen=self.max_history_length)
-            logger.warning(f"History deque not found for {entity_id}, created new one.")
-
-        # Update the entity in the EntityManager
+        # Update the entity in the EntityManager (this handles both state and history)
         entity = self.entity_manager.get_entity(entity_id)
         if entity:
             entity.update_state(payload_to_store)
         else:
-            # If entity doesn't exist in the EntityManager but exists in legacy system,
-            # create it in the EntityManager to ensure consistency
-            if entity_id in self.entity_id_lookup:
-                config = self.entity_id_lookup[entity_id]
-                entity = self.entity_manager.register_entity(entity_id, config)
-                entity.update_state(payload_to_store)
+            # If entity doesn't exist in the EntityManager, try to register it
+            # This can happen during runtime when new entities are discovered
+            from backend.models.entity_model import EntityConfig
 
-    def preseed_light_states(self, decode_payload_func) -> None:
-        """
-        Initializes the state and history for all known light entities to an "off" state.
-        """
-        now = time.time()
-        logger.info(f"Pre-seeding states for {len(self.light_entity_ids)} light entities.")
-        for eid in self.light_entity_ids:
-            info = self.light_command_info.get(eid)
-            entity_config = self.entity_id_lookup.get(eid)
-
-            if not info or not entity_config:
-                logger.warning(
-                    f"Pre-seeding: Missing info or entity_config for light entity ID: {eid}"
-                )
-                continue
-
-            dgn_for_status_hex_str = None
-            raw_status_dgn_from_config = entity_config.get("status_dgn")
-
-            if raw_status_dgn_from_config:
-                dgn_for_status_hex_str = str(raw_status_dgn_from_config).upper().replace("0X", "")
-            else:
-                dgn_for_status_hex_str = format(info["dgn"], "X").upper()
-
-            logger.debug(
-                f"Pre-seeding {eid}: Using DGN {dgn_for_status_hex_str} for initial status."
+            # Create a minimal config from the payload
+            config = EntityConfig(
+                device_type=payload_to_store.get("device_type", "unknown"),
+                suggested_area=payload_to_store.get("suggested_area", "Unknown"),
+                friendly_name=payload_to_store.get("friendly_name"),
+                capabilities=payload_to_store.get("capabilities", []),
+                groups=payload_to_store.get("groups", []),
             )
-
-            spec_entry = None
-            for entry_val in self.decoder_map.values():
-                if entry_val.get("dgn_hex", "").upper().replace("0X", "") == dgn_for_status_hex_str:
-                    spec_entry = entry_val
-                    break
-
-            if not spec_entry:
-                logger.warning(
-                    f"Pre-seeding: No spec entry found for DGN {dgn_for_status_hex_str} (entity: {eid})"
-                )
-                continue
-
-            data_length = spec_entry.get("data_length", 8)
-            initial_can_payload = bytes([0] * data_length)
-
-            decoded, raw = decode_payload_func(spec_entry, initial_can_payload)
-
-            brightness = raw.get("operating_status", 0)
-            human_state = "on" if brightness > 0 else "off"
-
-            payload = {
-                "entity_id": eid,
-                "value": decoded,
-                "raw": raw,
-                "state": human_state,
-                "timestamp": now,
-                "suggested_area": entity_config.get("suggested_area", "Unknown"),
-                "device_type": entity_config.get("device_type", "light"),
-                "capabilities": entity_config.get("capabilities", []),
-                "friendly_name": entity_config.get("friendly_name"),
-                "groups": entity_config.get("groups", []),
-            }
-            self.update_entity_state_and_history(eid, payload)
-        logger.info("Finished pre-seeding light states.")
+            entity = self.entity_manager.register_entity(entity_id, config)
+            entity.update_state(payload_to_store)
 
     def populate_app_state(
         self, rvc_spec_path=None, device_mapping_path=None, load_config_func=None
@@ -404,98 +270,64 @@ class AppState(Feature):
         )
         logger.info("populate_app_state: Starting entity/config loading...")
         if load_config_func is None:
-            from rvc_decoder.decode import load_config_data
+            from backend.integrations.rvc.decode import load_config_data
 
             load_config_func = load_config_data
+
         logger.info(f"populate_app_state: Using load_config_func={load_config_func}")
-        self.entity_id_lookup.clear()
-        self.device_lookup.clear()
-        self.status_lookup.clear()
-        self.light_command_info.clear()
-        self.state.clear()
-        self.history.clear()
+
+        # Clear previous state
         self.unknown_pgns.clear()
         self.unmapped_entries.clear()
-        self.last_known_brightness_levels.clear()
-        logger.info("populate_app_state: Cleared all in-memory state dicts.")
+        logger.info("populate_app_state: Cleared in-memory state.")
+
         try:
             processed_data_tuple = load_config_func(rvc_spec_path, device_mapping_path)
         except Exception as e:
             logger.error(f"populate_app_state: load_config_func failed: {e}")
             raise
+
         (
-            _decoder_map,
-            _device_mapping_yaml,
-            loaded_device_lookup,
-            loaded_status_lookup,
-            _light_entity_ids,
-            loaded_entity_id_lookup,
-            loaded_light_command_info,
-            _pgn_hex_to_name_map,
-            _dgn_pairs,
-            _coach_info,
+            decoder_map_val,
+            raw_device_mapping_val,
+            device_lookup_val,
+            status_lookup_val,
+            light_entity_ids_set_val,
+            entity_id_lookup_val,
+            light_command_info_val,
+            pgn_hex_to_name_map_val,
+            dgn_pairs_val,
+            coach_info_val,
         ) = processed_data_tuple
-        logger.info(
-            f"populate_app_state: loaded_entity_id_lookup has {len(loaded_entity_id_lookup)} entries."
-        )
-        logger.info(
-            f"populate_app_state: loaded_light_command_info has {len(loaded_light_command_info)} entries."
-        )
-        self.entity_id_lookup.update(loaded_entity_id_lookup)
-        self.device_lookup.update(loaded_device_lookup)
-        self.status_lookup.update(loaded_status_lookup)
-        self.light_command_info.update(loaded_light_command_info)
-        logger.info(
-            f"populate_app_state: After update, self.entity_id_lookup has {len(self.entity_id_lookup)} entries."
-        )
-        logger.info(
-            f"populate_app_state: After update, self.light_command_info has {len(self.light_command_info)} entries."
-        )
-        for eid in self.entity_id_lookup:
-            if eid not in self.history:
-                self.history[eid] = deque(maxlen=self.max_history_length)
-        logger.info(
-            f"populate_app_state: History deques initialized for {len(self.history)} entities."
-        )
-
-        # Pre-seed initial state for all entities to make them available via API
-        now = time.time()
-        for eid, entity_config in self.entity_id_lookup.items():
-            # Initialize default payload
-            payload = {
-                "entity_id": eid,
-                "value": {"operating_status": "0"},
-                "raw": {"operating_status": 0},
-                "state": "off",
-                "timestamp": now,
-                "suggested_area": entity_config.get("suggested_area", "Unknown"),
-                "device_type": entity_config.get("device_type", "unknown"),
-                "capabilities": entity_config.get("capabilities", []),
-                "friendly_name": entity_config.get("friendly_name"),
-                "groups": entity_config.get("groups", []),
-            }
-
-            # Add to state and history
-            self.update_entity_state_and_history(eid, payload)
-
-            # For lights, ensure last_known_brightness is set
-            if (
-                entity_config.get("device_type") == "light"
-                and eid not in self.last_known_brightness_levels
-            ):
-                self.last_known_brightness_levels[eid] = 100  # Default to 100% when turned on
 
         logger.info(
-            f"populate_app_state: Pre-seeded {len(self.entity_id_lookup)} entities into state dictionary."
-        )
-
-        # Now run the full initialize_app_from_config for proper light state setup
-        self.initialize_app_from_config(
-            processed_data_tuple, lambda *args: ({"operating_status": "0"}, {"operating_status": 0})
+            f"populate_app_state: loaded_entity_id_lookup has {len(entity_id_lookup_val)} entries."
         )
         logger.info(
-            f"populate_app_state: Completed initialize_app_from_config. self.state has {len(self.state)} entities."
+            f"populate_app_state: loaded_light_command_info has {len(light_command_info_val)} entries."
         )
+
+        # Store configuration data
+        self.raw_device_mapping = raw_device_mapping_val
+        self.pgn_hex_to_name_map = pgn_hex_to_name_map_val
+        self.coach_info = coach_info_val
+
+        if dgn_pairs_val:
+            self.known_command_status_pairs.clear()
+            for cmd_dgn, status_dgn in dgn_pairs_val.items():
+                self.known_command_status_pairs[cmd_dgn.upper()] = status_dgn.upper()
+
+        logger.info("Application state populated from configuration data.")
+
+        # Update the entity manager with loaded entities
+        self.entity_manager.bulk_load_entities(entity_id_lookup_val)
+
+        # Initialize light states
+        from rvc_decoder.decode import decode_payload
+
+        self.entity_manager.preseed_light_states(decode_payload, device_lookup_val)
+
+        logger.info("Global app state dictionaries populated.")
 
     def notify_network_map_ws(self) -> None:
         """Notifies WebSocket clients about network map updates."""
@@ -507,21 +339,6 @@ class AppState(Feature):
     def get_controller_source_addr(self) -> int:
         """Returns the controller's source address."""
         return self.controller_source_addr
-
-    def _sync_state_from_entity_manager(self) -> None:
-        """
-        Synchronize the legacy state dictionary from the entity manager.
-
-        This ensures backward compatibility with code that uses the state dictionary directly.
-        """
-        # Get the API response format from entity manager
-        entity_data = self.entity_manager.to_api_response()
-
-        # Update state dictionary with this data
-        self.state.clear()
-        self.state.update(entity_data)
-
-        logger.debug(f"Synced {len(entity_data)} entities from EntityManager to state dictionary")
 
 
 app_state = None
@@ -549,14 +366,17 @@ def initialize_app_state(manager, config) -> AppState:
 def get_state() -> dict:
     """Get the current entity state dictionary."""
     if app_state:
-        return app_state.state
+        return app_state.entity_manager.to_api_response()
     return {}
 
 
 def get_history() -> dict:
     """Get the entity history dictionary."""
     if app_state:
-        return app_state.history
+        history_dict = {}
+        for entity_id, entity in app_state.entity_manager.get_all_entities().items():
+            history_dict[entity_id] = [state.model_dump() for state in entity.get_history()]
+        return history_dict
     return {}
 
 
@@ -564,8 +384,10 @@ def get_entity_by_id(entity_id) -> dict | None:
     """
     Get an entity by its ID.
     """
-    if app_state and entity_id in app_state.state:
-        return app_state.state[entity_id]
+    if app_state:
+        entity = app_state.entity_manager.get_entity(entity_id)
+        if entity:
+            return entity.to_dict()
     return None
 
 
@@ -573,10 +395,12 @@ def get_entity_history(entity_id, count=None) -> list:
     """
     Get historical data for an entity.
     """
-    if not app_state or entity_id not in app_state.history:
+    if not app_state:
         return []
 
-    history_data = list(app_state.history[entity_id])
-    if count is not None:
-        return history_data[-count:]
+    entity = app_state.entity_manager.get_entity(entity_id)
+    if not entity:
+        return []
+
+    history_data = [state.model_dump() for state in entity.get_history(count=count)]
     return history_data
