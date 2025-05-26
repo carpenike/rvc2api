@@ -26,6 +26,63 @@ from backend.models.common import CoachInfo
 logger = logging.getLogger(__name__)  # Added named logger
 
 
+# Global storage for missing DGNs - can be accessed for monitoring and debugging
+_missing_dgns_storage: dict[int, dict] = {}
+
+
+def get_missing_dgns() -> dict[int, dict]:
+    """
+    Get the current storage of missing DGNs that were encountered during decoding.
+
+    Returns:
+        Dictionary mapping DGN IDs to metadata about when/how they were encountered
+    """
+    return _missing_dgns_storage.copy()
+
+
+def clear_missing_dgns() -> None:
+    """Clear the missing DGNs storage."""
+    global _missing_dgns_storage
+    _missing_dgns_storage.clear()
+
+
+def record_missing_dgn(dgn_id: int, can_id: int | None = None, context: str | None = None) -> None:
+    """
+    Record a missing DGN for future processing.
+
+    Args:
+        dgn_id: The DGN ID that was not found in the specification
+        can_id: Optional CAN ID where this DGN was encountered
+        context: Optional context string describing where/how this was encountered
+    """
+    if dgn_id not in _missing_dgns_storage:
+        _missing_dgns_storage[dgn_id] = {
+            "dgn_id": dgn_id,
+            "dgn_hex": f"{dgn_id:X}",
+            "first_seen": None,
+            "encounter_count": 0,
+            "can_ids": set(),
+            "contexts": set(),
+        }
+
+    entry = _missing_dgns_storage[dgn_id]
+    entry["encounter_count"] += 1
+
+    if can_id is not None:
+        entry["can_ids"].add(can_id)
+
+    if context:
+        entry["contexts"].add(context)
+
+    # Set first seen timestamp if not already set
+    if entry["first_seen"] is None:
+        import time
+
+        entry["first_seen"] = time.time()
+
+    logger.debug(f"Missing DGN recorded: {dgn_id:X} (count: {entry['encounter_count']})")
+
+
 def _default_paths():
     """
     Determine default paths for the rvc spec and device mapping files bundled as package data.
@@ -55,7 +112,7 @@ def decode_payload(entry: dict, data_bytes: bytes) -> tuple[dict[str, str], dict
       - decoded: human-readable strings (with scale/offset/enum logic)
 
     Returns:
-      tupl`e(decoded: dict[str,str], raw_values: dict[str,int])
+      tuple(decoded: dict[str,str], raw_values: dict[str,int])
     """
     decoded = {}
     raw_values = {}
@@ -81,6 +138,38 @@ def decode_payload(entry: dict, data_bytes: bytes) -> tuple[dict[str, str], dict
         decoded[sig["name"]] = formatted
 
     return decoded, raw_values
+
+
+def decode_payload_safe(
+    dgn_dict: dict[int, dict], dgn_id: int, data_bytes: bytes
+) -> tuple[dict[str, str], dict[str, int], bool]:
+    """
+    Safely decode a payload, handling missing DGNs gracefully.
+
+    Args:
+        dgn_dict: Dictionary mapping DGNs to specification entries
+        dgn_id: The DGN ID to decode
+        data_bytes: The CAN payload bytes
+
+    Returns:
+        tuple containing:
+            - decoded: Dictionary of decoded signal values (empty if DGN missing)
+            - raw_values: Dictionary of raw signal values (empty if DGN missing)
+            - success: Boolean indicating if decoding was successful
+    """
+    if dgn_id not in dgn_dict:
+        record_missing_dgn(dgn_id, context="decode_payload_safe")
+        logger.warning(f"DGN {dgn_id:X} not found in specification - storing for future processing")
+        return {}, {}, False
+
+    try:
+        entry = dgn_dict[dgn_id]
+        decoded, raw_values = decode_payload(entry, data_bytes)
+        return decoded, raw_values, True
+    except Exception as e:
+        logger.error(f"Error decoding DGN {dgn_id:X}: {e}")
+        record_missing_dgn(dgn_id, context=f"decode_error: {e!s}")
+        return {}, {}, False
 
 
 def load_config_data(

@@ -34,9 +34,9 @@ def mock_app_state(mocker):
     """
     Mocks the AppState instance presumably used by the FastAPI application.
 
-    The patch target 'core_daemon.main.app_state' assumes that 'app_state' is
+    The patch target 'backend.core.state.app_state' assumes that 'app_state' is
     an object (e.g., an instance of an AppState class) that is either defined
-    globally in 'core_daemon/main.py' or imported into that namespace in a way
+    globally in 'backend/core/state.py' or imported into that namespace in a way
     that 'app' can access it.
 
     If 'app_state' is an attribute of the app instance (e.g., app.state),
@@ -45,7 +45,7 @@ def mock_app_state(mocker):
     Adjust the target string as necessary based on your application's structure.
     """
     # Example: mock = mocker.patch("core_daemon.main.app_state_instance_name", autospec=True)
-    mock = mocker.patch("core_daemon.main.app_state", autospec=True)
+    mock = mocker.patch("backend.core.state.app_state", autospec=True)
     return mock
 
 
@@ -54,8 +54,8 @@ def mock_can_manager(mocker):
     """
     Mocks the CANManager instance presumably used by the FastAPI application.
 
-    Similar to 'mock_app_state', the patch target 'core_daemon.main.can_manager'
-    assumes 'can_manager' is an object accessible from 'core_daemon/main.py'.
+    Similar to 'mock_app_state', the patch target 'backend.integrations.can.manager'
+    assumes 'can_manager' module is accessible from 'backend/integrations/can/manager.py'.
 
     If 'can_manager' is an attribute of the app instance (e.g., app.can_manager),
     you would use: mocker.patch.object(app, "can_manager", autospec=True)
@@ -63,7 +63,7 @@ def mock_can_manager(mocker):
     Adjust the target string as necessary.
     """
     # Example: mock = mocker.patch("core_daemon.main.can_manager_instance_name", autospec=True)
-    mock = mocker.patch("core_daemon.main.can_manager", autospec=True)
+    mock = mocker.patch("backend.integrations.can.manager", autospec=True)
     return mock
 
 
@@ -101,7 +101,7 @@ def reset_can_manager_state():
     """
     import asyncio
 
-    import core_daemon.can_manager as can_manager
+    import backend.integrations.can.manager as can_manager
 
     can_manager.can_tx_queue = asyncio.Queue()
     can_manager.buses = {}

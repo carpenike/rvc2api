@@ -242,3 +242,48 @@ async def get_metadata(
     """
     _check_rvc_feature_enabled(request)
     return await entity_service.get_metadata()
+
+
+@router.get(
+    "/missing-dgns",
+    response_model=dict[int, dict],
+    summary="List missing DGNs",
+    description="Return DGNs that were encountered during decoding but not found in the specification.",
+    response_description="Dictionary of missing DGN entries with encounter metadata",
+)
+async def get_missing_dgns_endpoint(request: Request) -> dict[int, dict]:
+    """
+    Return DGNs that were encountered during decoding but not found in the specification.
+
+    This endpoint provides visibility into DGNs that are being received on the CAN bus
+    but are not defined in the RV-C specification. This helps identify potential
+    gaps in the protocol implementation or new DGNs that need to be added.
+
+    Returns:
+        Dictionary mapping DGN IDs to metadata including:
+        - dgn_id: The numeric DGN ID
+        - dgn_hex: Hexadecimal representation
+        - first_seen: Timestamp when first encountered
+        - encounter_count: Number of times encountered
+        - can_ids: Set of CAN IDs where this DGN was seen
+        - contexts: Set of contexts where this DGN was encountered
+    """
+    _check_rvc_feature_enabled(request)
+
+    try:
+        # Import here to avoid circular imports and unused import warnings
+        from backend.integrations.rvc.decode import get_missing_dgns
+
+        missing_dgns = get_missing_dgns()
+
+        # Convert sets to lists for JSON serialization
+        for dgn_data in missing_dgns.values():
+            if "can_ids" in dgn_data:
+                dgn_data["can_ids"] = list(dgn_data["can_ids"])
+            if "contexts" in dgn_data:
+                dgn_data["contexts"] = list(dgn_data["contexts"])
+
+        return missing_dgns
+
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"RVC decode module unavailable: {e}") from e
