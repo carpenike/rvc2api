@@ -16,7 +16,7 @@ import logging
 import time
 from typing import Any
 
-from backend.core.entity_feature import get_entity_manager_feature
+from backend.core.entity_manager import EntityManager
 from backend.integrations.can.manager import can_tx_queue
 from backend.integrations.can.message_factory import create_light_can_message
 from backend.models.entity import ControlCommand, ControlEntityResponse
@@ -38,31 +38,32 @@ class EntityService:
     def __init__(
         self,
         websocket_manager: WebSocketManager,
+        entity_manager: EntityManager | None = None,
     ):
         """
         Initialize the entity service.
 
         Args:
             websocket_manager: WebSocket communication manager
+            entity_manager: EntityManager instance (will be retrieved from feature manager if None)
         """
         self.websocket_manager = websocket_manager
-
-        # Lazy-load the EntityManagerFeature to avoid initialization timing issues
-        self._entity_manager_feature: Any = None
-        self._entity_manager: Any = None
+        self._entity_manager = entity_manager
 
     @property
-    def entity_manager_feature(self):
-        """Lazy-load the EntityManagerFeature."""
-        if self._entity_manager_feature is None:
-            self._entity_manager_feature = get_entity_manager_feature()
-        return self._entity_manager_feature
-
-    @property
-    def entity_manager(self):
-        """Lazy-load the EntityManager."""
+    def entity_manager(self) -> EntityManager:
+        """Get the EntityManager instance."""
         if self._entity_manager is None:
-            self._entity_manager = self.entity_manager_feature.get_entity_manager()
+            # Get entity manager from feature manager
+            from backend.services.feature_manager import get_feature_manager
+
+            feature_manager = get_feature_manager()
+            entity_manager_feature = feature_manager.get_feature("entity_manager")
+            if entity_manager_feature is None:
+                raise RuntimeError("EntityManager feature not found in feature manager")
+
+            self._entity_manager = entity_manager_feature.get_entity_manager()
+
         return self._entity_manager
 
     async def list_entities(

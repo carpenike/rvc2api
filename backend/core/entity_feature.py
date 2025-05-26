@@ -97,8 +97,21 @@ class EntityManagerFeature(Feature):
             # Register all entities with the EntityManager
             for entity_id in entity_ids:
                 if entity_id in entity_id_lookup:
-                    config = entity_id_lookup[entity_id]
-                    self.entity_manager.register_entity(entity_id, config)
+                    # Get DGN and instance from entity_id_lookup
+                    dgn_instance_info = entity_id_lookup[entity_id]
+                    dgn_hex = dgn_instance_info["dgn_hex"]
+                    instance = dgn_instance_info["instance"]
+
+                    # Get full entity configuration from entity_map
+                    entity_key = (dgn_hex, instance)
+                    if entity_key in entity_map:
+                        config = entity_map[entity_key]
+                        self.entity_manager.register_entity(entity_id, config)
+                        logger.debug(f"Registered entity: {entity_id} from {dgn_hex}:{instance}")
+                    else:
+                        logger.warning(
+                            f"Entity {entity_id} not found in entity_map for {dgn_hex}:{instance}"
+                        )
 
             logger.info(f"Successfully loaded {len(entity_ids)} entities into EntityManager")
 

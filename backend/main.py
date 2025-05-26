@@ -70,8 +70,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Get initialized features from feature manager
         app_state = feature_manager.get_feature("app_state")
         websocket_manager = feature_manager.get_feature("websocket")
-        if not app_state or not websocket_manager:
-            raise RuntimeError("Required features (app_state, websocket) failed to initialize")
+        entity_manager_feature = feature_manager.get_feature("entity_manager")
+        if not app_state or not websocket_manager or not entity_manager_feature:
+            raise RuntimeError(
+                "Required features (app_state, websocket, entity_manager) failed to initialize"
+            )
 
         # Update logging configuration to include WebSocket handler now that manager is available
         from backend.core.logging_config import update_websocket_logging
@@ -81,7 +84,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Initialize services with correct constructor signatures
         config_service = ConfigService(app_state)
-        entity_service = EntityService(websocket_manager)
+        entity_service = EntityService(
+            websocket_manager, entity_manager_feature.get_entity_manager()
+        )
         can_service = CANService(app_state)
         rvc_service = RVCService(app_state)
         docs_service = DocsService()
