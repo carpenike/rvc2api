@@ -109,6 +109,7 @@ run-in-subdirectory = "^1.0.1"
 pyright = "^1.1.401"
 toml = "^0.10.2"
 deptry = "^0.23.0"
+pytest-cov = "^6.1.1"
 
 [tool.poetry.group.devtools.dependencies]
 pymupdf = "==1.23.26"
