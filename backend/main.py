@@ -6,10 +6,12 @@ This module provides a simplified FastAPI application setup with proper
 initialization order to avoid metrics collisions and circular imports.
 """
 
+import argparse
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -190,7 +192,35 @@ def main():
     This function is used when the backend is run via the project scripts
     defined in pyproject.toml.
     """
-    import uvicorn
+    import os
+
+    parser = argparse.ArgumentParser(description="Start the rvc2api backend server.")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=os.getenv("RVC2API_HOST", "0.0.0.0"),
+        help="Host to bind the server (default: 0.0.0.0 or RVC2API_HOST)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("RVC2API_PORT", 8000)),
+        help="Port to bind the server (default: 8000 or RVC2API_PORT)",
+    )
+    parser.add_argument(
+        "--reload",
+        action="store_true"
+        if os.getenv("RVC2API_RELOAD", "false").lower() == "true"
+        else "store_false",
+        help="Enable auto-reload (development only, or RVC2API_RELOAD=true)",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=os.getenv("LOG_LEVEL", "info"),
+        help="Uvicorn log level (default: LOG_LEVEL env var or 'info')",
+    )
+    args = parser.parse_args()
 
     # Set up early logging before anything else
     setup_early_logging()
@@ -203,8 +233,14 @@ def main():
 
     logger.info("Starting rvc2api backend server in standalone mode")
 
-    # Run the application
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    # Run the application using the top-level uvicorn import
+    uvicorn.run(
+        "backend.main:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        log_level=args.log_level,
+    )
 
 
 if __name__ == "__main__":

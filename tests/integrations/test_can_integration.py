@@ -10,37 +10,73 @@ from unittest.mock import Mock
 import pytest
 
 
+@pytest.fixture
+def mock_can_interface():
+    """Mock CAN interface for testing."""
+    mock = Mock()
+    mock.connect = Mock(return_value=True)
+    mock.disconnect = Mock()
+    mock.send_message = Mock(return_value=True)
+    mock.receive_message = Mock(return_value=None)
+    mock.is_connected = Mock(return_value=True)
+    return mock
+
+
 @pytest.mark.integration
 @pytest.mark.can
 class TestCANIntegration:
     """Integration tests for CAN bus operations."""
 
     @pytest.fixture
-    def mock_can_interface(self):
-        """Mock CAN interface for testing."""
-        mock = Mock()  # No spec to avoid undefined CANInterface
-        mock.connect = Mock(return_value=True)
-        mock.disconnect = Mock()
-        mock.send_message = Mock(return_value=True)
-        mock.receive_message = Mock(return_value=None)
-        mock.is_connected = Mock(return_value=True)
-        return mock
-        mock.disconnect = Mock()
-        mock.send_message = Mock(return_value=True)
-        mock.receive_message = Mock(return_value=None)
-        mock.is_connected = Mock(return_value=True)
-        return mock
-
-    @pytest.fixture
     def can_service(self, mock_can_interface):
-        """CAN service with mocked interface."""
-        # Create a mock CAN service since CANService doesn't take interface parameter
-        service = Mock()
-        service.start = Mock()
-        service.is_running = True
-        service.send_message = Mock()
-        service.receive_message = Mock()
-        return service
+        """Minimal fake CAN service with async methods for integration tests."""
+
+        class FakeCANService:
+            def __init__(self, iface):
+                self.iface = iface
+                self.is_running = False
+                self._handlers = []
+
+            async def start(self):
+                self.is_running = True
+                self.iface.connect()
+
+            async def stop(self):
+                self.is_running = False
+                self.iface.disconnect()
+
+            async def send_message(self, msg):
+                return self.iface.send_message(msg)
+
+            async def receive_message(self, *args, **kwargs):
+                return self.iface.receive_message(*args, **kwargs)
+
+            def add_message_handler(self, handler):
+                self._handlers.append(handler)
+
+            async def process_incoming_messages(self):
+                msg = self.iface.receive_message()
+                for handler in self._handlers:
+                    handler(msg)
+
+            async def get_status(self):
+                connected = self.iface.is_connected()
+                if not connected:
+                    return {"connected": False, "error": "Connection lost"}
+                return {"connected": True}
+
+            async def monitor_messages(self, duration=2.0):
+                import time
+
+                start = time.time()
+                while time.time() - start < duration:
+                    msg = self.iface.receive_message()
+                    if msg is None:
+                        break
+                    for handler in self._handlers:
+                        handler(msg)
+
+        return FakeCANService(mock_can_interface)
 
     @pytest.mark.asyncio
     async def test_can_service_initialization(self, can_service, mock_can_interface):
@@ -232,16 +268,39 @@ class TestRVCCANIntegration:
     """Integration tests for RV-C protocol over CAN."""
 
     @pytest.fixture
-    def rvc_can_service(self, mock_can_interface):
-        """RV-C enabled CAN service."""
-        # Create a mock RV-C CAN service
-        service = Mock()
-        service.start = Mock()
-        service.is_running = True
-        service.send_message = Mock()
-        service.receive_message = Mock()
-        service.decode_message = Mock()
-        return service
+    def rvc_can_service(self, request, mock_rvc_decoder):
+        # Use the mock_can_interface fixture from the parent module/class scope
+        mock_can_interface = request.getfixturevalue("mock_can_interface")
+
+        class FakeRVCCANService:
+            def __init__(self, iface, decoder):
+                self.iface = iface
+                self.is_running = False
+                self._mock_rvc_decoder = decoder
+
+            async def start(self):
+                self.is_running = True
+                self.iface.connect()
+
+            async def send_message(self, msg):
+                return self.iface.send_message(msg)
+
+            async def receive_message(self, *args, **kwargs):
+                return self.iface.receive_message(*args, **kwargs)
+
+            async def process_rvc_message(self, msg):
+                mock_rvc_decoder = self._mock_rvc_decoder
+                if hasattr(
+                    mock_rvc_decoder, "is_valid_message"
+                ) and not mock_rvc_decoder.is_valid_message(msg):
+                    return None
+                return mock_rvc_decoder.decode_message(msg)
+
+            async def validate_rvc_message(self, msg):
+                mock_rvc_decoder = self._mock_rvc_decoder
+                return mock_rvc_decoder.is_valid_message(msg)
+
+        return FakeRVCCANService(mock_can_interface, mock_rvc_decoder)
 
     @pytest.mark.asyncio
     async def test_rvc_message_decoding(

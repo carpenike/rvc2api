@@ -47,10 +47,12 @@ class RVCService:
             return
 
         logger.info("Starting RVC Service")
-        self._running = True
 
         # Start background processing task
         self._processing_task = asyncio.create_task(self._process_messages())
+
+        # Only mark as running after task creation succeeds
+        self._running = True
 
         # Initialize message handlers for different DGNs
         self._init_message_handlers()

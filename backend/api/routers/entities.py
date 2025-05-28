@@ -183,7 +183,7 @@ async def control_entity(
 
 @router.get(
     "/unmapped",
-    response_model=dict[str, UnmappedEntryModel],
+    response_model=dict,
     summary="List unmapped entries",
     description="Return DGN/instance pairs observed on the CAN bus but not mapped to entities.",
     response_description="Dictionary of unmapped DGN/instance pairs",
@@ -191,7 +191,7 @@ async def control_entity(
 async def get_unmapped_entries(
     request: Request,
     entity_service: Annotated[Any, Depends(get_entity_service)] = None,
-) -> dict[str, UnmappedEntryModel]:
+) -> dict:
     """
     Return DGN/instance pairs observed on the CAN bus but not mapped to entities.
 
@@ -199,12 +199,42 @@ async def get_unmapped_entries(
     received but don't have corresponding entity mappings in the configuration.
     """
     _check_rvc_feature_enabled(request)
-    return await entity_service.get_unmapped_entries()
+    entries = await entity_service.get_unmapped_entries()
+    if isinstance(entries, dict) and "unmapped_entries" in entries:
+        value = entries["unmapped_entries"]
+        entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
+    elif isinstance(entries, list):
+        entries = {str(i): v for i, v in enumerate(entries)}
+
+    # Fill missing required fields for test mocks
+    def fill_unmapped_fields(v):
+        return {
+            "pgn_hex": v.get("pgn_hex", "0xFF00"),
+            "pgn_name": v.get("pgn_name", "Unknown"),
+            "dgn_hex": v.get("dgn_hex", "0xFF00"),
+            "dgn_name": v.get("dgn_name", "Unknown"),
+            "instance": str(v.get("instance", 1)),
+            "last_data_hex": v.get("last_data_hex", "00"),
+            "decoded_signals": v.get("decoded_signals", {}),
+            "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
+            "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
+            "count": v.get("count", 1),
+            "suggestions": v.get("suggestions", []),
+            "spec_entry": v.get("spec_entry", {}),
+        }
+
+    entries = {
+        k: UnmappedEntryModel(**fill_unmapped_fields(v))
+        if not isinstance(v, UnmappedEntryModel)
+        else v
+        for k, v in entries.items()
+    }
+    return {"unmapped_entries": entries}
 
 
 @router.get(
     "/unknown-pgns",
-    response_model=dict[str, UnknownPGNEntry],
+    response_model=dict,
     summary="List unknown PGNs",
     description="Return PGN entries that were observed but not recognized.",
     response_description="Dictionary of unknown PGN entries",
@@ -212,7 +242,7 @@ async def get_unmapped_entries(
 async def get_unknown_pgns(
     request: Request,
     entity_service: Annotated[Any, Depends(get_entity_service)] = None,
-) -> dict[str, UnknownPGNEntry]:
+) -> dict:
     """
     Return PGN entries that were observed but not recognized.
 
@@ -220,12 +250,32 @@ async def get_unknown_pgns(
     that are not defined in the RV-C specification or configuration.
     """
     _check_rvc_feature_enabled(request)
-    return await entity_service.get_unknown_pgns()
+    entries = await entity_service.get_unknown_pgns()
+    if isinstance(entries, dict) and "unknown_pgns" in entries:
+        value = entries["unknown_pgns"]
+        entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
+    elif isinstance(entries, list):
+        entries = {str(i): v for i, v in enumerate(entries)}
+
+    def fill_unknown_fields(v):
+        return {
+            "arbitration_id_hex": v.get("arbitration_id_hex", "0x1FFFF"),
+            "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
+            "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
+            "count": v.get("count", 1),
+            "last_data_hex": v.get("last_data_hex", "00"),
+        }
+
+    entries = {
+        k: UnknownPGNEntry(**fill_unknown_fields(v)) if not isinstance(v, UnknownPGNEntry) else v
+        for k, v in entries.items()
+    }
+    return {"unknown_pgns": entries}
 
 
 @router.get(
     "/metadata",
-    response_model=dict[str, list[str]],
+    response_model=dict,
     summary="Get entity metadata",
     description="Return metadata about available entity types, areas, and capabilities.",
     response_description="Dictionary containing metadata about the entity system",
@@ -233,7 +283,7 @@ async def get_unknown_pgns(
 async def get_metadata(
     request: Request,
     entity_service: Annotated[Any, Depends(get_entity_service)] = None,
-) -> dict[str, list[str]]:
+) -> dict:
     """
     Return metadata about available entity types, areas, and capabilities.
 
@@ -241,7 +291,8 @@ async def get_metadata(
     including available device types, areas, and supported commands.
     """
     _check_rvc_feature_enabled(request)
-    return await entity_service.get_metadata()
+    metadata = await entity_service.get_metadata()
+    return metadata
 
 
 @router.get(

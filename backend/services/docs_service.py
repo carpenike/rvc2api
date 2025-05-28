@@ -50,6 +50,10 @@ class DocsService:
             # Get the OpenAPI schema from FastAPI
             schema = self.app_instance.openapi()
 
+            # Handle case where openapi() returns None
+            if schema is None:
+                raise RuntimeError("OpenAPI schema generation returned None")
+
             # Add custom metadata if needed
             if "info" in schema:
                 schema["info"]["x-generated-by"] = "rvc2api-backend"
@@ -59,7 +63,7 @@ class DocsService:
 
         except Exception as e:
             logger.error(f"Failed to generate OpenAPI schema: {e}")
-            raise RuntimeError(f"Schema generation failed: {e}") from e
+            raise RuntimeError(f"Failed to generate OpenAPI schema: {e}") from e
 
     async def get_api_info(self) -> dict[str, Any]:
         """

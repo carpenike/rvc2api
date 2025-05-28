@@ -6,8 +6,8 @@ and integrations with proper mocking and isolation.
 """
 
 import asyncio
-from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock, Mock, patch
+from collections.abc import AsyncGenerator, Generator
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -23,15 +23,13 @@ from backend.core.dependencies import (
 from backend.main import app
 
 
-def _setup_test_app_state():
+def _setup_test_app_state() -> None:
     """
     Set up minimal app state for testing.
     This ensures that the app.state has the necessary attributes
     that the dependency functions expect.
     """
     if not hasattr(app.state, "feature_manager"):
-        from unittest.mock import Mock
-
         # Create basic mocks for app state
         app.state.feature_manager = Mock()
         app.state.feature_manager.is_enabled = Mock(return_value=True)
@@ -49,7 +47,7 @@ def _setup_test_app_state():
 
 
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """
     Create an instance of the default event loop for the test session.
     This ensures consistent async behavior across all tests.
@@ -65,7 +63,7 @@ def event_loop():
 
 
 @pytest.fixture(scope="function")
-def client():  # type: ignore[no-untyped-def]
+def client() -> Generator[TestClient, None, None]:
     """
     Synchronous TestClient fixture for FastAPI.
     Use this for standard API endpoint testing where async is not required.
@@ -81,6 +79,7 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
     Asynchronous AsyncClient fixture for FastAPI.
     Use this for testing async endpoints, WebSockets, or when you need
     to await client operations directly in your test.
+    Note: If you encounter issues with this fixture, ensure httpx is up to date (>=0.23).
     """
     _setup_test_app_state()
     async with AsyncClient() as ac:
@@ -93,7 +92,7 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture
-def mock_app_state():
+def mock_app_state() -> Mock:
     """
     Mock for the AppState service with common methods.
     Provides a clean mock that can be customized per test.
@@ -108,7 +107,7 @@ def mock_app_state():
 
 
 @pytest.fixture
-def mock_entity_service():
+def mock_entity_service() -> AsyncMock:
     """
     Mock for the EntityService with common async methods.
     Use this to mock entity business logic operations.
@@ -126,21 +125,20 @@ def mock_entity_service():
 
 
 @pytest.fixture
-def mock_can_service():
+def mock_can_service() -> AsyncMock:
     """
-    Mock for the CANService with common async methods.
-    Use this to mock CAN bus operations.
+    Mock for the CAN service with common async methods.
+    Use this to mock CANbus operations in tests.
     """
     mock = AsyncMock()
-    mock.send_message = AsyncMock(return_value=True)
-    mock.get_status = AsyncMock(return_value={"connected": True})
-    mock.start = AsyncMock()
-    mock.stop = AsyncMock()
+    mock.send_message = AsyncMock()
+    mock.receive_message = AsyncMock(return_value=None)
+    mock.get_status = AsyncMock(return_value={})
     return mock
 
 
 @pytest.fixture
-def mock_config_service():
+def mock_config_service() -> Mock:
     """
     Mock for the ConfigService with common methods.
     Use this to mock configuration operations.
@@ -153,7 +151,7 @@ def mock_config_service():
 
 
 @pytest.fixture
-def mock_feature_manager():
+def mock_feature_manager() -> Mock:
     """
     Mock for the FeatureManager with common methods.
     Use this to mock feature flag operations.
@@ -172,7 +170,7 @@ def mock_feature_manager():
 
 
 @pytest.fixture
-def override_app_state(mock_app_state):
+def override_app_state(mock_app_state: Mock) -> Generator[Mock, None, None]:
     """
     Override the app_state dependency with a mock.
     Use this when testing endpoints that depend on app state.
@@ -183,7 +181,7 @@ def override_app_state(mock_app_state):
 
 
 @pytest.fixture
-def override_entity_service(mock_entity_service):
+def override_entity_service(mock_entity_service: AsyncMock) -> Generator[AsyncMock, None, None]:
     """
     Override the entity_service dependency with a mock.
     Use this when testing endpoints that depend on entity operations.
@@ -194,7 +192,7 @@ def override_entity_service(mock_entity_service):
 
 
 @pytest.fixture
-def override_can_service(mock_can_service):
+def override_can_service(mock_can_service: AsyncMock) -> Generator[AsyncMock, None, None]:
     """
     Override the can_service dependency with a mock.
     Use this when testing endpoints that depend on CAN operations.
@@ -205,7 +203,7 @@ def override_can_service(mock_can_service):
 
 
 @pytest.fixture
-def override_config_service(mock_config_service):
+def override_config_service(mock_config_service: Mock) -> Generator[Mock, None, None]:
     """
     Override the config_service dependency with a mock.
     Use this when testing endpoints that depend on configuration.
@@ -216,7 +214,7 @@ def override_config_service(mock_config_service):
 
 
 @pytest.fixture
-def override_feature_manager(mock_feature_manager):
+def override_feature_manager(mock_feature_manager: Mock) -> Generator[Mock, None, None]:
     """
     Override the feature_manager dependency with a mock.
     Use this when testing endpoints that depend on feature flags.
@@ -229,12 +227,12 @@ def override_feature_manager(mock_feature_manager):
 
 @pytest.fixture
 def override_all_services(
-    mock_app_state,
-    mock_entity_service,
-    mock_can_service,
-    mock_config_service,
-    mock_feature_manager,
-):
+    mock_app_state: Mock,
+    mock_entity_service: AsyncMock,
+    mock_can_service: AsyncMock,
+    mock_config_service: Mock,
+    mock_feature_manager: Mock,
+) -> Generator[dict[str, Mock | AsyncMock], None, None]:
     """
     Override all major service dependencies with mocks.
     Use this for comprehensive endpoint testing.
@@ -264,7 +262,7 @@ def override_all_services(
 
 
 @pytest.fixture
-def sample_entity_data():
+def sample_entity_data() -> dict[str, int | str | dict[str, int]]:
     """
     Sample entity data for testing.
     Returns a dictionary with typical entity properties.
@@ -284,7 +282,7 @@ def sample_entity_data():
 
 
 @pytest.fixture
-def sample_can_message():
+def sample_can_message() -> dict[str, int | list[int] | bool | float]:
     """
     Sample CAN message data for testing.
     Returns a dictionary with typical CAN message properties.
@@ -298,7 +296,7 @@ def sample_can_message():
 
 
 @pytest.fixture
-def sample_config_data():
+def sample_config_data() -> dict[str, str | dict[str, bool | int]]:
     """
     Sample configuration data for testing.
     Returns a dictionary with typical configuration properties.
@@ -323,32 +321,28 @@ def sample_config_data():
 
 
 @pytest.fixture
-def mock_can_bus():
+def mock_can_bus() -> Generator[Mock, None, None]:
     """
     Mock for CAN bus interface operations.
     Use this to mock hardware-level CAN interactions.
     """
-    with patch("backend.integrations.can.interface.CANInterface") as mock:
-        mock_instance = Mock()
-        mock_instance.send.return_value = True
-        mock_instance.receive.return_value = None
-        mock_instance.is_connected.return_value = True
-        mock.return_value = mock_instance
-        yield mock_instance
+    mock_instance = Mock()
+    mock_instance.send.return_value = True
+    mock_instance.receive.return_value = None
+    mock_instance.is_connected.return_value = True
+    yield mock_instance
 
 
 @pytest.fixture
-def mock_rvc_decoder():
+def mock_rvc_decoder() -> Generator[Mock, None, None]:
     """
     Mock for RV-C protocol decoder.
     Use this to mock RV-C message decoding operations.
     """
-    with patch("backend.integrations.rvc.decoder.RVCDecoder") as mock:
-        mock_instance = Mock()
-        mock_instance.decode_message.return_value = {"decoded": True}
-        mock_instance.is_valid_message.return_value = True
-        mock.return_value = mock_instance
-        yield mock_instance
+    mock_instance = Mock()
+    mock_instance.decode_message.return_value = {"decoded": True}
+    mock_instance.is_valid_message.return_value = True
+    yield mock_instance
 
 
 # ================================
@@ -357,7 +351,7 @@ def mock_rvc_decoder():
 
 
 @pytest.fixture
-def websocket_test_client():
+def websocket_test_client() -> Generator[TestClient, None, None]:
     """
     Test client configured for WebSocket testing.
     Use this for testing WebSocket connections and messaging.
@@ -375,7 +369,7 @@ def websocket_test_client():
 
 
 @pytest.fixture(autouse=True)
-def clean_app_state():
+def clean_app_state() -> Generator[None, None, None]:
     """
     Automatically clean up application state after each test.
     Ensures test isolation by preventing state leakage.
@@ -386,7 +380,7 @@ def clean_app_state():
 
 
 @pytest.fixture(autouse=True)
-def reset_dependency_overrides():
+def reset_dependency_overrides() -> Generator[None, None, None]:
     """
     Automatically reset FastAPI dependency overrides after each test.
     Ensures clean dependency injection state.
@@ -396,44 +390,11 @@ def reset_dependency_overrides():
 
 
 # ================================
-# Performance Test Fixtures
-# ================================
-
-
-@pytest.fixture
-def performance_timer():
-    """
-    Simple performance timer for testing response times.
-    Use this to verify that operations complete within expected timeframes.
-    """
-    import time
-
-    class Timer:
-        def __init__(self):
-            self.start_time = None
-            self.end_time = None
-
-        def start(self):
-            self.start_time = time.perf_counter()
-
-        def stop(self):
-            self.end_time = time.perf_counter()
-
-        @property
-        def elapsed(self):
-            if self.start_time is None or self.end_time is None:
-                return None
-            return self.end_time - self.start_time
-
-    return Timer()
-
-
-# ================================
 # Pytest Configuration
 # ================================
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest with custom markers."""
     config.addinivalue_line("markers", "unit: Unit tests")
     config.addinivalue_line("markers", "integration: Integration tests")
@@ -444,7 +405,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "performance: Performance tests")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Automatically mark tests based on their location."""
     for item in items:
         # Add markers based on test file location
