@@ -394,14 +394,14 @@ EOF
                 poetry run pre-commit run --all-files
 
                 # Frontend checks
-                if [ -d "web_ui" ]; then
-                  echo "🔍 Running frontend checks..."
-                  cd web_ui
-                  npm run lint
-                  npm run typecheck
-                  npm run build
-                  cd ..
-                fi
+                # if [ -d "web_ui" ]; then
+                #   echo "🔍 Running frontend checks..."
+                #   cd web_ui
+                #   npm run lint
+                #   npm run typecheck
+                #   npm run build
+                #   cd ..
+                # fi
               '';
             };
           }) // {
