@@ -1,23 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { SideNav } from "./components";
+import { ErrorBoundary, LoadingSpinner } from "./components";
 import { useWebSocket } from "./hooks";
 import "./index.css";
 import Layout from "./layout/Layout";
-import {
-  CanSniffer,
-  Dashboard,
-  DeviceMapping,
-  DocumentationPage,
-  Lights,
-  NetworkMap,
-  RvcSpec,
-  UnknownPgns,
-  UnmappedEntries
-} from "./pages";
-import "./styles/themes.css";
 import { getWebSocketUrl } from "./utils/config";
+
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Lights = lazy(() => import("./pages/Lights"));
+const DeviceMapping = lazy(() => import("./pages/DeviceMapping"));
+const RvcSpec = lazy(() => import("./pages/RvcSpec"));
+const DocumentationPage = lazy(() => import("./pages/DocumentationPage"));
+const UnmappedEntries = lazy(() => import("./pages/UnmappedEntries"));
+const UnknownPgns = lazy(() => import("./pages/UnknownPgns"));
+const CanSniffer = lazy(() => import("./pages/CanSniffer"));
+const NetworkMap = lazy(() => import("./pages/NetworkMap"));
 
 /**
  * Main application component
@@ -36,6 +35,11 @@ function App() {
    * access to the full history of messages
    */
   const [_wsMessages, setWsMessages] = useState<unknown[]>([]);
+
+  /**
+   * Loading state for initial application setup
+   */
+  const [isInitializing, setIsInitializing] = useState(true);
 
   /**
    * Helper function to dispatch custom events for cross-component communication
@@ -110,25 +114,37 @@ function App() {
   }, [messages, wsStatus, dispatchCustomEvent]);
 
   /**
-   * Gets the current view identifier from the route path
-   *
-   * @returns The current view identifier (defaults to 'dashboard' if none found)
+   * Handle initial application setup and loading state
    */
-  const getCurrentView = (): string => {
-    const path = location.pathname.split("/")[1] || "dashboard";
-    return path;
-  };
+  useEffect(() => {
+    // Mark app as initialized once WebSocket connection is established or after timeout
+    const initTimer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 1000); // Short timeout to show initial loading state
+
+    // Initialize immediately if WebSocket is connected
+    if (wsStatus === "open") {
+      setIsInitializing(false);
+      clearTimeout(initTimer);
+    }
+
+    return () => clearTimeout(initTimer);
+  }, [wsStatus]);
 
   return (
-    <Layout wsStatus={wsStatus}>
-      <div className="flex flex-1 min-h-0">
-        {/* Sidebar Navigation */}
-        <div className="z-40">
-          <SideNav currentView={getCurrentView()} wsStatus={wsStatus} />
+    <ErrorBoundary>
+      {isInitializing ? (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <LoadingSpinner label="Initializing application..." />
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+              WebSocket status: {wsStatus}
+            </p>
+          </div>
         </div>
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto min-h-0">
-          <div className="overflow-y-auto h-full">
+      ) : (
+        <Layout wsStatus={wsStatus}>
+          <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/lights" element={<Lights />} />
@@ -141,10 +157,10 @@ function App() {
               <Route path="/networkMap" element={<NetworkMap />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
-          </div>
-        </main>
-      </div>
-    </Layout>
+          </Suspense>
+        </Layout>
+      )}
+    </ErrorBoundary>
   );
 }
 

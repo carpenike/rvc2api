@@ -12,7 +12,7 @@ import { timeAgo } from "../utils/date";
  *
  * @returns The DeviceMapping page component
  */
-export function DeviceMapping() {
+function DeviceMapping() {
   /** List of device mappings from the API */
   const [devices, setDevices] = useState<DeviceMapping[]>([]);
 
@@ -204,3 +204,5 @@ export function DeviceMapping() {
     </main>
   );
 }
+
+export default DeviceMapping;

@@ -1,4 +1,9 @@
-import clsx from "clsx";
+import {
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Card as ShadcnCard
+} from "@/components/ui/card";
 import type { ReactNode } from "react";
 
 /**
@@ -34,24 +39,19 @@ interface CardProps {
  */
 export function Card(props: CardProps) {
   const { title, children, className = "", ariaLabel } = props;
+
   return (
-    <section
-      className={clsx(
-        // Theme-adaptive, semantic tokens
-        "rounded-lg shadow-md border border-rv-border bg-rv-surface text-rv-text p-6",
-        "transition-colors duration-200",
-        className
-      )}
-      aria-label={ariaLabel}
-      role="region"
-      data-testid="card"
-    >
+    <ShadcnCard className={className} aria-label={ariaLabel} data-testid="card">
       {title && (
-        <h2 className="text-lg font-semibold mb-4 text-rv-heading" tabIndex={-1} id={typeof title === "string" ? `card-title-${title.replace(/\s+/g, "-").toLowerCase()}` : undefined}>
-          {title}
-        </h2>
+        <CardHeader>
+          <CardTitle>
+            {typeof title === "string" ? title : title}
+          </CardTitle>
+        </CardHeader>
       )}
-      <div>{children}</div>
-    </section>
+      <CardContent>
+        {children}
+      </CardContent>
+    </ShadcnCard>
   );
 }

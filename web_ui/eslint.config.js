@@ -175,11 +175,30 @@ export default [
     }
   },
 
+  // shadcn/UI components override - suppress React refresh warnings
+  {
+    files: ["**/components/ui/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off"
+    }
+  },
+
   // Node.js environment override for jest.setup.js
   {
     files: ["jest.setup.js"],
     languageOptions: {
       env: { node: true }
+    }
+  },
+
+  // CommonJS configuration files
+  {
+    files: ["jest.config.cjs", "src/__mocks__/fileMock.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      },
+      sourceType: "script"
     }
   },
 

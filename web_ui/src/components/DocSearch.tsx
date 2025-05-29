@@ -1,5 +1,9 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import type { SearchResult } from "../api/docsApi";
 import { searchDocumentation } from "../api/docsApi";
@@ -39,77 +43,82 @@ export function DocSearch({ className = "" }: DocSearchProps) {
   }, []);
 
   return (
-    <section
-      className={clsx(
-        "doc-search rounded-lg border border-rv-border bg-rv-surface text-rv-text p-6 shadow-sm transition-colors duration-200",
-        className
-      )}
+    <Card
+      className={cn("doc-search", className)}
       aria-label="Documentation Search"
       role="search"
       data-testid="doc-search"
     >
-      <h2 className="text-lg font-semibold mb-2 text-rv-heading" id="doc-search-title">
-        RV-C Documentation Search
-      </h2>
-      <div className="mb-4">
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          placeholder="Search the RV-C documentation..."
-          className="w-full px-4 py-2 rounded border border-rv-border bg-rv-surface text-rv-text focus:outline-none focus:ring-2 focus:ring-rv-primary"
-          aria-label="Search query"
-          aria-describedby="doc-search-help"
-        />
-        {query.trim().length > 0 && query.trim().length < 3 && (
-          <p id="doc-search-help" className="text-sm text-rv-muted mt-1">
-            Type at least 3 characters to search
-          </p>
+      <CardHeader>
+        <CardTitle id="doc-search-title">
+          RV-C Documentation Search
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            placeholder="Search the RV-C documentation..."
+            aria-label="Search query"
+            aria-describedby="doc-search-help"
+            className="w-full"
+          />
+          {query.trim().length > 0 && query.trim().length < 3 && (
+            <p id="doc-search-help" className="text-sm text-muted-foreground">
+              Type at least 3 characters to search
+            </p>
+          )}
+        </div>
+
+        {isLoading && (
+          <div className="flex items-center space-x-2 py-4" aria-live="polite">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <span className="text-sm text-muted-foreground">Searching documentation...</span>
+          </div>
         )}
-      </div>
 
-      {isLoading && (
-        <div className="flex justify-center items-center py-4" aria-live="polite">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rv-primary"></div>
-          <span className="ml-2 text-rv-muted">Searching documentation...</span>
-        </div>
-      )}
+        {error && (
+          <Alert variant="destructive" role="alert">
+            <AlertDescription>
+              Error searching documentation. Please try again.
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {error && (
-        <div className="text-rv-error bg-rv-error/10 rounded p-2 mt-2" role="alert">
-          Error searching documentation. Please try again.
-        </div>
-      )}
+        {!isLoading && !error && results.length === 0 && debouncedQuery.trim().length >= 3 && (
+          <div className="text-muted-foreground text-sm py-4" role="status">
+            No results found for "{debouncedQuery}".
+          </div>
+        )}
 
-      {!isLoading && !error && results.length === 0 && debouncedQuery.trim().length >= 3 && (
-        <div className="text-rv-muted mt-2" role="status">
-          No results found for "{debouncedQuery}".
-        </div>
-      )}
-
-      {results.length > 0 && (
-        <ul className="divide-y divide-rv-border mt-2" aria-label="Search results">
-          {results.map((result: SearchResult, idx: number) => (
-            <li key={result.section + "-" + result.pages.join("-") + "-" + idx} className="py-3">
-              <a
-                href={`#page-${result.pages[0]}`}
-                className="text-rv-link hover:underline focus:underline focus:outline-none"
-                tabIndex={0}
-                aria-label={`Jump to documentation section: ${result.title}`}
-              >
-                <span className="font-medium text-rv-heading">{result.title}</span>
-              </a>
-              <span className="ml-2 text-xs text-rv-muted">(Section: {result.section}, Page{result.pages.length > 1 ? "s" : ""}: {result.pages.join(", ")})</span>
-              {result.content && (
-                <p className="text-sm text-rv-muted mt-1" style={{ wordBreak: "break-word" }}>
-                  {result.content.length > 350 ? result.content.slice(0, 350) + "…" : result.content}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+        {results.length > 0 && (
+          <div className="space-y-3" aria-label="Search results">
+            {results.map((result: SearchResult, idx: number) => (
+              <div key={result.section + "-" + result.pages.join("-") + "-" + idx} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                <a
+                  href={`#page-${result.pages[0]}`}
+                  className="text-primary hover:underline focus:underline focus:outline-none font-medium"
+                  tabIndex={0}
+                  aria-label={`Jump to documentation section: ${result.title}`}
+                >
+                  {result.title}
+                </a>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Section: {result.section}, Page{result.pages.length > 1 ? "s" : ""}: {result.pages.join(", ")}
+                </div>
+                {result.content && (
+                  <p className="text-sm text-muted-foreground mt-2" style={{ wordBreak: "break-word" }}>
+                    {result.content.length > 350 ? result.content.slice(0, 350) + "…" : result.content}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

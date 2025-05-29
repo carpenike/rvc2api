@@ -1,4 +1,6 @@
-import clsx from "clsx";
+import { Button } from "@/components/ui/button";
+import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -46,40 +48,43 @@ export function Navbar(props: NavbarProps) {
 
   return (
     <nav
-      className="bg-rv-surface text-rv-text px-4 py-3 rounded-xl mb-6 shadow-lg border border-rv-border transition-colors duration-200"
+      className="bg-card text-card-foreground px-4 py-3 rounded-xl mb-6 shadow-lg border transition-colors duration-200"
       aria-label="Main navigation"
       role="navigation"
       data-testid="navbar"
     >
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
-          <span className="text-xl font-bold mr-8 text-rv-heading">RVC2API</span>
+          <span className="text-xl font-bold mr-8 text-foreground">RVC2API</span>
 
           {/* Desktop menu */}
-          <div className="hidden md:flex space-x-4" role="menubar">
-            {navItems.map((item) => (
-              <Link
-                key={item.id}
-                to={item.path}
-                className={clsx(
-                  "px-3 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-rv-primary transition-colors duration-150",
-                  currentView === item.id
-                    ? "bg-rv-primary/20 text-rv-primary"
-                    : "hover:bg-rv-primary/10 hover:text-rv-primary text-rv-text"
-                )}
-                aria-current={currentView === item.id ? "page" : undefined}
-                role="menuitem"
-                tabIndex={0}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+          <NavigationMenu className="hidden md:flex">
+            <NavigationMenuList className="space-x-2">
+              {navItems.map((item) => (
+                <NavigationMenuItem key={item.id}>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "px-3 py-2 rounded-lg font-medium transition-colors duration-150 inline-flex items-center justify-center",
+                      currentView === item.id
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    )}
+                    aria-current={currentView === item.id ? "page" : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
         {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2 rounded focus:outline-none focus:ring-2 focus:ring-rv-primary text-rv-text"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden p-2"
           onClick={toggleMenu}
           aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={isOpen}
@@ -99,25 +104,25 @@ export function Navbar(props: NavbarProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             )}
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Mobile menu */}
       {isOpen && (
         <div
           id="mobile-nav-menu"
-          className="md:hidden mt-2 bg-rv-surface border border-rv-border rounded-lg shadow-lg p-4"
+          className="md:hidden mt-2 bg-card border rounded-lg shadow-lg p-4"
           role="menu"
         >
           {navItems.map((item) => (
             <Link
               key={item.id}
               to={item.path}
-              className={clsx(
-                "block px-3 py-2 rounded-lg font-medium mb-1 focus:outline-none focus:ring-2 focus:ring-rv-primary transition-colors duration-150",
+              className={cn(
+                "block px-3 py-2 rounded-lg font-medium mb-1 transition-colors duration-150",
                 currentView === item.id
-                  ? "bg-rv-primary/20 text-rv-primary"
-                  : "hover:bg-rv-primary/10 hover:text-rv-primary text-rv-text"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               )}
               aria-current={currentView === item.id ? "page" : undefined}
               role="menuitem"

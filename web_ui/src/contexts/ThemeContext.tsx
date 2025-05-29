@@ -66,26 +66,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!isBrowser) return;
     const root = document.documentElement;
-    // Remove all known theme classes
-    root.classList.remove(
-      "theme-light",
-      "theme-dark",
-      "theme-default",
-      "theme-catppuccin-mocha",
-      "theme-catppuccin-latte",
-      "theme-nord-dark",
-      "theme-nord-light",
-      "theme-gruvbox-dark",
-      "theme-gruvbox-light"
-    );
-    let classToAdd = "";
-    if (theme === "system") {
-      classToAdd = `theme-${resolvedTheme}`;
-    } else {
-      classToAdd = `theme-${theme}`;
+
+    // Remove all theme classes and set only the dark class for shadcn/UI
+    root.classList.remove("dark", "light");
+
+    if (resolvedTheme === "dark") {
+      root.classList.add("dark");
     }
-    root.classList.add(classToAdd);
-  }, [theme, resolvedTheme, isBrowser]);
+    // Light theme is the default state (no class needed)
+  }, [resolvedTheme, isBrowser]);
 
   const value: ThemeContextValue = {
     theme,

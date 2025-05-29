@@ -71,13 +71,13 @@ export function NetworkMap() {
 
     // Theme-adaptive background
     ctx.fillStyle =
-      getComputedStyle(document.documentElement).getPropertyValue("--color-bg") || "#fff";
+      getComputedStyle(document.documentElement).getPropertyValue("--background") || "#fff";
     ctx.fillRect(0, 0, width, height);
 
     // Draw edges
     if (networkData.nodes && networkData.edges) {
       ctx.strokeStyle =
-        getComputedStyle(document.documentElement).getPropertyValue("--color-border") || "#888";
+        getComputedStyle(document.documentElement).getPropertyValue("--border") || "#888";
       ctx.lineWidth = 2;
       networkData.edges.forEach((edge) => {
         const from = networkData.nodes?.find((n) => n.id === edge.source);
@@ -118,15 +118,15 @@ export function NetworkMap() {
         ctx.beginPath();
         ctx.arc(x, y, 24, 0, 2 * Math.PI);
         ctx.fillStyle = node.status === "active"
-          ? getComputedStyle(document.documentElement).getPropertyValue("--color-primary") || "#2563eb"
-          : getComputedStyle(document.documentElement).getPropertyValue("--color-muted") || "#d1d5db";
+          ? getComputedStyle(document.documentElement).getPropertyValue("--primary") || "#2563eb"
+          : getComputedStyle(document.documentElement).getPropertyValue("--muted") || "#d1d5db";
         ctx.fill();
         ctx.lineWidth = 3;
-        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-border") || "#888";
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--border") || "#888";
         ctx.stroke();
 
         // Node label
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-text") || "#111";
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--foreground") || "#111";
         ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
@@ -155,3 +155,5 @@ export function NetworkMap() {
     </div>
   );
 }
+
+export default NetworkMap;

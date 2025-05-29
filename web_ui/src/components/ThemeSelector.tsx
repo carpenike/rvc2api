@@ -28,7 +28,7 @@ export const ThemeSelector: React.FC = () => {
       <legend className="sr-only">Theme selection</legend>
       <label
         htmlFor="theme-select"
-        className="mr-2 text-rv-text text-sm font-medium"
+        className="mr-2 text-foreground text-sm font-medium"
         id="theme-select-label"
       >
         Theme:
@@ -41,8 +41,8 @@ export const ThemeSelector: React.FC = () => {
           setTheme(newTheme);
         }}
         className={clsx(
-          "bg-rv-surface text-rv-text border border-rv-border rounded-md px-2 py-1 text-sm",
-          "focus:outline-none focus:ring-2 focus:ring-rv-primary transition-colors"
+          "bg-background text-foreground border border-border rounded-md px-2 py-1 text-sm",
+          "focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
         )}
         aria-label="Select theme"
         aria-describedby="theme-select-label"

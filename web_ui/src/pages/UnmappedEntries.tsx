@@ -53,9 +53,9 @@ export function UnmappedEntries() {
 
   return (
     <div className="px-4 py-6 max-w-5xl mx-auto">
-      <Card className="bg-[var(--color-bg)] border border-[var(--color-border)] shadow-md">
-        <h1 className="text-2xl font-bold mb-4 text-[var(--color-text)]">Unmapped RV-C Entries</h1>
-        <p className="mb-6 text-[var(--color-muted)]">
+      <Card className="bg-card border border-border shadow-md">
+        <h1 className="text-2xl font-bold mb-4 text-foreground">Unmapped RV-C Entries</h1>
+        <p className="mb-6 text-muted-foreground">
           The following entries were received on the RV-C network but could not be mapped to known DGNs or device types. This may indicate new, custom, or unsupported messages.
         </p>
         {error && (
@@ -64,30 +64,30 @@ export function UnmappedEntries() {
           </div>
         )}
         {!loading && unmappedEntries.length === 0 && !error && (
-          <div className="italic text-[var(--color-muted)]">No unmapped entries detected.</div>
+          <div className="italic text-muted-foreground">No unmapped entries detected.</div>
         )}
         {!loading && unmappedEntries.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-y-1">
               <thead>
-                <tr className="bg-[var(--color-bg-muted)]">
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">DGN</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Source Address</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Priority</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Timestamp</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Data</th>
+                <tr className="bg-muted">
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">DGN</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Source Address</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Priority</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Timestamp</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {unmappedEntries.map((entry, idx) => (
-                  <tr key={entry.dgn ?? idx} className="hover:bg-[var(--color-primary)/10]">
-                    <td className="px-4 py-2 font-mono text-[var(--color-text)]">
-                      <Badge className="bg-[var(--color-primary)] text-white">{entry.dgn ?? "-"}</Badge>
+                  <tr key={entry.dgn ?? idx} className="hover:bg-primary/10">
+                    <td className="px-4 py-2 font-mono text-foreground">
+                      <Badge className="bg-primary text-primary-foreground">{entry.dgn ?? "-"}</Badge>
                     </td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.source_address ?? "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.priority ?? "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">
+                    <td className="px-4 py-2 text-foreground">{entry.source_address ?? "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{entry.priority ?? "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-foreground">
                       {Array.isArray(entry.data) && entry.data.length > 0
                         ? entry.data.map((b) => b.toString(16).padStart(2, "0")).join(" ")
                         : "-"}
@@ -102,3 +102,5 @@ export function UnmappedEntries() {
     </div>
   );
 }
+
+export default UnmappedEntries;

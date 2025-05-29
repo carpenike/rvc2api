@@ -53,9 +53,9 @@ export function UnknownPgns() {
 
   return (
     <div className="px-4 py-6 max-w-5xl mx-auto">
-      <Card className="bg-[var(--color-bg)] border border-[var(--color-border)] shadow-md">
-        <h1 className="text-2xl font-bold mb-4 text-[var(--color-text)]">Unknown PGNs</h1>
-        <p className="mb-6 text-[var(--color-muted)]">
+      <Card className="bg-card border border-border shadow-md">
+        <h1 className="text-2xl font-bold mb-4 text-foreground">Unknown PGNs</h1>
+        <p className="mb-6 text-muted-foreground">
           The following Parameter Group Numbers (PGNs) have been observed on the RV-C network but are not recognized by the system. This may indicate missing protocol support or new/undocumented messages.
         </p>
         {error && (
@@ -64,30 +64,30 @@ export function UnknownPgns() {
           </div>
         )}
         {!loading && unknownPgns.length === 0 && !error && (
-          <div className="italic text-[var(--color-muted)]">No unknown PGNs detected.</div>
+          <div className="italic text-muted-foreground">No unknown PGNs detected.</div>
         )}
         {!loading && unknownPgns.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-y-1">
               <thead>
-                <tr className="bg-[var(--color-bg-muted)]">
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">PGN</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Count</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">First Seen</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Last Seen</th>
-                  <th className="px-4 py-2 text-left font-semibold text-[var(--color-text)]">Source Address</th>
+                <tr className="bg-muted">
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">PGN</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Count</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">First Seen</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Last Seen</th>
+                  <th className="px-4 py-2 text-left font-semibold text-foreground">Source Address</th>
                 </tr>
               </thead>
               <tbody>
                 {unknownPgns.map((pgn) => (
-                  <tr key={pgn.pgn} className="hover:bg-[var(--color-primary)/10]">
-                    <td className="px-4 py-2 font-mono text-[var(--color-text)]">
-                      <Badge className="bg-[var(--color-primary)] text-white">{pgn.pgn}</Badge>
+                  <tr key={pgn.pgn} className="hover:bg-primary/10">
+                    <td className="px-4 py-2 font-mono text-foreground">
+                      <Badge className="bg-primary text-primary-foreground">{pgn.pgn}</Badge>
                     </td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.occurrence_count ?? "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.first_seen ? new Date(pgn.first_seen).toLocaleString() : "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{pgn.last_seen ? new Date(pgn.last_seen).toLocaleString() : "-"}</td>
-                    <td className="px-4 py-2 text-[var(--color-text)]">{Array.isArray(pgn.source_addresses) && pgn.source_addresses.length > 0 ? pgn.source_addresses.join(", ") : "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{pgn.occurrence_count ?? "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{pgn.first_seen ? new Date(pgn.first_seen).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{pgn.last_seen ? new Date(pgn.last_seen).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-2 text-foreground">{Array.isArray(pgn.source_addresses) && pgn.source_addresses.length > 0 ? pgn.source_addresses.join(", ") : "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -98,3 +98,5 @@ export function UnknownPgns() {
     </div>
   );
 }
+
+export default UnknownPgns;

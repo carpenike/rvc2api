@@ -1,22 +1,26 @@
 // Environment configuration and application-wide settings
 
+import { getEnv, isProduction } from "./env";
+
 // API base URL - handles development vs production environments
 type ApiBaseUrl = string;
-export const API_BASE_URL: ApiBaseUrl = import.meta.env.PROD
+const env = getEnv();
+export const API_BASE_URL: ApiBaseUrl = isProduction()
   ? "/api" // In production, use relative path for API (assuming same domain)
-  : import.meta.env.VITE_API_URL || "http://localhost:8000/api"; // Dev default
+  : env.VITE_API_BASE_URL || "http://localhost:8000/api"; // Dev default
 
 // WebSocket URL helper - builds correct URL for dev and prod
 export function getWebSocketUrl(path: string): string {
-  if (import.meta.env.VITE_WS_URL) {
-    return `${import.meta.env.VITE_WS_URL}${path}`;
+  const envVars = getEnv();
+  if (envVars.VITE_WS_URL) {
+    return `${envVars.VITE_WS_URL}${path}`;
   }
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}${path}`;
 }
 
 // App version (from env or fallback)
-export const APP_VERSION: string = import.meta.env.VITE_APP_VERSION || "0.1.0";
+export const APP_VERSION: string = getEnv().VITE_APP_VERSION || "0.1.0";
 
 // Feature flags (add new features here as needed)
 export interface FeaturesConfig {
@@ -80,12 +84,13 @@ export const DATE_FORMAT = {
 };
 
 // Only log config in development for debugging
-if (import.meta.env.DEV) {
+const envVars = getEnv();
+if (envVars.DEV) {
   console.log("Environment config:", {
-    VITE_API_URL: import.meta.env.VITE_API_URL,
-    VITE_WS_URL: import.meta.env.VITE_WS_URL,
-    DEV: import.meta.env.DEV,
-    PROD: import.meta.env.PROD
+    VITE_API_URL: envVars.VITE_API_BASE_URL,
+    VITE_WS_URL: envVars.VITE_WS_URL,
+    DEV: envVars.DEV,
+    PROD: envVars.PROD
   });
   console.log("Using WebSocket URL:", getWebSocketUrl("/api/ws"));
 }

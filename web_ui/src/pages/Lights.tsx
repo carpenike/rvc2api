@@ -177,3 +177,5 @@ export function Lights() {
     </div>
   );
 }
+
+export default Lights;

@@ -1,27 +1,29 @@
-import clsx from "clsx";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
-  AlertCircle,
-  ChevronRight,
-  Database,
-  FileText,
-  HelpCircle,
-  LayoutDashboard,
-  Lightbulb,
-  Map,
-  Menu,
-  Network,
-  X
+    AlertCircle,
+    ChevronRight,
+    Database,
+    FileText,
+    HelpCircle,
+    LayoutDashboard,
+    Lightbulb,
+    Map,
+    Menu,
+    Network,
+    X
 } from "lucide-react";
 import React, {
-  cloneElement,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactElement,
-  type ReactNode
+    cloneElement,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type KeyboardEvent,
+    type ReactElement,
+    type ReactNode
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -182,7 +184,7 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
   return (
     <>
       {/* Mobile header with menu button */}
-      <div className="lg:hidden flex items-center justify-between bg-rv-surface text-rv-text p-4 rounded-xl mb-4 shadow-lg">
+      <div className="lg:hidden flex items-center justify-between bg-card text-card-foreground p-4 rounded-xl mb-4 shadow-lg border">
         <div className="flex items-center">
           <span className="text-xl font-bold">RVC2API</span>
         </div>
@@ -190,34 +192,39 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
           {/* WebSocket status indicator - mobile only */}
           {wsStatus && (
             <div className="flex items-center space-x-2">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                wsStatus === "open"
-                  ? "bg-rv-success/20 text-rv-success"
-                  : wsStatus === "connecting"
-                  ? "bg-rv-warning/20 text-rv-warning"
-                  : "bg-rv-error/20 text-rv-error"
-              }`}>
+              <Badge
+                variant={
+                  wsStatus === "open"
+                    ? "default"
+                    : wsStatus === "connecting"
+                    ? "secondary"
+                    : "destructive"
+                }
+                className="text-xs"
+              >
                 {wsStatus}
-              </span>
+              </Badge>
             </div>
           )}
-          <button
+          <Button
             ref={menuButtonRef}
             onClick={handleMenuToggle}
-            className="p-2 rounded-lg hover:bg-rv-surface/80"
+            variant="ghost"
+            size="sm"
+            className="p-2"
             aria-label="Toggle menu"
             aria-controls="side-nav-menu"
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-rv-background/80 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
           role="dialog"
           aria-modal="true"
           tabIndex={-1}
@@ -230,7 +237,7 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
         ref={sidebarRef}
         id="side-nav-menu"
         tabIndex={-1}
-        className={clsx(
+        className={cn(
           "fixed lg:sticky top-0 lg:top-0 z-50 lg:z-auto h-screen lg:h-full transition-all duration-300 ease-in-out",
           isMobileMenuOpen ? "left-0" : "-left-64 lg:left-0",
           isCollapsed ? "lg:w-16" : "lg:w-64",
@@ -242,29 +249,33 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
         role="navigation"
         data-testid="side-nav"
       >
-        <div className="bg-rv-surface text-rv-text h-full rounded-r-3xl lg:rounded-none p-4 shadow-md flex flex-col border-l border-rv-border transition-colors duration-200">
+        <div className="bg-card text-card-foreground h-full rounded-r-3xl lg:rounded-none p-4 shadow-md flex flex-col border-l border transition-colors duration-200">
           {/* Logo section - hidden on desktop as it's in the main header */}
-          <div className="flex lg:hidden items-center justify-between mb-4 pb-3 border-b border-rv-surface/20">
-            <span className="text-lg font-bold text-rv-heading">RVC2API</span>
-            <button
+          <div className="flex lg:hidden items-center justify-between mb-4 pb-3 border-b border-border/20">
+            <span className="text-lg font-bold text-foreground">RVC2API</span>
+            <Button
               onClick={handleMenuClose}
-              className="p-2 rounded-lg hover:bg-rv-surface/80 focus:outline-none focus:ring-2 focus:ring-rv-primary"
+              variant="ghost"
+              size="sm"
+              className="p-2"
               aria-label="Close menu"
             >
               <X size={20} />
-            </button>
+            </Button>
           </div>
 
           {/* Navigation items - scrollable if needed */}
           <div className="flex flex-col space-y-1.5 overflow-y-auto flex-1" role="menubar" aria-orientation="vertical">
             {memoizedNavItems.map((item, idx) => (
-              <button
+              <Button
                 key={item.path}
-                ref={el => { menuItemRefs.current[idx] = el; }}
-                className={clsx(
-                  "flex items-center w-full px-3 py-2 rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:ring-rv-primary",
-                  "hover:bg-rv-primary/10 focus:bg-rv-primary/20",
-                  currentView === item.id ? "bg-rv-primary/20 text-rv-primary" : "text-rv-text"
+                ref={(el: HTMLButtonElement | null) => { menuItemRefs.current[idx] = el; }}
+                variant="ghost"
+                className={cn(
+                  "flex items-center w-full px-3 py-2 justify-start text-left h-auto",
+                  currentView === item.id
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
                 onClick={() => {
                   navigate(item.path);
@@ -274,7 +285,7 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
                 aria-current={currentView === item.id ? "page" : undefined}
                 role="menuitem"
                 tabIndex={0}
-                onKeyDown={e => handleMenuItemKeyDown(e, idx)}
+                onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => handleMenuItemKeyDown(e, idx)}
               >
                 {React.isValidElement(item.icon)
                   ? cloneElement(item.icon as ReactElement<{ className?: string; "aria-hidden"?: boolean }>, {
@@ -283,19 +294,21 @@ export function SideNav({ currentView: propCurrentView, wsStatus }: SideNavProps
                     })
                   : item.icon}
                 <span className="truncate">{item.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Collapse/Expand button - desktop only */}
-          <div className="hidden lg:flex justify-center mt-4 pt-4 border-t border-rv-surface/20">
-            <button
+          <div className="hidden lg:flex justify-center mt-4 pt-4 border-t border-border/20">
+            <Button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 rounded-full hover:bg-rv-surface/80"
+              variant="ghost"
+              size="sm"
+              className="p-2 rounded-full"
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <ChevronRight className={`transform transition-transform ${isCollapsed ? "rotate-0" : "rotate-180"}`} size={20} />
-            </button>
+              <ChevronRight className={cn("transform transition-transform", isCollapsed ? "rotate-0" : "rotate-180")} size={20} />
+            </Button>
           </div>
         </div>
       </div>

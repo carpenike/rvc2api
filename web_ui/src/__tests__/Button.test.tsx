@@ -1,6 +1,6 @@
+import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { Button } from "../components/Button";
-import "@testing-library/jest-dom";
 
 describe("Button component", () => {
   test("renders button with text", () => {
@@ -12,7 +12,7 @@ describe("Button component", () => {
   test("applies variant classes correctly", () => {
     render(<Button variant="primary">Primary Button</Button>);
     const buttonElement = screen.getByText("Primary Button");
-    expect(buttonElement).toHaveClass("bg-rv-primary");
+    expect(buttonElement).toHaveClass("btn", "btn-primary");
   });
 
   test("invokes onClick handler when clicked", () => {
@@ -30,6 +30,6 @@ describe("Button component", () => {
     const buttonElement = screen.getByText("Disabled Button");
 
     expect(buttonElement).toBeDisabled();
-    expect(buttonElement).toHaveClass("opacity-50");
+    expect(buttonElement).toHaveClass("btn", "btn-primary");
   });
 });

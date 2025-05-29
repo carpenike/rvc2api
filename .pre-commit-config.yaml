@@ -48,8 +48,8 @@ repos:
     hooks:
       - id: eslint
         name: eslint (web_ui)
-        entry: npx eslint --config ./eslint.config.js web_ui --ext .ts,.tsx,.js,.jsx
-        language: node
+        entry: bash -c 'cd web_ui && npm run lint'
+        language: system
         pass_filenames: false
         files: ^web_ui/
 

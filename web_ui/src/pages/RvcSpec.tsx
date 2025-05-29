@@ -93,3 +93,5 @@ export function RvcSpec() {
     </div>
   );
 }
+
+export default RvcSpec;

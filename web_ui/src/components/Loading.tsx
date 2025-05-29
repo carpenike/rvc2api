@@ -1,4 +1,6 @@
-import clsx from "clsx";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface LoadingProps {
@@ -17,17 +19,14 @@ export function Loading({
   children
 }: LoadingProps) {
   const sizeClasses = {
-    sm: "h-6 w-6 border-2",
-    md: "h-10 w-10 border-2",
-    lg: "h-16 w-16 border-4"
+    sm: "h-4 w-4",
+    md: "h-6 w-6",
+    lg: "h-8 w-8"
   };
 
   const spinner = (
-    <div
-      className={clsx(
-        "animate-spin rounded-full border-t-rv-primary border-b-rv-primary border-r-transparent border-l-transparent",
-        sizeClasses[size]
-      )}
+    <Loader2
+      className={cn("animate-spin", sizeClasses[size])}
       role="status"
       aria-label="Loading"
       data-testid="loading-spinner"
@@ -42,21 +41,23 @@ export function Loading({
   // For full page loading state
   if (fullPage) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-rv-background/80 backdrop-blur-sm z-50">
-        <div className="flex flex-col items-center p-8 rounded-xl bg-rv-surface shadow-lg">
-          {spinner}
-          {message && <p className="mt-4 text-rv-text/90 text-lg" aria-live="polite">{message}</p>}
-          {children}
-        </div>
+      <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+        <Card className="max-w-sm">
+          <CardContent className="flex flex-col items-center p-6">
+            {spinner}
+            {message && <p className="mt-4 text-foreground text-lg" aria-live="polite">{message}</p>}
+            {children}
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   // Default loading component
   return (
-    <div className={clsx("flex flex-col items-center justify-center p-6", className)}>
+    <div className={cn("flex flex-col items-center justify-center p-6", className)}>
       {spinner}
-      {message && <p className="mt-2 text-rv-text/70" aria-live="polite">{message}</p>}
+      {message && <p className="mt-2 text-muted-foreground" aria-live="polite">{message}</p>}
       {children}
     </div>
   );
