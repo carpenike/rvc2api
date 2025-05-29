@@ -62,7 +62,7 @@ export const fetchEntities = async (params?: {
 };
 
 export const fetchEntity = async (entityId: string): Promise<Entity> => {
-  const response = await fetch(`${API_BASE}/api/entities/${entityId}`);
+  const response = await fetch(`${API_BASE}/entities/${entityId}`);
 
   if (!response.ok) {
     if (response.status === 404) {

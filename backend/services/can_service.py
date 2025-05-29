@@ -239,6 +239,29 @@ class CANService:
         """
         return await self.send_raw_message(arbitration_id, data, interface)
 
+    async def get_recent_messages(self, limit: int = 100) -> list[dict[str, Any]]:
+        """
+        Get recent CAN messages captured on the bus.
+
+        Args:
+            limit: Maximum number of messages to return (default: 100)
+
+        Returns:
+            List of recent CAN messages with decoded information
+        """
+        # This is a placeholder implementation. In a real system, this would
+        # fetch messages from a message buffer or database.
+        # For now, we return an empty list as no message storage is implemented.
+        logger.debug(f"Requested {limit} recent CAN messages")
+
+        # TODO: Implement actual message storage and retrieval
+        # This could involve:
+        # 1. Keeping a circular buffer of recent messages
+        # 2. Storing messages in a database
+        # 3. Reading from the CAN sniffer feature if available
+
+        return []
+
     async def initialize_can_interfaces(
         self, interfaces: list[str] | None = None
     ) -> dict[str, Any]:

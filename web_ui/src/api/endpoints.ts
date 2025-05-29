@@ -6,15 +6,15 @@
  */
 import { handleApiResponse } from "./index";
 import type {
-    AllCanStats,
-    AppHealth,
-    CanMessage,
-    DeviceMapping,
-    LightStatus,
-    NetworkMapData,
-    RvcSpecData,
-    UnknownPgn,
-    UnmappedEntry
+  AllCanStats,
+  AppHealth,
+  CanMessage,
+  DeviceMapping,
+  LightStatus,
+  NetworkMapData,
+  RvcSpecData,
+  UnknownPgn,
+  UnmappedEntry
 } from "./types";
 
 /** Base URL for API requests */
@@ -29,7 +29,7 @@ const defaultOptions: RequestInit = {
 
 // Application health check
 export async function fetchAppHealth(): Promise<AppHealth> {
-  const response = await fetch(`${API_BASE}/health`, defaultOptions);
+  const response = await fetch("/health", defaultOptions);
   return handleApiResponse<AppHealth>(response);
 }
 
@@ -136,7 +136,7 @@ export async function fetchUnmappedEntries(): Promise<UnmappedEntry[]> {
 // Unknown PGNs
 export async function fetchUnknownPgns(): Promise<UnknownPgn[]> {
   const response = await fetch(
-    `${API_BASE}/mappings/unknown-pgns`,
+    `${API_BASE}/unknown-pgns`,
     defaultOptions
   );
   return handleApiResponse<UnknownPgn[]>(response);

@@ -60,7 +60,7 @@ export function CanSniffer() {
   const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/can/sniffer");
+      const response = await fetch("/api/can/recent");
       if (!response.ok) {
         throw new Error("Failed to fetch CAN sniffer data");
       }

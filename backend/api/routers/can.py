@@ -161,6 +161,31 @@ async def send_raw_message(
 
 
 @router.get(
+    "/recent",
+    response_model=list[dict[str, Any]],
+    summary="Get recent CAN messages",
+    description="Return recent CAN messages captured on the bus.",
+    response_description="List of recent CAN messages with metadata",
+)
+async def get_recent_can_messages(
+    request: Request,
+    limit: int = 100,
+    can_service: Annotated[Any, Depends(get_can_service)] = None,
+) -> list[dict[str, Any]]:
+    """
+    Return recent CAN messages captured on the bus.
+
+    Args:
+        limit: Maximum number of messages to return (default: 100)
+
+    Returns:
+        List of recent CAN messages with decoded information
+    """
+    _check_can_interface_feature_enabled(request)
+    return await can_service.get_recent_messages(limit)
+
+
+@router.get(
     "/statistics",
     response_model=dict[str, Any],
     summary="Get CAN bus statistics",
