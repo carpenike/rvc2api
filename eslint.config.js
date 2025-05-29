@@ -39,6 +39,7 @@ export default [
       "**/.tox/**",
       "**/.nox/**",
       "**/.eggs/**",
+      "**/_deprecated/**",
       "**/.idea/**",
       "**/.vscode/**",
       "**/.devcontainer/**",

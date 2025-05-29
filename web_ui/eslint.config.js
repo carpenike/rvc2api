@@ -92,7 +92,8 @@ export default [
       "**/yarn-error.log",
       "**/pnpm-debug.log",
       "**/pip-log.txt",
-      "**/pip-delete-this-directory.txt"
+      "**/pip-delete-this-directory.txt",
+      "_deprecated/**"
     ]
   },
   // Base JS config

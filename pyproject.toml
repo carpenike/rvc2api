@@ -41,7 +41,7 @@ target-version = "py312"
 
 [tool.pyright]
 include = [ "backend", "src/common"]
-exclude = [ "**/node_modules", "**/__pycache__", ".venv"]
+exclude = [ "**/node_modules", "**/__pycache__", ".venv", "_deprecated"]
 typeCheckingMode = "basic"
 reportMissingImports = true
 reportMissingTypeStubs = false
@@ -65,7 +65,7 @@ quote-style = "double"
 select = [ "E", "F", "I", "B", "C4", "SIM", "TCH", "TID", "UP", "W", "N", "C90", "RUF",]
 ignore = [ "E203", "E501", "C901",]
 unfixable = [ "F401", "F841",]
-exclude = [ ".git", "__pycache__", ".venv", "build", "dist", "*.egg-info",]
+exclude = [ ".git", "__pycache__", ".venv", "build", "dist", "*.egg-info", "_deprecated"]
 
 [tool.ruff.lint.isort]
 known-first-party = [ "common", "backend"]
