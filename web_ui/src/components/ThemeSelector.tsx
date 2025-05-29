@@ -1,20 +1,16 @@
 import clsx from "clsx";
 import React from "react";
 import type { ThemeType } from "../contexts/ThemeUtils";
+import { themeConfigs } from "../contexts/ThemeUtils";
 import { useTheme } from "../contexts/useTheme";
 
-interface ThemeOption {
-  id: string;
-  label: string;
-  value: ThemeType;
-}
-
-const themeOptions: ThemeOption[] = [
-  { id: "theme-system", label: "System", value: "system" },
-  { id: "theme-default", label: "Default", value: "default" },
-  { id: "theme-dark", label: "Dark", value: "dark" },
-  { id: "theme-light", label: "Light", value: "light" }
-];
+const themeOptions = Object.values(themeConfigs).map(config => ({
+  id: `theme-${config.name}`,
+  label: config.displayName,
+  value: config.name,
+  icon: config.icon,
+  description: config.description
+}));
 
 export const ThemeSelector: React.FC = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -50,7 +46,7 @@ export const ThemeSelector: React.FC = () => {
       >
         {themeOptions.map((option) => (
           <option key={option.id} value={option.value} data-testid={`theme-option-${option.value}`}>
-            {option.label}
+            {option.icon} {option.label}
             {option.value === "system" && resolvedTheme ?
               ` (${resolvedTheme.charAt(0).toUpperCase() + resolvedTheme.slice(1)})` : ""}
           </option>

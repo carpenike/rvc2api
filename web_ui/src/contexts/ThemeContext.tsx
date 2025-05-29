@@ -1,6 +1,7 @@
 // filepath: /workspace/web_ui/src/contexts/ThemeContext.tsx
 import React, { createContext, useEffect, useState, type ReactNode } from "react";
 import type { ThemeType } from "./ThemeUtils";
+import { getSystemTheme } from "./ThemeUtils";
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -31,22 +32,23 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   const [theme, setThemeState] = useState<ThemeType>(() => getInitialTheme());
-  const getSystemTheme = (): "dark" | "light" => {
-    if (!isBrowser || !window.matchMedia) return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  };
   const [systemTheme, setSystemTheme] = useState<"dark" | "light">(() => getSystemTheme());
 
-  // Calculate the resolved theme (the actual theme to apply)
-  // Only allow 'light' or 'dark' as resolvedTheme
-  const resolvedTheme: "light" | "dark" = theme === "system"
-    ? systemTheme
-    : theme === "dark"
-      ? "dark"
-      : "light";
+  // Calculate the resolved theme
+  const resolvedTheme: "light" | "dark" = theme === "system" ? systemTheme : (theme === "dark" ? "dark" : "light");
 
   // Update theme and persist to localStorage
   const setTheme = (newTheme: ThemeType) => {
+    if (isBrowser) {
+      // Temporarily disable transitions during theme change
+      document.documentElement.classList.add("theme-switching");
+
+      // Re-enable transitions after a brief delay
+      setTimeout(() => {
+        document.documentElement.classList.remove("theme-switching");
+      }, 100);
+    }
+
     setThemeState(newTheme);
     if (isBrowser) {
       localStorage.setItem("rv-theme", newTheme);
@@ -57,7 +59,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!isBrowser || !window.matchMedia) return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => setSystemTheme(media.matches ? "dark" : "light");
+    const handler = () => setSystemTheme(getSystemTheme());
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);
   }, [isBrowser]);

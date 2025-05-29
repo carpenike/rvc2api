@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import type { ReactNode } from "react";
 import React from "react";
 import { AppSidebar } from "../components/AppSidebar";
@@ -12,47 +12,51 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, wsStatus }) => {
-  /**
-   * Get WebSocket status display
-   */
   const getWsStatusBadge = () => {
     if (!wsStatus) return null;
-
     const variant = wsStatus === "Connected" ? "default" : "destructive";
     return <Badge variant={variant} className="text-xs">{wsStatus}</Badge>;
   };
 
   return (
     <SidebarProvider>
-      <AppSidebar wsStatus={wsStatus} />
-      <SidebarInset>
-        {/* Header with integrated sidebar trigger */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <div className="flex flex-1 items-center justify-between">
-            <div className="flex items-center">
-              <span className="text-xl font-bold">RVC2API</span>
-            </div>
+      {/* full-bleed root, one divider between sidebar & main */}
+      <div className="flex h-screen w-full overflow-hidden divide-x divide-border bg-background">
+        {/* Sidebar */}
+        <aside className="w-64 flex-shrink-0 hidden md:flex md:flex-col bg-background overflow-x-hidden">
+          <AppSidebar wsStatus={wsStatus} />
+        </aside>
+
+        {/* Main column */}
+        <div className="flex flex-col flex-1 w-full min-w-0 overflow-hidden bg-background">
+          {/* Header */}
+          <header className="flex h-16 items-center justify-between border-b border-border px-4">
+            <h1 className="text-xl font-bold">RVC2API</h1>
             <div className="flex items-center space-x-4">
               {wsStatus && (
-                <div className="flex items-center space-x-3" aria-live="polite">
-                  <span className="sr-only" id="ws-status-label">WebSocket status:</span>
+                <div
+                  className="flex items-center space-x-2"
+                  aria-live="polite"
+                  aria-label={`WebSocket status: ${wsStatus}`}
+                >
                   {getWsStatusBadge()}
                 </div>
               )}
               <ThemeSelector />
             </div>
+          </header>
+
+          {/* Scrollable content */}
+          <main className="flex-1 w-full min-w-0 overflow-y-auto p-4 md:p-6">
+            {children}
+          </main>
+
+          {/* Footer */}
+          <div className="w-full">
+            <Footer />
           </div>
-        </header>
-
-        {/* Main content area */}
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {children}
-        </main>
-
-        {/* Footer */}
-        <Footer />
-      </SidebarInset>
+        </div>
+      </div>
     </SidebarProvider>
   );
 };

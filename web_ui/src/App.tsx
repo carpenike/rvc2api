@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { ErrorBoundary, LoadingSpinner } from "./components";
+import { ThemeDebugger } from "./components/dev/ThemeDebugger";
 import { useWebSocket } from "./hooks";
 import "./index.css";
 import Layout from "./layout/Layout";
@@ -143,22 +144,26 @@ function App() {
           </div>
         </div>
       ) : (
-        <Layout wsStatus={wsStatus}>
-          <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
-            <Routes>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/lights" element={<Lights />} />
-              <Route path="/mapping" element={<DeviceMapping />} />
-              <Route path="/spec" element={<RvcSpec />} />
-              <Route path="/documentation" element={<DocumentationPage />} />
-              <Route path="/unmapped" element={<UnmappedEntries />} />
-              <Route path="/unknownPgns" element={<UnknownPgns />} />
-              <Route path="/canSniffer" element={<CanSniffer />} />
-              <Route path="/networkMap" element={<NetworkMap />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Suspense>
-        </Layout>
+        <>
+          <Layout wsStatus={wsStatus}>
+            <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
+              <Routes>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/lights" element={<Lights />} />
+                <Route path="/mapping" element={<DeviceMapping />} />
+                <Route path="/spec" element={<RvcSpec />} />
+                <Route path="/documentation" element={<DocumentationPage />} />
+                <Route path="/unmapped" element={<UnmappedEntries />} />
+                <Route path="/unknownPgns" element={<UnknownPgns />} />
+                <Route path="/canSniffer" element={<CanSniffer />} />
+                <Route path="/networkMap" element={<NetworkMap />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+          {/* Development-only theme debugger */}
+          <ThemeDebugger />
+        </>
       )}
     </ErrorBoundary>
   );

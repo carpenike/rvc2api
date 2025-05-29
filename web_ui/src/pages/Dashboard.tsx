@@ -44,59 +44,125 @@ export function Dashboard() {
   }, []);
 
   return (
-    <section className="space-y-8 bg-background text-foreground min-h-screen p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      </div>
 
-      <Card title="Quick Light Controls" className="mb-8 bg-card text-card-foreground">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Button variant="primary" className="w-full" aria-label="Turn all lights on">All Lights On</Button>
-          <Button variant="ghost" className="w-full" aria-label="Turn all lights off">All Lights Off</Button>
-          <Button variant="accent" className="w-full" aria-label="Turn exterior lights on">Exterior On</Button>
-          <Button variant="ghost" className="w-full" aria-label="Turn exterior lights off">Exterior Off</Button>
-          <Button variant="secondary" className="w-full" aria-label="Turn interior lights on">Interior On</Button>
-          <Button variant="ghost" className="w-full" aria-label="Turn interior lights off">Interior Off</Button>
-        </div>
-      </Card>
+      {/* Quick actions grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card title="Quick Light Controls" className="md:col-span-2 lg:col-span-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <Button variant="primary" className="w-full" aria-label="Turn all lights on">
+              All On
+            </Button>
+            <Button variant="ghost" className="w-full" aria-label="Turn all lights off">
+              All Off
+            </Button>
+            <Button variant="accent" className="w-full" aria-label="Turn exterior lights on">
+              Exterior On
+            </Button>
+            <Button variant="ghost" className="w-full" aria-label="Turn exterior lights off">
+              Exterior Off
+            </Button>
+            <Button variant="secondary" className="w-full" aria-label="Turn interior lights on">
+              Interior On
+            </Button>
+            <Button variant="ghost" className="w-full" aria-label="Turn interior lights off">
+              Interior Off
+            </Button>
+          </div>
+        </Card>
+      </div>
 
-      <Card title="Scenes" className="bg-card text-card-foreground">
-        <p className="text-muted-foreground mb-6">Scene management and definition coming soon.</p>
-        <Button variant="primary" aria-label="Create new scene">Create New Scene</Button>
-      </Card>
+      {/* Secondary actions */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card title="Scenes" className="md:col-span-2">
+          <p className="text-sm text-muted-foreground mb-4">
+            Scene management and definition coming soon.
+          </p>
+          <Button variant="primary" aria-label="Create new scene">
+            Create New Scene
+          </Button>
+        </Card>
 
-      <div className="mt-8 space-y-6">
-        <h2 className="text-xl font-semibold text-primary">System Status</h2>
-        {loading && <p className="text-muted-foreground">Loading...</p>}
-        {error && <p className="text-error" role="alert">{error}</p>}
+        <Card title="Quick Stats" className="md:col-span-2">
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-primary">8</div>
+              <div className="text-xs text-muted-foreground">Active Lights</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-primary">12</div>
+              <div className="text-xs text-muted-foreground">Total Devices</div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          <Card title="Application Health" className="bg-card text-card-foreground">
+      {/* System status section */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">System Status</h2>
+
+        {loading && (
+          <p className="text-sm text-muted-foreground">Loading system status...</p>
+        )}
+
+        {error && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <p className="text-sm text-destructive" role="alert">
+              Error loading system status: {error}
+            </p>
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card title="Application Health">
             {appHealth ? (
-              <pre className="text-foreground text-sm whitespace-pre-wrap overflow-x-auto rounded-lg bg-muted p-3">
-                {JSON.stringify(appHealth, null, 2)}
-              </pre>
+              <div className="rounded-md bg-muted p-3">
+                <pre className="text-xs text-foreground whitespace-pre-wrap overflow-auto">
+                  {JSON.stringify(appHealth, null, 2)}
+                </pre>
+              </div>
             ) : (
-              <p className="text-muted-foreground">Loading application health...</p>
+              <p className="text-sm text-muted-foreground">Loading...</p>
             )}
           </Card>
 
-          <Card title="CAN Bus Interfaces" className="bg-card text-card-foreground">
+          <Card title="CAN Bus Status">
             {canStatus && canStatus.interfaces ? (
               <CanBusStatusPanel interfaces={canStatus.interfaces} />
             ) : loading ? (
-              <p className="text-muted-foreground">Loading CAN status...</p>
+              <p className="text-sm text-muted-foreground">Loading CAN status...</p>
             ) : error ? (
-              <p className="text-error" role="alert">{error}</p>
+              <p className="text-sm text-destructive" role="alert">Failed to load</p>
             ) : (
-              <p className="text-muted-foreground">No CAN status available.</p>
+              <p className="text-sm text-muted-foreground">No CAN status available</p>
             )}
           </Card>
 
-          <Card title="WebSocket Status" className="bg-card text-card-foreground">
-            <span className="text-muted-foreground">WebSocket status coming soon.</span>
+          <Card title="Network Status">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">WebSocket</span>
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-green-500" />
+                  <span className="text-xs text-muted-foreground">Connected</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">API Server</span>
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-green-500" />
+                  <span className="text-xs text-muted-foreground">Online</span>
+                </div>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
