@@ -68,15 +68,6 @@
     },
     {
       "description": "Security updates - high priority, no automerge",
-      "matchPackagePatterns": [
-        "^fastapi$",
-        "^uvicorn$",
-        "^python-can$",
-        "^pydantic$",
-        "^requests$",
-        "^urllib3$",
-        "^cryptography$"
-      ],
       "addLabels": [
         "security",
         "urgent"
@@ -85,6 +76,15 @@
       "minimumReleaseAge": "0 days",
       "assignees": [
         "@carpenike"
+      ],
+      "matchPackageNames": [
+        "/^fastapi$/",
+        "/^uvicorn$/",
+        "/^python-can$/",
+        "/^pydantic$/",
+        "/^requests$/",
+        "/^urllib3$/",
+        "/^cryptography$/"
       ]
     },
     {
@@ -92,19 +92,12 @@
       "matchManagers": [
         "poetry"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "pyproject.toml",
         "poetry.lock"
       ],
       "matchDepTypes": [
         "dependencies"
-      ],
-      "matchPackagePatterns": [
-        "^fastapi$",
-        "^uvicorn$",
-        "^python-can$",
-        "^pydantic$",
-        "^langchain-"
       ],
       "groupName": "Backend core dependencies",
       "addLabels": [
@@ -115,6 +108,13 @@
       "minimumReleaseAge": "7 days",
       "assignees": [
         "@carpenike"
+      ],
+      "matchPackageNames": [
+        "/^fastapi$/",
+        "/^uvicorn$/",
+        "/^python-can$/",
+        "/^pydantic$/",
+        "/^langchain-/"
       ]
     },
     {
@@ -122,7 +122,7 @@
       "matchManagers": [
         "poetry"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "pyproject.toml",
         "poetry.lock"
       ],
@@ -142,12 +142,12 @@
         "dev-tools"
       ],
       "automerge": true,
-      "matchPackagePatterns": [
-        "^ruff$",
-        "^mypy$",
-        "^pytest",
-        "^pre-commit$",
-        "^djlint$"
+      "matchPackageNames": [
+        "/^ruff$/",
+        "/^mypy$/",
+        "/^pytest/",
+        "/^pre-commit$/",
+        "/^djlint$/"
       ]
     },
     {
@@ -176,7 +176,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "React core packages",
@@ -185,11 +185,11 @@
         "react"
       ],
       "minimumReleaseAge": "7 days",
-      "matchPackagePatterns": [
-        "^react$",
-        "^react-dom$",
-        "^react-router",
-        "^@tanstack/react-query$"
+      "matchPackageNames": [
+        "/^react$/",
+        "/^react-dom$/",
+        "/^react-router/",
+        "/^@tanstack/react-query$/"
       ]
     },
     {
@@ -197,7 +197,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "TypeScript type definitions",
@@ -207,8 +207,8 @@
         "types"
       ],
       "automerge": true,
-      "matchPackagePatterns": [
-        "^@types/"
+      "matchPackageNames": [
+        "/^@types//"
       ]
     },
     {
@@ -216,7 +216,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "ESLint packages",
@@ -229,9 +229,9 @@
         "minor",
         "patch"
       ],
-      "matchPackagePatterns": [
-        "^eslint",
-        "eslint-plugin-"
+      "matchPackageNames": [
+        "/^eslint/",
+        "/eslint-plugin-/"
       ]
     },
     {
@@ -239,7 +239,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "Testing packages",
@@ -252,10 +252,10 @@
         "minor",
         "patch"
       ],
-      "matchPackagePatterns": [
-        "^@testing-library/",
-        "^vitest$",
-        "^jsdom$"
+      "matchPackageNames": [
+        "/^@testing-library//",
+        "/^vitest$/",
+        "/^jsdom$/"
       ]
     },
     {
@@ -263,7 +263,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "Build tools",
@@ -271,10 +271,10 @@
         "frontend",
         "build-tools"
       ],
-      "matchPackagePatterns": [
-        "^vite$",
-        "^@vitejs/",
-        "^typescript$"
+      "matchPackageNames": [
+        "/^vite$/",
+        "/^@vitejs//",
+        "/^typescript$/"
       ]
     },
     {
@@ -282,7 +282,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "groupName": "CSS tooling",
@@ -290,10 +290,10 @@
         "frontend",
         "styling"
       ],
-      "matchPackagePatterns": [
-        "^tailwindcss$",
-        "^postcss$",
-        "^autoprefixer$"
+      "matchPackageNames": [
+        "/^tailwindcss$/",
+        "/^postcss$/",
+        "/^autoprefixer$/"
       ]
     },
     {
@@ -301,7 +301,7 @@
       "matchManagers": [
         "npm"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "web_ui/**"
       ],
       "matchDepTypes": [
@@ -312,10 +312,10 @@
         "frontend",
         "ui-components"
       ],
-      "matchPackagePatterns": [
-        "^lucide-react$",
-        "^clsx$",
-        "^@radix-ui/"
+      "matchPackageNames": [
+        "/^lucide-react$/",
+        "/^clsx$/",
+        "/^@radix-ui//"
       ]
     },
     {
@@ -323,7 +323,7 @@
       "matchManagers": [
         "poetry"
       ],
-      "matchPaths": [
+      "matchFileNames": [
         "pyproject.toml",
         "poetry.lock"
       ],
@@ -331,10 +331,10 @@
       "addLabels": [
         "documentation"
       ],
-      "matchPackagePatterns": [
-        "^mkdocs",
-        "^mkdocs-",
-        "^mkdocstrings"
+      "matchPackageNames": [
+        "/^mkdocs/",
+        "/^mkdocs-/",
+        "/^mkdocstrings/"
       ]
     },
     {
