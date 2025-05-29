@@ -392,8 +392,6 @@ EOF
                 fi
 
                 poetry run pre-commit run --all-files
-                poetry run ruff check .
-                poetry run pyright backend
 
                 # Frontend checks
                 if [ -d "web_ui" ]; then
