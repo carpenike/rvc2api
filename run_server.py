@@ -58,11 +58,18 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.info("Starting rvc2api backend server")
 
+    # Normalize and validate log level for uvicorn
+    valid_log_levels = {"critical", "error", "warning", "info", "debug", "trace"}
+    log_level = str(args.log_level).lower()
+    if log_level not in valid_log_levels:
+        logger.warning(f"Invalid log level '{args.log_level}' provided. Falling back to 'info'.")
+        log_level = "info"
+
     # Run the modernized backend
     uvicorn.run(
         "backend.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
-        log_level=args.log_level,
+        log_level=log_level,
     )
