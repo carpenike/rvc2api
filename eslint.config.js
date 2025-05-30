@@ -1,5 +1,6 @@
 // Root ESLint Flat Config for rvc2api monorepo
-import webUiConfig from "./web_ui/eslint.config.js";
+// This file provides ignore patterns for the entire repository
+// Frontend-specific linting is handled in web_ui/eslint.config.js
 
 export default [
   // Global ignores (covers all build/output/generated/cache files everywhere)
@@ -75,6 +76,5 @@ export default [
       "**/pip-log.txt",
       "**/pip-delete-this-directory.txt"
     ]
-  },
-  ...webUiConfig
+  }
 ];
