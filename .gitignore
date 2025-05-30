@@ -184,79 +184,45 @@ resources/rv-c-spec.pdf
 resources/vector_store/
 resources/rvc_spec_chunks_with_overlap.json
 
-# Vite/React/Node.js
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Vite/React/TypeScript
 web_ui/node_modules/
 web_ui/dist/
 web_ui/dist-ssr/
 web_ui/.vite/
+web_ui/.vite-temp/
 web_ui/.eslintcache
-web_ui/.DS_Store
+*.tsbuildinfo
 web_ui/.env.local
 web_ui/.env.*.local
-web_ui/npm-debug.log*
-web_ui/yarn-debug.log*
-web_ui/yarn-error.log*
-web_ui/pnpm-debug.log*
-web_ui/lerna-debug.log*
 web_ui/.turbo/
-web_ui/.parcel-cache/
 web_ui/.cache/
 web_ui/.coverage/
 web_ui/coverage/
 web_ui/.nyc_output/
-web_ui/.next/
-web_ui/.vercel/
-web_ui/.firebase/
-web_ui/.output/
-web_ui/.storybook/
-web_ui/storybook-static/
-web_ui/.sass-cache/
-web_ui/.tmp/
-web_ui/.vscode/
-web_ui/.idea/
-web_ui/.swc/
-web_ui/.svelte-kit/
-web_ui/.svelte/
-web_ui/.svelte-kit-output/
-web_ui/.svelte-kit-build/
-web_ui/.svelte-kit-preview/
-web_ui/.svelte-kit-dev/
-web_ui/.svelte-kit-prod/
-web_ui/.svelte-kit-test/
-web_ui/.svelte-kit-storybook/
-web_ui/.svelte-kit-static/
-web_ui/.svelte-kit-ssr/
-web_ui/.svelte-kit-ssg/
-web_ui/.svelte-kit-ssg-static/
-web_ui/.svelte-kit-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-static/
-web_ui/.svelte-kit-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssg-ssr/
 
 # Ignore devcontainer secrets
 devcontainer.env
 
-.DS_STORE
+# macOS
+.DS_Store
 
+# Project backup directories
+web_ui.backup/
+web_ui_backup/
+_deprecated/
 
+# VS Code
+.vscode-test/
+
+# DevContainer cache
 .devcontainer/home-cache
 .devcontainer/nix-store
 .devcontainer/nix-profile
