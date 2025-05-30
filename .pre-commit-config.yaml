@@ -43,7 +43,7 @@ repos:
         stages: [pre-commit]
         files: ^src/core_daemon/web_ui/templates/
 
-  # Frontend linting (local, uses project node_modules)
+  # Frontend linting (run from web_ui directory)
   - repo: local
     hooks:
       - id: eslint
