@@ -18,6 +18,7 @@ const UnmappedEntries = lazy(() => import("./pages/UnmappedEntries"));
 const UnknownPgns = lazy(() => import("./pages/UnknownPgns"));
 const CanSniffer = lazy(() => import("./pages/CanSniffer"));
 const NetworkMap = lazy(() => import("./pages/NetworkMap"));
+const ThemeTest = lazy(() => import("./pages/ThemeTest"));
 
 /**
  * Main application component
@@ -157,6 +158,7 @@ function App() {
                 <Route path="/unknownPgns" element={<UnknownPgns />} />
                 <Route path="/canSniffer" element={<CanSniffer />} />
                 <Route path="/networkMap" element={<NetworkMap />} />
+                <Route path="/themeTest" element={<ThemeTest />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </Suspense>

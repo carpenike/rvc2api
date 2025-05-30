@@ -1,3 +1,5 @@
+// src/components/AppSidebar.tsx
+
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import {
   AlertCircle,
   Database,
@@ -20,14 +23,12 @@ import {
   Lightbulb,
   Map,
   Network,
+  Palette,
   User
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-/**
- * Navigation item structure
- */
 interface NavItem {
   id: string;
   label: string;
@@ -35,63 +36,35 @@ interface NavItem {
   icon: ReactNode;
 }
 
-/**
- * Navigation items configuration
- */
 const navMain: NavItem[] = [
   { id: "dashboard", label: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
-  { id: "lights", label: "Lights", path: "/lights", icon: <Lightbulb size={20} /> },
-  { id: "mapping", label: "Device Mapping", path: "/mapping", icon: <Map size={20} /> },
-  { id: "networkMap", label: "Network Map", path: "/networkMap", icon: <Map size={20} /> }
+  { id: "lights",    label: "Lights",    path: "/lights",    icon: <Lightbulb size={20} /> },
+  { id: "mapping",   label: "Device Mapping", path: "/mapping",   icon: <Map size={20} /> },
+  { id: "networkMap",label: "Network Map",   path: "/networkMap",icon: <Map size={20} /> }
 ];
 
 const navSecondary: NavItem[] = [
-  { id: "spec", label: "RVC Spec", path: "/spec", icon: <FileText size={20} /> },
-  { id: "documentation", label: "Documentation", path: "/documentation", icon: <HelpCircle size={20} /> }
+  { id: "spec",           label: "RVC Spec",     path: "/spec",           icon: <FileText size={20} /> },
+  { id: "documentation",  label: "Documentation",path: "/documentation", icon: <HelpCircle size={20} /> }
 ];
 
 const navDeveloper: NavItem[] = [
-  { id: "unmapped", label: "Unmapped Devices", path: "/unmapped", icon: <AlertCircle size={20} /> },
-  { id: "unknownPgns", label: "Unknown PGNs", path: "/unknownPgns", icon: <Database size={20} /> },
-  { id: "canSniffer", label: "CAN Sniffer", path: "/canSniffer", icon: <Network size={20} /> }
+  { id: "unmapped",    label: "Unmapped Devices", path: "/unmapped",    icon: <AlertCircle size={20} /> },
+  { id: "unknownPgns", label: "Unknown PGNs",     path: "/unknownPgns", icon: <Database size={20} /> },
+  { id: "canSniffer",  label: "CAN Sniffer",      path: "/canSniffer",  icon: <Network size={20} /> },
+  { id: "themeTest",   label: "Theme Test",       path: "/themeTest",   icon: <Palette size={20} /> }
 ];
 
-/**
- * Props for the AppSidebar component
- */
 interface AppSidebarProps {
-  /** WebSocket status indicator */
   wsStatus?: string;
+  className?: string;
 }
 
-/**
- * Main application sidebar using shadcn/ui v4 sidebar components
- *
- * Features:
- * - Responsive design with mobile support
- * - Collapsible functionality via SidebarProvider context
- * - Icon-based navigation with labels
- * - Active state management
- * - Built-in accessibility and keyboard navigation
- * - Organized navigation groups following v4 patterns
- */
-export function AppSidebar({ wsStatus }: AppSidebarProps) {
+export function AppSidebar({ wsStatus, className }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Get current active route
   const currentPath = location.pathname;
 
-  /**
-   * Handle navigation to a route
-   */
-  const handleNavigation = (path: string) => {
-    navigate(path);
-  };
-
-  /**
-   * Render navigation menu from items array
-   */
   const renderNavMenu = (items: NavItem[]) => (
     <SidebarMenu>
       {items.map((item) => {
@@ -99,7 +72,7 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
         return (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton
-              onClick={() => handleNavigation(item.path)}
+              onClick={() => navigate(item.path)}
               isActive={isActive}
               tooltip={item.label}
             >
@@ -113,15 +86,23 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
   );
 
   return (
-    <Sidebar collapsible="icon" className="!border-0">
-      {/* Header with app branding */}
+    <Sidebar
+      variant="inset"             // ⟵ tells SidebarInset to auto-offset
+      collapsible="icon"
+      openWidth="16rem"            // ⟵ expanded width
+      collapsedWidth="4rem"        // ⟵ collapsed width
+      className={cn(
+        "bg-background border-r border-border !border-0",
+        className
+      )}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <div className="flex items-center">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <LayoutDashboard className="size-4" />
+                <div className="flex aspect-square w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <LayoutDashboard className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">RVC2API</span>
@@ -133,9 +114,7 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* Main content with navigation groups */}
       <SidebarContent className="!px-0 overflow-y-auto overflow-x-hidden">
-        {/* Main navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -145,7 +124,6 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
 
         <SidebarSeparator />
 
-        {/* Secondary navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Resources</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -153,7 +131,6 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Developer tools - using mt-auto to push to bottom */}
         <SidebarGroup className="mt-auto">
           <SidebarGroupLabel>Developer Tools</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -162,13 +139,12 @@ export function AppSidebar({ wsStatus }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer with status and user info */}
       <SidebarFooter>
         <SidebarMenu>
           {wsStatus && (
             <SidebarMenuItem>
               <div className="flex items-center gap-2 px-2 py-1.5">
-                <div className="size-2 rounded-full bg-green-500" />
+                <div className="w-2 h-2 rounded-full bg-green-500" />
                 <span className="text-sm text-muted-foreground">
                   {wsStatus}
                 </span>

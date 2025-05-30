@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Test</title>
+    <style>
+        /* Simple test styles using shadcn/ui variables */
+        .test-container {
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .test-card {
+            background: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 16px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+
+        .test-button {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .test-button:hover {
+            background: hsl(var(--primary) / 0.9);
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground">
+    <div class="test-container">
+        <h1>Theme Test Page</h1>
+        <p>This page tests if shadcn/ui CSS variables are working correctly.</p>
+
+        <div class="test-card">
+            <h2>Card Component</h2>
+            <p>This should adapt to the current theme.</p>
+            <button class="test-button">Primary Button</button>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button onclick="toggleTheme()" class="test-button">Toggle Dark/Light Theme</button>
+        </div>
+
+        <div id="debug-info" style="font-family: monospace; font-size: 12px; background: hsl(var(--muted)); padding: 10px; border-radius: 4px;">
+            <strong>Debug Info:</strong><br>
+            <span id="current-theme">Theme: Unknown</span><br>
+            <span id="background-var">--background: Unknown</span><br>
+            <span id="foreground-var">--foreground: Unknown</span>
+        </div>
+    </div>
+
+    <script>
+        function updateDebugInfo() {
+            const root = document.documentElement;
+            const computedStyle = getComputedStyle(root);
+
+            document.getElementById('current-theme').textContent =
+                `Theme: ${root.classList.contains('dark') ? 'Dark' : 'Light'}`;
+            document.getElementById('background-var').textContent =
+                `--background: ${computedStyle.getPropertyValue('--background').trim()}`;
+            document.getElementById('foreground-var').textContent =
+                `--foreground: ${computedStyle.getPropertyValue('--foreground').trim()}`;
+        }
+
+        function toggleTheme() {
+            const root = document.documentElement;
+            root.classList.toggle('dark');
+            updateDebugInfo();
+        }
+
+        // Initial update
+        updateDebugInfo();
+    </script>
+</body>
+</html>

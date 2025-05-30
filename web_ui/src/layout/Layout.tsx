@@ -1,64 +1,56 @@
-import { Badge } from "@/components/ui/badge";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import type { ReactNode } from "react";
-import React from "react";
+// src/components/Layout.tsx
+
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
+import { useState } from "react";
 import { AppSidebar } from "../components/AppSidebar";
-import Footer from "../components/Footer";
 import { ThemeSelector } from "../components/ThemeSelector";
 
-interface LayoutProps {
-  children: ReactNode;
-  wsStatus?: string;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children, wsStatus }) => {
-  const getWsStatusBadge = () => {
-    if (!wsStatus) return null;
-    const variant = wsStatus === "Connected" ? "default" : "destructive";
-    return <Badge variant={variant} className="text-xs">{wsStatus}</Badge>;
-  };
-
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      {/* full-bleed root, one divider between sidebar & main */}
-      <div className="flex h-screen w-full overflow-hidden divide-x divide-border bg-background">
-        {/* Sidebar */}
-        <aside className="w-64 flex-shrink-0 hidden md:flex md:flex-col bg-background overflow-x-hidden">
-          <AppSidebar wsStatus={wsStatus} />
-        </aside>
-
-        {/* Main column */}
-        <div className="flex flex-col flex-1 w-full min-w-0 overflow-hidden bg-background">
-          {/* Header */}
-          <header className="flex h-16 items-center justify-between border-b border-border px-4">
-            <h1 className="text-xl font-bold">RVC2API</h1>
-            <div className="flex items-center space-x-4">
-              {wsStatus && (
-                <div
-                  className="flex items-center space-x-2"
-                  aria-live="polite"
-                  aria-label={`WebSocket status: ${wsStatus}`}
-                >
-                  {getWsStatusBadge()}
-                </div>
-              )}
-              <ThemeSelector />
-            </div>
-          </header>
-
-          {/* Scrollable content */}
-          <main className="flex-1 w-full min-w-0 overflow-y-auto p-4 md:p-6">
-            {children}
-          </main>
-
-          {/* Footer */}
-          <div className="w-full">
-            <Footer />
-          </div>
-        </div>
-      </div>
+      <LayoutContent>{children}</LayoutContent>
     </SidebarProvider>
   );
-};
+}
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const [wsStatus] = useState("Connected");
+
+  return (
+    <>
+      {/* Sidebar (variant="inset" inside AppSidebar will handle offset) */}
+      <AppSidebar wsStatus={wsStatus} />
+
+      {/* Content area auto-offset by sidebar width */}
+      <SidebarInset className="flex flex-col h-screen overflow-hidden">
+        {/* Header */}
+        <header className="flex h-14 items-center gap-2 border-b border-border bg-background px-4">
+          <SidebarTrigger />
+          <h1 className="text-lg font-semibold">RV-C API</h1>
+          <div className="ml-auto">
+            <ThemeSelector />
+          </div>
+        </header>
+
+        {/* Main: scrollable */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-border bg-background px-4 py-2">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>WebSocket: {wsStatus}</span>
+            <span>© 2024 RV-C API</span>
+          </div>
+        </footer>
+      </SidebarInset>
+    </>
+  );
+}
 
 export default Layout;
