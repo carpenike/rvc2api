@@ -1,27 +1,45 @@
 import { AppLayout } from "@/components/app-layout"
+import { EntityOverviewCard, LightControlCard, SystemStatusCard } from "@/components/entity-status"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useWebSocketManager } from "@/hooks"
 
 export default function RVCDashboard() {
+  // Enable real-time updates via WebSocket
+  const { hasAnyError } = useWebSocketManager({
+    enableEntityUpdates: true,
+    enableSystemStatus: true,
+    enableCANScan: false, // Not needed for dashboard
+  });
+
   return (
     <AppLayout pageTitle="RV-C Control" sidebarVariant="inset">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lighting System</CardTitle>
-                <CardDescription>Control RV interior and exterior lights</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline">Interior Lights</Button>
-                  <Button variant="outline">Exterior Lights</Button>
-                  <Button variant="outline">Awning Lights</Button>
-                </div>
-              </CardContent>
-            </Card>
+          {/* WebSocket Status Indicator */}
+          {hasAnyError && (
+            <div className="mb-4">
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Real-time updates may be limited. Check your connection.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Real-time Light Control */}
+            <LightControlCard />
+
+            {/* System Status with real data */}
+            <SystemStatusCard />
+
+            {/* Entity Overview with real data */}
+            <EntityOverviewCard />
+
+            {/* Static Cards (to be migrated later) */}
             <Card>
               <CardHeader>
                 <CardTitle>Power Management</CardTitle>

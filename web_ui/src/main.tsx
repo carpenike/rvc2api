@@ -1,3 +1,4 @@
+import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import DemoDashboard from "@/pages/demo-dashboard";
 import RVCDashboard from "@/pages/rvc-dashboard";
@@ -8,19 +9,21 @@ import "./global.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/rvc-dashboard" replace />} />
-          <Route path="/demo-dashboard" element={<DemoDashboard />} />
-          <Route path="/rvc-dashboard" element={<RVCDashboard />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <QueryProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/rvc-dashboard" replace />} />
+            <Route path="/demo-dashboard" element={<DemoDashboard />} />
+            <Route path="/rvc-dashboard" element={<RVCDashboard />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryProvider>
   </StrictMode>
 );
