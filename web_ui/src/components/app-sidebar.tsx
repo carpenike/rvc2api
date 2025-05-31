@@ -1,4 +1,3 @@
-import * as React from "react"
 import {
   IconCamera,
   IconChartBar,
@@ -7,15 +6,14 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react"
+import * as React from "react"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -33,35 +31,35 @@ import {
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "RV-C User",
+    email: "user@rvc2api.local",
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
+      title: "RV-C Dashboard",
+      url: "/rvc-dashboard",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
+      title: "Demo Dashboard",
+      url: "/demo-dashboard",
+      icon: IconChartBar,
+    },
+    {
+      title: "System Status",
       url: "#",
       icon: IconListDetails,
     },
     {
-      title: "Analytics",
+      title: "Configuration",
       url: "#",
-      icon: IconChartBar,
+      icon: IconSettings,
     },
     {
-      title: "Projects",
+      title: "Documentation",
       url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
+      icon: IconFileDescription,
     },
   ],
   navClouds: [

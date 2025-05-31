@@ -2,38 +2,50 @@
 requires = [ "poetry-core>=1.8.0",]
 build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "rvc2api"
 version = "0.1.0"
 description = "CAN-bus web service exposing RV-C network data via HTTP & WebSocket"
-readme = "README.md"
+authors = ["Ryan Holt <ryan@ryanholt.net>"]
 license = "MIT"
-keywords = [ "can", "rv-c", "websocket", "fastapi",]
-classifiers = [ "Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: POSIX :: Linux",]
-requires-python = ">=3.12,<4.0"
-dependencies = [ "fastapi>=0.115", "uvicorn[standard]>=0.34", "python-can>=4.0", "pydantic>=2.9", "pyyaml>=6.0", "prometheus_client>=0.21.0", "coloredlogs>=15.0", "pyroute2>=0.7.10,<0.9.0", "langchain-community>=0.3",]
-[[project.authors]]
-name = "Ryan Holt"
-email = "ryan@ryanholt.net"
-
-[project.urls]
-Homepage = "https://github.com/carpenike/rvc2api"
-Repository = "https://github.com/carpenike/rvc2api"
-
-[project.scripts]
-rvc2api-daemon = "backend.main:main"
-rvc2api-console = "console_client.console:main"
-frontend-build = "scripts.build_frontend:main"
-
-[tool.poetry]
+readme = "README.md"
+keywords = ["can", "rv-c", "websocket", "fastapi"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux"
+]
 include = [ "backend/**/*", "web_ui/dist/**/*", "src/common/**/*"]
-
-[[tool.poetry.packages]]
-include = "common"
-from = "src"
+homepage = "https://github.com/carpenike/rvc2api"
+repository = "https://github.com/carpenike/rvc2api"
 
 [[tool.poetry.packages]]
 include = "backend"
+
+
+[[tool.poetry.packages]]
+include = "backend"
+
+# ------------------------------------------------------------------
+# Runtime dependencies + Python version (required by Poetry solver)
+# ------------------------------------------------------------------
+[tool.poetry.dependencies]
+python            = ">=3.12,<4.0"
+fastapi           = ">=0.115"
+uvicorn           = { version = ">=0.34", extras = ["standard"] }
+python-can        = ">=4.0"
+pydantic          = ">=2.9"
+pyyaml            = ">=6.0"
+prometheus_client = ">=0.21.0"
+coloredlogs       = ">=15.0"
+pyroute2          = { version = ">=0.7.10,<0.9.0" }
+langchain-community = ">=0.3"
+
+# ------------------------------------------------------------------
+# CLI entry-points (was in the deleted [project] section)
+# ------------------------------------------------------------------
+[tool.poetry.scripts]
+rvc2api-daemon  = "backend.main:main"
 
 [tool.ruff]
 line-length = 100
@@ -108,9 +120,9 @@ pyyaml = "^6.0.2"
 run-in-subdirectory = "^1.0.1"
 pyright = "^1.1.401"
 toml = "^0.10.2"
-deptry = "^0.23.0"
-pytest-cov = "^6.1.1"
+deptry = {version = "^0.23.0", python = ">=3.9"}
+pytest-cov = {version = "^6.1.1", python = ">=3.9"}
 
 [tool.poetry.group.devtools.dependencies]
-pymupdf = "==1.23.26"
+pymupdf = {version = "==1.23.26", python = ">=3.8"}
 faiss-cpu = ">=1.7.4"
