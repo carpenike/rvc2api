@@ -28,7 +28,15 @@ class BusABC:
     def send(self, message: Message, timeout: float | None = None) -> None: ...
     async def send_periodic(self, message: Message, period: float) -> Any: ...
 
-def interface(interface: str, channel: str, **kwargs: Any) -> BusABC: ...
+class Bus(BusABC):
+    """CAN bus implementation."""
+
+    def __init__(
+        self,
+        channel: str | None = None,
+        bustype: str | None = None,
+        **kwargs: Any,
+    ) -> None: ...
 
 class CanError(Exception):
     """Base class for all python-can exceptions."""
@@ -40,13 +48,38 @@ class CanOperationError(CanError):
 
     pass
 
-# Exception namespace in the can module
-class Exceptions:
-    """Namespace for can exceptions."""
+class CanInterfaceNotImplementedError(CanError):
+    """Indicates that the CAN interface is not implemented or available."""
 
-    # Use type annotations instead of direct assignments
-    CanError: type[CanError]
-    CanOperationError: type[CanOperationError]
+    pass
 
-# Expose exceptions namespace
-exceptions = Exceptions()
+# Interface module
+class Interface:
+    """Interface module for CAN."""
+
+    @staticmethod
+    def Bus(  # noqa: N802
+        channel: str | None = None,
+        bustype: str | None = None,
+        **kwargs: Any,
+    ) -> Bus: ...
+
+interface = Interface()
+
+# Module structure for submodule imports
+class BusModule:
+    """bus module namespace."""
+
+    BusABC = BusABC
+    Bus = Bus
+
+class ExceptionsModule:
+    """exceptions module namespace."""
+
+    CanError = CanError
+    CanOperationError = CanOperationError
+    CanInterfaceNotImplementedError = CanInterfaceNotImplementedError
+
+# Export modules for submodule imports
+bus = BusModule()
+exceptions = ExceptionsModule()
