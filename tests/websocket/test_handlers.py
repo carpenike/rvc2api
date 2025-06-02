@@ -49,6 +49,11 @@ class TestWebSocketHandlers:
             # Subscribe to entity updates
             websocket.send_json({"type": "subscribe", "topic": "entity_updates"})
 
+            # Get subscription confirmation
+            subscription_response = websocket.receive_json()
+            assert subscription_response["type"] == "subscription_confirmed"
+            assert subscription_response["topic"] == "entity_updates"
+
             # Simulate entity update broadcast
             websocket.send_json(entity_update)
 
@@ -67,6 +72,11 @@ class TestWebSocketHandlers:
         with websocket_test_client.websocket_connect("/ws") as websocket:
             # Subscribe to CAN messages
             websocket.send_json({"type": "subscribe", "topic": "can_messages"})
+
+            # Get subscription confirmation
+            subscription_response = websocket.receive_json()
+            assert subscription_response["type"] == "subscription_confirmed"
+            assert subscription_response["topic"] == "can_messages"
 
             # Simulate CAN message
             websocket.send_json(can_stream_message)
@@ -234,7 +244,10 @@ class TestWebSocketIntegration:
     ):
         """Test WebSocket integration with CAN service."""
         # Arrange
-        override_can_service.get_status.return_value = {"connected": True, "message_count": 100}
+        override_can_service.get_status.return_value = {
+            "connected": True,
+            "message_count": 100,
+        }
 
         # Act & Assert
         with websocket_test_client.websocket_connect("/ws") as websocket:

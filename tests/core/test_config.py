@@ -56,7 +56,11 @@ class TestSettings:
         """Test CAN configuration from environment variables."""
         with patch.dict(
             os.environ,
-            {"CAN_CHANNELS": "can0,can1", "CAN_BUSTYPE": "virtual", "CAN_BITRATE": "250000"},
+            {
+                "CAN_CHANNELS": "can0,can1",
+                "CAN_BUSTYPE": "virtual",
+                "CAN_BITRATE": "250000",
+            },
             clear=False,
         ):
             settings = Settings()
@@ -73,16 +77,19 @@ class TestSettings:
         """Test file path configuration settings."""
         with patch.dict(
             os.environ,
-            {"CAN_SPEC_PATH": "/custom/path/spec.json", "CAN_MAP_PATH": "/custom/path/mapping.yml"},
+            {
+                "RVC_SPEC_PATH": "/custom/path/spec.json",
+                "RVC_COACH_MAPPING_PATH": "/custom/path/mapping.yml",
+            },
             clear=False,
         ):
             settings = Settings()
 
             # Settings returns Path objects, not strings
-            assert str(settings.can_spec_path) == "/custom/path/spec.json"
-            assert str(settings.can_map_path) == "/custom/path/mapping.yml"
-            assert isinstance(settings.can_spec_path, Path)
-            assert isinstance(settings.can_map_path, Path)
+            assert str(settings.rvc_spec_path) == "/custom/path/spec.json"
+            assert str(settings.rvc_coach_mapping_path) == "/custom/path/mapping.yml"
+            assert isinstance(settings.rvc_spec_path, Path)
+            assert isinstance(settings.rvc_coach_mapping_path, Path)
 
     def test_validation_errors(self):
         """Test that invalid configuration raises validation errors."""
@@ -150,14 +157,17 @@ class TestSettingsIntegration:
 
         with patch.dict(
             os.environ,
-            {"CAN_SPEC_PATH": str(spec_file), "CAN_MAP_PATH": str(mapping_file)},
+            {
+                "RVC_SPEC_PATH": str(spec_file),
+                "RVC_COACH_MAPPING_PATH": str(mapping_file),
+            },
             clear=False,
         ):
             settings = Settings()
 
             # Settings returns Path objects
-            assert str(settings.can_spec_path) == str(spec_file)
-            assert str(settings.can_map_path) == str(mapping_file)
+            assert str(settings.rvc_spec_path) == str(spec_file)
+            assert str(settings.rvc_coach_mapping_path) == str(mapping_file)
 
     def test_settings_env_file_loading(self, tmp_path):
         """Test loading settings from .env file."""
@@ -184,11 +194,14 @@ class TestSettingsIntegration:
         """Test settings behavior with missing optional configuration files."""
         with patch.dict(
             os.environ,
-            {"CAN_SPEC_PATH": "/nonexistent/spec.json", "CAN_MAP_PATH": "/nonexistent/mapping.yml"},
+            {
+                "RVC_SPEC_PATH": "/nonexistent/spec.json",
+                "RVC_COACH_MAPPING_PATH": "/nonexistent/mapping.yml",
+            },
             clear=False,
         ):
             # Should not raise an error for missing files
             settings = Settings()
 
-            assert str(settings.can_spec_path) == "/nonexistent/spec.json"
-            assert str(settings.can_map_path) == "/nonexistent/mapping.yml"
+            assert str(settings.rvc_spec_path) == "/nonexistent/spec.json"
+            assert str(settings.rvc_coach_mapping_path) == "/nonexistent/mapping.yml"

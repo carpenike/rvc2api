@@ -22,6 +22,11 @@ from backend.core.dependencies import (
 )
 from backend.main import app
 
+# Import performance test fixtures
+# performance_timer is imported here to make it available as a fixture
+# pylint: disable=unused-import
+# from tests.conftest_performance import performance_timer
+
 
 def _setup_test_app_state() -> None:
     """
@@ -181,7 +186,9 @@ def override_app_state(mock_app_state: Mock) -> Generator[Mock, None, None]:
 
 
 @pytest.fixture
-def override_entity_service(mock_entity_service: AsyncMock) -> Generator[AsyncMock, None, None]:
+def override_entity_service(
+    mock_entity_service: AsyncMock,
+) -> Generator[AsyncMock, None, None]:
     """
     Override the entity_service dependency with a mock.
     Use this when testing endpoints that depend on entity operations.
@@ -192,7 +199,9 @@ def override_entity_service(mock_entity_service: AsyncMock) -> Generator[AsyncMo
 
 
 @pytest.fixture
-def override_can_service(mock_can_service: AsyncMock) -> Generator[AsyncMock, None, None]:
+def override_can_service(
+    mock_can_service: AsyncMock,
+) -> Generator[AsyncMock, None, None]:
     """
     Override the can_service dependency with a mock.
     Use this when testing endpoints that depend on CAN operations.
