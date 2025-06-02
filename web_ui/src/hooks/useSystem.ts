@@ -8,6 +8,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchCANInterfaces,
+  fetchCANMessages,
+  fetchCANMetrics,
   fetchCANStatistics,
   fetchFeatureStatus,
   fetchHealthStatus,
@@ -17,6 +19,7 @@ import {
   sendCANMessage,
 } from '../api';
 import { queryKeys, STALE_TIMES } from '../lib/query-client';
+import { useEntities } from './useEntities';
 
 /**
  * Hook to fetch CAN interface information
@@ -38,6 +41,37 @@ export function useCANStatistics() {
     queryFn: fetchCANStatistics,
     staleTime: STALE_TIMES.CAN_STATISTICS,
     refetchInterval: 5000, // Auto-refetch every 5 seconds for real-time stats
+  });
+}
+
+/**
+ * Hook to fetch recent CAN messages with real-time updates
+ */
+export function useCANMessages(options?: {
+  enabled?: boolean;
+  maxMessages?: number;
+  refetchInterval?: number;
+}) {
+  const { enabled = true, maxMessages = 1000, refetchInterval = 2000 } = options || {};
+
+  return useQuery({
+    queryKey: queryKeys.can.messages(maxMessages),
+    queryFn: () => fetchCANMessages({ limit: maxMessages }),
+    staleTime: STALE_TIMES.CAN_STATISTICS,
+    refetchInterval: enabled ? refetchInterval : false,
+    enabled,
+  });
+}
+
+/**
+ * Hook to fetch CAN bus metrics for health monitoring
+ */
+export function useCANMetrics() {
+  return useQuery({
+    queryKey: queryKeys.can.metrics(),
+    queryFn: fetchCANMetrics,
+    staleTime: STALE_TIMES.CAN_STATISTICS,
+    refetchInterval: 5000, // Auto-refetch every 5 seconds for real-time metrics
   });
 }
 

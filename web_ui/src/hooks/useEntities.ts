@@ -26,6 +26,7 @@ import {
 import type {
   ControlCommand,
   ControlEntityResponse,
+  EntitiesQueryParams,
   EntityBase,
   LightEntity,
   LockEntity,
@@ -37,10 +38,10 @@ import { queryKeys, STALE_TIMES } from '../lib/query-client';
 /**
  * Hook to fetch all entities
  */
-export function useEntities() {
+export function useEntities(params?: EntitiesQueryParams) {
   return useQuery({
-    queryKey: queryKeys.entities.list(),
-    queryFn: fetchEntities,
+    queryKey: queryKeys.entities.list(params),
+    queryFn: () => fetchEntities(params),
     staleTime: STALE_TIMES.ENTITIES,
   });
 }
@@ -63,7 +64,7 @@ export function useEntity(entityId: string) {
 export function useEntityMetadata(entityId: string) {
   return useQuery({
     queryKey: queryKeys.entities.metadata(entityId),
-    queryFn: () => fetchEntityMetadata(entityId),
+    queryFn: () => fetchEntityMetadata(),
     staleTime: STALE_TIMES.ENTITY_METADATA,
     enabled: !!entityId,
   });
@@ -172,11 +173,11 @@ export function useControlEntity() {
             const updated = { ...old };
 
             // Handle different command types
-            if (command.command_type === 'set_state' && command.parameters?.state !== undefined) {
+            if (command.command_type === 'set_state' && command.parameters?.state !== undefined && command.parameters.state !== null && typeof command.parameters.state === 'string') {
               updated.current_state = command.parameters.state;
             }
 
-            if (command.command_type === 'set_brightness' && command.parameters?.brightness !== undefined) {
+            if (command.command_type === 'set_brightness' && command.parameters?.brightness !== undefined && command.parameters.brightness !== null && typeof command.parameters.brightness === 'number') {
               (updated as LightEntity).brightness = command.parameters.brightness;
             }
 
@@ -189,7 +190,7 @@ export function useControlEntity() {
     },
 
     // Revert on error
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousEntity) {
         queryClient.setQueryData(
           queryKeys.entities.detail(variables.entityId),

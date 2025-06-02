@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -9,6 +8,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 export function LoginForm({
   className,
@@ -38,12 +38,16 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="ml-auto p-0 text-sm underline-offset-4 hover:underline"
+                    onClick={() => {
+                      // TODO: Implement forgot password functionality
+                    }}
                   >
                     Forgot your password?
-                  </a>
+                  </Button>
                 </div>
                 <Input id="password" type="password" required />
               </div>
@@ -58,9 +62,16 @@ export function LoginForm({
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 underline underline-offset-4"
+                onClick={() => {
+                  // TODO: Implement sign up functionality
+                }}
+              >
                 Sign up
-              </a>
+              </Button>
             </div>
           </form>
         </CardContent>

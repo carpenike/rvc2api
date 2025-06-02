@@ -3,18 +3,55 @@
  *
  * This module provides the base configuration for API communication,
  * including error handling, response parsing, and common utilities.
+ *
+ * Environment Configuration:
+ * - VITE_API_URL: Backend API base URL (e.g., http://localhost:8000 in dev, /api in prod)
+ * - VITE_WS_URL: WebSocket base URL (e.g., ws://localhost:8000 in dev, auto-detected in prod)
+ *
+ * Development: Uses Vite proxy to forward /api and /ws to backend
+ * Production: Uses relative paths assuming reverse proxy configuration
  */
 
 import type { APIError } from './types';
 
-/** Base URL for API requests */
-export const API_BASE = '/api';
+/**
+ * Base URL for API requests
+ * Uses VITE_API_URL environment variable or defaults to '/api'
+ */
+export const API_BASE = (() => {
+  const apiUrl = import.meta.env.VITE_API_URL;
 
-/** WebSocket base URL for real-time connections */
+  if (apiUrl) {
+    return apiUrl;
+  }
+
+  // Default to relative path (works with reverse proxy in production)
+  return '/api';
+})();
+
+/**
+ * WebSocket base URL for real-time connections
+ * Uses VITE_WS_URL environment variable or builds from current location
+ */
 export const WS_BASE = (() => {
+  const wsUrl = import.meta.env.VITE_WS_URL;
+
+  if (wsUrl) {
+    return wsUrl;
+  }
+
+  // Build WebSocket URL based on current location
   const protocol = window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window?.location?.host || 'localhost:8000';
-  return `${protocol}//${host}/ws`;
+  const host = window?.location?.host;
+
+  // In development mode, use localhost:8000 directly to bypass Vite proxy issues
+  if (import.meta.env.DEV) {
+    console.log('Development mode: Using direct WebSocket connection to backend');
+    return `${protocol}//localhost:8000`;
+  }
+
+  // In production without explicit WS URL, use same host with relative path
+  return `${protocol}//${host}`;
 })();
 
 /** Common fetch options for all API requests */
@@ -29,6 +66,7 @@ const defaultOptions: RequestInit = {
  */
 export class APIClientError extends Error {
   statusCode: number;
+  status: number; // Alias for backward compatibility
   originalError: Error | undefined;
   constructor(
     message: string,
@@ -38,6 +76,7 @@ export class APIClientError extends Error {
     super(message);
     this.name = 'APIClientError';
     this.statusCode = statusCode;
+    this.status = statusCode; // Alias for backward compatibility
     this.originalError = originalError;
   }
 }
@@ -141,7 +180,7 @@ export async function apiDelete<T>(url: string): Promise<T> {
  * @param params - Object of query parameters
  * @returns Query string (without leading ?)
  */
-export function buildQueryString(params: Record<string, unknown>): string {
+export function buildQueryString(params: Record<string, unknown> | { [key: string]: string | number | boolean | undefined }): string {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -258,7 +297,11 @@ export const env = {
   isDevelopment: import.meta.env.MODE === 'development',
   isProduction: import.meta.env.MODE === 'production',
   isTest: import.meta.env.MODE === 'test',
-  apiUrl: import.meta.env.VITE_API_URL || API_BASE,
+  apiUrl: API_BASE,
+  wsUrl: WS_BASE,
+  // Export environment variables for debugging
+  viteApiUrl: import.meta.env.VITE_API_URL,
+  viteWsUrl: import.meta.env.VITE_WS_URL,
 };
 
 /**

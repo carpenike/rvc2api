@@ -15,13 +15,12 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: POSIX :: Linux"
 ]
-include = [ "backend/**/*", "web_ui/dist/**/*", "src/common/**/*"]
+include = [
+    "backend/**/*",
+    "web_ui/dist/**/*"
+]
 homepage = "https://github.com/carpenike/rvc2api"
 repository = "https://github.com/carpenike/rvc2api"
-
-[[tool.poetry.packages]]
-include = "backend"
-
 
 [[tool.poetry.packages]]
 include = "backend"

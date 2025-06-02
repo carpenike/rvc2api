@@ -139,7 +139,7 @@ function SystemStatusCard() {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center">
             <span>Overall Status</span>
-            <Badge variant={health?.status === 'healthy' ? 'default' : 'destructive'}>
+            <Badge variant={health?.status === 'ok' ? 'default' : 'destructive'}>
               {health?.status || 'Unknown'}
             </Badge>
           </div>

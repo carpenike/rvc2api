@@ -126,8 +126,8 @@ The application uses the following environment variables which you may need to s
 
 ### File Paths
 
-- `CAN_SPEC_PATH`: Override path to RV-C specification file
-- `CAN_MAP_PATH`: Override path to device mapping file
+- `RVC_SPEC_PATH`: Override path to RV-C specification file
+- `RVC_COACH_MAPPING_PATH`: Override path to device mapping file
 - `RVC2API_USER_COACH_INFO_PATH`: Path to user coach info YAML file
 
 ## Model Context Protocol Tools

@@ -186,8 +186,8 @@ The NixOS module automatically sets up these environment variables for the syste
 | `CONTROLLER_SOURCE_ADDR`       | `settings.controllerSourceAddr`                                |
 | `GITHUB_UPDATE_REPO`           | `settings.githubUpdateRepo`                                    |
 | `CAN_MODEL_SELECTOR`           | `settings.modelSelector`                                       |
-| `CAN_SPEC_PATH`                | `settings.rvcSpecPath`                                         |
-| `CAN_MAP_PATH`                 | Complex logic based on `deviceMappingPath` and `modelSelector` |
+| `RVC_SPEC_PATH`                | `settings.rvcSpecPath`                                         |
+| `RVC_COACH_MAPPING_PATH`       | Complex logic based on `deviceMappingPath` and `modelSelector` |
 | `RVC2API_USER_COACH_INFO_PATH` | `settings.userCoachInfoPath`                                   |
 
 ## Advanced Configuration

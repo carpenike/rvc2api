@@ -21,6 +21,8 @@ export {
   controlEntity,
   // CAN bus endpoints
   fetchCANInterfaces,
+  fetchCANMessages,
+  fetchCANMetrics,
   fetchCANStatistics,
   // Entity endpoints
   fetchEntities,

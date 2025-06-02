@@ -16,6 +16,9 @@ export interface EntityBase {
   capabilities: string[];
   last_updated: string;
   source_type: string;
+  entity_id?: string;
+  entity_type?: string;
+  current_state?: string;
 }
 
 // Light-specific interface extending base entity
@@ -44,6 +47,11 @@ export interface TankEntity extends EntityBase {
   tank_type?: string;
 }
 
+// Aliases for backward compatibility
+export type TankSensorEntity = TankEntity;
+export type TemperatureSensorEntity = TemperatureEntity;
+export type EntityData = Entity;
+
 // Union type for all entity types
 export type Entity = LightEntity | LockEntity | TemperatureEntity | TankEntity | EntityBase;
 
@@ -53,6 +61,7 @@ export type EntityCollection = Record<string, Entity>;
 // Control Command Structure (matches backend ControlCommand model)
 export interface ControlCommand {
   command: string;
+  command_type?: string;
   parameters?: Record<string, unknown>;
   state?: string | null;
   brightness?: number;
@@ -65,6 +74,7 @@ export interface ControlEntityResponse {
   success: boolean;
   message: string;
   entity_id: string;
+  entity_type?: string;
   command: ControlCommand;
   timestamp: string;
   execution_time_ms?: number;
@@ -98,21 +108,26 @@ export interface CANInterfaceStats {
 // All CAN Stats (matches backend AllCANStats model)
 export interface AllCANStats {
   interfaces: Record<string, CANInterfaceStats>;
+  total_messages?: number;
+  total_errors?: number;
 }
 
 // CAN Message Structure
 export interface CANMessage {
   timestamp: string;
-  arbitration_id: string;
-  data: string;
-  interface: string;
   pgn: string;
-  source_addr: string;
-  priority: string;
-  dgn_hex: string;
-  name: string;
-  decoded: Record<string, unknown>;
-  direction: "rx" | "tx";
+  instance?: number;
+  source: number;
+  data: number[];
+  error?: boolean;
+}
+
+// CAN Metrics (for bus health monitoring)
+export interface CANMetrics {
+  messageRate: number;
+  totalMessages: number;
+  errorCount: number;
+  uptime: number;
 }
 
 // Unmapped Entry Model (matches backend UnmappedEntryModel)
@@ -135,10 +150,12 @@ export interface UnmappedEntry {
 export interface UnknownPGNEntry {
   pgn_hex: string;
   pgn_name: string;
+  arbitration_id_hex?: string;
   first_seen_timestamp: number;
   last_seen_timestamp: number;
   count: number;
   example_data: string;
+  last_data_hex?: string;
   source_addresses: string[];
 }
 
@@ -159,16 +176,31 @@ export interface MetadataResponse {
   states: string[];
 }
 
-// Health Status Response
+// Health Status Response (matches backend /api/healthz)
 export interface HealthStatus {
-  status: "healthy" | "degraded" | "unhealthy";
-  timestamp: string;
-  version: string;
-  uptime: number;
-  features: Record<string, boolean>;
+  status: "ok" | "degraded";
+  features: Record<string, string>;
+  unhealthy_features?: Record<string, string>;
+  all_features?: Record<string, string>;
 }
 
-// Feature Status
+// Feature Status from /api/status/features
+export interface FeatureInfo {
+  enabled: boolean;
+  core: boolean;
+  health: string;
+  type: string;
+}
+
+export interface FeatureStatusResponse {
+  total_features: number;
+  enabled_count: number;
+  core_count: number;
+  optional_count: number;
+  features: Record<string, FeatureInfo>;
+}
+
+// Legacy FeatureStatus (for backward compatibility)
 export interface FeatureStatus {
   name: string;
   enabled: boolean;
@@ -177,12 +209,10 @@ export interface FeatureStatus {
   description: string;
 }
 
-// Queue Status Response
+// Queue Status Response (matches backend CAN service response)
 export interface QueueStatus {
   length: number;
-  capacity: number;
-  pending_messages: number;
-  last_processed: string | null;
+  maxsize: number | "unbounded";
 }
 
 // WebSocket Message Types
@@ -217,6 +247,17 @@ export interface SystemStatusMessage extends WebSocketMessage {
 // Union type for all WebSocket message types
 export type WebSocketMessageType = EntityUpdateMessage | CANMessageUpdate | SystemStatusMessage | WebSocketMessage;
 
+// WebSocket Handlers Interface
+export interface WebSocketHandlers {
+  onEntityUpdate?: (data: EntityUpdateMessage['data']) => void;
+  onCANMessage?: (data: CANMessage) => void;
+  onSystemStatus?: (data: SystemStatusMessage['data']) => void;
+  onMessage?: (message: WebSocketMessageType) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: Event) => void;
+}
+
 // API Error Response
 export interface APIError {
   detail: string;
@@ -233,12 +274,12 @@ export interface APIResponse<T> {
 }
 
 // Query Parameters for API endpoints
-export interface EntitiesQueryParams {
+export interface EntitiesQueryParams extends Record<string, unknown> {
   device_type?: string;
   area?: string;
 }
 
-export interface HistoryQueryParams {
+export interface HistoryQueryParams extends Record<string, unknown> {
   limit?: number;
   since?: number;
 }

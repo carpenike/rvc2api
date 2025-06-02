@@ -16,8 +16,7 @@ import {
 } from '../api';
 import type {
   CANMessage,
-  EntityBase,
-  SystemStatusMessage,
+  EntityUpdateMessage,
   WebSocketHandlers,
 } from '../api/types';
 import { queryKeys } from '../lib/query-client';
@@ -30,7 +29,7 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { autoConnect = true } = options || {};
 
@@ -40,24 +39,24 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
     }
 
     const handlers: WebSocketHandlers = {
-      onEntityUpdate: (entity: EntityBase) => {
+      onEntityUpdate: (data: EntityUpdateMessage['data']) => {
         // Update the specific entity in the cache
         queryClient.setQueryData(
-          queryKeys.entities.detail(entity.entity_id),
-          entity
+          queryKeys.entities.detail(data.entity_id),
+          data.entity_data
         );
 
         // Invalidate entity lists to trigger re-render
         queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
 
         // Update type-specific lists
-        if (entity.entity_type === 'light') {
+        if (data.entity_data.entity_type === 'light') {
           queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
-        } else if (entity.entity_type === 'lock') {
+        } else if (data.entity_data.entity_type === 'lock') {
           queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
-        } else if (entity.entity_type === 'tank_sensor') {
+        } else if (data.entity_data.entity_type === 'tank_sensor') {
           queryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
-        } else if (entity.entity_type === 'temperature_sensor') {
+        } else if (data.entity_data.entity_type === 'temperature_sensor') {
           queryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
         }
       },
@@ -74,15 +73,15 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
 
         // Attempt to reconnect after a delay
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (wsClient && !wsClient.isConnected()) {
+          if (wsClient && !wsClient.isConnected) {
             console.log('[WebSocket] Attempting to reconnect...');
             wsClient.connect();
           }
         }, 5000);
       },
 
-      onError: (error: string) => {
-        setError(error);
+      onError: (error: Event) => {
+        setError(error.type || 'WebSocket error');
         console.error('[WebSocket] Entity updates error:', error);
       },
     };
@@ -124,7 +123,7 @@ export function useCANScanWebSocket(options?: {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messageCount, setMessageCount] = useState(0);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { autoConnect = false, onMessage } = options || {};
 
@@ -156,15 +155,15 @@ export function useCANScanWebSocket(options?: {
 
         // Attempt to reconnect after a delay
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (wsClient && !wsClient.isConnected()) {
+          if (wsClient && !wsClient.isConnected) {
             console.log('[WebSocket] Attempting to reconnect...');
             wsClient.connect();
           }
         }, 5000);
       },
 
-      onError: (error: string) => {
-        setError(error);
+      onError: (error: Event) => {
+        setError(error.type || 'WebSocket error');
         console.error('[WebSocket] CAN scan error:', error);
       },
     };
@@ -205,7 +204,7 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { autoConnect = true } = options || {};
 
@@ -215,15 +214,12 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
     }
 
     const handlers: WebSocketHandlers = {
-      onSystemStatus: (status: SystemStatusMessage) => {
-        // Update system queries based on status type
-        if (status.type === 'health') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.system.health() });
-        } else if (status.type === 'queue') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
-        } else if (status.type === 'can') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
-        }
+      onSystemStatus: () => {
+        // Update system queries - we just invalidate all relevant queries
+        // since we only get the data portion, not the message type
+        queryClient.invalidateQueries({ queryKey: queryKeys.system.health() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
       },
 
       onConnect: () => {
@@ -238,15 +234,15 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
 
         // Attempt to reconnect after a delay
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (wsClient && !wsClient.isConnected()) {
+          if (wsClient && !wsClient.isConnected) {
             console.log('[WebSocket] Attempting to reconnect...');
             wsClient.connect();
           }
         }, 5000);
       },
 
-      onError: (error: string) => {
-        setError(error);
+      onError: (error: Event) => {
+        setError(error.type || 'WebSocket error');
         console.error('[WebSocket] System status error:', error);
       },
     };

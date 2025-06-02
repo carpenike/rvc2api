@@ -69,7 +69,7 @@ uptimerobot:
   description: "UptimeRobot monitoring service integration"
 
 github_update_checker:
-  enabled: true
+  enabled: false
   core: false
   depends_on: []
   description: "GitHub update checker service for application updates"

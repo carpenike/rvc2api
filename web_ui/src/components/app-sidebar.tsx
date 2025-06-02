@@ -1,23 +1,25 @@
 import {
-  IconCamera,
+  IconBulb,
   IconChartBar,
+  IconCircuitSwitchOpen,
+  IconCpu,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
   IconFileDescription,
   IconFileWord,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
-  IconReport,
-  IconSearch,
+  IconMapPin,
+  IconQuestionMark,
   IconSettings,
+  IconWifi,
 } from "@tabler/icons-react"
 import * as React from "react"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
+import { NavSection } from "@/components/nav-section"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -47,101 +49,72 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "System Status",
-      url: "#",
-      icon: IconListDetails,
+      title: "Lights",
+      url: "/lights",
+      icon: IconBulb,
     },
     {
-      title: "Configuration",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: IconFileDescription,
+      title: "Device Mapping",
+      url: "/device-mapping",
+      icon: IconCpu,
     },
   ],
-  navClouds: [
+  navMonitoring: [
     {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "CAN Sniffer",
+      url: "/can-sniffer",
+      icon: IconWifi,
     },
     {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Network Map",
+      url: "/network-map",
+      icon: IconMapPin,
+    },
+  ],
+  navDiagnostics: [
+    {
+      title: "Unknown PGNs",
+      url: "/unknown-pgns",
+      icon: IconQuestionMark,
     },
     {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Unmapped Entries",
+      url: "/unmapped-entries",
+      icon: IconCircuitSwitchOpen,
     },
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
+      title: "Documentation",
+      url: "/documentation",
+      icon: IconFileDescription,
+    },
+    {
+      title: "RV-C Spec",
+      url: "/rvc-spec",
+      icon: IconFileWord,
+    },
+    {
+      title: "Theme Test",
+      url: "/theme-test",
       icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
     },
   ],
   documents: [
     {
-      name: "Data Library",
+      name: "System Status",
       url: "#",
-      icon: IconDatabase,
+      icon: IconListDetails,
     },
     {
-      name: "Reports",
+      name: "Configuration",
       url: "#",
-      icon: IconReport,
+      icon: IconSettings,
     },
     {
-      name: "Word Assistant",
+      name: "Help",
       url: "#",
-      icon: IconFileWord,
+      icon: IconHelp,
     },
   ],
 }
@@ -153,19 +126,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+              <IconInnerShadowTop className="!size-5" />
+              <span className="text-base font-semibold">RV-C2API</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        <NavSection
+          title="Monitoring"
+          items={data.navMonitoring}
+          className="mt-4"
+        />
+        <NavSection
+          title="Diagnostics"
+          items={data.navDiagnostics}
+          className="mt-4"
+        />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

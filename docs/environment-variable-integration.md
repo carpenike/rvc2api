@@ -39,7 +39,7 @@ All environment variables used by the application are now properly mapped in the
 | `settings.logLevel`             | `LOG_LEVEL`                    |
 | `settings.controllerSourceAddr` | `CONTROLLER_SOURCE_ADDR`       |
 | `settings.githubUpdateRepo`     | `GITHUB_UPDATE_REPO`           |
-| `settings.modelSelector`        | `CAN_MODEL_SELECTOR`           |
+| `settings.modelSelector`        | `RVC_COACH_MODEL`              |
 | `settings.pushover.enable`      | `ENABLE_PUSHOVER`              |
 | `settings.pushover.apiToken`    | `PUSHOVER_API_TOKEN`           |
 | `settings.pushover.userKey`     | `PUSHOVER_USER_KEY`            |
@@ -50,8 +50,8 @@ All environment variables used by the application are now properly mapped in the
 | `settings.canbus.channels`      | `CAN_CHANNELS`                 |
 | `settings.canbus.bustype`       | `CAN_BUSTYPE`                  |
 | `settings.canbus.bitrate`       | `CAN_BITRATE`                  |
-| `settings.rvcSpecPath`          | `CAN_SPEC_PATH`                |
-| `settings.deviceMappingPath`    | `CAN_MAP_PATH`                 |
+| `settings.rvcSpecPath`          | `RVC_SPEC_PATH`                |
+| `settings.deviceMappingPath`    | `RVC_COACH_MAPPING_PATH`       |
 | `settings.userCoachInfoPath`    | `RVC2API_USER_COACH_INFO_PATH` |
 
 ## Documentation Updates

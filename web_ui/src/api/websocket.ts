@@ -14,6 +14,16 @@ import type {
   WebSocketMessageType
 } from './types';
 
+// Debug utility for WebSocket connections
+export const DEBUG_WS = {
+  enabled: import.meta.env.DEV && import.meta.env.VITE_DEBUG_WS === 'true',
+  log: (...args: unknown[]) => {
+    if (DEBUG_WS.enabled) {
+      console.log('[WebSocket Debug]', ...args);
+    }
+  },
+};
+
 /**
  * WebSocket connection states
  */
@@ -27,9 +37,9 @@ export interface WebSocketHandlers {
   onClose?: (event: CloseEvent) => void;
   onError?: (error: Event) => void;
   onMessage?: (message: WebSocketMessage) => void;
-  onEntityUpdate?: (message: EntityUpdateMessage) => void;
-  onCANMessage?: (message: CANMessageUpdate) => void;
-  onSystemStatus?: (message: SystemStatusMessage) => void;
+  onEntityUpdate?: (data: EntityUpdateMessage['data']) => void;
+  onCANMessage?: (data: CANMessageUpdate['data']) => void;
+  onSystemStatus?: (data: SystemStatusMessage['data']) => void;
 }
 
 /**
@@ -110,6 +120,7 @@ export class RVCWebSocketClient {
 
     if (env.isDevelopment) {
       logApiRequest('WS CONNECT', wsUrl);
+      DEBUG_WS.log(`Connecting to ${wsUrl} (endpoint: ${this.endpoint})`);
     }
 
     this.socket = new WebSocket(wsUrl);
@@ -173,6 +184,8 @@ export class RVCWebSocketClient {
         logApiResponse(`WS CONNECTED`, this.endpoint);
       }
 
+      DEBUG_WS.log('WebSocket connected:', this.endpoint);
+
       this.setupHeartbeat();
       this.handlers.onOpen?.();
     };
@@ -184,6 +197,8 @@ export class RVCWebSocketClient {
       if (env.isDevelopment) {
         console.log(`🔌 WebSocket closed: ${this.endpoint}`, { code: event.code, reason: event.reason });
       }
+
+      DEBUG_WS.log('WebSocket closed:', this.endpoint, { code: event.code, reason: event.reason });
 
       this.handlers.onClose?.(event);
 
@@ -199,6 +214,8 @@ export class RVCWebSocketClient {
         console.error(`❌ WebSocket error: ${this.endpoint}`, event);
       }
 
+      DEBUG_WS.log('WebSocket error:', this.endpoint, event);
+
       this.handlers.onError?.(event);
     };
 
@@ -210,6 +227,8 @@ export class RVCWebSocketClient {
           logApiResponse(`WS MESSAGE ${this.endpoint}`, message);
         }
 
+        DEBUG_WS.log('WebSocket message received:', this.endpoint, message);
+
         // Call generic message handler
         this.handlers.onMessage?.(message);
 
@@ -217,6 +236,7 @@ export class RVCWebSocketClient {
         this.handleTypedMessage(message as WebSocketMessageType);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error, event.data);
+        DEBUG_WS.log('Failed to parse WebSocket message:', error, event.data);
       }
     };
   }
@@ -227,19 +247,20 @@ export class RVCWebSocketClient {
   private handleTypedMessage(message: WebSocketMessageType): void {
     switch (message.type) {
       case 'entity_update':
-        this.handlers.onEntityUpdate?.(message as EntityUpdateMessage);
+        this.handlers.onEntityUpdate?.((message as EntityUpdateMessage).data);
         break;
       case 'can_message':
-        this.handlers.onCANMessage?.(message as CANMessageUpdate);
+        this.handlers.onCANMessage?.((message as CANMessageUpdate).data);
         break;
       case 'system_status':
-        this.handlers.onSystemStatus?.(message as SystemStatusMessage);
+        this.handlers.onSystemStatus?.((message as SystemStatusMessage).data);
         break;
       default:
         // Handle unknown message types gracefully
         if (env.isDevelopment) {
           console.log('Unknown WebSocket message type:', message.type, message);
         }
+        DEBUG_WS.log('Unknown WebSocket message type:', message.type, message);
     }
   }
 
@@ -252,6 +273,7 @@ export class RVCWebSocketClient {
         this.socket?.close();
         this._state = 'error';
         console.error(`WebSocket connection timeout: ${this.endpoint}`);
+        DEBUG_WS.log('WebSocket connection timeout:', this.endpoint);
       }
     }, this.config.connectionTimeout);
   }
@@ -276,8 +298,10 @@ export class RVCWebSocketClient {
       if (this.isConnected) {
         try {
           this.send({ type: 'ping', timestamp: new Date().toISOString() });
+          DEBUG_WS.log('Heartbeat sent:', this.endpoint);
         } catch (error) {
           console.warn('Failed to send heartbeat:', error);
+          DEBUG_WS.log('Failed to send heartbeat:', error);
         }
       }
     }, this.config.heartbeatInterval);
@@ -304,6 +328,8 @@ export class RVCWebSocketClient {
     if (env.isDevelopment) {
       console.log(`📡 Scheduling WebSocket reconnect attempt ${this.reconnectAttempts} in ${this.config.reconnectDelay}ms`);
     }
+
+    DEBUG_WS.log('Scheduling WebSocket reconnect attempt:', this.reconnectAttempts, this.config.reconnectDelay);
 
     this.reconnectTimer = setTimeout(() => {
       this.connect();
@@ -356,7 +382,7 @@ export function createEntityWebSocket(
   handlers: WebSocketHandlers = {},
   config: WebSocketConfig = {}
 ): RVCWebSocketClient {
-  return new RVCWebSocketClient('/entities', handlers, config);
+  return new RVCWebSocketClient('/ws', handlers, config);
 }
 
 /**
@@ -370,7 +396,7 @@ export function createCANScanWebSocket(
   handlers: WebSocketHandlers = {},
   config: WebSocketConfig = {}
 ): RVCWebSocketClient {
-  return new RVCWebSocketClient('/can/scan', handlers, config);
+  return new RVCWebSocketClient('/ws/can-sniffer', handlers, config);
 }
 
 /**
@@ -384,7 +410,7 @@ export function createSystemStatusWebSocket(
   handlers: WebSocketHandlers = {},
   config: WebSocketConfig = {}
 ): RVCWebSocketClient {
-  return new RVCWebSocketClient('/system/status', handlers, config);
+  return new RVCWebSocketClient('/ws/features', handlers, config);
 }
 
 //

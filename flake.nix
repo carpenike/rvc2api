@@ -624,23 +624,23 @@ EOF
               GITHUB_UPDATE_REPO = lib.mkIf (config.rvc2api.settings.githubUpdateRepo != null)
                 config.rvc2api.settings.githubUpdateRepo;
 
-              # Model selector (used by rvc_decoder if CAN_MAP_PATH isn't set)
-              CAN_MODEL_SELECTOR = lib.mkIf (config.rvc2api.settings.modelSelector != null)
+              # Model selector (used by RVC integration if RVC_COACH_MAPPING_PATH isn't set)
+              RVC_COACH_MODEL = lib.mkIf (config.rvc2api.settings.modelSelector != null)
                 config.rvc2api.settings.modelSelector;
 
               # RVC spec and device mapping paths
-              CAN_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
+              RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
                 config.rvc2api.settings.rvcSpecPath;
 
               # Device mapping path - complex logic to select the right path
-              CAN_MAP_PATH =
+              RVC_COACH_MAPPING_PATH =
                 if config.rvc2api.settings.deviceMappingPath != null then
                   config.rvc2api.settings.deviceMappingPath
                 else if config.rvc2api.settings.modelSelector != null then
-                  "${config.rvc2api.package}/lib/python3.12/site-packages/rvc_decoder/config/" +
+                  "${config.rvc2api.package}/lib/python3.12/site-packages/backend/integrations/rvc/config/" +
                   config.rvc2api.settings.modelSelector + ".yml"
                 else
-                  "${config.rvc2api.package}/lib/python3.12/site-packages/rvc_decoder/config/coach_mapping.default.yml";
+                  "${config.rvc2api.package}/lib/python3.12/site-packages/backend/integrations/rvc/config/coach_mapping.default.yml";
 
               # User coach info path
               RVC2API_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)

@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -12,6 +13,12 @@ export default defineConfig({
       "@tabler/icons-react$": path.resolve(__dirname, "node_modules/@tabler/icons-react/dist/esm/index.js"),
     },
   },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    css: true,
+  },
   // Development server optimizations to prevent resource exhaustion
   server: {
     // Limit the number of concurrent requests to prevent browser resource exhaustion
@@ -19,6 +26,16 @@ export default defineConfig({
     // Enable caching for better performance
     headers: {
       'Cache-Control': 'max-age=31536000',
+    },
+    // Proxy API requests to the backend server (WebSockets connect directly)
+    proxy: {
+      // Proxy REST API requests
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      // WebSocket connections are handled directly via WS_BASE in client.ts
     },
   },
   optimizeDeps: {

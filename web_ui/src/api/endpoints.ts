@@ -6,6 +6,8 @@
  */
 
 import {
+  APIClientError,
+  API_BASE,
   apiGet,
   apiPost,
   buildQueryString,
@@ -15,13 +17,15 @@ import {
 
 import type {
   AllCANStats,
+  CANMessage,
+  CANMetrics,
   CANSendParams,
   ControlCommand,
   ControlEntityResponse,
   EntitiesQueryParams,
   Entity,
   EntityCollection,
-  FeatureStatus,
+  FeatureStatusResponse,
   HealthStatus,
   HistoryEntry,
   HistoryQueryParams,
@@ -206,6 +210,48 @@ export async function sendCANMessage(params: CANSendParams): Promise<{ success: 
   return result;
 }
 
+/**
+ * Fetch recent CAN messages
+ *
+ * @param params - Optional query parameters (limit)
+ * @returns Promise resolving to CAN messages
+ */
+export async function fetchCANMessages(params?: { limit?: number }): Promise<CANMessage[]> {
+  const queryString = params ? buildQueryString(params) : '';
+  const url = queryString ? `/api/can/recent?${queryString}` : '/api/can/recent';
+
+  logApiRequest('GET', url, params);
+  const result = await apiGet<CANMessage[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get CAN bus metrics and health information
+ *
+ * Note: Using statistics endpoint as metrics source
+ * @returns Promise resolving to CAN metrics derived from statistics
+ */
+export async function fetchCANMetrics(): Promise<CANMetrics> {
+  const url = '/api/can/statistics';
+
+  logApiRequest('GET', url);
+  const statsResult = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, statsResult);
+
+  // Transform statistics to metrics format
+  const summary = statsResult.summary as Record<string, unknown> || {};
+  const metrics: CANMetrics = {
+    messageRate: (summary.message_rate as number) || 0,
+    totalMessages: (summary.total_messages as number) || 0,
+    errorCount: (summary.total_errors as number) || 0,
+    uptime: (summary.uptime as number) || 0
+  };
+
+  return metrics;
+}
+
 //
 // ===== CONFIGURATION API (/api/config) =====
 //
@@ -213,28 +259,55 @@ export async function sendCANMessage(params: CANSendParams): Promise<{ success: 
 /**
  * Get application health status
  *
+ * Special handling for health endpoint: accepts both 200 (healthy) and 503 (degraded) as valid responses
+ *
  * @returns Promise resolving to health status
  */
 export async function fetchHealthStatus(): Promise<HealthStatus> {
-  const url = '/api/config/health';
+  const url = '/api/healthz';
 
   logApiRequest('GET', url);
-  const result = await apiGet<HealthStatus>(url);
-  logApiResponse(url, result);
 
-  return result;
+  try {
+    const result = await apiGet<HealthStatus>(url);
+    logApiResponse(url, result);
+    return result;
+  } catch (error) {
+    // For health endpoint, 503 responses contain valid degraded status data
+    if (error instanceof APIClientError && error.statusCode === 503) {
+      try {
+        // Re-fetch to get the 503 response data directly
+        const fullUrl = url.startsWith('/api') ? url : `${API_BASE}${url}`;
+        const response = await fetch(fullUrl, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (response.status === 503) {
+          const degradedData = await response.json() as HealthStatus;
+          logApiResponse(url, degradedData);
+          return degradedData;
+        }
+      } catch (fetchError) {
+        console.warn('Failed to parse 503 health response:', fetchError);
+      }
+    }
+
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**
  * Get feature status and configuration
  *
- * @returns Promise resolving to feature status list
+ * @returns Promise resolving to feature status response
  */
-export async function fetchFeatureStatus(): Promise<FeatureStatus[]> {
-  const url = '/api/config/features';
+export async function fetchFeatureStatus(): Promise<FeatureStatusResponse> {
+  const url = '/api/status/features';
 
   logApiRequest('GET', url);
-  const result = await apiGet<FeatureStatus[]>(url);
+  const result = await apiGet<FeatureStatusResponse>(url);
   logApiResponse(url, result);
 
   return result;
@@ -246,7 +319,7 @@ export async function fetchFeatureStatus(): Promise<FeatureStatus[]> {
  * @returns Promise resolving to queue status
  */
 export async function fetchQueueStatus(): Promise<QueueStatus> {
-  const url = '/api/config/queue-status';
+  const url = '/api/can/queue/status';
 
   logApiRequest('GET', url);
   const result = await apiGet<QueueStatus>(url);
