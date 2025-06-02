@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from backend.models.common import CoachInfo
+    from backend.models.entity_model import EntityConfig
 
 from backend.core.entity_manager import EntityManager
 from backend.services.feature_base import Feature
@@ -94,8 +95,10 @@ class AppState(Feature):
 
             settings = get_settings()
 
-            rvc_spec_path = str(settings.can_spec_path) if settings.can_spec_path else None
-            device_mapping_path = str(settings.can_map_path) if settings.can_map_path else None
+            rvc_spec_path = str(settings.rvc_spec_path) if settings.rvc_spec_path else None
+            device_mapping_path = (
+                str(settings.rvc_coach_mapping_path) if settings.rvc_coach_mapping_path else None
+            )
 
             logger.info(f"Using RV-C spec path: {rvc_spec_path}")
             logger.info(f"Using device mapping path: {device_mapping_path}")
@@ -114,6 +117,13 @@ class AppState(Feature):
         logger.info("Shutting down AppState feature")
         for task in self.background_tasks:
             task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                logger.debug("Background task cancelled successfully")
+            except Exception as e:
+                logger.error(f"Error during background task cancellation: {e}")
+        self.background_tasks.clear()
 
     @property
     def health(self) -> str:
@@ -289,26 +299,22 @@ class AppState(Feature):
 
         (
             decoder_map_val,
-            raw_device_mapping_val,
-            device_lookup_val,
-            status_lookup_val,
-            light_entity_ids_set_val,
-            entity_id_lookup_val,
-            light_command_info_val,
+            spec_meta_val,
+            mapping_dict_val,
+            entity_map_val,
+            entity_ids_val,
+            inst_map_val,
+            unique_instances_val,
             pgn_hex_to_name_map_val,
             dgn_pairs_val,
             coach_info_val,
         ) = processed_data_tuple
 
-        logger.info(
-            f"populate_app_state: loaded_entity_id_lookup has {len(entity_id_lookup_val)} entries."
-        )
-        logger.info(
-            f"populate_app_state: loaded_light_command_info has {len(light_command_info_val)} entries."
-        )
+        logger.info(f"populate_app_state: entity_map has {len(entity_map_val)} entries.")
+        logger.info(f"populate_app_state: entity_ids has {len(entity_ids_val)} entries.")
 
         # Store configuration data
-        self.raw_device_mapping = raw_device_mapping_val
+        self.raw_device_mapping = mapping_dict_val
         self.pgn_hex_to_name_map = pgn_hex_to_name_map_val
         self.coach_info = coach_info_val
 
@@ -321,13 +327,33 @@ class AppState(Feature):
 
         logger.info("Application state populated from configuration data.")
 
+        # Build the correct entity ID to config mapping from entity_map
+        # entity_map is keyed by (dgn_hex, instance) tuples, but EntityManager expects
+        # entity configs keyed by entity_id strings
+        entity_configs: dict[str, EntityConfig] = {}
+        for (_dgn_hex, _instance), entity_dict in entity_map_val.items():
+            if isinstance(entity_dict, dict) and "entity_id" in entity_dict:
+                entity_id = entity_dict["entity_id"]
+                # Use the dictionary directly as it's already compatible with EntityConfig
+                entity_configs[entity_id] = entity_dict
+
+        logger.info(f"Built entity configs mapping with {len(entity_configs)} entities")
+
+        # Count lights for verification
+        light_count = sum(
+            1
+            for config in entity_configs.values()
+            if isinstance(config, dict) and config.get("device_type") == "light"
+        )
+        logger.info(f"Found {light_count} light entities in entity configs")
+
         # Update the entity manager with loaded entities
-        self.entity_manager.bulk_load_entities(entity_id_lookup_val)
+        self.entity_manager.bulk_load_entities(entity_configs)
 
         # Initialize light states
-        from rvc_decoder.decode import decode_payload
+        from backend.integrations.rvc.decode import decode_payload
 
-        self.entity_manager.preseed_light_states(decode_payload, device_lookup_val)
+        self.entity_manager.preseed_light_states(decode_payload, entity_map_val)
 
         logger.info("Global app state dictionaries populated.")
 

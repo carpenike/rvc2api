@@ -17,6 +17,7 @@ Notes:
 import json
 import logging
 import os
+import pathlib
 from importlib import resources
 
 import yaml
@@ -85,15 +86,133 @@ def record_missing_dgn(dgn_id: int, can_id: int | None = None, context: str | No
 
 def _default_paths():
     """
-    Determine default paths for the rvc spec and device mapping files bundled as package data.
+    Determine default paths for the rvc spec and device mapping files.
+
+    Supports multiple deployment scenarios:
+    1. Python package installation (pip install)
+    2. Debian/system package installation
+    3. Nix deployment
+    4. Development mode (running from source)
+
+    Returns a tuple of (rvc_spec_path, device_mapping_path) where device_mapping_path
+    is selected based on RVC_COACH_MODEL environment variable or falls back to default.
     """
-    # Expect config files to live under the 'config' directory in this package
-    cfg_dir = resources.files(__package__) / "config"
-    return (
-        str(cfg_dir / "rvc.json"),
-        str(cfg_dir / "coach_mapping.default.yml"),
-        str(cfg_dir / "2021_Entegra_Aspire_44R.yml"),
+    # Try different locations in order of preference
+    search_paths = []
+
+    # 1. Environment variable override (highest priority)
+    if "RVC_CONFIG_DIR" in os.environ:
+        search_paths.append(pathlib.Path(os.environ["RVC_CONFIG_DIR"]))
+
+    # 2. Development/source tree (relative to this module) - prioritized for dev mode
+    current_file = pathlib.Path(__file__)
+    search_paths.append(current_file.parent / "config")
+
+    # 3. Current working directory fallback for development
+    search_paths.append(pathlib.Path.cwd() / "backend/integrations/rvc/config")
+
+    # 4. System package locations (Debian/RPM packages)
+    search_paths.extend(
+        [
+            pathlib.Path("/usr/share/rvc2api/config"),
+            pathlib.Path("/usr/local/share/rvc2api/config"),
+            pathlib.Path("/etc/rvc2api"),
+        ]
     )
+
+    # Search each path for the config files
+    for config_dir in search_paths:
+        if config_dir.exists() and config_dir.is_dir():
+            rvc_json = config_dir / "rvc.json"
+            if rvc_json.is_file():
+                logger.debug(f"Found RVC config files in: {config_dir}")
+
+                # Determine which coach mapping file to use
+                coach_mapping_path = _select_coach_mapping_file(config_dir)
+
+                return (str(rvc_json), str(coach_mapping_path))
+
+    # 5. Python package installation (importlib.resources) - fallback for pip installs
+    try:
+        cfg_dir = resources.files(__package__) / "config"
+        if cfg_dir.joinpath("rvc.json").is_file():
+            logger.debug(f"Found RVC config files via importlib.resources: {cfg_dir}")
+
+            # Determine which coach mapping file to use
+            coach_mapping_path = _select_coach_mapping_file(cfg_dir)
+
+            return (str(cfg_dir / "rvc.json"), str(coach_mapping_path))
+    except Exception as e:
+        logger.debug(f"Failed to locate config files via importlib.resources: {e}")
+
+    # If nothing is found, raise an error with helpful information
+    searched_paths = [str(p) for p in search_paths]
+    error_msg = f"RVC config files not found. Searched paths: {searched_paths}"
+    logger.error(error_msg)
+    raise FileNotFoundError(error_msg)
+
+
+def _select_coach_mapping_file(config_dir) -> pathlib.Path:
+    """
+    Select the appropriate coach mapping file based on environment variables.
+
+    Priority:
+    1. RVC_COACH_MODEL environment variable (e.g., "2021_Entegra_Aspire_44R")
+    2. Default fallback: "coach_mapping.default.yml"
+
+    Args:
+        config_dir: Path to the config directory containing mapping files
+
+    Returns:
+        Path to the selected coach mapping file
+    """
+    import pathlib
+
+    config_dir = pathlib.Path(config_dir)
+
+    # Check for model selector environment variable
+    model_selector = os.getenv("RVC_COACH_MODEL")
+    if model_selector:
+        # Normalize selector: replace spaces with underscores, lowercase, strip extension if present
+        selector_norm = os.path.splitext(model_selector.replace(" ", "_").lower())[0]
+
+        try:
+            # Find available mapping files
+            available_mappings = [
+                fname
+                for fname in os.listdir(config_dir)
+                if os.path.splitext(fname)[1].lower() in (".yml", ".yaml")
+            ]
+
+            # Search for matching file
+            for fname in available_mappings:
+                base, ext = os.path.splitext(fname)
+                base_norm = base.replace(" ", "_").lower()
+
+                if base_norm == selector_norm:
+                    candidate = config_dir / fname
+                    if candidate.is_file():
+                        logger.info(
+                            f"Model selector '{model_selector}' -> Using mapping file: {candidate}"
+                        )
+                        return candidate
+
+            # Model selector specified but file not found
+            logger.warning(f"Requested model mapping '{model_selector}' not found in {config_dir}.")
+            logger.warning(f"Available mapping files: {available_mappings}")
+            logger.warning("Falling back to default mapping")
+
+        except Exception as e:
+            logger.warning(f"Could not scan mapping directory '{config_dir}': {e}")
+
+    # Fallback to default mapping
+    default_mapping = config_dir / "coach_mapping.default.yml"
+    if default_mapping.is_file():
+        logger.debug(f"Using default coach mapping: {default_mapping}")
+        return default_mapping
+
+    # Last resort - raise error if default is not found
+    raise FileNotFoundError(f"Default coach mapping file not found: {default_mapping}")
 
 
 def get_bits(data_bytes: bytes, start_bit: int, length: int) -> int:
@@ -208,7 +327,7 @@ def load_config_data(
             - coach_info: CoachInfo object with detected coach metadata
     """
     # Get default paths if not overridden
-    rvc_spec_path, device_mapping_path, _ = _default_paths()  # Ignore third default config
+    rvc_spec_path, device_mapping_path = _default_paths()
     if rvc_spec_path_override:
         rvc_spec_path = rvc_spec_path_override
     if device_mapping_path_override:
@@ -277,6 +396,10 @@ def load_config_data(
     for dgn_hex, instance_dict in device_mapping.items():
         if dgn_hex.startswith("#") or dgn_hex.startswith("_"):
             # Skip comment lines
+            continue
+
+        # Skip metadata sections
+        if dgn_hex in ("coach_info", "dgn_pairs", "templates"):
             continue
 
         for instance_id, devices in instance_dict.items():

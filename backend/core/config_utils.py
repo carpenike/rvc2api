@@ -28,19 +28,19 @@ def get_actual_paths() -> tuple[str | None, str | None]:
     if ACTUAL_SPEC_PATH is not None and ACTUAL_MAP_PATH is not None:
         return ACTUAL_SPEC_PATH, ACTUAL_MAP_PATH
 
-    # Try to get paths from rvc_decoder
+    # Try to get paths from RVC integration module
     try:
-        from rvc_decoder.decode import _default_paths
+        from backend.integrations.rvc.decode import _default_paths
 
         decoder_default_spec_path, decoder_default_map_path = _default_paths()
     except ImportError as e:
-        logger.warning(f"Could not import rvc_decoder._default_paths: {e}")
+        logger.warning(f"Could not import backend.integrations.rvc.decode._default_paths: {e}")
         decoder_default_spec_path = None
         decoder_default_map_path = None
 
     # Check environment overrides
-    spec_override_env = os.getenv("CAN_SPEC_PATH")
-    mapping_override_env = os.getenv("CAN_MAP_PATH")
+    spec_override_env = os.getenv("RVC_SPEC_PATH")
+    mapping_override_env = os.getenv("RVC_COACH_MAPPING_PATH")
 
     # Determine actual spec path
     if (

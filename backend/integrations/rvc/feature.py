@@ -76,15 +76,15 @@ class RVCFeature(Feature):
             spec_path_override = None
             map_path_override = None
 
-            if settings.can_spec_path:
-                spec_path_override = str(settings.can_spec_path)
+            if settings.rvc_spec_path:
+                spec_path_override = str(settings.rvc_spec_path)
                 logger.info(f"Using RVC spec path from environment: {spec_path_override}")
             elif self._rvc_spec_path:
                 spec_path_override = self._rvc_spec_path
                 logger.info(f"Using RVC spec path from config: {spec_path_override}")
 
-            if settings.can_map_path:
-                map_path_override = str(settings.can_map_path)
+            if settings.rvc_coach_mapping_path:
+                map_path_override = str(settings.rvc_coach_mapping_path)
                 logger.info(f"Using device mapping path from environment: {map_path_override}")
             elif self._device_mapping_path:
                 map_path_override = self._device_mapping_path

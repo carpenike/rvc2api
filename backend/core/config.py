@@ -75,8 +75,8 @@ class Settings(BaseSettings):
     root_path: str = ""
 
     # File paths
-    can_spec_path: Path | None = Field(default=None, alias="CAN_SPEC_PATH")
-    can_map_path: Path | None = Field(default=None, alias="CAN_MAP_PATH")
+    rvc_spec_path: Path | None = Field(default=None, alias="RVC_SPEC_PATH")
+    rvc_coach_mapping_path: Path | None = Field(default=None, alias="RVC_COACH_MAPPING_PATH")
     static_dir: Path = Path("static")
 
     # CAN bus settings

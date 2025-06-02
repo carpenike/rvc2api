@@ -10,6 +10,7 @@ Handles business logic for CAN bus operations, including:
 This service extracts CAN-related business logic from the API router layer.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -42,16 +43,19 @@ class CANService:
         Get the current status of the CAN transmission queue.
 
         Returns:
-            Dictionary containing queue length and max size information
+            dict: Dictionary containing queue length and max size information.
         """
-        return {"length": can_tx_queue.qsize(), "maxsize": can_tx_queue.maxsize or "unbounded"}
+        return {
+            "length": can_tx_queue.qsize(),
+            "maxsize": can_tx_queue.maxsize or "unbounded",
+        }
 
     async def get_interfaces(self) -> list[str]:
         """
         Get a list of active CAN interfaces.
 
         Returns:
-            List of interface names that are currently active
+            list: List of interface names that are currently active.
         """
         return list(buses.keys())
 
@@ -60,7 +64,7 @@ class CANService:
         Get detailed information about all CAN interfaces.
 
         Returns:
-            Dictionary mapping interface names to their details
+            dict: Dictionary mapping interface names to their details.
         """
         interface_details = {}
 
@@ -105,10 +109,10 @@ class CANService:
             interface: Target CAN interface name
 
         Returns:
-            Dictionary with send status and details
+            dict: Dictionary with send status and details.
 
         Raises:
-            ValueError: If interface is invalid or message parameters are wrong
+            ValueError: If interface is invalid or message parameters are wrong.
         """
         # Validate arbitration ID
         if not (0 <= arbitration_id <= 0x1FFFFFFF):
@@ -127,7 +131,9 @@ class CANService:
 
         # Create CAN message
         msg = can.Message(
-            arbitration_id=arbitration_id, data=data, is_extended_id=arbitration_id > 0x7FF
+            arbitration_id=arbitration_id,
+            data=data,
+            is_extended_id=arbitration_id > 0x7FF,
         )
 
         try:
@@ -164,7 +170,7 @@ class CANService:
         Get comprehensive statistics about CAN bus operations.
 
         Returns:
-            Dictionary containing bus statistics and metrics
+            dict: Dictionary containing bus statistics and metrics.
         """
         stats = {
             "interfaces": {},
@@ -211,17 +217,34 @@ class CANService:
             return
 
         # Import here to avoid circular imports
-        import asyncio
-
         from backend.integrations.can.manager import can_writer
 
         # Start the CAN writer task and store reference to prevent garbage collection
         can_writer_task = asyncio.create_task(can_writer(self.app_state))
-
-        # Store task reference as instance attribute to prevent garbage collection
         self._can_writer_task = can_writer_task
-
         logger.info("CAN writer task started")
+
+    async def shutdown(self) -> None:
+        """
+        Shutdown the CAN service and clean up background tasks.
+
+        This method cancels and awaits the CAN writer task to ensure
+        graceful shutdown without hanging background tasks.
+        """
+        logger.info("Shutting down CANService")
+
+        # Cancel and await the CAN writer task if it exists
+        if hasattr(self, "_can_writer_task") and self._can_writer_task:
+            logger.info("Cancelling CAN writer task")
+            self._can_writer_task.cancel()
+            try:
+                await self._can_writer_task
+            except asyncio.CancelledError:
+                logger.info("CAN writer task cancelled successfully")
+            except Exception as e:
+                logger.error(f"Error during CAN writer task cancellation: {e}")
+
+        logger.info("CANService shutdown complete")
 
     async def send_message(
         self, arbitration_id: int, data: bytes, interface: str
@@ -235,7 +258,7 @@ class CANService:
             interface: Target CAN interface name
 
         Returns:
-            Dictionary with send status and details
+            dict: Dictionary with send status and details.
         """
         return await self.send_raw_message(arbitration_id, data, interface)
 
@@ -247,7 +270,7 @@ class CANService:
             limit: Maximum number of messages to return (default: 100)
 
         Returns:
-            List of recent CAN messages with decoded information
+            list: List of recent CAN messages with decoded information.
         """
         # This is a placeholder implementation. In a real system, this would
         # fetch messages from a message buffer or database.
@@ -272,7 +295,7 @@ class CANService:
             interfaces: List of interface names to initialize
 
         Returns:
-            Dictionary with initialization status
+            dict: Dictionary with initialization status.
         """
         import os
 
@@ -302,4 +325,8 @@ class CANService:
                 logger.error(f"Failed to initialize CAN interface '{interface_name}': {e}")
                 failed.append({"interface": interface_name, "error": str(e)})
 
-        return {"initialized": initialized, "failed": failed, "total_interfaces": len(buses)}
+        return {
+            "initialized": initialized,
+            "failed": failed,
+            "total_interfaces": len(buses),
+        }

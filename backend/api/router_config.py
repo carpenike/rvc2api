@@ -11,6 +11,7 @@ from typing import Any
 from fastapi import FastAPI
 
 from backend.api.routers import can, config, docs, entities
+from backend.websocket.routes import router as websocket_router
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,9 @@ def configure_routers(app: FastAPI) -> None:
     app.include_router(config.router)
     app.include_router(docs.router)
 
+    # Include WebSocket routes that integrate with feature manager
+    app.include_router(websocket_router)
+
     logger.info("All API routers configured successfully")
 
 
@@ -49,7 +53,8 @@ def get_router_info() -> dict[str, Any]:
             {"prefix": "/api", "tags": ["can"], "name": "can"},
             {"prefix": "/api", "tags": ["config"], "name": "config"},
             {"prefix": "/api", "tags": ["docs"], "name": "docs"},
+            {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 4,
+        "total_routers": 5,
         "dependency_injection": True,
     }

@@ -102,8 +102,10 @@ class CANBusFeature(Feature):
             settings = get_settings()
 
             # Convert Path objects to strings if they exist
-            spec_path = str(settings.can_spec_path) if settings.can_spec_path else None
-            map_path = str(settings.can_map_path) if settings.can_map_path else None
+            spec_path = str(settings.rvc_spec_path) if settings.rvc_spec_path else None
+            map_path = (
+                str(settings.rvc_coach_mapping_path) if settings.rvc_coach_mapping_path else None
+            )
 
             logger.info(f"Using RVC spec path: {spec_path}")
             logger.info(f"Using device mapping path: {map_path}")

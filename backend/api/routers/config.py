@@ -1,7 +1,7 @@
 """
 Config and Status API Router
 
-FastAPI router for configuration, status monitoring, and WebSocket connections.
+FastAPI router for configuration and status monitoring.
 This router delegates business logic to appropriate services.
 
 Routes:
@@ -14,19 +14,15 @@ Routes:
 - GET /status/application: Get application status information
 - GET /status/latest_release: Get latest GitHub release information
 - POST /status/force_update_check: Force GitHub update check
-- WebSocket /ws: General data streaming
-- WebSocket /ws/logs: Application log streaming
-- WebSocket /ws/can-sniffer: CAN bus sniffer
-- WebSocket /ws/features: Feature status updates
-- WebSocket /ws/status: Combined status updates
+
+Note: WebSocket endpoints are handled by backend.websocket.routes
 """
 
-import asyncio
 import logging
 import time
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, WebSocket
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
@@ -45,13 +41,6 @@ router = APIRouter(prefix="/api", tags=["config", "status"])
 
 # Store startup time
 SERVER_START_TIME = time.time()
-
-# WebSocket client sets
-log_ws_clients: set[WebSocket] = set()
-status_ws_clients: set[WebSocket] = set()
-features_ws_clients: set[WebSocket] = set()
-can_sniffer_ws_clients: set[WebSocket] = set()
-data_ws_clients: set[WebSocket] = set()
 
 
 @router.get(
@@ -108,10 +97,11 @@ async def healthz(request: Request) -> JSONResponse:
     health_report = {name: f.health for name, f in features.items() if getattr(f, "enabled", False)}
 
     # Consider healthy if all enabled features are healthy/unknown/disabled
+    # Note: status can be "healthy" or start with "healthy (" for descriptive info
     unhealthy = {
         name: status
         for name, status in health_report.items()
-        if status not in ("healthy", "unknown", "disabled")
+        if not (status in ("unknown", "disabled") or status.startswith("healthy"))
     }
 
     if unhealthy:
@@ -212,13 +202,15 @@ async def get_application_status(request: Request) -> dict[str, Any]:
         "active_entity_state_count": len(app_state.entity_manager.get_entity_ids()),
         "unmapped_entry_count": len(app_state.unmapped_entries),
         "unknown_pgn_count": len(app_state.unknown_pgns),
-        "can_listeners_status": "likely_active" if can_listeners_active else "unknown_or_inactive",
+        "can_listeners_status": (
+            "likely_active" if can_listeners_active else "unknown_or_inactive"
+        ),
         "websocket_clients": {
-            "data_clients": len(data_ws_clients),
-            "log_clients": len(log_ws_clients),
-            "status_clients": len(status_ws_clients),
-            "features_clients": len(features_ws_clients),
-            "can_sniffer_clients": len(can_sniffer_ws_clients),
+            "data_clients": 0,  # Will be updated once WebSocket manager is properly integrated
+            "log_clients": 0,
+            "status_clients": 0,
+            "features_clients": 0,
+            "can_sniffer_clients": 0,
         },
     }
 
@@ -299,136 +291,6 @@ async def get_feature_status(request: Request) -> dict[str, Any]:
     }
 
 
-# WebSocket endpoints
-@router.websocket("/ws")
-async def websocket_data_endpoint(websocket: WebSocket) -> None:
-    """WebSocket endpoint for general data streaming."""
-    await websocket.accept()
-    data_ws_clients.add(websocket)
-
-    try:
-        while True:
-            # Keep connection alive, actual data streaming handled by background tasks
-            await websocket.receive_text()
-    except Exception as e:
-        logger.info(f"WebSocket client disconnected: {e}")
-    finally:
-        data_ws_clients.discard(websocket)
-
-
-@router.websocket("/ws/logs")
-async def websocket_logs_endpoint(websocket: WebSocket) -> None:
-    """WebSocket endpoint for streaming application logs."""
-    await websocket.accept()
-    log_ws_clients.add(websocket)
-
-    try:
-        while True:
-            # Keep connection alive, actual log streaming handled by log handler
-            await websocket.receive_text()
-    except Exception as e:
-        logger.info(f"Log WebSocket client disconnected: {e}")
-    finally:
-        log_ws_clients.discard(websocket)
-
-
-@router.websocket("/ws/can-sniffer")
-async def websocket_can_sniffer_endpoint(websocket: WebSocket) -> None:
-    """WebSocket endpoint for CAN bus sniffing."""
-    await websocket.accept()
-    can_sniffer_ws_clients.add(websocket)
-
-    try:
-        while True:
-            # Keep connection alive, actual CAN data handled by CAN manager
-            await websocket.receive_text()
-    except Exception as e:
-        logger.info(f"CAN sniffer WebSocket client disconnected: {e}")
-    finally:
-        can_sniffer_ws_clients.discard(websocket)
-
-
-@router.websocket("/ws/features")
-async def websocket_features_endpoint(websocket: WebSocket) -> None:
-    """WebSocket endpoint for live feature status updates."""
-    await websocket.accept()
-    features_ws_clients.add(websocket)
-
-    try:
-        while True:
-            # Send feature status updates periodically
-            # Use websocket's app instance to access app state
-            feature_manager = get_feature_manager_from_request(websocket)
-            features = feature_manager.features
-            status_data = {
-                name: f.health for name, f in features.items() if getattr(f, "enabled", False)
-            }
-
-            await websocket.send_json(
-                {"type": "feature_status", "data": status_data, "timestamp": time.time()}
-            )
-
-            await asyncio.sleep(5)  # Update every 5 seconds
-    except Exception as e:
-        logger.info(f"Features WebSocket client disconnected: {e}")
-    finally:
-        features_ws_clients.discard(websocket)
-
-
-@router.websocket("/ws/status")
-async def websocket_status_endpoint(websocket: WebSocket) -> None:
-    """WebSocket endpoint for combined status updates."""
-    await websocket.accept()
-    status_ws_clients.add(websocket)
-
-    try:
-        while True:
-            # Gather all status information
-            server_status = await get_server_status()
-
-            # Build application status manually since we can't call the endpoint directly
-            config_service = get_config_service(websocket)
-            app_state = get_app_state(websocket)
-
-            # Get configuration status
-            config_status = await config_service.get_config_status()
-
-            # Basic check for CAN listeners (simple proxy: if entities exist, listeners likely ran)
-            can_listeners_active = len(app_state.entity_manager.get_entity_ids()) > 0
-
-            application_status = {
-                "status": "ok",
-                "rvc_spec_file_loaded": config_status["spec_loaded"],
-                "rvc_spec_file_path": config_status.get("spec_path"),
-                "device_mapping_file_loaded": config_status["mapping_loaded"],
-                "device_mapping_file_path": config_status.get("mapping_path"),
-                "known_entity_count": len(app_state.entity_manager.get_entity_ids()),
-                "active_entity_state_count": len(app_state.entity_manager.get_entity_ids()),
-                "unmapped_entry_count": len(app_state.unmapped_entries),
-                "unknown_pgn_count": len(app_state.unknown_pgns),
-                "can_listeners_status": "likely_active"
-                if can_listeners_active
-                else "unknown_or_inactive",
-                "websocket_clients": {
-                    "data_clients": len(data_ws_clients),
-                    "log_clients": len(log_ws_clients),
-                    "status_clients": len(status_ws_clients),
-                    "features_clients": len(features_ws_clients),
-                    "can_sniffer_clients": len(can_sniffer_ws_clients),
-                },
-            }
-
-            # Send combined status
-            await websocket.send_json(
-                {
-                    "server": server_status,
-                    "application": application_status,
-                    "timestamp": time.time(),
-                }
-            )
-
-            await asyncio.sleep(5)  # Update every 5 seconds
-    except Exception as e:
-        logger.info(f"Status WebSocket client disconnected: {e}")
-    finally:
-        status_ws_clients.discard(websocket)
+# Note: WebSocket endpoints have been moved to backend.websocket.routes
+# The endpoints /ws, /ws/logs, /ws/can-sniffer, /ws/features, and /ws/status
+# are now handled by the proper WebSocket manager with feature integration

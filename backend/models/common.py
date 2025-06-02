@@ -30,3 +30,27 @@ class CoachInfo(BaseModel):
     trim: str | None = None
     filename: str | None = None
     notes: str | None = None
+
+
+class UserCoachInfo(BaseModel):
+    """
+    UserCoachInfo
+
+    Represents user-supplied coach information (VIN, serial numbers, owner, etc).
+    Common fields are optional; arbitrary extra fields are allowed.
+
+    Attributes:
+        vin (str | None): Vehicle Identification Number (optional).
+        chassis_serial_number (str | None): Chassis serial number (optional).
+        owner (str | None): Owner name (optional).
+        custom_notes (str | None): Freeform notes (optional).
+        ...any other user-supplied fields are accepted as extra keys.
+    """
+
+    vin: str | None = None
+    chassis_serial_number: str | None = None
+    owner: str | None = None
+    custom_notes: str | None = None
+
+    class Config:
+        extra = "allow"

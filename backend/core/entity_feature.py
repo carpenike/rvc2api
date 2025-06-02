@@ -66,8 +66,10 @@ class EntityManagerFeature(Feature):
 
             settings = get_settings()
 
-            rvc_spec_path = str(settings.can_spec_path) if settings.can_spec_path else None
-            device_mapping_path = str(settings.can_map_path) if settings.can_map_path else None
+            rvc_spec_path = str(settings.rvc_spec_path) if settings.rvc_spec_path else None
+            device_mapping_path = (
+                str(settings.rvc_coach_mapping_path) if settings.rvc_coach_mapping_path else None
+            )
 
             logger.info(f"Using RV-C spec path: {rvc_spec_path}")
             logger.info(f"Using device mapping path: {device_mapping_path}")
