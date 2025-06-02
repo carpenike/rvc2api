@@ -2,7 +2,7 @@
  * Enhanced Dashboard Page
  *
  * Provides system overview with health status, CAN bus monitoring,
- * quick actions, and real-time updates via WebSocket.
+ * quick actions, real-time updates, and RV-specific control cards.
  */
 
 import { AppLayout } from "@/components/app-layout"
@@ -440,6 +440,171 @@ function QuickActionsCard() {
 }
 
 /**
+ * RV Power Management card component
+ */
+function RVPowerManagementCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconBolt className="size-5" />
+          Power Management
+        </CardTitle>
+        <CardDescription>Monitor and control power systems</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
+            <IconBolt className="mr-2 size-4" />
+            Battery Status
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconBolt className="mr-2 size-4" />
+            Inverter Control
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconBolt className="mr-2 size-4" />
+            Shore Power
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * RV Climate Control card component
+ */
+function RVClimateControlCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconWifi className="size-5" />
+          Climate Control
+        </CardTitle>
+        <CardDescription>Temperature and ventilation control</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
+            <IconWifi className="mr-2 size-4" />
+            Air Conditioning
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconWifi className="mr-2 size-4" />
+            Heating
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconWifi className="mr-2 size-4" />
+            Ventilation
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * RV Water System card component
+ */
+function RVWaterSystemCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconCpu className="size-5" />
+          Water System
+        </CardTitle>
+        <CardDescription>Fresh water and waste management</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
+            <IconCpu className="mr-2 size-4" />
+            Fresh Water
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconCpu className="mr-2 size-4" />
+            Gray Water
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconCpu className="mr-2 size-4" />
+            Black Water
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * RV Slide Outs card component
+ */
+function RVSlideOutsCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconActivity className="size-5" />
+          Slide Outs
+        </CardTitle>
+        <CardDescription>Extend and retract slide out rooms</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
+            <IconActivity className="mr-2 size-4" />
+            Main Slide
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconActivity className="mr-2 size-4" />
+            Bedroom Slide
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconActivity className="mr-2 size-4" />
+            Kitchen Slide
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * RV Awnings & Steps card component
+ */
+function RVAwningsStepsCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconCheck className="size-5" />
+          Awnings & Steps
+        </CardTitle>
+        <CardDescription>Deploy awnings and entry steps</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
+            <IconCheck className="mr-2 size-4" />
+            Main Awning
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconCheck className="mr-2 size-4" />
+            Door Awning
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <IconCheck className="mr-2 size-4" />
+            Entry Steps
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
  * Enhanced Dashboard Page Component
  */
 export default function Dashboard() {
@@ -486,6 +651,26 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+
+        {/* RV Control Systems */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">RV Control Systems</h2>
+              <p className="text-muted-foreground">
+                Monitor and control key RV systems and components
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <RVPowerManagementCard />
+            <RVClimateControlCard />
+            <RVWaterSystemCard />
+            <RVSlideOutsCard />
+            <RVAwningsStepsCard />
           </div>
         </div>
       </div>

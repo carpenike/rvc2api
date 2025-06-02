@@ -1,18 +1,18 @@
 import {
-  IconBulb,
-  IconChartBar,
-  IconCircuitSwitchOpen,
-  IconCpu,
-  IconDashboard,
-  IconFileDescription,
-  IconFileWord,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconMapPin,
-  IconQuestionMark,
-  IconSettings,
-  IconWifi,
+    IconBulb,
+    IconChartBar,
+    IconCircuitSwitchOpen,
+    IconCpu,
+    IconDashboard,
+    IconFileDescription,
+    IconFileWord,
+    IconHelp,
+    IconInnerShadowTop,
+    IconListDetails,
+    IconMapPin,
+    IconQuestionMark,
+    IconSettings,
+    IconWifi,
 } from "@tabler/icons-react"
 import * as React from "react"
 
@@ -22,13 +22,13 @@ import { NavSecondary } from "@/components/nav-secondary"
 import { NavSection } from "@/components/nav-section"
 import { NavUser } from "@/components/nav-user"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
 const data = {
@@ -39,8 +39,8 @@ const data = {
   },
   navMain: [
     {
-      title: "RV-C Dashboard",
-      url: "/rvc-dashboard",
+      title: "Dashboard",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {

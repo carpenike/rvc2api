@@ -7,7 +7,7 @@ import DeviceMapping from "@/pages/device-mapping";
 import Documentation from "@/pages/documentation";
 import Lights from "@/pages/lights";
 import NetworkMap from "@/pages/network-map";
-import RVCDashboard from "@/pages/rvc-dashboard";
+
 import RVCSpec from "@/pages/rvc-spec";
 import ThemeTest from "@/pages/theme-test";
 import UnknownPGNs from "@/pages/unknown-pgns";
@@ -26,12 +26,16 @@ createRoot(document.getElementById("root")!).render(
         enableSystem
         disableTransitionOnChange
       >
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/demo-dashboard" element={<DemoDashboard />} />
-            <Route path="/rvc-dashboard" element={<RVCDashboard />} />
             <Route path="/lights" element={<Lights />} />
             <Route path="/device-mapping" element={<DeviceMapping />} />
             <Route path="/can-sniffer" element={<CanSniffer />} />

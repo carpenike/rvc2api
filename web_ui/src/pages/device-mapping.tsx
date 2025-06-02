@@ -15,13 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useEntities } from "@/hooks/useEntities"
 import {
-  IconAlertCircle,
-  IconDeviceDesktop,
-  IconDeviceGamepad,
-  IconInfoCircle,
-  IconMapPin,
-  IconRefresh,
-  IconSettings
+    IconAlertCircle,
+    IconDeviceDesktop,
+    IconDeviceGamepad,
+    IconInfoCircle,
+    IconMapPin,
+    IconRefresh,
+    IconSettings
 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
@@ -174,7 +174,7 @@ function DeviceMappingTable({ entities }: { entities: EntityData[] }) {
           </TableHeader>
           <TableBody>
             {entities.map((entity) => (
-              <TableRow key={entity.id}>
+              <TableRow key={entity.id || entity.entity_id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{getDeviceTypeIcon(entity.device_type)}</span>
@@ -259,7 +259,7 @@ function DeviceTypeBreakdown({ entities }: { entities: EntityData[] }) {
               </div>
               <div className="flex gap-1">
                 {devices.slice(0, 3).map((device) => (
-                  <Badge key={device.id} variant="secondary" className="text-xs">
+                  <Badge key={device.id || device.entity_id} variant="secondary" className="text-xs">
                     {device.suggested_area || 'Unmapped'}
                   </Badge>
                 ))}

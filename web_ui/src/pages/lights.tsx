@@ -112,8 +112,8 @@ function LightControl({ light }: LightControlProps) {
           <div className="pt-2 border-t">
             <div className="text-xs text-muted-foreground mb-1">Capabilities</div>
             <div className="flex flex-wrap gap-1">
-              {light.capabilities.map((capability) => (
-                <Badge key={capability} variant="outline" className="text-xs">
+              {light.capabilities.map((capability, index) => (
+                <Badge key={`${light.id}-capability-${index}`} variant="outline" className="text-xs">
                   {capability}
                 </Badge>
               ))}
@@ -182,7 +182,7 @@ function LightGroup({ title, lights }: LightGroupProps) {
       <h3 className="text-lg font-semibold">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {lights.map((light) => (
-          <LightControl key={light.id} light={light} />
+          <LightControl key={light.id || light.entity_id} light={light} />
         ))}
       </div>
     </div>
