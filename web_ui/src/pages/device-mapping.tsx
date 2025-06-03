@@ -15,13 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useEntities } from "@/hooks/useEntities"
 import {
-    IconAlertCircle,
-    IconDeviceDesktop,
-    IconDeviceGamepad,
-    IconInfoCircle,
-    IconMapPin,
-    IconRefresh,
-    IconSettings
+  IconAlertCircle,
+  IconDeviceDesktop,
+  IconDeviceGamepad,
+  IconInfoCircle,
+  IconMapPin,
+  IconRefresh,
+  IconSettings
 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
@@ -36,7 +36,8 @@ function DeviceMappingStats({ entities }: { entities: EntityData[] }) {
     }, {} as Record<string, number>)
 
     const bySourceType = entities.reduce((acc, entity) => {
-      acc[entity.source_type] = (acc[entity.source_type] || 0) + 1
+      const sourceType = entity.source_type || entity.device_type || 'unknown'
+      acc[sourceType] = (acc[sourceType] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
@@ -203,7 +204,9 @@ function DeviceMappingTable({ entities }: { entities: EntityData[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {new Date(entity.last_updated).toLocaleString()}
+                  {entity.last_updated ? new Date(entity.last_updated).toLocaleString() :
+                   entity.timestamp ? new Date(entity.timestamp * 1000).toLocaleString() :
+                   'N/A'}
                 </TableCell>
                 <TableCell>
                   <Button variant="outline" size="sm">

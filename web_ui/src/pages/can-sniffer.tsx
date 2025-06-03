@@ -16,13 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useCANMessages, useCANMetrics } from "@/hooks/useSystem"
 import {
-  IconActivity,
-  IconAlertTriangle,
-  IconFilter,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconRefresh,
-  IconTrash
+    IconActivity,
+    IconAlertTriangle,
+    IconFilter,
+    IconPlayerPause,
+    IconPlayerPlay,
+    IconRefresh,
+    IconTrash
 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 
@@ -395,14 +395,99 @@ export default function CANSniffer() {
   }
 
   if (error) {
+    // Extract error details for better user messaging
+    const getErrorDetails = () => {
+      if (error instanceof Error) {
+        // Check for specific API error types
+        if ('statusCode' in error && typeof (error as { statusCode?: number }).statusCode === 'number') {
+          const statusCode = (error as { statusCode: number }).statusCode;
+
+          switch (statusCode) {
+            case 404:
+              return {
+                title: "CAN Feature Disabled",
+                message: "The CAN interface feature is currently disabled in the system configuration.",
+                isConnectionError: false,
+                showRetry: false,
+                troubleshooting: [
+                  "Contact your system administrator to enable the CAN interface feature",
+                  "Check the system configuration settings"
+                ]
+              };
+            case 503:
+              return {
+                title: "CAN Bus Connection Error",
+                message: "Failed to connect to CAN bus interface. No interfaces are available or connected.",
+                isConnectionError: true,
+                showRetry: true,
+                troubleshooting: [
+                  "Ensure CAN interfaces are configured and connected",
+                  "Check that vCAN interfaces are available (if using virtual CAN)",
+                  "Verify physical CAN connections and termination",
+                  "Check interface status with 'ip link show' or 'ifconfig'"
+                ]
+              };
+            default:
+              return {
+                title: "API Error",
+                message: error.message || "An unexpected error occurred while communicating with the server.",
+                isConnectionError: false,
+                showRetry: true,
+                troubleshooting: ["Try refreshing the page", "Check your network connection"]
+              };
+          }
+        }
+
+        // Generic error handling
+        return {
+          title: "Connection Error",
+          message: error.message || "An error occurred while loading CAN data.",
+          isConnectionError: true,
+          showRetry: true,
+          troubleshooting: ["Try refreshing the page", "Check your network connection"]
+        };
+      }
+
+      // Fallback for unknown error types
+      return {
+        title: "Unknown Error",
+        message: "An unexpected error occurred.",
+        isConnectionError: false,
+        showRetry: true,
+        troubleshooting: ["Try refreshing the page"]
+      };
+    };
+
+    const errorDetails = getErrorDetails();
+
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8">
           <Alert variant="destructive">
             <IconAlertTriangle className="h-4 w-4" />
-            <AlertTitle>CAN Bus Connection Error</AlertTitle>
-            <AlertDescription>
-              Failed to connect to CAN bus interface. Please check your connection and try again.
+            <AlertTitle>{errorDetails.title}</AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p>{errorDetails.message}</p>
+
+              {errorDetails.showRetry && (
+                <div className="flex gap-2">
+                  <Button onClick={() => refetch()} variant="outline" size="sm">
+                    <IconRefresh className="h-4 w-4 mr-2" />
+                    {errorDetails.isConnectionError ? "Retry Connection" : "Retry"}
+                  </Button>
+                </div>
+              )}
+
+              {errorDetails.troubleshooting.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Troubleshooting tips:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 mt-2">
+                    {errorDetails.troubleshooting.map((tip, index) => (
+                      <li key={index}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         </div>

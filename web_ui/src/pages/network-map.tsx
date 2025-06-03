@@ -14,12 +14,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEntities } from "@/hooks/useEntities"
 import {
-  IconAlertTriangle,
-  IconInfoCircle,
-  IconMapPin,
-  IconRefresh,
-  IconZoomIn,
-  IconZoomOut
+    IconAlertTriangle,
+    IconInfoCircle,
+    IconMapPin,
+    IconRefresh,
+    IconZoomIn,
+    IconZoomOut
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
@@ -305,7 +305,8 @@ function NetworkStatsSidebar({ entities }: { entities: EntityData[] }) {
     }, {} as Record<string, number>)
 
     const sourceCounts = entities.reduce((acc, entity) => {
-      acc[entity.source_type] = (acc[entity.source_type] || 0) + 1
+      const sourceType = entity.source_type || entity.device_type || 'unknown'
+      acc[sourceType] = (acc[sourceType] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 

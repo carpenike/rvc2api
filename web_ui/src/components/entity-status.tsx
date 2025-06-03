@@ -63,11 +63,7 @@ function LightControlCard() {
   }
 
   const handleLightToggle = (light: LightEntity) => {
-    lightControl.toggle.mutate(light.id, {
-      onError: (error) => {
-        console.error('Failed to toggle light:', error);
-      },
-    });
+    lightControl.toggle.mutate({ entityId: light.entity_id });
   };
 
   return (
@@ -230,6 +226,6 @@ function EntityOverviewCard() {
  * Main component export
  */
 export {
-  EntityCardSkeleton, EntityOverviewCard, LightControlCard,
-  SystemStatusCard
+    EntityCardSkeleton, EntityOverviewCard, LightControlCard,
+    SystemStatusCard
 };

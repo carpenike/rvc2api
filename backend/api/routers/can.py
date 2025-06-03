@@ -18,7 +18,14 @@ import logging
 import platform
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 from backend.core.dependencies import get_can_service, get_feature_manager_from_request
 
@@ -180,9 +187,18 @@ async def get_recent_can_messages(
 
     Returns:
         List of recent CAN messages with decoded information
+
+    Raises:
+        HTTPException: 503 if CAN interfaces are not available or connected
     """
     _check_can_interface_feature_enabled(request)
-    return await can_service.get_recent_messages(limit)
+
+    try:
+        return await can_service.get_recent_messages(limit)
+    except ConnectionError as e:
+        raise HTTPException(
+            status_code=503, detail=f"Failed to connect to CAN bus interface: {e!s}"
+        ) from e
 
 
 @router.get(

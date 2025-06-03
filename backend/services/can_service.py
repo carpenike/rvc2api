@@ -271,11 +271,20 @@ class CANService:
 
         Returns:
             list: List of recent CAN messages with decoded information.
+
+        Raises:
+            ConnectionError: If no CAN interfaces are available or connected.
         """
-        # This is a placeholder implementation. In a real system, this would
-        # fetch messages from a message buffer or database.
-        # For now, we return an empty list as no message storage is implemented.
         logger.debug(f"Requested {limit} recent CAN messages")
+
+        # Check if we have any active CAN interfaces
+        if not buses:
+            raise ConnectionError("No CAN interfaces are configured")
+
+        # Check if any interfaces are actually connected/working
+        active_interfaces = [name for name, bus in buses.items() if bus is not None]
+        if not active_interfaces:
+            raise ConnectionError("No CAN interfaces are connected or available")
 
         # TODO: Implement actual message storage and retrieval
         # This could involve:
@@ -283,6 +292,7 @@ class CANService:
         # 2. Storing messages in a database
         # 3. Reading from the CAN sniffer feature if available
 
+        # For now, return empty list when interfaces are available but no messages yet
         return []
 
     async def initialize_can_interfaces(
