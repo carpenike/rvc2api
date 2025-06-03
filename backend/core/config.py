@@ -26,7 +26,7 @@ class CANBusSettings(BaseModel):
 
     bustype: str = Field(default="socketcan")
     channels: list[str] = Field(default=["vcan0"])
-    bitrate: int = Field(default=250000)
+    bitrate: int = Field(default=500000)
 
     @field_validator("channels", mode="before")
     @classmethod
