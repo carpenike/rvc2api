@@ -53,7 +53,7 @@ class CANBusFeature(Feature):
         self.config = {
             "interfaces": config_dict.get("interfaces", ["vcan0"]),
             "bustype": config_dict.get("bustype", "socketcan"),
-            "bitrate": config_dict.get("bitrate", 250000),
+            "bitrate": config_dict.get("bitrate", 500000),
             "poll_interval": config_dict.get("poll_interval", 0.1),  # seconds
             "simulate": config_dict.get("simulate", False),
         }
