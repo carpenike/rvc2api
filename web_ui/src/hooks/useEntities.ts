@@ -6,6 +6,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import {
   controlEntity,
   fetchEntities,
@@ -17,10 +19,6 @@ import {
   fetchTankSensors,
   fetchTemperatureSensors,
   lockEntity,
-  setLightBrightness,
-  toggleLight,
-  turnLightOff,
-  turnLightOn,
   unlockEntity,
 } from '../api';
 import type {
@@ -134,6 +132,35 @@ export function useTemperatureSensors() {
  */
 export function useControlEntity() {
   const queryClient = useQueryClient();
+  // Track pending optimistic updates per entity
+  const pendingTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const lastConfirmedTimestamps = useRef<Record<string, number>>({});
+
+  // Listen for WebSocket entity updates to clear pending timers
+  useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (event.type === 'updated' && event.query.queryKey && Array.isArray(event.query.queryKey)) {
+        const key = event.query.queryKey;
+        // Only care about entity detail updates
+        if (key[0] === 'entity' && typeof key[1] === 'string') {
+          const entityId = key[1];
+          const entity = queryClient.getQueryData<EntityBase>(key);
+          if (entity && entity.timestamp) {
+            // If we have a pending timer and the timestamp is new, clear the timer
+            if (
+              pendingTimers.current[entityId] &&
+              entity.timestamp !== lastConfirmedTimestamps.current[entityId]
+            ) {
+              clearTimeout(pendingTimers.current[entityId]);
+              delete pendingTimers.current[entityId];
+              lastConfirmedTimestamps.current[entityId] = entity.timestamp;
+            }
+          }
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [queryClient]);
 
   return useMutation({
     mutationFn: ({ entityId, command }: { entityId: string; command: ControlCommand }) =>
@@ -143,8 +170,6 @@ export function useControlEntity() {
       // Invalidate the specific entity and related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
-
-      // Also invalidate type-specific queries if applicable
       if (data.entity_type === 'light') {
         queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
       } else if (data.entity_type === 'lock') {
@@ -152,50 +177,181 @@ export function useControlEntity() {
       }
     },
 
-    // Optimistically update the entity state
     onMutate: async ({ entityId, command }) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.entities.detail(entityId) });
-
-      // Snapshot the previous value
-      const previousEntity = queryClient.getQueryData<EntityBase>(
-        queryKeys.entities.detail(entityId)
-      );
-
-      // Optimistically update the entity
+      const previousEntity = queryClient.getQueryData<EntityBase>(queryKeys.entities.detail(entityId));
+      const previousLights = queryClient.getQueryData<Record<string, LightEntity>>(queryKeys.lights.list());
+      // Optimistically update the entity detail
       if (previousEntity) {
         queryClient.setQueryData<EntityBase>(
           queryKeys.entities.detail(entityId),
           (old) => {
             if (!old) return old;
-
-            // Update the entity based on the command
-            const updated = { ...old };
-
-            // Handle different command types
-            if (command.command_type === 'set_state' && command.parameters?.state !== undefined && command.parameters.state !== null && typeof command.parameters.state === 'string') {
-              updated.current_state = command.parameters.state;
+            if (old.entity_type === 'light') {
+              const light = old as LightEntity;
+              let newState = light.state;
+              if (command.command === 'set' && command.state) {
+                newState = command.state;
+              } else if (command.command === 'toggle') {
+                newState = light.state === 'on' ? 'off' : 'on';
+              } else if (
+                command.command === 'brightness_up' ||
+                command.command === 'brightness_down'
+              ) {
+                newState = light.state === 'off' ? 'on' : light.state;
+              }
+              return {
+                ...light,
+                state: newState,
+                ...(command.brightness !== undefined ? { brightness: command.brightness } : {}),
+                ...((command.command === 'brightness_up' && command.brightness === undefined)
+                  ? { brightness: typeof light.brightness === 'number' ? Math.min(light.brightness + 10, 100) : 10 }
+                  : {}),
+                ...((command.command === 'brightness_down' && command.brightness === undefined)
+                  ? { brightness: typeof light.brightness === 'number' ? Math.max(light.brightness - 10, 0) : 0 }
+                  : {}),
+                timestamp: Date.now(),
+              };
             }
-
-            if (command.command_type === 'set_brightness' && command.parameters?.brightness !== undefined && command.parameters.brightness !== null && typeof command.parameters.brightness === 'number') {
-              (updated as LightEntity).brightness = command.parameters.brightness;
-            }
-
-            return updated;
+            // For other entity types, just return old
+            return old;
           }
         );
       }
-
-      return { previousEntity };
+      // Optimistically update the lights list cache
+      if (previousLights) {
+        queryClient.setQueryData<Record<string, LightEntity>>(
+          queryKeys.lights.list(),
+          (old) => {
+            if (!old) return old;
+            const light =
+              old[entityId] ||
+              (previousEntity && previousEntity.entity_type === 'light'
+                ? (previousEntity as LightEntity)
+                : undefined);
+            if (!light) return old;
+            let newState = light.state;
+            let newBrightness = light.brightness;
+            if (command.command === 'set' && command.state) {
+              newState = command.state;
+              if (command.brightness !== undefined) {
+                newBrightness = command.brightness;
+              }
+            } else if (command.command === 'toggle') {
+              newState = light.state === 'on' ? 'off' : 'on';
+              // If toggling on, set brightness to last known or default (10)
+              if (newState === 'on') {
+                newBrightness = typeof light.brightness === 'number' ? light.brightness : 10;
+              }
+            } else if (command.command === 'brightness_up' && command.brightness === undefined) {
+              // If light is off, turn it on and bump brightness
+              newState = light.state === 'off' ? 'on' : light.state;
+              newBrightness = typeof light.brightness === 'number' ? Math.min(light.brightness + 10, 100) : 10;
+            } else if (command.command === 'brightness_down' && command.brightness === undefined) {
+              // If light is off, turn it on and lower brightness
+              newState = light.state === 'off' ? 'on' : light.state;
+              newBrightness = typeof light.brightness === 'number' ? Math.max(light.brightness - 10, 0) : 0;
+            } else if (command.brightness !== undefined) {
+              newBrightness = command.brightness;
+            }
+            return {
+              ...old,
+              [entityId]: {
+                ...light,
+                state: newState,
+                brightness: newBrightness,
+                timestamp: Date.now(),
+              },
+            };
+          }
+        );
+      } else if (previousEntity && previousEntity.entity_type === 'light') {
+        // If lights list cache is missing, but we have the entity, create a new cache entry
+        queryClient.setQueryData<Record<string, LightEntity>>(
+          queryKeys.lights.list(),
+          (old) => {
+            const prev = previousEntity as LightEntity;
+            let newState = prev.state;
+            let newBrightness = prev.brightness;
+            if (command.command === 'set' && command.state) {
+              newState = command.state;
+              if (command.brightness !== undefined) {
+                newBrightness = command.brightness;
+              }
+            } else if (command.command === 'toggle') {
+              newState = prev.state === 'on' ? 'off' : 'on';
+              if (newState === 'on') {
+                newBrightness = typeof prev.brightness === 'number' ? prev.brightness : 10;
+              }
+            } else if (command.command === 'brightness_up' && command.brightness === undefined) {
+              // If light is off, turn it on and bump brightness
+              newState = prev.state === 'off' ? 'on' : prev.state;
+              newBrightness = typeof prev.brightness === 'number' ? Math.min(prev.brightness + 10, 100) : 10;
+            } else if (command.command === 'brightness_down' && command.brightness === undefined) {
+              // If light is off, turn it on and lower brightness
+              newState = prev.state === 'off' ? 'on' : prev.state;
+              newBrightness = typeof prev.brightness === 'number' ? Math.max(prev.brightness - 10, 0) : 0;
+            } else if (command.brightness !== undefined) {
+              newBrightness = command.brightness;
+            }
+            return {
+              ...(old || {}),
+              [entityId]: {
+                ...prev,
+                state: newState,
+                brightness: newBrightness,
+                timestamp: Date.now(),
+              },
+            };
+          }
+        );
+      }
+      // Start a timer to revert the optimistic update if no confirmation is received
+      if (pendingTimers.current[entityId]) {
+        clearTimeout(pendingTimers.current[entityId]);
+      }
+      pendingTimers.current[entityId] = setTimeout(() => {
+        // Revert entity detail
+        if (previousEntity) {
+          // Always create a new object to ensure re-render
+          queryClient.setQueryData<EntityBase>(
+            queryKeys.entities.detail(entityId),
+            { ...previousEntity }
+          );
+        }
+        // Revert lights list
+        if (previousLights) {
+          // Always create a new object to ensure re-render
+          queryClient.setQueryData<Record<string, LightEntity>>(
+            queryKeys.lights.list(),
+            { ...previousLights }
+          );
+        } else {
+          // If there was no previous lights list, remove the entity from the list
+          queryClient.setQueryData<Record<string, LightEntity>>(
+            queryKeys.lights.list(),
+            (old) => {
+              if (!old) return old;
+              // Remove the entity from the list without unused variable warning
+              const rest = Object.fromEntries(
+                Object.entries(old).filter(([key]) => key !== entityId)
+              );
+              return { ...rest };
+            }
+          );
+        }
+        // Show a toast notification
+        toast("No confirmation from backend. State reverted.");
+        delete pendingTimers.current[entityId];
+      }, 2000);
     },
 
-    // Revert on error
-    onError: (_err, variables, context) => {
-      if (context?.previousEntity) {
-        queryClient.setQueryData(
-          queryKeys.entities.detail(variables.entityId),
-          context.previousEntity
-        );
+    onError: (_err, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+      if (pendingTimers.current[variables.entityId]) {
+        clearTimeout(pendingTimers.current[variables.entityId]);
+        delete pendingTimers.current[variables.entityId];
       }
     },
   });
@@ -203,37 +359,42 @@ export function useControlEntity() {
 
 /**
  * Hook for light control commands
+ * Exposes only mutate and isPending for each action.
  */
 export function useLightControl() {
-  const queryClient = useQueryClient();
-
-  const invalidateLight = (entityId: string) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(entityId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
-  };
+  const controlEntity = useControlEntity();
 
   return {
-    toggle: useMutation({
-      mutationFn: toggleLight,
-      onSuccess: (_, entityId) => invalidateLight(entityId),
-    }),
-
-    turnOn: useMutation({
-      mutationFn: turnLightOn,
-      onSuccess: (_, entityId) => invalidateLight(entityId),
-    }),
-
-    turnOff: useMutation({
-      mutationFn: turnLightOff,
-      onSuccess: (_, entityId) => invalidateLight(entityId),
-    }),
-
-    setBrightness: useMutation({
-      mutationFn: ({ entityId, brightness }: { entityId: string; brightness: number }) =>
-        setLightBrightness(entityId, brightness),
-      onSuccess: (_, { entityId }) => invalidateLight(entityId),
-    }),
+    toggle: {
+      mutate: ({ entityId }: { entityId: string }) =>
+        controlEntity.mutate({ entityId, command: { command: 'toggle' } }),
+      isPending: controlEntity.isPending,
+    },
+    turnOn: {
+      mutate: ({ entityId }: { entityId: string }) =>
+        controlEntity.mutate({ entityId, command: { command: 'set', state: 'on' } }),
+      isPending: controlEntity.isPending,
+    },
+    turnOff: {
+      mutate: ({ entityId }: { entityId: string }) =>
+        controlEntity.mutate({ entityId, command: { command: 'set', state: 'off' } }),
+      isPending: controlEntity.isPending,
+    },
+    setBrightness: {
+      mutate: ({ entityId, brightness }: { entityId: string; brightness: number }) =>
+        controlEntity.mutate({ entityId, command: { command: 'set', state: 'on', brightness } }),
+      isPending: controlEntity.isPending,
+    },
+    brightnessUp: {
+      mutate: ({ entityId }: { entityId: string }) =>
+        controlEntity.mutate({ entityId, command: { command: 'brightness_up' } }),
+      isPending: controlEntity.isPending,
+    },
+    brightnessDown: {
+      mutate: ({ entityId }: { entityId: string }) =>
+        controlEntity.mutate({ entityId, command: { command: 'brightness_down' } }),
+      isPending: controlEntity.isPending,
+    },
   };
 }
 

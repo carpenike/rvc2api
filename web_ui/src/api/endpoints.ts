@@ -6,33 +6,35 @@
  */
 
 import {
-  APIClientError,
-  API_BASE,
-  apiGet,
-  apiPost,
-  buildQueryString,
-  logApiRequest,
-  logApiResponse
+    APIClientError,
+    API_BASE,
+    apiGet,
+    apiPost,
+    buildQueryString,
+    logApiRequest,
+    logApiResponse
 } from './client';
 
 import type {
-  AllCANStats,
-  CANMessage,
-  CANMetrics,
-  CANSendParams,
-  ControlCommand,
-  ControlEntityResponse,
-  EntitiesQueryParams,
-  Entity,
-  EntityCollection,
-  FeatureStatusResponse,
-  HealthStatus,
-  HistoryEntry,
-  HistoryQueryParams,
-  MetadataResponse,
-  QueueStatus,
-  UnknownPGNResponse,
-  UnmappedResponse
+    AllCANStats,
+    CANMessage,
+    CANMetrics,
+    CANSendParams,
+    ControlCommand,
+    ControlEntityResponse,
+    CreateEntityMappingRequest,
+    CreateEntityMappingResponse,
+    EntitiesQueryParams,
+    Entity,
+    EntityCollection,
+    FeatureStatusResponse,
+    HealthStatus,
+    HistoryEntry,
+    HistoryQueryParams,
+    MetadataResponse,
+    QueueStatus,
+    UnknownPGNResponse,
+    UnmappedResponse
 } from './types';
 
 //
@@ -121,10 +123,28 @@ export async function fetchEntityHistory(
  * @returns Promise resolving to unmapped entries
  */
 export async function fetchUnmappedEntries(): Promise<UnmappedResponse> {
-  const url = '/api/entities/unmapped';
+  const url = '/api/unmapped';
 
   logApiRequest('GET', url);
   const result = await apiGet<UnmappedResponse>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Create entity mapping from unmapped entry
+ *
+ * @param request - Entity mapping configuration details
+ * @returns Promise resolving to mapping creation response
+ */
+export async function createEntityMapping(
+  request: CreateEntityMappingRequest
+): Promise<CreateEntityMappingResponse> {
+  const url = '/api/entities/mappings';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<CreateEntityMappingResponse>(url, request);
   logApiResponse(url, result);
 
   return result;
@@ -136,7 +156,7 @@ export async function fetchUnmappedEntries(): Promise<UnmappedResponse> {
  * @returns Promise resolving to unknown PGN entries
  */
 export async function fetchUnknownPGNs(): Promise<UnknownPGNResponse> {
-  const url = '/api/entities/unknown-pgns';
+  const url = '/api/unknown-pgns';
 
   logApiRequest('GET', url);
   const result = await apiGet<UnknownPGNResponse>(url);
@@ -151,7 +171,7 @@ export async function fetchUnknownPGNs(): Promise<UnknownPGNResponse> {
  * @returns Promise resolving to metadata response
  */
 export async function fetchEntityMetadata(): Promise<MetadataResponse> {
-  const url = '/api/entities/metadata';
+  const url = '/api/metadata';
 
   logApiRequest('GET', url);
   const result = await apiGet<MetadataResponse>(url);
@@ -421,6 +441,26 @@ export async function setLightBrightness(
     command: 'set',
     parameters: { brightness: Math.max(0, Math.min(100, brightness)) }
   });
+}
+
+/**
+ * Increase light brightness by 10%
+ *
+ * @param entityId - The light entity ID
+ * @returns Promise resolving to control response
+ */
+export async function brightnessUp(entityId: string): Promise<ControlEntityResponse> {
+  return controlEntity(entityId, { command: 'brightness_up', parameters: {} });
+}
+
+/**
+ * Decrease light brightness by 10%
+ *
+ * @param entityId - The light entity ID
+ * @returns Promise resolving to control response
+ */
+export async function brightnessDown(entityId: string): Promise<ControlEntityResponse> {
+  return controlEntity(entityId, { command: 'brightness_down', parameters: {} });
 }
 
 //

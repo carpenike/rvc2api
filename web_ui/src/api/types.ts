@@ -7,16 +7,21 @@
 
 // Base Entity Interface
 export interface EntityBase {
-  id: string;
-  name: string;
+  entity_id: string;
+  name?: string;  // Made optional since backend may not always include this
+  friendly_name: string | null;
   device_type: string;
   suggested_area: string;
   state: string;
   raw: Record<string, unknown>;
   capabilities: string[];
-  last_updated: string;
-  source_type: string;
-  entity_id?: string;
+  timestamp: number;  // Backend returns timestamp, not last_updated
+  value: Record<string, unknown>;  // Backend includes value field
+  groups: string[];  // Backend includes groups field
+  // Legacy fields for backward compatibility
+  id?: string;
+  last_updated?: string;
+  source_type?: string;
   entity_type?: string;
   current_state?: string;
 }
@@ -78,6 +83,29 @@ export interface ControlEntityResponse {
   command: ControlCommand;
   timestamp: string;
   execution_time_ms?: number;
+}
+
+// Entity Mapping Creation Request (matches backend CreateEntityMappingRequest model)
+export interface CreateEntityMappingRequest {
+  // Source unmapped entry information
+  pgn_hex: string;
+  instance: string;
+
+  // Entity configuration
+  entity_id: string;
+  friendly_name: string;
+  device_type: string;
+  suggested_area?: string;
+  capabilities?: string[];
+  notes?: string;
+}
+
+// Entity Mapping Creation Response (matches backend CreateEntityMappingResponse model)
+export interface CreateEntityMappingResponse {
+  status: "success" | "error";
+  entity_id: string;
+  message: string;
+  entity_data: Record<string, unknown> | null;
 }
 
 // Entity History Entry

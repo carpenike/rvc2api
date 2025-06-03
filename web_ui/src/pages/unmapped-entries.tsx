@@ -5,6 +5,7 @@
  * but are not mapped to entities. Provides manual mapping interface.
  */
 
+import { createEntityMapping } from "@/api/endpoints"
 import type { UnmappedEntry } from "@/api/types"
 import { AppLayout } from "@/components/app-layout"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { MappingDialog } from "@/components/unmapped-entries/mapping-dialog"
 import { useUnmappedEntries } from "@/hooks/useSystem"
 import {
   IconAlertTriangle,
@@ -24,7 +26,8 @@ import {
   IconRefresh,
   IconSettings
 } from "@tabler/icons-react"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+import { toast } from "sonner"
 
 /**
  * Unmapped entries statistics component
@@ -117,7 +120,13 @@ function UnmappedEntriesStats({ unmappedEntries }: { unmappedEntries: UnmappedEn
 /**
  * Unmapped entries table component
  */
-function UnmappedEntriesTable({ unmappedEntries }: { unmappedEntries: UnmappedEntry[] }) {
+function UnmappedEntriesTable({
+  unmappedEntries,
+  onMapEntry
+}: {
+  unmappedEntries: UnmappedEntry[]
+  onMapEntry: (entry: UnmappedEntry) => void
+}) {
   const sortedEntries = useMemo(() => {
     return [...unmappedEntries].sort((a, b) => b.count - a.count)
   }, [unmappedEntries])
@@ -202,7 +211,12 @@ function UnmappedEntriesTable({ unmappedEntries }: { unmappedEntries: UnmappedEn
                     {formatTimestamp(entry.last_seen_timestamp)}
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => onMapEntry(entry)}
+                    >
                       <IconPlus className="h-3 w-3" />
                       Map
                     </Button>
@@ -233,7 +247,15 @@ function UnmappedEntriesTable({ unmappedEntries }: { unmappedEntries: UnmappedEn
 /**
  * Mapping tools sidebar component
  */
-function MappingToolsSidebar({ unmappedEntries }: { unmappedEntries: UnmappedEntry[] }) {
+function MappingToolsSidebar({
+  unmappedEntries,
+  onMapAllSuggested,
+  onAutoMapSimilar
+}: {
+  unmappedEntries: UnmappedEntry[]
+  onMapAllSuggested: () => void
+  onAutoMapSimilar: () => void
+}) {
   const analysis = useMemo(() => {
     // Analyze common device types and suggestions
     const dgnTypes = unmappedEntries.reduce((acc, entry) => {
@@ -309,11 +331,21 @@ function MappingToolsSidebar({ unmappedEntries }: { unmappedEntries: UnmappedEnt
           <CardTitle className="text-sm">Bulk Actions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button variant="outline" className="w-full gap-2" size="sm">
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            size="sm"
+            onClick={onMapAllSuggested}
+          >
             <IconPlus className="h-4 w-4" />
             Map All Suggested
           </Button>
-          <Button variant="outline" className="w-full gap-2" size="sm">
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            size="sm"
+            onClick={onAutoMapSimilar}
+          >
             <IconSettings className="h-4 w-4" />
             Auto-Map Similar
           </Button>
@@ -348,7 +380,89 @@ function MappingToolsSidebar({ unmappedEntries }: { unmappedEntries: UnmappedEnt
 export default function UnmappedEntries() {
   const { data: response, isLoading, error, refetch } = useUnmappedEntries()
 
+  // State for mapping dialog
+  const [selectedEntry, setSelectedEntry] = useState<UnmappedEntry | null>(null)
+  const [isMappingDialogOpen, setIsMappingDialogOpen] = useState(false)
+
   const unmappedEntriesArray = response?.unmapped_entries ? Object.values(response.unmapped_entries) : []
+
+  // Callback functions for mapping operations
+  const handleMapEntry = (entry: UnmappedEntry) => {
+    setSelectedEntry(entry)
+    setIsMappingDialogOpen(true)
+  }
+
+  const handleMapAllSuggested = () => {
+    const entriesWithSuggestions = unmappedEntriesArray.filter(
+      entry => entry.suggestions && entry.suggestions.length > 0
+    )
+
+    if (entriesWithSuggestions.length === 0) {
+      toast("No suggested mappings", {
+        description: "There are no unmapped entries with suggestions to map.",
+      })
+      return
+    }
+
+    // TODO: Implement bulk mapping for suggested entries
+    toast("Feature coming soon", {
+      description: `Would map ${entriesWithSuggestions.length} entries with suggestions.`,
+    })
+  }
+
+  const handleAutoMapSimilar = () => {
+    // TODO: Implement auto-mapping for similar entries
+    toast("Feature coming soon", {
+      description: "Auto-mapping similar entries will be implemented soon.",
+    })
+  }
+
+  const handleMappingSubmit = async (mappingData: {
+    entity_id: string
+    friendly_name: string
+    device_type: string
+    suggested_area?: string
+    capabilities?: string[]
+    notes?: string
+  }) => {
+    try {
+      if (!selectedEntry) {
+        throw new Error("No unmapped entry selected")
+      }
+
+      const result = await createEntityMapping({
+        // Source unmapped entry information
+        pgn_hex: selectedEntry.pgn_hex,
+        instance: selectedEntry.instance,
+
+        // Entity configuration
+        entity_id: mappingData.entity_id,
+        friendly_name: mappingData.friendly_name,
+        device_type: mappingData.device_type,
+        suggested_area: mappingData.suggested_area || "",
+        capabilities: mappingData.capabilities || [],
+        notes: mappingData.notes || "",
+      })
+
+      if (result.status === "success") {
+        toast("Mapping created", {
+          description: `Successfully mapped ${mappingData.entity_id} to DGN ${selectedEntry?.dgn_hex}/${selectedEntry?.instance}`,
+        })
+
+        setIsMappingDialogOpen(false)
+        setSelectedEntry(null)
+        refetch() // Refresh the data
+      } else {
+        throw new Error(result.message)
+      }
+    } catch (err) {
+      console.error('Failed to create mapping:', err)
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+      toast.error("Mapping failed", {
+        description: `Failed to create entity mapping: ${errorMessage}`,
+      })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -449,15 +563,30 @@ export default function UnmappedEntries() {
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Unmapped Entries Table - Takes 3/4 width */}
           <div className="lg:col-span-3">
-            <UnmappedEntriesTable unmappedEntries={unmappedEntriesArray} />
+            <UnmappedEntriesTable
+              unmappedEntries={unmappedEntriesArray}
+              onMapEntry={handleMapEntry}
+            />
           </div>
 
           {/* Mapping Tools Sidebar - Takes 1/4 width */}
           <div>
-            <MappingToolsSidebar unmappedEntries={unmappedEntriesArray} />
+            <MappingToolsSidebar
+              unmappedEntries={unmappedEntriesArray}
+              onMapAllSuggested={handleMapAllSuggested}
+              onAutoMapSimilar={handleAutoMapSimilar}
+            />
           </div>
         </div>
       </div>
+
+      {/* Mapping Dialog */}
+      <MappingDialog
+        open={isMappingDialogOpen}
+        onOpenChange={setIsMappingDialogOpen}
+        unmappedEntry={selectedEntry}
+        onSubmit={handleMappingSubmit}
+      />
     </AppLayout>
   )
 }

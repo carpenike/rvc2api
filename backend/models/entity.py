@@ -28,7 +28,8 @@ class ControlCommand(BaseModel):
 
     command: str
     state: str | None = Field(
-        None, description="Target state: 'on' or 'off'. Required only for 'set' command."
+        None,
+        description="Target state: 'on' or 'off'. Required only for 'set' command.",
     )
     brightness: int | None = Field(
         None,
@@ -60,3 +61,28 @@ class SuggestedMapping(BaseModel):
     instance: str
     name: str
     suggested_area: str | None = None
+
+
+class CreateEntityMappingRequest(BaseModel):
+    """Request model for creating a new entity mapping from an unmapped entry."""
+
+    # Source unmapped entry information
+    pgn_hex: str = Field(..., description="PGN hex identifier from the unmapped entry")
+    instance: str = Field(..., description="Instance identifier from the unmapped entry")
+
+    # Entity configuration
+    entity_id: str = Field(..., description="Unique identifier for the new entity")
+    friendly_name: str = Field(..., description="Human-readable name for the entity")
+    device_type: str = Field(..., description="Device type (e.g., 'light', 'lock', 'tank')")
+    suggested_area: str | None = Field(None, description="Suggested area/location for the entity")
+    capabilities: list[str] | None = Field(default_factory=list, description="Entity capabilities")
+    notes: str | None = Field(None, description="Optional notes about the entity mapping")
+
+
+class CreateEntityMappingResponse(BaseModel):
+    """Response model for entity mapping creation."""
+
+    status: str
+    entity_id: str
+    message: str
+    entity_data: dict | None = None

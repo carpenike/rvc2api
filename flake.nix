@@ -428,6 +428,25 @@ EOF
         packages = {
           rvc2api = rvc2apiPackage;
           default = rvc2apiPackage;
+          frontend = pkgs.stdenv.mkDerivation {
+            pname = "rvc2api-frontend";
+            version = "1.0.0";
+            src = ./web_ui;
+            buildInputs = [ pkgs.nodejs pkgs.yarn ];
+            buildPhase = ''
+              export HOME=$TMPDIR
+              yarn install --frozen-lockfile || npm install
+              yarn build || npm run build
+            '';
+            installPhase = ''
+              mkdir -p $out
+              cp -r dist/* $out/
+            '';
+            meta = {
+              description = "rvc2api React frontend static files (built with Vite)";
+              license = pkgs.lib.licenses.mit;
+            };
+          };
         };
 
         devShells = {

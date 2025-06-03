@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useEntityWebSocket } from "@/hooks"
 import { useLightControl, useLights } from "@/hooks/useEntities"
 import { cn } from "@/lib/utils"
 import { IconBulb, IconBulbOff, IconMinus, IconPlus } from "@tabler/icons-react"
@@ -23,17 +24,12 @@ interface LightControlProps {
 }
 
 function LightControl({ light }: LightControlProps) {
-  const { toggle, setBrightness } = useLightControl()
+  const { toggle, setBrightness, brightnessUp, brightnessDown } = useLightControl()
 
   const isOn = light.state === "on" || light.state === "true"
   const lightEntity = light as LightEntity
   const brightness = lightEntity.brightness || 0
   const hasBrightnessControl = light.capabilities?.includes("brightness")
-
-  const handleBrightnessAdjust = (delta: number) => {
-    const newBrightness = Math.max(0, Math.min(100, brightness + delta))
-    setBrightness.mutate({ entityId: light.id, brightness: newBrightness })
-  }
 
   return (
     <Card className={cn(
@@ -49,7 +45,7 @@ function LightControl({ light }: LightControlProps) {
               <IconBulbOff className="size-5 text-muted-foreground" />
             )}
             <CardTitle className="text-base">
-              {light.name}
+              {light.friendly_name}
             </CardTitle>
           </div>
           <Badge variant={isOn ? "default" : "secondary"}>
@@ -64,7 +60,7 @@ function LightControl({ light }: LightControlProps) {
         {/* Main Controls */}
         <div className="flex gap-2">
           <Button
-            onClick={() => toggle.mutate(light.id)}
+            onClick={() => toggle.mutate({ entityId: light.entity_id })}
             disabled={toggle.isPending || setBrightness.isPending}
             className="flex-1"
             variant={isOn ? "default" : "outline"}
@@ -84,8 +80,8 @@ function LightControl({ light }: LightControlProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleBrightnessAdjust(-10)}
-                disabled={toggle.isPending || setBrightness.isPending || brightness <= 0}
+                onClick={() => brightnessDown.mutate({ entityId: light.entity_id })}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessDown.isPending || brightness <= 0}
               >
                 <IconMinus className="size-4" />
               </Button>
@@ -98,25 +94,11 @@ function LightControl({ light }: LightControlProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleBrightnessAdjust(10)}
-                disabled={toggle.isPending || setBrightness.isPending || brightness >= 100}
+                onClick={() => brightnessUp.mutate({ entityId: light.entity_id })}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightness >= 100}
               >
                 <IconPlus className="size-4" />
               </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Capabilities */}
-        {light.capabilities && light.capabilities.length > 0 && (
-          <div className="pt-2 border-t">
-            <div className="text-xs text-muted-foreground mb-1">Capabilities</div>
-            <div className="flex flex-wrap gap-1">
-              {light.capabilities.map((capability, index) => (
-                <Badge key={`${light.id}-capability-${index}`} variant="outline" className="text-xs">
-                  {capability}
-                </Badge>
-              ))}
             </div>
           </div>
         )}
@@ -182,7 +164,7 @@ function LightGroup({ title, lights }: LightGroupProps) {
       <h3 className="text-lg font-semibold">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {lights.map((light) => (
-          <LightControl key={light.id || light.entity_id} light={light} />
+          <LightControl key={light.entity_id} light={light} />
         ))}
       </div>
     </div>
@@ -193,6 +175,7 @@ function LightGroup({ title, lights }: LightGroupProps) {
  * Lights Management Page Component
  */
 export default function Lights() {
+  useEntityWebSocket(); // Ensure WebSocket updates are applied
   const { data: lights, isLoading, error } = useLights()
 
   if (isLoading) {

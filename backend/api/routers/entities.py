@@ -20,8 +20,16 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from backend.core.dependencies import get_entity_service, get_feature_manager_from_request
-from backend.models.entity import ControlCommand, ControlEntityResponse
+from backend.core.dependencies import (
+    get_entity_service,
+    get_feature_manager_from_request,
+)
+from backend.models.entity import (
+    ControlCommand,
+    ControlEntityResponse,
+    CreateEntityMappingRequest,
+    CreateEntityMappingResponse,
+)
 from backend.models.unmapped import UnknownPGNEntry, UnmappedEntryModel
 
 logger = logging.getLogger(__name__)
@@ -181,6 +189,46 @@ async def control_entity(
     return result
 
 
+@router.post(
+    "/entities/mappings",
+    response_model=CreateEntityMappingResponse,
+    summary="Create entity mapping",
+    description="Create a new entity mapping from an unmapped entry.",
+    response_description="Response with status and entity mapping details",
+)
+async def create_entity_mapping(
+    request: Request,
+    mapping_request: CreateEntityMappingRequest,
+    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+) -> CreateEntityMappingResponse:
+    """
+    Create a new entity mapping from an unmapped entry.
+
+    This endpoint allows creating new entity mappings by specifying the entity
+    configuration details. It registers the entity with the EntityManager and
+    makes it available for monitoring and control.
+
+    Args:
+        mapping_request: The entity mapping configuration details
+
+    Raises:
+        HTTPException: If the entity already exists or creation fails
+
+    Returns:
+        Response with status and entity mapping details
+    """
+    _check_rvc_feature_enabled(request)
+    result = await entity_service.create_entity_mapping(mapping_request)
+
+    # Convert error responses to HTTP exceptions
+    if result.status == "error":
+        # Use 409 for conflicts (entity already exists), 400 for other errors
+        status_code = 409 if "already exists" in result.message else 400
+        raise HTTPException(status_code=status_code, detail=result.message)
+
+    return result
+
+
 @router.get(
     "/unmapped",
     response_model=dict,
@@ -224,9 +272,11 @@ async def get_unmapped_entries(
         }
 
     entries = {
-        k: UnmappedEntryModel(**fill_unmapped_fields(v))
-        if not isinstance(v, UnmappedEntryModel)
-        else v
+        k: (
+            UnmappedEntryModel(**fill_unmapped_fields(v))
+            if not isinstance(v, UnmappedEntryModel)
+            else v
+        )
         for k, v in entries.items()
     }
     return {"unmapped_entries": entries}
@@ -267,7 +317,7 @@ async def get_unknown_pgns(
         }
 
     entries = {
-        k: UnknownPGNEntry(**fill_unknown_fields(v)) if not isinstance(v, UnknownPGNEntry) else v
+        k: (UnknownPGNEntry(**fill_unknown_fields(v)) if not isinstance(v, UnknownPGNEntry) else v)
         for k, v in entries.items()
     }
     return {"unknown_pgns": entries}

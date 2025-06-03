@@ -19,7 +19,12 @@ from typing import Any
 from backend.core.entity_manager import EntityManager
 from backend.integrations.can.manager import can_tx_queue
 from backend.integrations.can.message_factory import create_light_can_message
-from backend.models.entity import ControlCommand, ControlEntityResponse
+from backend.models.entity import (
+    ControlCommand,
+    ControlEntityResponse,
+    CreateEntityMappingRequest,
+    CreateEntityMappingResponse,
+)
 from backend.models.unmapped import UnknownPGNEntry, UnmappedEntryModel
 from backend.websocket.handlers import WebSocketManager
 
@@ -208,6 +213,116 @@ class EntityService:
             "total_entities": len(entities),
         }
 
+    async def create_entity_mapping(
+        self, request: CreateEntityMappingRequest
+    ) -> CreateEntityMappingResponse:
+        """
+        Create a new entity mapping from an unmapped entry.
+
+        Args:
+            request: CreateEntityMappingRequest with entity configuration details
+
+        Returns:
+            CreateEntityMappingResponse: Response with status and entity information
+
+        Raises:
+            ValueError: If entity_id already exists or invalid configuration
+            RuntimeError: If entity registration fails
+        """
+        try:
+            # Check if entity already exists
+            existing_entity = self.entity_manager.get_entity(request.entity_id)
+            if existing_entity:
+                return CreateEntityMappingResponse(
+                    status="error",
+                    entity_id=request.entity_id,
+                    message=f"Entity '{request.entity_id}' already exists",
+                    entity_data=None,
+                )
+
+            # Create entity configuration
+            entity_config = {
+                "entity_id": request.entity_id,
+                "friendly_name": request.friendly_name,
+                "device_type": request.device_type,
+                "suggested_area": request.suggested_area,
+                "capabilities": request.capabilities or [],
+                "notes": request.notes or "",
+            }
+
+            # Register the new entity with the EntityManager
+            new_entity = self.entity_manager.register_entity(
+                entity_id=request.entity_id,
+                config=entity_config,
+            )
+
+            if not new_entity:
+                return CreateEntityMappingResponse(
+                    status="error",
+                    entity_id=request.entity_id,
+                    message="Failed to register entity with EntityManager",
+                    entity_data=None,
+                )
+
+            # Get entity data to return
+            entity_data = new_entity.to_dict() if new_entity else entity_config
+
+            logger.info(f"Successfully created entity mapping: {request.entity_id}")
+
+            # Broadcast the new entity via WebSocket
+            broadcast_data = {
+                "type": "entity_created",
+                "entity_id": request.entity_id,
+                "data": entity_data,
+            }
+            await self.websocket_manager.broadcast_to_data_clients(broadcast_data)
+
+            return CreateEntityMappingResponse(
+                status="success",
+                entity_id=request.entity_id,
+                message=f"Entity '{request.entity_id}' created successfully",
+                entity_data=entity_data,
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to create entity mapping for {request.entity_id}: {e}")
+            return CreateEntityMappingResponse(
+                status="error",
+                entity_id=request.entity_id,
+                message=f"Failed to create entity: {e!s}",
+                entity_data=None,
+            )
+
+    async def control_entity(
+        self, entity_id: str, command: ControlCommand
+    ) -> ControlEntityResponse:
+        """
+        Control an entity by routing to the appropriate device-specific control method.
+
+        Args:
+            entity_id: The ID of the entity to control
+            command: Control command with action details
+
+        Returns:
+            ControlEntityResponse: Response with status and action description
+
+        Raises:
+            ValueError: If entity not found or device type not supported
+            RuntimeError: If control command fails
+        """
+        entity = self.entity_manager.get_entity(entity_id)
+        if not entity:
+            raise ValueError(f"Entity '{entity_id}' not found")
+
+        device_type = entity.config.get("device_type")
+
+        if device_type == "light":
+            return await self.control_light(entity_id, command)
+        else:
+            raise ValueError(
+                f"Control not supported for device type '{device_type}'. Supported types: light"
+            )
+
     async def control_light(self, entity_id: str, cmd: ControlCommand) -> ControlEntityResponse:
         """
         Control a light entity.
@@ -237,11 +352,23 @@ class EntityService:
         current_on_str = current_state_data.get("state", "off")
         current_on = current_on_str.lower() == "on"
 
-        last_brightness_ui = getattr(entity, "last_known_brightness", 100)
+        last_brightness_ui = getattr(entity, "last_known_brightness", None)
+        if (
+            last_brightness_ui is None
+            or not isinstance(last_brightness_ui, int | float)
+            or last_brightness_ui <= 0
+        ):
+            last_brightness_ui = 100
+        last_brightness_ui = int(last_brightness_ui)
+
         target_brightness_ui = cmd.brightness if cmd.brightness is not None else last_brightness_ui
         action = ""
         new_state = current_on
         new_brightness = current_brightness_ui
+
+        # If 'set' command is sent with brightness but no state, treat as 'on'
+        if cmd.command == "set" and cmd.state is None and cmd.brightness is not None:
+            cmd.state = "on"
 
         if cmd.command == "set":
             if cmd.state == "on":
@@ -250,12 +377,14 @@ class EntityService:
                 else:
                     target_brightness_ui = cmd.brightness
                 action = f"Set ON to {target_brightness_ui}%"
-                entity.last_known_brightness = target_brightness_ui
+                entity.last_known_brightness = int(target_brightness_ui)
                 new_state = True
-                new_brightness = target_brightness_ui
+                new_brightness = int(target_brightness_ui)
+                if new_brightness <= 0:
+                    new_brightness = 100
             elif cmd.state == "off":
                 if current_on:
-                    entity.last_known_brightness = current_brightness_ui
+                    entity.last_known_brightness = int(current_brightness_ui)
                 target_brightness_ui = 0
                 action = "Set OFF"
                 new_state = False
@@ -265,28 +394,46 @@ class EntityService:
         elif cmd.command == "toggle":
             new_state = not current_on
             if new_state:
-                new_brightness = last_brightness_ui
+                new_brightness = last_brightness_ui if last_brightness_ui > 0 else 100
                 action = f"Toggled ON to {new_brightness}%"
             else:
-                entity.last_known_brightness = current_brightness_ui
+                entity.last_known_brightness = int(current_brightness_ui)
                 new_brightness = 0
                 action = "Toggled OFF"
         elif cmd.command == "brightness_up":
             new_brightness = min(current_brightness_ui + 10, 100)
             new_state = bool(new_brightness)
             action = f"Brightness up to {new_brightness}%"
-            entity.last_known_brightness = new_brightness
+            entity.last_known_brightness = int(new_brightness)
         elif cmd.command == "brightness_down":
             new_brightness = max(current_brightness_ui - 10, 0)
             new_state = bool(new_brightness)
             action = f"Brightness down to {new_brightness}%"
             if new_brightness > 0:
-                entity.last_known_brightness = new_brightness
+                entity.last_known_brightness = int(new_brightness)
         else:
             raise ValueError(f"Unknown command: {cmd.command}")
 
-        # Simulate updating the entity state (in real code, this would be via CAN and state refresh)
-        # entity.set_state(new_state, new_brightness)
+        # Ensure new_brightness is always a valid integer between 0 and 100
+        try:
+            new_brightness = round(new_brightness)
+        except Exception:
+            new_brightness = 100 if new_state else 0
+        if new_brightness < 0:
+            new_brightness = 0
+        if new_brightness > 100:
+            new_brightness = 100
+
+        # Broadcast entity update over WebSocket after control
+        await self.websocket_manager.broadcast_to_data_clients(
+            {
+                "type": "entity_update",
+                "data": {
+                    "entity_id": entity_id,
+                    "entity_data": entity.to_dict(),
+                },
+            }
+        )
 
         return ControlEntityResponse(
             status="success",
@@ -349,9 +496,16 @@ class EntityService:
         # Update entity state optimistically
         entity.update_state(optimistic_payload)
 
-        # Broadcast update via WebSocket
-        broadcast_data = {"entity_id": entity_id, "data": optimistic_payload}
-        await self.websocket_manager.broadcast_to_data_clients(broadcast_data)
+        # Broadcast update via WebSocket (correct structure)
+        await self.websocket_manager.broadcast_to_data_clients(
+            {
+                "type": "entity_update",
+                "data": {
+                    "entity_id": entity_id,
+                    "entity_data": entity.to_dict(),
+                },
+            }
+        )
 
         # Create and send CAN message
         try:
@@ -380,14 +534,14 @@ class EntityService:
             # This could be added to EntityManager or handled differently if needed
             logger.debug("Successfully sent CAN command")
 
-            # Broadcast the state update via WebSocket
+            # Broadcast the state update via WebSocket (correct structure)
             await self.websocket_manager.broadcast_to_data_clients(
                 {
                     "type": "entity_update",
-                    "entity_id": entity_id,
-                    "state": optimistic_state_str,
-                    "brightness": target_brightness_ui,
-                    "timestamp": ts,
+                    "data": {
+                        "entity_id": entity_id,
+                        "entity_data": entity.to_dict(),
+                    },
                 }
             )
 
