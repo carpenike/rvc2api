@@ -59,10 +59,31 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
 
   const metricsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Use ref to store the throttledUpdate function and break circular dependency
-  const throttledUpdateRef = useRef<((updates: BatchedUpdate[]) => void) | null>(null);
+  // Stable refs to break circular dependencies
+  const queryClientRef = useRef(queryClient);
+  const selectiveSubscriptionRef = useRef(selectiveSubscription);
+  const throttleDelayRef = useRef(throttleDelay);
+  const clientRef = useRef<RVCWebSocketClient | null>(null);
 
-  // Throttled update function
+  // Stable refs for functions to avoid circular dependencies
+  const addToBatchRef = useRef<((entityId: string, data: EntityUpdateMessage['data']) => void) | null>(null);
+  const updateMetricsRef = useRef<(() => void) | null>(null);
+  const flushBatchRef = useRef<(() => void) | null>(null);
+
+  // Update refs without causing re-renders
+  useEffect(() => {
+    queryClientRef.current = queryClient;
+  }, [queryClient]);
+
+  useEffect(() => {
+    selectiveSubscriptionRef.current = selectiveSubscription;
+  }, [selectiveSubscription]);
+
+  useEffect(() => {
+    throttleDelayRef.current = throttleDelay;
+  }, [throttleDelay]);
+
+  // Stable throttled update function using refs
   const throttledUpdate = useCallback((updates: BatchedUpdate[]) => {
     if (throttleTimerRef.current) return;
 
@@ -78,14 +99,17 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
         }
       });
 
-      // Apply updates to React Query cache
+      // Apply updates to React Query cache using refs
+      const currentQueryClient = queryClientRef.current;
+      const currentSelectiveSubscription = selectiveSubscriptionRef.current;
+
       entityGroups.forEach((update) => {
         // Skip if selective subscription is enabled and entity is not included
-        if (selectiveSubscription && !selectiveSubscription.includes(update.entityId)) {
+        if (currentSelectiveSubscription && !currentSelectiveSubscription.includes(update.entityId)) {
           return;
         }
 
-        queryClient.setQueryData(
+        currentQueryClient.setQueryData(
           queryKeys.entities.detail(update.entityId),
           update.data.entity_data
         );
@@ -93,49 +117,55 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
         // Update type-specific lists based on entity type
         const entityType = update.data.entity_data.entity_type;
         if (entityType === 'light') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+          currentQueryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
         } else if (entityType === 'lock') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
+          currentQueryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
         } else if (entityType === 'tank_sensor') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
+          currentQueryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
         } else if (entityType === 'temperature_sensor') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
+          currentQueryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
         }
       });
 
       // Invalidate entity lists once for all updates
-      queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
+      currentQueryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
 
       throttleTimerRef.current = null;
-    }, throttleDelay);
-  }, [queryClient, selectiveSubscription, throttleDelay]);
+    }, throttleDelayRef.current);
+  }, []); // No dependencies - using refs for all dynamic values
 
-  // Update the ref whenever throttledUpdate changes
-  throttledUpdateRef.current = throttledUpdate;
-
-  // Flush batched updates
+  // Stable flushBatch function using throttledUpdate ref
   const flushBatch = useCallback(() => {
     if (batchRef.current.length === 0) return;
 
-    // Use ref to access throttledUpdate and break circular dependency
-    if (throttledUpdateRef.current) {
-      throttledUpdateRef.current([...batchRef.current]);
-    }
+    throttledUpdate([...batchRef.current]);
     batchRef.current = [];
 
     if (batchTimerRef.current) {
       clearTimeout(batchTimerRef.current);
       batchTimerRef.current = null;
     }
-  }, []); // No dependencies - using ref to break circular dependency
+  }, [throttledUpdate]);
 
-  // Store function refs to break circular dependencies
-  const addToBatchRef = useRef<((entityId: string, data: EntityUpdateMessage['data']) => void) | null>(null);
-  const updateMetricsRef = useRef<(() => void) | null>(null);
-  const flushBatchRef = useRef<(() => void) | null>(null);
-  const clientRef = useRef<RVCWebSocketClient | null>(null);
+  // Stable refs for other functions
+  const batchUpdatesRef = useRef(batchUpdates);
+  const maxBatchSizeRef = useRef(maxBatchSize);
+  const batchDelayRef = useRef(batchDelay);
 
-  // Add update to batch
+  // Update refs without causing re-renders
+  useEffect(() => {
+    batchUpdatesRef.current = batchUpdates;
+  }, [batchUpdates]);
+
+  useEffect(() => {
+    maxBatchSizeRef.current = maxBatchSize;
+  }, [maxBatchSize]);
+
+  useEffect(() => {
+    batchDelayRef.current = batchDelay;
+  }, [batchDelay]);
+
+  // Stable addToBatch function
   const addToBatch = useCallback((entityId: string, data: EntityUpdateMessage['data']) => {
     const update: BatchedUpdate = {
       entityId,
@@ -145,7 +175,7 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
 
     batchRef.current.push(update);
 
-    if (!batchUpdates || batchRef.current.length >= maxBatchSize) {
+    if (!batchUpdatesRef.current || batchRef.current.length >= maxBatchSizeRef.current) {
       // Flush immediately if batching is disabled or batch is full
       flushBatch();
     } else {
@@ -153,14 +183,11 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
       }
-      batchTimerRef.current = setTimeout(flushBatch, batchDelay);
+      batchTimerRef.current = setTimeout(flushBatch, batchDelayRef.current);
     }
-  }, [batchUpdates, maxBatchSize, batchDelay, flushBatch]);
+  }, [flushBatch]);
 
-  // Update refs whenever functions change
-  addToBatchRef.current = addToBatch;
-
-  // Update performance metrics
+  // Stable updateMetrics function
   const updateMetrics = useCallback(() => {
     setMetrics(prev => {
       const now = Date.now();
@@ -175,10 +202,10 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
     });
   }, []);
 
-  // Update refs whenever functions change
+  // Assign stable functions to refs
+  addToBatchRef.current = addToBatch;
   updateMetricsRef.current = updateMetrics;
   flushBatchRef.current = flushBatch;
-  clientRef.current = client;
 
   useEffect(() => {
     if (!autoConnect) return;
@@ -245,6 +272,7 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
       });
 
       setClient(wsClient);
+      clientRef.current = wsClient;
       wsClient.connect();
 
       // Start metrics collection using ref
@@ -280,7 +308,7 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
         clientRef.current.disconnect();
       }
     };
-  }, [autoConnect]); // Removed dependencies to prevent infinite loop
+  }, [autoConnect, client]);
 
   const connect = () => clientRef.current?.connect();
   const disconnect = () => clientRef.current?.disconnect();

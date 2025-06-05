@@ -27,6 +27,7 @@ import { queryKeys } from '../lib/query-client';
  */
 export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
   const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
   const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -35,6 +36,9 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
 
   const { autoConnect = true } = options || {};
 
+  // Update queryClient ref when it changes
+  queryClientRef.current = queryClient;
+
   useEffect(() => {
     if (!autoConnect || !isWebSocketSupported()) {
       return;
@@ -42,24 +46,24 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
 
     const handlers: WebSocketHandlers = {
       onEntityUpdate: (data: EntityUpdateMessage['data']) => {
-        // Update the specific entity in the cache
-        queryClient.setQueryData(
+        // Update the specific entity in the cache using ref
+        queryClientRef.current.setQueryData(
           queryKeys.entities.detail(data.entity_id),
           data.entity_data
         );
 
         // Invalidate entity lists to trigger re-render
-        queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
+        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.entities.lists() });
 
         // Update type-specific lists
         if (data.entity_data.entity_type === 'light') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.lights.list() });
         } else if (data.entity_data.entity_type === 'lock') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
+          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.locks.list() });
         } else if (data.entity_data.entity_type === 'tank_sensor') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
+          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
         } else if (data.entity_data.entity_type === 'temperature_sensor') {
-          queryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
+          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
         }
       },
 
@@ -99,7 +103,7 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
       }
       wsClient.disconnect();
     };
-  }, [autoConnect, queryClient]);
+  }, [autoConnect]);
 
   const connect = useCallback(() => {
     clientRef.current?.connect();
@@ -126,6 +130,7 @@ export function useCANScanWebSocket(options?: {
   onMessage?: (message: CANMessage) => void;
 }) {
   const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
   const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -133,7 +138,12 @@ export function useCANScanWebSocket(options?: {
   const [messageCount, setMessageCount] = useState(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { autoConnect = false, onMessage } = options || {};
+  const { autoConnect = false } = options || {};
+  const onMessageRef = useRef(options?.onMessage);
+
+  // Update refs when they change
+  queryClientRef.current = queryClient;
+  onMessageRef.current = options?.onMessage;
 
   useEffect(() => {
     if (!autoConnect || !isWebSocketSupported()) {
@@ -143,11 +153,11 @@ export function useCANScanWebSocket(options?: {
     const handlers: WebSocketHandlers = {
       onCANMessage: (message: CANMessage) => {
         setMessageCount(prev => prev + 1);
-        onMessage?.(message);
+        onMessageRef.current?.(message);
 
         // Periodically invalidate CAN statistics
         if (messageCount % 100 === 0) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
         }
       },
 
@@ -187,7 +197,7 @@ export function useCANScanWebSocket(options?: {
       }
       wsClient.disconnect();
     };
-  }, [autoConnect, queryClient, messageCount, onMessage]);
+  }, [autoConnect, messageCount]);
 
   const connect = useCallback(() => {
     clientRef.current?.connect();
@@ -214,6 +224,7 @@ export function useCANScanWebSocket(options?: {
  */
 export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
   const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
   const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -221,6 +232,9 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { autoConnect = true } = options || {};
+
+  // Update queryClient ref when it changes
+  queryClientRef.current = queryClient;
 
   useEffect(() => {
     if (!autoConnect || !isWebSocketSupported()) {
@@ -231,9 +245,9 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
       onSystemStatus: () => {
         // Update system queries - we just invalidate all relevant queries
         // since we only get the data portion, not the message type
-        queryClient.invalidateQueries({ queryKey: queryKeys.system.health() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.health() });
+        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
+        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
       },
 
       onOpen: () => {
@@ -272,7 +286,7 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
       }
       wsClient.disconnect();
     };
-  }, [autoConnect, queryClient]);
+  }, [autoConnect]);
 
   const connect = useCallback(() => {
     clientRef.current?.connect();
@@ -303,8 +317,12 @@ export function useLogWebSocket(options?: {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onLogRef = useRef(options?.onLog);
 
-  const { autoConnect = false, onLog } = options || {};
+  const { autoConnect = false } = options || {};
+
+  // Update onLog ref when it changes
+  onLogRef.current = options?.onLog;
 
   useEffect(() => {
     if (!autoConnect || !isWebSocketSupported()) {
@@ -318,7 +336,7 @@ export function useLogWebSocket(options?: {
           message && typeof message === 'object' &&
           'timestamp' in message && 'level' in message && 'message' in message
         ) {
-          onLog?.(message);
+          onLogRef.current?.(message);
         } else if (typeof message === 'string') {
           // Try to parse as JSON, fallback to raw string
           try {
@@ -327,16 +345,16 @@ export function useLogWebSocket(options?: {
               parsed && typeof parsed === 'object' &&
               'timestamp' in parsed && 'level' in parsed && 'message' in parsed
             ) {
-              onLog?.(parsed);
+              onLogRef.current?.(parsed);
               return;
             }
           } catch {
             // Not JSON, pass as raw string
           }
-          onLog?.(message);
+          onLogRef.current?.(message);
         } else {
           // Fallback: pass any message
-          onLog?.(message);
+          onLogRef.current?.(message);
         }
       },
 
@@ -375,7 +393,7 @@ export function useLogWebSocket(options?: {
       }
       wsClient.disconnect();
     };
-  }, [autoConnect, onLog]);
+  }, [autoConnect]);
 
   const connect = useCallback(() => {
     clientRef.current?.connect();

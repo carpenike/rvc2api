@@ -89,6 +89,7 @@ export function LogViewerProvider({
     setLoading(false);
     try {
       const logData = typeof message === "string" ? JSON.parse(message) : message;
+
       const log: LogEntry = {
         timestamp: logData.timestamp || new Date().toISOString(),
         level: logData.level || "INFO",
@@ -98,6 +99,7 @@ export function LogViewerProvider({
         pid: logData.thread,
         extra: { ...logData },
       };
+
       setLogs((prev) => {
         const updatedLogs = [log, ...prev];
         return updatedLogs.slice(0, config.maxBufferSize);

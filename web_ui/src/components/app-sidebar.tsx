@@ -72,14 +72,8 @@ const data = {
   ],
   navDiagnostics: [
     {
-      title: "Live Logs",
-      url: "#",
-      icon: IconTerminal2,
-      drawer: true,
-    },
-    {
-      title: "Log History",
-      url: "/log-history",
+      title: "Logs",
+      url: "/logs",
       icon: IconTerminal2,
       badge: false, // TODO: Implement dynamic error-level notification
     },

@@ -1,6 +1,5 @@
 import { LogViewerProvider } from "./log-viewer-context";
 import { LogList } from "./LogList";
-import { LogTabs } from "./LogTabs";
 import { LogToolbar } from "./LogToolbar";
 import { VirtualizedLogList } from "./VirtualizedLogList";
 
@@ -28,7 +27,6 @@ export function LogViewer({
     >
       <div className="flex flex-col h-full">
         <LogToolbar />
-        <LogTabs />
         {useVirtualization ? <VirtualizedLogList /> : <LogList />}
       </div>
     </LogViewerProvider>

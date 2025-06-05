@@ -1,5 +1,4 @@
-import { Badge, type badgeVariants } from "@/components/ui/badge";
-import { type VariantProps } from "class-variance-authority";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   AlertTriangle,
@@ -12,11 +11,10 @@ import { InfiniteLogLoader } from "./InfiniteLogLoader";
 import type { LogEntry } from "./log-viewer-context";
 import { useLogViewer } from "./useLogViewer";
 
-type LogBadgeVariant = VariantProps<typeof badgeVariants>["variant"];
-
 // Log level icon mapping for accessibility
 function getLogIcon(level?: string) {
-  switch (level) {
+  const normalizedLevel = level?.toLowerCase();
+  switch (normalizedLevel) {
     case "error":
     case "3":
       return AlertCircle;
@@ -41,30 +39,62 @@ function getLogIcon(level?: string) {
   }
 }
 
-// Log level badge variant mapping
-function getLogVariant(level?: string): LogBadgeVariant {
-  switch (level) {
+// Get CSS custom properties for log levels with better contrast
+function getLogStyle(level?: string): React.CSSProperties {
+  const normalizedLevel = level?.toLowerCase();
+  switch (normalizedLevel) {
     case "error":
     case "3":
-      return "log-error";
+      return {
+        backgroundColor: 'var(--log-error)',
+        color: 'white',
+        borderColor: 'var(--log-error)',
+        fontWeight: '600'
+      };
     case "warn":
     case "warning":
     case "4":
-      return "log-warning";
+      return {
+        backgroundColor: 'var(--log-warning)',
+        color: 'black',
+        borderColor: 'var(--log-warning)',
+        fontWeight: '600'
+      };
     case "info":
     case "6":
-      return "log-info";
+      return {
+        backgroundColor: 'var(--log-info)',
+        color: 'white',
+        borderColor: 'var(--log-info)',
+        fontWeight: '500'
+      };
     case "debug":
     case "7":
-      return "log-debug";
+      return {
+        backgroundColor: 'var(--log-debug)',
+        color: 'white',
+        borderColor: 'var(--log-debug)',
+        fontWeight: '400'
+      };
     case "critical":
     case "2":
-      return "log-critical";
+      return {
+        backgroundColor: 'var(--log-critical)',
+        color: 'white',
+        borderColor: 'var(--log-critical)',
+        fontWeight: '700',
+        boxShadow: '0 0 0 1px var(--log-critical), 0 0 8px var(--log-critical)'
+      };
     case "notice":
     case "5":
-      return "log-notice";
+      return {
+        backgroundColor: 'var(--log-notice)',
+        color: 'white',
+        borderColor: 'var(--log-notice)',
+        fontWeight: '500'
+      };
     default:
-      return "outline";
+      return {};
   }
 }
 
@@ -97,6 +127,7 @@ function getLogRowBg(level?: string) {
 
 export function LogList() {
   const { logs, loading, error, clearError } = useLogViewer();
+
 
   if (error) {
     return (
@@ -144,7 +175,7 @@ export function LogList() {
     <div className="overflow-y-auto flex-1 bg-background font-mono text-sm">
       {logs.map((log: LogEntry, i: number) => {
         const IconComponent = getLogIcon(log.level);
-        const variant = getLogVariant(log.level);
+        const logStyle = getLogStyle(log.level);
         const isCritical = log.level === "critical" || log.level === "2";
 
         // Apply text color based on log level for improved readability
@@ -161,7 +192,11 @@ export function LogList() {
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {log.timestamp}
             </span>
-            <Badge variant={variant} className="shrink-0 flex items-center gap-1">
+            <Badge
+              variant="outline"
+              className="shrink-0 flex items-center gap-1 border"
+              style={logStyle}
+            >
               <IconComponent className="w-3 h-3" aria-hidden="true" />
               <span>{log.level}</span>
             </Badge>

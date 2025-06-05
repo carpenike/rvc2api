@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/contexts/query-provider";
 import { WebSocketProvider } from "@/contexts/websocket-provider";
 import CanSniffer from "@/pages/can-sniffer";
@@ -7,7 +8,7 @@ import DemoDashboard from "@/pages/demo-dashboard";
 import DeviceMapping from "@/pages/device-mapping";
 import Documentation from "@/pages/documentation";
 import Lights from "@/pages/lights";
-import LogHistoryPage from "@/pages/log-history";
+import LogsPage from "@/pages/logs";
 import NetworkMap from "@/pages/network-map";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -31,8 +32,9 @@ createRoot(document.getElementById("root")!).render(
           enableSystem
           disableTransitionOnChange
         >
-          <Toaster />
-          <BrowserRouter
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter
             future={{
               v7_startTransition: true,
               v7_relativeSplatPath: true,
@@ -52,10 +54,11 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/rvc-spec" element={<RVCSpec />} />
             <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/theme-test" element={<ThemeTest />} />
-            <Route path="/log-history" element={<LogHistoryPage />} />
+            <Route path="/logs" element={<LogsPage />} />
           </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
+          </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
       </WebSocketProvider>
     </QueryProvider>
   </StrictMode>

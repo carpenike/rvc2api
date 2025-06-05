@@ -298,6 +298,18 @@ export default function ThemeTest() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label>Log Badge Variants</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="log-debug">Debug</Badge>
+                      <Badge variant="log-info">Info</Badge>
+                      <Badge variant="log-warning">Warning</Badge>
+                      <Badge variant="log-error">Error</Badge>
+                      <Badge variant="log-critical">Critical</Badge>
+                      <Badge variant="log-notice">Notice</Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>Loading Skeletons</Label>
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-[250px]" />
@@ -586,6 +598,7 @@ export default function ThemeTest() {
               </CardContent>
             </Card>
           </TabsContent>
+
         </Tabs>
       </div>
     </AppLayout>

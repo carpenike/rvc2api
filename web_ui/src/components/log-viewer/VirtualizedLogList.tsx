@@ -42,28 +42,26 @@ function getLogIcon(level?: string) {
   }
 }
 
-// Log level badge variant mapping
+// Log level badge variant mapping (using semantic variants until custom variants work)
 function getLogVariant(level?: string): LogBadgeVariant {
   switch (level) {
     case "error":
     case "3":
-      return "log-error";
+    case "critical":
+    case "2":
+      return "destructive";
     case "warn":
     case "warning":
     case "4":
-      return "log-warning";
+      return "secondary";
     case "info":
     case "6":
-      return "log-info";
-    case "debug":
-    case "7":
-      return "log-debug";
-    case "critical":
-    case "2":
-      return "log-critical";
     case "notice":
     case "5":
-      return "log-notice";
+      return "default";
+    case "debug":
+    case "7":
+      return "outline";
     default:
       return "outline";
   }

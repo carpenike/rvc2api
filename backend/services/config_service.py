@@ -14,6 +14,7 @@ import logging
 import os
 from typing import Any
 
+from backend.core.config import get_settings
 from backend.core.state import AppState
 
 logger = logging.getLogger(__name__)
@@ -68,27 +69,62 @@ class ConfigService:
 
     async def get_environment_info(self) -> dict[str, Any]:
         """
-        Get information about relevant environment variables.
+        Get information about relevant environment variables and configuration.
 
         Returns:
-            Dictionary containing environment configuration
+            Dictionary containing environment configuration showing actual env vars vs defaults
         """
+        import os
+
+        # Helper function to get raw env var or None if not set
+        def get_raw_env(key: str) -> str | None:
+            return os.environ.get(key)
+
+        # Helper function to parse boolean environment variables
+        def parse_bool_env(key: str, default: bool = False) -> bool:
+            value = get_raw_env(key)
+            if value is None:
+                return default
+            return value.lower() in ("true", "1", "yes", "on")
+
+        # Get settings for defaults when env vars are present
+        settings = get_settings()
+
         env_vars = {
-            # CAN-related environment variables
-            "CAN_BUSTYPE": os.getenv("CAN_BUSTYPE", "socketcan"),
-            "CAN_INTERFACE": os.getenv("CAN_INTERFACE"),
-            "CAN_BITRATE": os.getenv("CAN_BITRATE"),
+            # CAN-related settings - show None if not set, actual value if set
+            "CAN_BUSTYPE": get_raw_env("CAN_BUSTYPE") or settings.can.bustype,
+            "CAN_INTERFACE": get_raw_env("CAN_INTERFACE"),  # None if not set
+            "CAN_BITRATE": get_raw_env("CAN_BITRATE"),
             # Application configuration
-            "CONFIG_FILE": os.getenv("CONFIG_FILE"),
-            "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO"),
-            "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
+            "CONFIG_FILE": get_raw_env("CONFIG_FILE"),
+            "LOG_LEVEL": get_raw_env("LOG_LEVEL") or settings.logging.level,
+            "DEBUG": parse_bool_env("DEBUG", settings.debug),
             # Server configuration
-            "HOST": os.getenv("HOST", "127.0.0.1"),
-            "PORT": os.getenv("PORT", "8000"),
-            "WORKERS": os.getenv("WORKERS", "1"),
-            # Feature flags
-            "ENABLE_WEBSOCKETS": os.getenv("ENABLE_WEBSOCKETS", "true").lower() == "true",
-            "ENABLE_CAN_SNIFFER": os.getenv("ENABLE_CAN_SNIFFER", "true").lower() == "true",
+            "HOST": get_raw_env("HOST") or settings.server.host,
+            "PORT": get_raw_env("PORT") or str(settings.server.port),
+            "WORKERS": get_raw_env("WORKERS") or str(settings.server.workers),
+            # Feature flags - using expected test names
+            "ENABLE_WEBSOCKETS": parse_bool_env("ENABLE_WEBSOCKETS", settings.websocket.enabled),
+            "ENABLE_CAN_SNIFFER": parse_bool_env(
+                "ENABLE_CAN_SNIFFER", settings.features.enable_metrics
+            ),
+        }
+
+        # Mask sensitive values
+        masked_vars = {}
+        for key, value in env_vars.items():
+            if value is None:
+                masked_vars[key] = None
+            elif any(
+                sensitive in key.lower() for sensitive in ["password", "secret", "token", "key"]
+            ):
+                masked_vars[key] = "***MASKED***" if value else None
+            else:
+                masked_vars[key] = value
+
+        return {
+            "environment_variables": masked_vars,
+            "total_env_vars": len([v for v in env_vars.values() if v is not None]),
         }
 
         # Mask sensitive values
@@ -126,9 +162,9 @@ class ConfigService:
                 "entity_id": entity_id,
                 "configuration": entity.config,
                 "is_light": entity.config.get("device_type") == "light",
-                "light_info": entity.config
-                if entity.config.get("device_type") == "light"
-                else None,
+                "light_info": (
+                    entity.config if entity.config.get("device_type") == "light" else None
+                ),
             }
         else:
             # Return summary of all entities
@@ -185,7 +221,10 @@ class ConfigService:
             warnings.append("No controllable lights configured")
 
         # Check for entities without required fields
-        for entity_id, entity in self.app_state.entity_manager.get_all_entities().items():
+        for (
+            entity_id,
+            entity,
+        ) in self.app_state.entity_manager.get_all_entities().items():
             config = entity.config
             if not config.get("device_type"):
                 warnings.append(f"Entity '{entity_id}' missing device_type")

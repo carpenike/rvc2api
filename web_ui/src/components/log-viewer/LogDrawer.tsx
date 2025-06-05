@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import * as React from "react";
+import { useId } from "react";
 import { LogViewer } from "./LogViewer";
 
 interface LogDrawerProps {
@@ -12,7 +12,7 @@ interface LogDrawerProps {
 }
 
 export function LogDrawer({ websocketUrl, apiEndpoint, trigger = "View Logs", initialFilters, asChild = false }: LogDrawerProps) {
-  const drawerId = React.useId();
+  const drawerId = useId();
   const drawerDescId = `${drawerId}-description`;
 
   return (

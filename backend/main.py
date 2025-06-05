@@ -13,7 +13,6 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.router_config import configure_routers
 from backend.core.config import get_settings
@@ -21,6 +20,7 @@ from backend.core.dependencies import get_app_state
 from backend.core.logging_config import configure_unified_logging, setup_early_logging
 from backend.core.metrics import initialize_backend_metrics
 from backend.integrations.registration import register_custom_features
+from backend.middleware.http import configure_cors
 from backend.services.can_service import CANService
 from backend.services.config_service import ConfigService
 from backend.services.docs_service import DocsService
@@ -148,14 +148,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Add CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # Configure as needed for production
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # Configure CORS middleware using settings
+    configure_cors(app)
 
     # Configure and include routers
     configure_routers(app)
@@ -193,18 +187,21 @@ def main():
     """
     import os
 
+    # Get settings to use as CLI defaults
+    settings = get_settings()
+
     parser = argparse.ArgumentParser(description="Start the rvc2api backend server.")
     parser.add_argument(
         "--host",
         type=str,
-        default=os.getenv("RVC2API_HOST", "0.0.0.0"),
-        help="Host to bind the server (default: 0.0.0.0 or RVC2API_HOST)",
+        default=settings.server.host,
+        help=f"Host to bind the server (default: {settings.server.host})",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.getenv("RVC2API_PORT", 8000)),
-        help="Port to bind the server (default: 8000 or RVC2API_PORT)",
+        default=settings.server.port,
+        help=f"Port to bind the server (default: {settings.server.port})",
     )
     parser.add_argument(
         "--reload",
@@ -218,8 +215,8 @@ def main():
     parser.add_argument(
         "--log-level",
         type=str,
-        default=os.getenv("LOG_LEVEL", "info"),
-        help="Uvicorn log level (default: LOG_LEVEL env var or 'info')",
+        default=settings.logging.level.lower(),
+        help=f"Uvicorn log level (default: {settings.logging.level.lower()})",
     )
     args = parser.parse_args()
 
