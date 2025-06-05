@@ -469,62 +469,260 @@ EOF
           };
 
           settings = {
-            pushover = {
-              enable = lib.mkOption {
+            # App metadata
+            appName = lib.mkOption {
+              type = lib.types.str;
+              default = "rvc2api";
+              description = "Application name";
+            };
+
+            appVersion = lib.mkOption {
+              type = lib.types.str;
+              default = "0.0.0";
+              description = "Application version";
+            };
+
+            appDescription = lib.mkOption {
+              type = lib.types.str;
+              default = "API for RV-C CANbus";
+              description = "Application description";
+            };
+
+            appTitle = lib.mkOption {
+              type = lib.types.str;
+              default = "RV-C API";
+              description = "API title for documentation";
+            };
+
+            # Server configuration
+            server = {
+              host = lib.mkOption {
+                type = lib.types.str;
+                default = "0.0.0.0";
+                description = "Host to bind the server to";
+              };
+
+              port = lib.mkOption {
+                type = lib.types.int;
+                default = 8000;
+                description = "Port to bind the server to";
+              };
+
+              workers = lib.mkOption {
+                type = lib.types.int;
+                default = 1;
+                description = "Number of worker processes";
+              };
+
+              reload = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Enable Pushover integration";
+                description = "Enable auto-reload for development";
               };
-              apiToken = lib.mkOption {
+
+              debug = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable debug mode";
+              };
+
+              rootPath = lib.mkOption {
                 type = lib.types.str;
                 default = "";
-                description = "Pushover API token";
+                description = "Root path for the application";
               };
-              userKey = lib.mkOption {
-                type = lib.types.str;
-                default = "";
-                description = "Pushover user key";
+
+              accessLog = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable access logging";
               };
-              device = lib.mkOption {
-                type = lib.types.nullOr lib.types.str;
-                default = null;
-                description = "Pushover device name (optional)";
+
+              keepAliveTimeout = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Keep-alive timeout in seconds";
               };
-              priority = lib.mkOption {
+
+              timeoutGracefulShutdown = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Graceful shutdown timeout";
+              };
+
+              limitConcurrency = lib.mkOption {
                 type = lib.types.nullOr lib.types.int;
                 default = null;
-                description = "Pushover message priority (optional)";
+                description = "Maximum number of concurrent connections";
+              };
+
+              limitMaxRequests = lib.mkOption {
+                type = lib.types.nullOr lib.types.int;
+                default = null;
+                description = "Maximum number of requests before worker restart";
+              };
+
+              timeoutNotify = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Timeout for worker startup notification";
+              };
+
+              # SSL/TLS settings
+              sslKeyfile = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "SSL key file path";
+              };
+
+              sslCertfile = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "SSL certificate file path";
+              };
+
+              sslCaCerts = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "SSL CA certificates file path";
+              };
+
+              sslCertReqs = lib.mkOption {
+                type = lib.types.int;
+                default = 0;
+                description = "SSL certificate verification mode (0=CERT_NONE, 1=CERT_OPTIONAL, 2=CERT_REQUIRED)";
+              };
+
+              workerClass = lib.mkOption {
+                type = lib.types.str;
+                default = "uvicorn.workers.UvicornWorker";
+                description = "Worker class to use";
+              };
+
+              workerConnections = lib.mkOption {
+                type = lib.types.int;
+                default = 1000;
+                description = "Maximum number of simultaneous clients";
+              };
+
+              serverHeader = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Include server header in responses";
+              };
+
+              dateHeader = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Include date header in responses";
               };
             };
 
-            uptimerobot = {
-              enable = lib.mkOption {
+            # CORS settings
+            cors = {
+              allowedOrigins = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ "*" ];
+                description = "Allowed origins for CORS";
+              };
+
+              allowedCredentials = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Allow credentials in CORS";
+              };
+
+              allowedMethods = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ "*" ];
+                description = "Allowed methods for CORS";
+              };
+
+              allowedHeaders = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ "*" ];
+                description = "Allowed headers for CORS";
+              };
+            };
+
+            # Security settings
+            security = {
+              secretKey = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Secret key for JWT tokens";
+              };
+
+              jwtAlgorithm = lib.mkOption {
+                type = lib.types.str;
+                default = "HS256";
+                description = "JWT algorithm";
+              };
+
+              jwtExpireMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "JWT token expiration in minutes";
+              };
+            };
+
+            # Logging settings
+            logging = {
+              level = lib.mkOption {
+                type = lib.types.str;
+                default = "INFO";
+                description = "Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)";
+              };
+
+              format = lib.mkOption {
+                type = lib.types.str;
+                default = "%(asctime)s - %(name)s - %(levelname)s - %(message)s";
+                description = "Log message format";
+              };
+
+              logToFile = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Enable UptimeRobot integration";
+                description = "Enable file logging";
               };
-              apiKey = lib.mkOption {
-                type = lib.types.str;
-                default = "";
-                description = "UptimeRobot API key";
+
+              logFile = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Log file path";
+              };
+
+              maxFileSize = lib.mkOption {
+                type = lib.types.int;
+                default = 10485760;
+                description = "Max log file size in bytes (10MB)";
+              };
+
+              backupCount = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Number of backup log files to keep";
               };
             };
 
+            # CAN bus settings
             canbus = {
-              channels = lib.mkOption {
-                type = lib.types.listOf lib.types.str;
-                default = [ "can0" ];
-                description = ''
-                  SocketCAN interfaces to listen on (comma-separated for env).
-                  Default is [ "can0" ].
-                  To use multiple interfaces, set to e.g. [ "can0" "can1" ] in your configuration.
-                '';
-              };
               bustype = lib.mkOption {
                 type = lib.types.str;
                 default = "socketcan";
-                description = "python-can bus type";
+                description = "CAN bus type";
               };
+
+              channels = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ "vcan0" ];
+                description = ''
+                  CAN channels to use.
+                  Default is [ "vcan0" ].
+                  To use multiple interfaces, set to e.g. [ "can0" "can1" ] in your configuration.
+                '';
+              };
+
               bitrate = lib.mkOption {
                 type = lib.types.int;
                 default = 500000;
@@ -532,10 +730,166 @@ EOF
               };
             };
 
+            # Feature flags
+            features = {
+              enableMaintenanceTracking = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable maintenance tracking features";
+              };
+
+              enableNotifications = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable notification services";
+              };
+
+              enableUptimerobot = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable UptimeRobot integration";
+              };
+
+              enablePushover = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Pushover notifications";
+              };
+
+              enableVectorSearch = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable vector search features";
+              };
+
+              enableApiDocs = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable API documentation endpoints";
+              };
+
+              enableMetrics = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Prometheus metrics";
+              };
+            };
+
+            # Maintenance settings
+            maintenance = {
+              checkInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 3600;
+                description = "Check interval in seconds (minimum 60)";
+              };
+
+              notificationThresholdDays = lib.mkOption {
+                type = lib.types.int;
+                default = 7;
+                description = "Days before due to send notifications";
+              };
+
+              databasePath = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Maintenance database path";
+              };
+            };
+
+            # Notification settings
+            notifications = {
+              # Pushover settings
+              pushoverUserKey = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Pushover user key";
+              };
+
+              pushoverApiToken = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Pushover API token";
+              };
+
+              pushoverDevice = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Pushover device name";
+              };
+
+              pushoverPriority = lib.mkOption {
+                type = lib.types.nullOr lib.types.int;
+                default = null;
+                description = "Pushover message priority (-2 to 2)";
+              };
+
+              # UptimeRobot settings
+              uptimerobotApiKey = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "UptimeRobot API key";
+              };
+            };
+
+            # Legacy compatibility options (for existing deployments)
+            pushover = {
+              enable = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "DEPRECATED: Use features.enablePushover instead";
+              };
+              apiToken = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "DEPRECATED: Use notifications.pushoverApiToken instead";
+              };
+              userKey = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "DEPRECATED: Use notifications.pushoverUserKey instead";
+              };
+              device = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "DEPRECATED: Use notifications.pushoverDevice instead";
+              };
+              priority = lib.mkOption {
+                type = lib.types.nullOr lib.types.int;
+                default = null;
+                description = "DEPRECATED: Use notifications.pushoverPriority instead";
+              };
+            };
+
+            uptimerobot = {
+              enable = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "DEPRECATED: Use features.enableUptimerobot instead";
+              };
+              apiKey = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "DEPRECATED: Use notifications.uptimerobotApiKey instead";
+              };
+            };
+
+            # File paths
             rvcSpecPath = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
               description = "Override path to rvc.json (RVC spec file)";
+            };
+
+            rvcCoachMappingPath = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Coach mapping file path";
+            };
+
+            staticDir = lib.mkOption {
+              type = lib.types.str;
+              default = "static";
+              description = "Static files directory";
             };
 
             deviceMappingPath = lib.mkOption {
@@ -554,30 +908,29 @@ EOF
               '';
             };
 
-            # Add any other configuration options from config.py
             userCoachInfoPath = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
               description = "Path to user coach info YAML file";
             };
 
-            # Server configuration
+            # Legacy server configuration (for backward compatibility)
             host = lib.mkOption {
               type = lib.types.str;
               default = "0.0.0.0";
-              description = "Host IP to bind the API server to";
+              description = "DEPRECATED: Use server.host instead - Host IP to bind the API server to";
             };
 
             port = lib.mkOption {
               type = lib.types.int;
               default = 8000;
-              description = "Port to run the API server on";
+              description = "DEPRECATED: Use server.port instead - Port to run the API server on";
             };
 
             logLevel = lib.mkOption {
               type = lib.types.str;
               default = "INFO";
-              description = "Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)";
+              description = "DEPRECATED: Use logging.level instead - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)";
             };
 
             # Controller configuration
@@ -613,33 +966,157 @@ EOF
             };
 
             environment = {
-              # Pushover settings
-              ENABLE_PUSHOVER = if config.rvc2api.settings.pushover.enable then "1" else "0";
-              PUSHOVER_API_TOKEN = config.rvc2api.settings.pushover.apiToken;
-              PUSHOVER_USER_KEY = config.rvc2api.settings.pushover.userKey;
-              PUSHOVER_DEVICE = lib.mkIf (config.rvc2api.settings.pushover.device != null)
-                config.rvc2api.settings.pushover.device;
-              PUSHOVER_PRIORITY = lib.mkIf (config.rvc2api.settings.pushover.priority != null)
-                (toString config.rvc2api.settings.pushover.priority);
+              # App metadata
+              RVC2API_APP_NAME = config.rvc2api.settings.appName;
+              RVC2API_APP_VERSION = config.rvc2api.settings.appVersion;
+              RVC2API_APP_DESCRIPTION = config.rvc2api.settings.appDescription;
+              RVC2API_APP_TITLE = config.rvc2api.settings.appTitle;
 
-              # UptimeRobot settings
-              ENABLE_UPTIMEROBOT = if config.rvc2api.settings.uptimerobot.enable then "1" else "0";
-              UPTIMEROBOT_API_KEY = config.rvc2api.settings.uptimerobot.apiKey;
+              # Server settings (using new nested structure)
+              RVC2API_SERVER__HOST = config.rvc2api.settings.server.host;
+              RVC2API_SERVER__PORT = toString config.rvc2api.settings.server.port;
+              RVC2API_SERVER__WORKERS = toString config.rvc2api.settings.server.workers;
+              RVC2API_SERVER__RELOAD = if config.rvc2api.settings.server.reload then "true" else "false";
+              RVC2API_SERVER__DEBUG = if config.rvc2api.settings.server.debug then "true" else "false";
+              RVC2API_SERVER__ROOT_PATH = config.rvc2api.settings.server.rootPath;
+              RVC2API_SERVER__ACCESS_LOG = if config.rvc2api.settings.server.accessLog then "true" else "false";
+              RVC2API_SERVER__KEEP_ALIVE_TIMEOUT = toString config.rvc2api.settings.server.keepAliveTimeout;
+              RVC2API_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN = toString config.rvc2api.settings.server.timeoutGracefulShutdown;
+              RVC2API_SERVER__WORKER_CLASS = config.rvc2api.settings.server.workerClass;
+              RVC2API_SERVER__WORKER_CONNECTIONS = toString config.rvc2api.settings.server.workerConnections;
+              RVC2API_SERVER__SERVER_HEADER = if config.rvc2api.settings.server.serverHeader then "true" else "false";
+              RVC2API_SERVER__DATE_HEADER = if config.rvc2api.settings.server.dateHeader then "true" else "false";
 
-              # CANbus settings
+              # Optional server settings
+              RVC2API_SERVER__LIMIT_CONCURRENCY = lib.mkIf (config.rvc2api.settings.server.limitConcurrency != null)
+                (toString config.rvc2api.settings.server.limitConcurrency);
+              RVC2API_SERVER__LIMIT_MAX_REQUESTS = lib.mkIf (config.rvc2api.settings.server.limitMaxRequests != null)
+                (toString config.rvc2api.settings.server.limitMaxRequests);
+              RVC2API_SERVER__TIMEOUT_NOTIFY = toString config.rvc2api.settings.server.timeoutNotify;
+
+              # SSL/TLS settings
+              RVC2API_SERVER__SSL_KEYFILE = lib.mkIf (config.rvc2api.settings.server.sslKeyfile != null)
+                config.rvc2api.settings.server.sslKeyfile;
+              RVC2API_SERVER__SSL_CERTFILE = lib.mkIf (config.rvc2api.settings.server.sslCertfile != null)
+                config.rvc2api.settings.server.sslCertfile;
+              RVC2API_SERVER__SSL_CA_CERTS = lib.mkIf (config.rvc2api.settings.server.sslCaCerts != null)
+                config.rvc2api.settings.server.sslCaCerts;
+              RVC2API_SERVER__SSL_CERT_REQS = toString config.rvc2api.settings.server.sslCertReqs;
+
+              # CORS settings
+              RVC2API_CORS__ALLOWED_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
+              RVC2API_CORS__ALLOWED_CREDENTIALS = if config.rvc2api.settings.cors.allowedCredentials then "true" else "false";
+              RVC2API_CORS__ALLOWED_METHODS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedMethods;
+              RVC2API_CORS__ALLOWED_HEADERS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedHeaders;
+
+              # Security settings
+              RVC2API_SECURITY__SECRET_KEY = lib.mkIf (config.rvc2api.settings.security.secretKey != null)
+                config.rvc2api.settings.security.secretKey;
+              RVC2API_SECURITY__JWT_ALGORITHM = config.rvc2api.settings.security.jwtAlgorithm;
+              RVC2API_SECURITY__JWT_EXPIRE_MINUTES = toString config.rvc2api.settings.security.jwtExpireMinutes;
+
+              # Logging settings
+              RVC2API_LOGGING__LEVEL = config.rvc2api.settings.logging.level;
+              RVC2API_LOGGING__FORMAT = config.rvc2api.settings.logging.format;
+              RVC2API_LOGGING__LOG_TO_FILE = if config.rvc2api.settings.logging.logToFile then "true" else "false";
+              RVC2API_LOGGING__LOG_FILE = lib.mkIf (config.rvc2api.settings.logging.logFile != null)
+                config.rvc2api.settings.logging.logFile;
+              RVC2API_LOGGING__MAX_FILE_SIZE = toString config.rvc2api.settings.logging.maxFileSize;
+              RVC2API_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
+
+              # CAN bus settings
+              RVC2API_CANBUS__BUSTYPE = config.rvc2api.settings.canbus.bustype;
+              RVC2API_CANBUS__CHANNELS = lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
+              RVC2API_CANBUS__BITRATE = toString config.rvc2api.settings.canbus.bitrate;
+
+              # Feature flags
+              RVC2API_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";
+              RVC2API_FEATURES__ENABLE_NOTIFICATIONS = if config.rvc2api.settings.features.enableNotifications then "true" else "false";
+              RVC2API_FEATURES__ENABLE_UPTIMEROBOT = if config.rvc2api.settings.features.enableUptimerobot then "true" else "false";
+              RVC2API_FEATURES__ENABLE_PUSHOVER = if config.rvc2api.settings.features.enablePushover then "true" else "false";
+              RVC2API_FEATURES__ENABLE_VECTOR_SEARCH = if config.rvc2api.settings.features.enableVectorSearch then "true" else "false";
+              RVC2API_FEATURES__ENABLE_API_DOCS = if config.rvc2api.settings.features.enableApiDocs then "true" else "false";
+              RVC2API_FEATURES__ENABLE_METRICS = if config.rvc2api.settings.features.enableMetrics then "true" else "false";
+
+              # Maintenance settings
+              RVC2API_MAINTENANCE__CHECK_INTERVAL = toString config.rvc2api.settings.maintenance.checkInterval;
+              RVC2API_MAINTENANCE__NOTIFICATION_THRESHOLD_DAYS = toString config.rvc2api.settings.maintenance.notificationThresholdDays;
+              RVC2API_MAINTENANCE__DATABASE_PATH = lib.mkIf (config.rvc2api.settings.maintenance.databasePath != null)
+                config.rvc2api.settings.maintenance.databasePath;
+
+              # Notification settings
+              RVC2API_NOTIFICATIONS__PUSHOVER_USER_KEY = lib.mkIf (config.rvc2api.settings.notifications.pushoverUserKey != null)
+                config.rvc2api.settings.notifications.pushoverUserKey;
+              RVC2API_NOTIFICATIONS__PUSHOVER_API_TOKEN = lib.mkIf (config.rvc2api.settings.notifications.pushoverApiToken != null)
+                config.rvc2api.settings.notifications.pushoverApiToken;
+              RVC2API_NOTIFICATIONS__PUSHOVER_DEVICE = lib.mkIf (config.rvc2api.settings.notifications.pushoverDevice != null)
+                config.rvc2api.settings.notifications.pushoverDevice;
+              RVC2API_NOTIFICATIONS__PUSHOVER_PRIORITY = lib.mkIf (config.rvc2api.settings.notifications.pushoverPriority != null)
+                (toString config.rvc2api.settings.notifications.pushoverPriority);
+              RVC2API_NOTIFICATIONS__UPTIMEROBOT_API_KEY = lib.mkIf (config.rvc2api.settings.notifications.uptimerobotApiKey != null)
+                config.rvc2api.settings.notifications.uptimerobotApiKey;
+
+              # File paths
+              RVC2API_RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
+                config.rvc2api.settings.rvcSpecPath;
+              RVC2API_RVC_COACH_MAPPING_PATH = lib.mkIf (config.rvc2api.settings.rvcCoachMappingPath != null)
+                config.rvc2api.settings.rvcCoachMappingPath;
+              RVC2API_STATIC_DIR = config.rvc2api.settings.staticDir;
+              RVC2API_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)
+                config.rvc2api.settings.userCoachInfoPath;
+
+              # Controller settings
+              RVC2API_CONTROLLER_SOURCE_ADDR = config.rvc2api.settings.controllerSourceAddr;
+
+              # GitHub update checker
+              RVC2API_GITHUB_UPDATE_REPO = lib.mkIf (config.rvc2api.settings.githubUpdateRepo != null)
+                config.rvc2api.settings.githubUpdateRepo;
+
+              # Legacy environment variables (for backward compatibility)
+              # Server settings
+              RVC2API_HOST = config.rvc2api.settings.host; # Maps to server.host in new config
+              RVC2API_PORT = toString config.rvc2api.settings.port; # Maps to server.port in new config
+              DEBUG = if config.rvc2api.settings.server.debug then "true" else "false";
+              RVC2API_ROOT_PATH = config.rvc2api.settings.server.rootPath;
+
+              # CORS legacy
+              CORS_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
+
+              # Logging legacy
+              LOG_LEVEL = config.rvc2api.settings.logging.level;
+
+              # CAN bus legacy
               CAN_CHANNELS = lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
               CAN_BUSTYPE = config.rvc2api.settings.canbus.bustype;
               CAN_BITRATE = toString config.rvc2api.settings.canbus.bitrate;
 
-              # Server settings
-              RVC2API_HOST = config.rvc2api.settings.host;
-              RVC2API_PORT = toString config.rvc2api.settings.port;
-              LOG_LEVEL = config.rvc2api.settings.logLevel;
+              # Legacy Pushover settings (maintain backward compatibility)
+              ENABLE_PUSHOVER = if (config.rvc2api.settings.pushover.enable || config.rvc2api.settings.features.enablePushover) then "1" else "0";
+              PUSHOVER_API_TOKEN = if config.rvc2api.settings.pushover.apiToken != ""
+                then config.rvc2api.settings.pushover.apiToken
+                else (lib.mkIf (config.rvc2api.settings.notifications.pushoverApiToken != null) config.rvc2api.settings.notifications.pushoverApiToken);
+              PUSHOVER_USER_KEY = if config.rvc2api.settings.pushover.userKey != ""
+                then config.rvc2api.settings.pushover.userKey
+                else (lib.mkIf (config.rvc2api.settings.notifications.pushoverUserKey != null) config.rvc2api.settings.notifications.pushoverUserKey);
+              PUSHOVER_DEVICE = lib.mkIf (config.rvc2api.settings.pushover.device != null || config.rvc2api.settings.notifications.pushoverDevice != null)
+                (if config.rvc2api.settings.pushover.device != null
+                 then config.rvc2api.settings.pushover.device
+                 else config.rvc2api.settings.notifications.pushoverDevice);
+              PUSHOVER_PRIORITY = lib.mkIf (config.rvc2api.settings.pushover.priority != null || config.rvc2api.settings.notifications.pushoverPriority != null)
+                (toString (if config.rvc2api.settings.pushover.priority != null
+                          then config.rvc2api.settings.pushover.priority
+                          else config.rvc2api.settings.notifications.pushoverPriority));
 
-              # Controller settings
+              # Legacy UptimeRobot settings
+              ENABLE_UPTIMEROBOT = if (config.rvc2api.settings.uptimerobot.enable || config.rvc2api.settings.features.enableUptimerobot) then "1" else "0";
+              UPTIMEROBOT_API_KEY = if config.rvc2api.settings.uptimerobot.apiKey != ""
+                then config.rvc2api.settings.uptimerobot.apiKey
+                else (lib.mkIf (config.rvc2api.settings.notifications.uptimerobotApiKey != null) config.rvc2api.settings.notifications.uptimerobotApiKey);
+
+              # Controller legacy
               CONTROLLER_SOURCE_ADDR = config.rvc2api.settings.controllerSourceAddr;
 
-              # GitHub update checker
+              # GitHub legacy
               GITHUB_UPDATE_REPO = lib.mkIf (config.rvc2api.settings.githubUpdateRepo != null)
                 config.rvc2api.settings.githubUpdateRepo;
 
@@ -647,7 +1124,7 @@ EOF
               RVC_COACH_MODEL = lib.mkIf (config.rvc2api.settings.modelSelector != null)
                 config.rvc2api.settings.modelSelector;
 
-              # RVC spec and device mapping paths
+              # RVC spec path
               RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
                 config.rvc2api.settings.rvcSpecPath;
 
@@ -660,10 +1137,6 @@ EOF
                   config.rvc2api.settings.modelSelector + ".yml"
                 else
                   "${config.rvc2api.package}/lib/python3.12/site-packages/backend/integrations/rvc/config/coach_mapping.default.yml";
-
-              # User coach info path
-              RVC2API_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)
-                config.rvc2api.settings.userCoachInfoPath;
             };
           };
         };
