@@ -55,7 +55,16 @@ def setup_websocket(
         config=config or {},
     )
     setup_websocket_routes(app, app_state)
-    WebSocketLogHandler(ws_manager)  # Attach log handler for WebSocket logs
+    # Initialize and attach WebSocket log handler to capture application and access logs
+    ws_handler = WebSocketLogHandler(ws_manager)
+    # Attach to root logger so all app logs are streamed
+    root_logger = logging.getLogger()
+    root_logger.addHandler(ws_handler)
+    # Also attach to Uvicorn access logger to capture HTTP access logs
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.addHandler(ws_handler)
+    # Ensure access logs propagate to attached handlers
+    access_logger.propagate = True
     logger.info("WebSocket setup complete.")
     return ws_manager
 

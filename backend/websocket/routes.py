@@ -81,6 +81,7 @@ async def websocket_logs_endpoint(websocket: WebSocket) -> None:
     Example:
         Connect to ws://<host>/ws/logs to receive log messages.
     """
+    # On client connect, delegate to WebSocketLogHandler via the manager
     ws_manager = get_websocket_manager_from_feature()
     await ws_manager.handle_log_connection(websocket)
 

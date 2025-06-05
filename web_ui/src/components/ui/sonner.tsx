@@ -1,4 +1,4 @@
-import { useTheme } from "next-themes"
+import { useTheme } from "@/hooks/use-theme"
 import type { ToasterProps } from "sonner"
 import { Toaster as Sonner } from "sonner"
 

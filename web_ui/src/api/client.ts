@@ -31,25 +31,33 @@ export const API_BASE = (() => {
 
 /**
  * WebSocket base URL for real-time connections
- * Uses VITE_WS_URL environment variable or builds from current location
+ *
+ * Connection priority:
+ *   1. VITE_BACKEND_WS_URL (preferred, set in .env[.development])
+ *   2. VITE_WS_URL (legacy, fallback)
+ *   3. In dev: ws://localhost:8000 (direct to backend, not via Vite proxy)
+ *   4. In prod: protocol/host of current page
+ *
+ * Example .env.development:
+ *   VITE_BACKEND_WS_URL=ws://localhost:8000
  */
 export const WS_BASE = (() => {
+  const backendWsUrl = import.meta.env.VITE_BACKEND_WS_URL;
+  if (backendWsUrl) {
+    return backendWsUrl;
+  }
   const wsUrl = import.meta.env.VITE_WS_URL;
-
   if (wsUrl) {
     return wsUrl;
   }
-
   // Build WebSocket URL based on current location
   const protocol = window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window?.location?.host;
-
   // In development mode, use localhost:8000 directly to bypass Vite proxy issues
   if (import.meta.env.DEV) {
     console.log('Development mode: Using direct WebSocket connection to backend');
     return `${protocol}//localhost:8000`;
   }
-
   // In production without explicit WS URL, use same host with relative path
   return `${protocol}//${host}`;
 })();

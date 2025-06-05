@@ -8,16 +8,17 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import {
-  RVCWebSocketClient,
-  createCANScanWebSocket,
-  createEntityWebSocket,
-  createSystemStatusWebSocket,
-  isWebSocketSupported
+    RVCWebSocketClient,
+    createCANScanWebSocket,
+    createEntityWebSocket,
+    createLogWebSocket,
+    createSystemStatusWebSocket,
+    isWebSocketSupported
 } from '../api';
 import type {
-  CANMessage,
-  EntityUpdateMessage,
-  WebSocketHandlers,
+    CANMessage,
+    EntityUpdateMessage,
+    WebSocketHandlers,
 } from '../api/types';
 import { queryKeys } from '../lib/query-client';
 
@@ -61,13 +62,13 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
         }
       },
 
-      onConnect: () => {
+      onOpen: () => {
         setIsConnected(true);
         setError(null);
         console.log('[WebSocket] Connected to entity updates');
       },
 
-      onDisconnect: () => {
+      onClose: () => {
         setIsConnected(false);
         console.log('[WebSocket] Disconnected from entity updates');
 
@@ -143,13 +144,13 @@ export function useCANScanWebSocket(options?: {
         }
       },
 
-      onConnect: () => {
+      onOpen: () => {
         setIsConnected(true);
         setError(null);
         console.log('[WebSocket] Connected to CAN scan');
       },
 
-      onDisconnect: () => {
+      onClose: () => {
         setIsConnected(false);
         console.log('[WebSocket] Disconnected from CAN scan');
 
@@ -222,13 +223,13 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
         queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
       },
 
-      onConnect: () => {
+      onOpen: () => {
         setIsConnected(true);
         setError(null);
         console.log('[WebSocket] Connected to system status');
       },
 
-      onDisconnect: () => {
+      onClose: () => {
         setIsConnected(false);
         console.log('[WebSocket] Disconnected from system status');
 
@@ -258,6 +259,103 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
       wsClient.disconnect();
     };
   }, [autoConnect, queryClient]);
+
+  const connect = () => client?.connect();
+  const disconnect = () => client?.disconnect();
+
+  return {
+    client,
+    isConnected,
+    error,
+    connect,
+    disconnect,
+    isSupported: isWebSocketSupported(),
+  };
+}
+
+/**
+ * Hook for log streaming via WebSocket
+ */
+export function useLogWebSocket(options?: {
+  autoConnect?: boolean;
+  onLog?: (log: unknown) => void;
+}) {
+  const [client, setClient] = useState<RVCWebSocketClient | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { autoConnect = false, onLog } = options || {};
+
+  useEffect(() => {
+    if (!autoConnect || !isWebSocketSupported()) {
+      return;
+    }
+
+    const handlers: WebSocketHandlers = {
+      onMessage: (message) => {
+        // Accept log messages with or without a type field, as long as they have standard log fields
+        if (
+          message && typeof message === 'object' &&
+          'timestamp' in message && 'level' in message && 'message' in message
+        ) {
+          onLog?.(message);
+        } else if (typeof message === 'string') {
+          // Try to parse as JSON, fallback to raw string
+          try {
+            const parsed = JSON.parse(message);
+            if (
+              parsed && typeof parsed === 'object' &&
+              'timestamp' in parsed && 'level' in parsed && 'message' in parsed
+            ) {
+              onLog?.(parsed);
+              return;
+            }
+          } catch {
+            // Not JSON, pass as raw string
+          }
+          onLog?.(message);
+        } else {
+          // Fallback: pass any message
+          onLog?.(message);
+        }
+      },
+
+      onOpen: () => {
+        setIsConnected(true);
+        setError(null);
+        console.log('[WebSocket] Connected to logs');
+      },
+
+      onClose: () => {
+        setIsConnected(false);
+        console.log('[WebSocket] Disconnected from logs');
+        // Attempt to reconnect after a delay
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (wsClient && !wsClient.isConnected) {
+            console.log('[WebSocket] Attempting to reconnect...');
+            wsClient.connect();
+          }
+        }, 5000);
+      },
+
+      onError: (error: Event) => {
+        setError(error.type || 'WebSocket error');
+        console.error('[WebSocket] Log error:', error);
+      },
+    };
+
+    const wsClient = createLogWebSocket(handlers);
+    setClient(wsClient);
+    wsClient.connect();
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      wsClient.disconnect();
+    };
+  }, [autoConnect, onLog]);
 
   const connect = () => client?.connect();
   const disconnect = () => client?.disconnect();

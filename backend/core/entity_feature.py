@@ -131,13 +131,25 @@ class EntityManagerFeature(Feature):
     def health(self) -> str:
         """Return the health status of the feature."""
         if not self.enabled:
-            return "disabled"
+            return "healthy"  # Disabled is considered healthy
+
+        # Return simple status - entity count details should be in health_details
+        return "healthy"
+
+    @property
+    def health_details(self) -> dict[str, Any]:
+        """Return detailed health information for diagnostics."""
+        if not self.enabled:
+            return {"status": "disabled", "reason": "Feature not enabled"}
 
         entity_count = len(self.entity_manager.get_entity_ids())
-        if entity_count > 0:
-            return f"healthy ({entity_count} entities)"
-        else:
-            return "healthy (no entities loaded)"
+        return {
+            "status": "healthy",
+            "entity_count": entity_count,
+            "description": (
+                f"{entity_count} entities loaded" if entity_count > 0 else "No entities loaded"
+            ),
+        }
 
     def get_entity_manager(self) -> EntityManager:
         """Get the EntityManager instance."""

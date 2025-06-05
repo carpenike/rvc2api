@@ -80,8 +80,17 @@ async def get_queue_status(
     This endpoint provides information about pending CAN messages
     waiting to be transmitted.
     """
+    logger.debug("GET /can/queue/status - Retrieving CAN queue status")
     _check_can_interface_feature_enabled(request)
-    return await can_service.get_queue_status()
+
+    try:
+        status = await can_service.get_queue_status()
+        queue_length = status.get("queue_length", 0)
+        logger.info(f"Retrieved CAN queue status: {queue_length} messages pending")
+        return status
+    except Exception as e:
+        logger.error(f"Error retrieving CAN queue status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -101,8 +110,16 @@ async def get_interfaces(
     This endpoint provides information about currently available
     CAN bus interfaces in the system.
     """
+    logger.debug("GET /can/interfaces - Retrieving CAN interfaces")
     _check_can_interface_feature_enabled(request)
-    return await can_service.get_interfaces()
+
+    try:
+        interfaces = await can_service.get_interfaces()
+        logger.info(f"Retrieved {len(interfaces)} CAN interfaces: {', '.join(interfaces)}")
+        return interfaces
+    except Exception as e:
+        logger.error(f"Error retrieving CAN interfaces: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -122,8 +139,17 @@ async def get_interface_details(
     This endpoint provides comprehensive information about each
     CAN interface including status, statistics, and configuration.
     """
+    logger.debug("GET /can/interfaces/details - Retrieving detailed interface information")
     _check_can_interface_feature_enabled(request)
-    return await can_service.get_interface_details()
+
+    try:
+        details = await can_service.get_interface_details()
+        interface_count = len(details)
+        logger.info(f"Retrieved detailed information for {interface_count} CAN interfaces")
+        return details
+    except Exception as e:
+        logger.error(f"Error retrieving CAN interface details: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post(
@@ -154,17 +180,36 @@ async def send_raw_message(
     Raises:
         HTTPException: If parameters are invalid or send fails
     """
+    logger.info(
+        f"POST /can/send - Sending CAN message: ID=0x{arbitration_id:X}, data='{data}', interface='{interface}'"
+    )
     _check_can_interface_feature_enabled(request)
 
     # Convert hex string to bytes
     try:
         data_bytes = bytes.fromhex(data.replace(" ", "").replace("0x", ""))
+        logger.debug(f"Converted hex data '{data}' to {len(data_bytes)} bytes")
     except ValueError as e:
-        from fastapi import HTTPException
-
+        logger.warning(f"Invalid hex data provided: '{data}' - {e}")
         raise HTTPException(status_code=400, detail=f"Invalid hex data: {e}") from e
 
-    return await can_service.send_raw_message(arbitration_id, data_bytes, interface)
+    try:
+        result = await can_service.send_raw_message(arbitration_id, data_bytes, interface)
+        if result.get("success", False):
+            logger.info(
+                f"Successfully sent CAN message: ID=0x{arbitration_id:X} on interface '{interface}'"
+            )
+        else:
+            logger.warning(
+                f"Failed to send CAN message: ID=0x{arbitration_id:X} on interface '{interface}' - {result.get('error', 'Unknown error')}"
+            )
+        return result
+    except Exception as e:
+        logger.error(
+            f"Error sending CAN message: ID=0x{arbitration_id:X} on interface '{interface}': {e}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -191,14 +236,21 @@ async def get_recent_can_messages(
     Raises:
         HTTPException: 503 if CAN interfaces are not available or connected
     """
+    logger.debug(f"GET /can/recent - Retrieving recent CAN messages (limit={limit})")
     _check_can_interface_feature_enabled(request)
 
     try:
-        return await can_service.get_recent_messages(limit)
+        messages = await can_service.get_recent_messages(limit)
+        logger.info(f"Retrieved {len(messages)} recent CAN messages")
+        return messages
     except ConnectionError as e:
+        logger.error(f"Failed to connect to CAN bus interface: {e}")
         raise HTTPException(
             status_code=503, detail=f"Failed to connect to CAN bus interface: {e!s}"
         ) from e
+    except Exception as e:
+        logger.error(f"Error retrieving recent CAN messages: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -218,8 +270,25 @@ async def get_bus_statistics(
     This endpoint provides metrics and statistics about CAN bus
     performance, message counts, and error rates.
     """
+    logger.debug("GET /can/statistics - Retrieving CAN bus statistics")
     _check_can_interface_feature_enabled(request)
-    return await can_service.get_bus_statistics()
+
+    try:
+        statistics = await can_service.get_bus_statistics()
+
+        # Log summary of statistics
+        interface_count = len(statistics.get("interfaces", {}))
+        total_messages = sum(
+            iface_stats.get("message_count", 0)
+            for iface_stats in statistics.get("interfaces", {}).values()
+        )
+        logger.info(
+            f"Retrieved CAN bus statistics: {interface_count} interfaces, {total_messages} total messages"
+        )
+        return statistics
+    except Exception as e:
+        logger.error(f"Error retrieving CAN bus statistics: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.websocket("/ws/scan")
@@ -340,6 +409,9 @@ async def get_can_status(
     Combines pyroute2 stats (if available) with the actual set of active interfaces.
     On non-Linux platforms, returns a platform-specific message.
     """
+    logger.debug("GET /can/status - Retrieving detailed CAN status")
+    _check_can_interface_feature_enabled(request)
+
     interfaces_data: dict[str, CANInterfaceStats] = {}
 
     # Handle non-Linux platforms or missing pyroute2
@@ -356,6 +428,9 @@ async def get_can_status(
             interfaces_data["dummy_interface"] = CANInterfaceStats(
                 name="dummy_interface", state=f"Unsupported/{platform_name}", notes=msg
             )
+        logger.info(
+            f"Retrieved CAN status for {platform_name} platform: {len(interfaces_data)} interfaces (no pyroute2)"
+        )
         return AllCANStats(interfaces=interfaces_data)
 
     # Linux platform with pyroute2 available
@@ -363,6 +438,7 @@ async def get_can_status(
         pyroute2_stats = {}
         with IPRoute() as ipr:
             can_links = ipr.get_links(kind="can")
+            logger.debug(f"Found {len(can_links)} CAN links via pyroute2")
             for link in can_links:
                 interface_name = link.get_attr("IFLA_IFNAME")
                 try:
@@ -406,8 +482,10 @@ async def get_can_status(
                     interfaces_data[ifname] = CANInterfaceStats(
                         name=ifname, state="Error/ParseFailure"
                     )
+
+        logger.info(f"Retrieved detailed CAN status: {len(interfaces_data)} interfaces")
+        return AllCANStats(interfaces=interfaces_data)
+
     except Exception as e:
         logger.error(f"Failed to get CAN status using pyroute2: {e}", exc_info=True)
         return AllCANStats(interfaces={})
-
-    return AllCANStats(interfaces=interfaces_data)

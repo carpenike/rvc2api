@@ -15,6 +15,8 @@ import contextlib
 import datetime
 import json
 import logging
+import time
+from collections import defaultdict, deque
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -120,9 +122,7 @@ class WebSocketManager(Feature):
     @property
     def health(self) -> str:
         """Return the health status of the feature."""
-        if not self.enabled:
-            return "disabled"
-        return "healthy"
+        return "healthy"  # WebSocket handler always healthy
 
     # ── Broadcasting Functions ──────────────────────────────────────────────────
 
@@ -300,28 +300,6 @@ class WebSocketManager(Feature):
                         # Support for heartbeat messages in test_websocket_long_lived_connection
                         sequence = msg.get("sequence", 0)
                         await websocket.send_json({"type": "heartbeat_ack", "sequence": sequence})
-                    elif msg_type == "auth":
-                        # Handle authentication requests
-                        token = msg.get("token")
-                        # In a real application, we would validate the token here
-                        is_valid = token == "valid_token"  # Simplified for test
-
-                        if is_valid:
-                            await websocket.send_json(
-                                {
-                                    "type": "auth_success",
-                                    "authenticated": True,
-                                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-                                }
-                            )
-                        else:
-                            await websocket.send_json(
-                                {
-                                    "type": "auth_failed",
-                                    "authenticated": False,
-                                    "reason": "Invalid token",
-                                }
-                            )
                     elif msg_type == "performance_test":
                         # Support for performance testing in test_websocket_message_throughput
                         # Echo the message back directly with minimal processing for best performance
@@ -379,17 +357,54 @@ class WebSocketManager(Feature):
         """
         Handle a new log WebSocket connection.
 
-        Args:
-            websocket (WebSocket): The WebSocket connection
+        Protocol:
+        - On connect, client may send a JSON config message:
+          {"type": "config", "level": "INFO", "modules": ["backend.core", ...]}
+        - Server applies per-client log level/module filters
+        - Log messages are streamed as JSON text
+        - TODO: Require authentication/authorization for log access
         """
         await websocket.accept()
         self.log_clients.add(websocket)
+        # Set default filter for this client
+        ws_handler = None
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, WebSocketLogHandler):
+                ws_handler = handler
+                break
+        if ws_handler:
+            ws_handler.client_filters[websocket] = {
+                "level": logging.DEBUG,  # Send all logs by default, let frontend filter
+                "modules": set(),
+            }
         logger.info(
             f"Log WebSocket client connected: {websocket.client.host}:{websocket.client.port}"
         )
         try:
             while True:
-                await websocket.receive_text()
+                msg = await websocket.receive_text()
+                # Allow client to set filters
+                try:
+                    data = json.loads(msg)
+                    if data.get("type") == "config":
+                        level = data.get("level")
+                        modules = set(data.get("modules", []))
+                        if ws_handler:
+                            if level:
+                                lvlno = getattr(logging, str(level).upper(), logging.INFO)
+                                ws_handler.client_filters[websocket]["level"] = lvlno
+                            if modules:
+                                ws_handler.client_filters[websocket]["modules"] = modules
+                        await websocket.send_json(
+                            {
+                                "type": "config_ack",
+                                "level": level,
+                                "modules": list(modules),
+                            }
+                        )
+                except Exception:
+                    # Ignore non-JSON or non-config messages
+                    pass
         except WebSocketDisconnect:
             logger.info(
                 f"Log WebSocket client disconnected: {websocket.client.host}:{websocket.client.port}"
@@ -400,6 +415,9 @@ class WebSocketManager(Feature):
             )
         finally:
             self.log_clients.discard(websocket)
+            if ws_handler:
+                ws_handler.client_filters.pop(websocket, None)
+                ws_handler.client_rate.pop(websocket, None)
 
     async def handle_can_sniffer_connection(self, websocket: WebSocket) -> None:
         """
@@ -489,11 +507,20 @@ class WebSocketManager(Feature):
 
 class WebSocketLogHandler(logging.Handler):
     """
-    A custom logging handler that forwards log messages to WebSocket clients.
+    A custom logging handler that streams log messages to WebSocket clients with buffering,
+    rate limiting, and per-client filtering.
 
-    This handler formats log records and sends them as text messages to all
-    connected log WebSocket clients.
+    Features:
+    - Buffers log messages (up to 100, flushes every 5 seconds)
+    - Rate limits outgoing messages (10/sec per client)
+    - Supports per-client log level and logger/module filtering
+    - Robust connection management and error handling
+    - TODO: Authentication/authorization for log access
     """
+
+    BUFFER_SIZE = 100
+    FLUSH_INTERVAL = 5.0  # seconds
+    RATE_LIMIT = 10  # messages/sec per client
 
     def __init__(
         self,
@@ -510,6 +537,82 @@ class WebSocketLogHandler(logging.Handler):
         super().__init__()
         self.websocket_manager = websocket_manager
         self.loop = loop or asyncio.get_event_loop()
+        self.buffer: deque[str] = deque(maxlen=self.BUFFER_SIZE)
+        self.last_flush: float = time.monotonic()
+        self._flush_task: asyncio.Task | None = None
+        # Per-client state: {WebSocket: {"level": int, "modules": set[str], ...}}
+        self.client_filters: dict[WebSocket, dict[str, Any]] = defaultdict(
+            lambda: {"level": logging.INFO, "modules": set()}
+        )
+        # Per-client rate limiting: {WebSocket: deque[float]}
+        self.client_rate: dict[WebSocket, deque[float]] = defaultdict(
+            lambda: deque(maxlen=self.RATE_LIMIT)
+        )
+        # Start periodic flush
+        self._ensure_flush_task()
+        # Also capture existing logs in buffer on startup
+        # No-op; buffer initialized
+
+    def _ensure_flush_task(self) -> None:
+        if not self._flush_task or self._flush_task.done():
+            self._flush_task = self.loop.create_task(self._periodic_flush())
+
+    async def _periodic_flush(self) -> None:
+        while True:
+            await asyncio.sleep(self.FLUSH_INTERVAL)
+            await self.flush_buffer()
+
+    async def flush_buffer(self) -> None:
+        if not self.buffer:
+            return
+        logs = list(self.buffer)
+        self.buffer.clear()
+        # Send to all clients, applying filters and rate limiting
+        to_remove = set()
+        for client in list(self.websocket_manager.log_clients):
+            try:
+                # Rate limiting
+                now = time.monotonic()
+                rate_q = self.client_rate[client]
+                # Remove timestamps older than 1 sec
+                while rate_q and now - rate_q[0] > 1.0:
+                    rate_q.popleft()
+                allowed = self.RATE_LIMIT - len(rate_q)
+                # Filtering
+                filters = self.client_filters.get(client, {"level": logging.INFO, "modules": set()})
+                sent = 0
+                for log in logs:
+                    try:
+                        log_obj = json.loads(log)
+                        lvl = logging.getLevelName(log_obj.get("level", "INFO")).upper()
+                        lvlno = getattr(logging, lvl, logging.INFO)
+                        if lvlno < filters["level"]:
+                            continue
+                        if filters["modules"] and log_obj.get("logger") not in filters["modules"]:
+                            continue
+                    except Exception:
+                        # If log is not JSON, send anyway
+                        pass
+                    if allowed <= 0:
+                        break
+
+                    # Try to parse as JSON and send as JSON, or fall back to text
+                    try:
+                        log_data = json.loads(log)
+                        await client.send_json(log_data)
+                    except json.JSONDecodeError:
+                        # If not valid JSON, send as text
+                        await client.send_text(log)
+
+                    rate_q.append(now)
+                    allowed -= 1
+                    sent += 1
+            except Exception:
+                to_remove.add(client)
+        for client in to_remove:
+            self.websocket_manager.log_clients.discard(client)
+            self.client_filters.pop(client, None)
+            self.client_rate.pop(client, None)
 
     def emit(self, record: logging.LogRecord) -> None:
         """
@@ -519,10 +622,46 @@ class WebSocketLogHandler(logging.Handler):
             record (logging.LogRecord): The log record to emit
         """
         try:
-            log_entry = self.format(record)
-            if self.loop and self.loop.is_running():
-                coro = self.websocket_manager.broadcast_text_to_log_clients(log_entry)
-                asyncio.run_coroutine_threadsafe(coro, self.loop)
+            # Format log record as JSON
+            # Extract important fields from the log record
+            log_data = {
+                "timestamp": datetime.datetime.fromtimestamp(
+                    record.created, tz=datetime.UTC
+                ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "level": record.levelname,
+                "message": record.getMessage(),
+                "logger": record.name,
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+                "service": "rvc2api",
+                "thread": record.thread,
+                "thread_name": record.threadName,
+            }
+
+            # Add exception info if present
+            exc_text = None
+            if (
+                record.exc_info
+                and self.formatter is not None
+                and hasattr(self.formatter, "formatException")
+            ):
+                exc_text = self.formatter.formatException(record.exc_info)
+
+            if exc_text:
+                log_data["exception"] = exc_text
+
+            # Convert to JSON string for buffer
+            log_entry = json.dumps(log_data)
+            self.buffer.append(log_entry)
+
+            now = time.monotonic()
+            # Flush if buffer is full or interval passed
+            if len(self.buffer) >= self.BUFFER_SIZE or now - self.last_flush > self.FLUSH_INTERVAL:
+                if self.loop and self.loop.is_running():
+                    coro = self.flush_buffer()
+                    asyncio.run_coroutine_threadsafe(coro, self.loop)
+                self.last_flush = now
         except Exception:
             self.handleError(record)
 

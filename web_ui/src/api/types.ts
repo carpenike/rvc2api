@@ -206,7 +206,7 @@ export interface MetadataResponse {
 
 // Health Status Response (matches backend /api/healthz)
 export interface HealthStatus {
-  status: "ok" | "degraded";
+  status: "healthy" | "degraded" | "failed";
   features: Record<string, string>;
   unhealthy_features?: Record<string, string>;
   all_features?: Record<string, string>;
@@ -281,8 +281,8 @@ export interface WebSocketHandlers {
   onCANMessage?: (data: CANMessage) => void;
   onSystemStatus?: (data: SystemStatusMessage['data']) => void;
   onMessage?: (message: WebSocketMessageType) => void;
-  onConnect?: () => void;
-  onDisconnect?: () => void;
+  onOpen?: () => void;
+  onClose?: (event: CloseEvent) => void;
   onError?: (error: Event) => void;
 }
 

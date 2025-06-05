@@ -73,3 +73,15 @@ github_update_checker:
   core: false
   depends_on: []
   description: "GitHub update checker service for application updates"
+
+log_history:
+  enabled: true
+  core: false
+  depends_on: []
+  description: "REST API and WebSocket endpoints for log history and log streaming (journald, JSON logs)"
+
+log_streaming:
+  enabled: true
+  core: false
+  depends_on: [websocket]
+  description: "WebSocket log streaming endpoints and handlers (buffering, filtering, rate limiting)"

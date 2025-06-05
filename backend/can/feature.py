@@ -234,15 +234,30 @@ class CANBusFeature(Feature):
     def health(self) -> str:
         """Return the health status of the feature."""
         if not self.enabled:
-            return "disabled"
+            return "healthy"  # Disabled is considered healthy
 
         if self._is_running:
-            # In a real implementation, we might check connection status to CAN interfaces
-            if self.config["simulate"]:
-                return "healthy (simulation mode)"
             return "healthy"
 
-        return "unhealthy"
+        return "failed"
+
+    @property
+    def health_details(self) -> dict[str, Any]:
+        """Return detailed health information for diagnostics."""
+        if not self.enabled:
+            return {"status": "disabled", "reason": "Feature not enabled"}
+
+        if self._is_running:
+            details = {"status": "healthy"}
+            if self.config["simulate"]:
+                details["mode"] = "simulation"
+                details["description"] = "Running in simulation mode"
+            else:
+                details["mode"] = "production"
+                details["description"] = "Connected to CAN interfaces"
+            return details
+
+        return {"status": "unhealthy", "reason": "CAN bus not running"}
 
     async def send_message(
         self, arbitration_id: int, data: bytes, extended_id: bool = True

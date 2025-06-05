@@ -1,0 +1,26 @@
+"""Type stubs for systemd.journal module."""
+
+from datetime import datetime
+from typing import Any
+
+# Log priority constants
+LOG_EMERG: int
+LOG_ALERT: int
+LOG_CRIT: int
+LOG_ERR: int
+LOG_WARNING: int
+LOG_NOTICE: int
+LOG_INFO: int
+LOG_DEBUG: int
+
+class Reader:
+    """Reader for the systemd journal."""
+
+    def this_boot(self) -> None: ...
+    def seek_realtime(self, dt: datetime) -> None: ...
+    def add_match(self, **kwargs: Any) -> None: ...
+    def seek_cursor(self, cursor: str) -> None: ...
+    def get_cursor(self) -> str: ...
+    def log_level(self, level: int) -> None: ...
+    def __iter__(self) -> Reader: ...
+    def __next__(self) -> dict[str, Any]: ...

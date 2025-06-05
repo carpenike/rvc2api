@@ -54,15 +54,31 @@ async def get_search_status(
     vector_service: Annotated[Any, Depends(get_vector_service)] = None,
 ) -> dict[str, Any]:
     """Get the status of the vector search service."""
+    logger.debug("GET /docs/status - Retrieving documentation search status")
     _check_api_docs_feature_enabled(request)
-    status = vector_service.get_status()
 
-    return {
-        "vector_search": {
-            "available": vector_service.is_available(),
-            **status,
+    try:
+        status = vector_service.get_status()
+        is_available = vector_service.is_available()
+
+        result = {
+            "vector_search": {
+                "available": is_available,
+                **status,
+            }
         }
-    }
+
+        if is_available:
+            logger.info("Documentation search service is available and operational")
+        else:
+            logger.warning(
+                f"Documentation search service is not available: {status.get('error', 'Unknown error')}"
+            )
+
+        return result
+    except Exception as e:
+        logger.error(f"Error retrieving documentation search status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -90,6 +106,7 @@ async def search_documentation(
     Raises:
         HTTPException: If search fails or service is unavailable
     """
+    logger.info(f"GET /docs/search - Searching documentation with query: '{query}' (k={k})")
     _check_api_docs_feature_enabled(request)
 
     try:
@@ -106,16 +123,21 @@ async def search_documentation(
             )
 
         results = vector_service.similarity_search(query, k=k)
+        logger.info(
+            f"Documentation search completed: found {len(results)} results for query '{query}'"
+        )
         return results
 
+    except HTTPException:
+        raise
     except RuntimeError as e:
-        logger.error(f"Error in vector search: {e}")
+        logger.error(f"Runtime error in vector search for query '{query}': {e}")
         raise HTTPException(
             status_code=503,
             detail=str(e),
         ) from e
     except Exception as e:
-        logger.error(f"Unexpected error in vector search: {e}")
+        logger.error(f"Unexpected error in vector search for query '{query}': {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="An unexpected error occurred during the search.",
@@ -133,13 +155,19 @@ async def get_openapi_schema(
     docs_service: Annotated[Any, Depends(get_docs_service)] = None,
 ) -> dict[str, Any]:
     """Get the complete OpenAPI schema for the API."""
+    logger.debug("GET /docs/openapi - Retrieving OpenAPI schema")
     _check_api_docs_feature_enabled(request)
 
     try:
         schema = await docs_service.get_openapi_schema()
+
+        # Count schema elements for logging
+        paths_count = len(schema.get("paths", {}))
+        components_count = len(schema.get("components", {}).get("schemas", {}))
+        logger.info(f"Retrieved OpenAPI schema: {paths_count} paths, {components_count} components")
         return schema
     except Exception as e:
-        logger.error(f"Error generating OpenAPI schema: {e}")
+        logger.error(f"Error generating OpenAPI schema: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error generating OpenAPI schema",

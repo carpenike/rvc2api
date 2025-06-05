@@ -181,6 +181,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/entities/mappings:
+    post:
+      tags:
+      - entities
+      summary: Create entity mapping
+      description: Create a new entity mapping from an unmapped entry.
+      operationId: create_entity_mapping_api_entities_mappings_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntityMappingRequest'
+        required: true
+      responses:
+        '200':
+          description: Response with status and entity mapping details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEntityMappingResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/unmapped:
     get:
       tags:
@@ -195,8 +221,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  $ref: '#/components/schemas/UnmappedEntryModel'
+                additionalProperties: true
                 type: object
                 title: Response Get Unmapped Entries Api Unmapped Get
   /api/unknown-pgns:
@@ -212,8 +237,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  $ref: '#/components/schemas/UnknownPGNEntry'
+                additionalProperties: true
                 type: object
                 title: Response Get Unknown Pgns Api Unknown Pgns Get
   /api/metadata:
@@ -229,12 +253,28 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  items:
-                    type: string
-                  type: array
+                additionalProperties: true
                 type: object
                 title: Response Get Metadata Api Metadata Get
+  /api/missing-dgns:
+    get:
+      tags:
+      - entities
+      summary: List missing DGNs
+      description: Return DGNs that were encountered during decoding but not found
+        in the specification.
+      operationId: get_missing_dgns_endpoint_api_missing_dgns_get
+      responses:
+        '200':
+          description: Dictionary of missing DGN entries with encounter metadata
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  additionalProperties: true
+                  type: object
+                type: object
+                title: Response Get Missing Dgns Endpoint Api Missing Dgns Get
   /api/can/queue/status:
     get:
       tags:
@@ -321,6 +361,38 @@ paths:
                 type: object
                 additionalProperties: true
                 title: Response Send Raw Message Api Can Send Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/can/recent:
+    get:
+      tags:
+      - can
+      summary: Get recent CAN messages
+      description: Return recent CAN messages captured on the bus.
+      operationId: get_recent_can_messages_api_can_recent_get
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: List of recent CAN messages with metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                title: Response Get Recent Can Messages Api Can Recent Get
         '422':
           description: Validation Error
           content:
@@ -593,6 +665,88 @@ paths:
                 additionalProperties: true
                 type: object
                 title: Response Get Openapi Schema Api Docs Openapi Get
+  /logs/history:
+    get:
+      tags:
+      - logs
+      summary: Get historical logs
+      description: "Query historical logs from journald. Supports filtering by time,\
+        \ level, module, and pagination via cursor.\n\n    **Feature-gated:** This\
+        \ endpoint is only available if the `log_history` feature flag is enabled.\n\
+        \n    Only available on systems with systemd/journald."
+      operationId: get_log_history_logs_history_get
+      parameters:
+      - name: since
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Since
+      - name: until
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Until
+      - name: level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+      - name: module
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Module
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          description: Max number of log entries to return
+          default: 100
+          title: Limit
+        description: Max number of log entries to return
+      - name: settings
+        in: query
+        required: false
+        schema:
+          title: Settings
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogHistoryResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     AllCANStats:
@@ -830,6 +984,82 @@ components:
       title: ControlEntityResponse
       description: Response model for individual entity control commands, confirming
         the action taken.
+    CreateEntityMappingRequest:
+      properties:
+        pgn_hex:
+          type: string
+          title: Pgn Hex
+          description: PGN hex identifier from the unmapped entry
+        instance:
+          type: string
+          title: Instance
+          description: Instance identifier from the unmapped entry
+        entity_id:
+          type: string
+          title: Entity Id
+          description: Unique identifier for the new entity
+        friendly_name:
+          type: string
+          title: Friendly Name
+          description: Human-readable name for the entity
+        device_type:
+          type: string
+          title: Device Type
+          description: Device type (e.g., 'light', 'lock', 'tank')
+        suggested_area:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Suggested Area
+          description: Suggested area/location for the entity
+        capabilities:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Capabilities
+          description: Entity capabilities
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+          description: Optional notes about the entity mapping
+      type: object
+      required:
+      - pgn_hex
+      - instance
+      - entity_id
+      - friendly_name
+      - device_type
+      title: CreateEntityMappingRequest
+      description: Request model for creating a new entity mapping from an unmapped
+        entry.
+    CreateEntityMappingResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        entity_id:
+          type: string
+          title: Entity Id
+        message:
+          type: string
+          title: Message
+        entity_data:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Entity Data
+      type: object
+      required:
+      - status
+      - entity_id
+      - message
+      title: CreateEntityMappingResponse
+      description: Response model for entity mapping creation.
     GitHubReleaseAsset:
       properties:
         name:
@@ -976,122 +1206,60 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
-    SuggestedMapping:
+    LogEntry:
       properties:
-        instance:
+        timestamp:
           type: string
-          title: Instance
-        name:
+          title: Timestamp
+          description: UTC ISO8601 timestamp of the log entry
+        level:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Level
+          description: Syslog priority (numeric)
+        message:
           type: string
-          title: Name
-        suggested_area:
+          title: Message
+          description: Log message
+        module:
           anyOf:
           - type: string
           - type: 'null'
-          title: Suggested Area
+          title: Module
+          description: Logger/module name
+        cursor:
+          type: string
+          title: Cursor
+          description: Journald cursor for pagination
       type: object
       required:
-      - instance
-      - name
-      title: SuggestedMapping
-      description: 'Provides a suggested mapping for an unmapped device instance
-
-        based on existing configurations.'
-    UnknownPGNEntry:
+      - timestamp
+      - message
+      - cursor
+      title: LogEntry
+    LogHistoryResponse:
       properties:
-        arbitration_id_hex:
-          type: string
-          title: Arbitration Id Hex
-        first_seen_timestamp:
-          type: number
-          title: First Seen Timestamp
-        last_seen_timestamp:
-          type: number
-          title: Last Seen Timestamp
-        count:
-          type: integer
-          title: Count
-        last_data_hex:
-          type: string
-          title: Last Data Hex
-      type: object
-      required:
-      - arbitration_id_hex
-      - first_seen_timestamp
-      - last_seen_timestamp
-      - count
-      - last_data_hex
-      title: UnknownPGNEntry
-      description: Represents a CAN message whose PGN (from arbitration ID) is not
-        in the rvc.json spec.
-    UnmappedEntryModel:
-      properties:
-        pgn_hex:
-          type: string
-          title: Pgn Hex
-        pgn_name:
+        entries:
+          items:
+            $ref: '#/components/schemas/LogEntry'
+          type: array
+          title: Entries
+        next_cursor:
           anyOf:
           - type: string
           - type: 'null'
-          title: Pgn Name
-          description: The human-readable name of the PGN (from arbitration ID), if
-            known from the spec.
-        dgn_hex:
-          type: string
-          title: Dgn Hex
-        dgn_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Dgn Name
-          description: The human-readable name of the DGN, if known from the spec.
-        instance:
-          type: string
-          title: Instance
-        last_data_hex:
-          type: string
-          title: Last Data Hex
-        decoded_signals:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
-          title: Decoded Signals
-        first_seen_timestamp:
-          type: number
-          title: First Seen Timestamp
-        last_seen_timestamp:
-          type: number
-          title: Last Seen Timestamp
-        count:
-          type: integer
-          title: Count
-        suggestions:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/SuggestedMapping'
-            type: array
-          - type: 'null'
-          title: Suggestions
-        spec_entry:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
-          title: Spec Entry
-          description: The raw rvc.json spec entry used for decoding, if PGN was known.
+          title: Next Cursor
+          description: Cursor for next page of results
+        has_more:
+          type: boolean
+          title: Has More
+          description: True if more results are available
       type: object
       required:
-      - pgn_hex
-      - dgn_hex
-      - instance
-      - last_data_hex
-      - first_seen_timestamp
-      - last_seen_timestamp
-      - count
-      title: UnmappedEntryModel
-      description: Represents an RV-C message that could not be mapped to a configured
-        entity.
+      - entries
+      - has_more
+      title: LogHistoryResponse
     ValidationError:
       properties:
         loc:

@@ -2,6 +2,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { WebSocketStatusIndicator } from "@/components/websocket-status-indicator"
 
 interface SiteHeaderProps {
   pageTitle?: string
@@ -18,10 +19,11 @@ export function SiteHeader({ pageTitle = "RVC2API" }: SiteHeaderProps) {
         />
         <h1 className="text-base font-medium">{pageTitle}</h1>
         <div className="ml-auto flex items-center gap-2">
+          <WebSocketStatusIndicator />
           <ModeToggle />
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
+              href="https://github.com/carpenike/rvc2api"
               rel="noopener noreferrer"
               target="_blank"
               className="dark:text-foreground"

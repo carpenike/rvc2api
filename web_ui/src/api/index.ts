@@ -10,10 +10,10 @@ export type * from './types';
 
 // Export client utilities
 export {
-    APIClientError, API_BASE, WS_BASE, apiDelete, apiGet,
+    API_BASE, APIClientError, apiDelete, apiGet,
     apiPost,
     apiPut, apiRequest, buildQueryString, env, handleApiResponse, logApiRequest,
-    logApiResponse
+    logApiResponse, WS_BASE
 } from './client';
 
 // Export all endpoint functions
@@ -39,7 +39,7 @@ export {
 } from './endpoints';
 
 // Export WebSocket functionality
-export { RVCWebSocketClient, createCANScanWebSocket, createEntityWebSocket, createSystemStatusWebSocket, getWebSocketStateString, isWebSocketSupported } from './websocket';
+export { createCANScanWebSocket, createEntityWebSocket, createLogWebSocket, createSystemStatusWebSocket, getWebSocketStateString, isWebSocketSupported, RVCWebSocketClient } from './websocket';
 
 export type {
     WebSocketConfig, WebSocketHandlers, WebSocketState
@@ -47,7 +47,7 @@ export type {
 
 // Re-export types that are commonly used
 export type {
-    APIError, AllCANStats, CANMessage, CANMessageUpdate, CANSendParams, ControlCommand,
+    AllCANStats, APIError, CANMessage, CANMessageUpdate, CANSendParams, ControlCommand,
     ControlEntityResponse, EntitiesQueryParams, Entity,
     EntityCollection, EntityUpdateMessage, FeatureStatus, HealthStatus, HistoryEntry, HistoryQueryParams, LightEntity,
     LockEntity, MetadataResponse, SystemStatusMessage, TankEntity, TemperatureEntity, UnknownPGNEntry, UnmappedEntry, WebSocketMessage

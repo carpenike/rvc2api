@@ -16,18 +16,18 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useTheme } from "@/hooks/use-theme";
 import {
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Lightbulb,
-  Moon,
-  Palette,
-  Settings,
-  Sun,
-  XCircle
+    AlertTriangle,
+    CheckCircle,
+    Info,
+    Lightbulb,
+    Moon,
+    Palette,
+    Settings,
+    Sun,
+    XCircle
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useState } from "react";
 
 export default function ThemeTest() {
@@ -68,7 +68,7 @@ export default function ThemeTest() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

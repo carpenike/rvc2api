@@ -1,7 +1,5 @@
-"use client"
-
+import { useTheme } from "@/hooks/use-theme"
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react"
-import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 import {

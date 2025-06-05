@@ -39,6 +39,22 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Log Level Colors */
+  --color-log-debug: var(--log-debug);
+  --color-log-info: var(--log-info);
+  --color-log-warning: var(--log-warning);
+  --color-log-error: var(--log-error);
+  --color-log-critical: var(--log-critical);
+  --color-log-notice: var(--log-notice);
+
+  /* Log Level Background Colors */
+  --color-log-debug-bg: var(--log-debug-bg);
+  --color-log-info-bg: var(--log-info-bg);
+  --color-log-warning-bg: var(--log-warning-bg);
+  --color-log-error-bg: var(--log-error-bg);
+  --color-log-critical-bg: var(--log-critical-bg);
+  --color-log-notice-bg: var(--log-notice-bg);
 }
 
 :root {
@@ -74,6 +90,22 @@
   --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
   --sidebar-border: oklch(0.928 0.006 264.531);
   --sidebar-ring: oklch(0.707 0.022 261.325);
+
+  /* Log Level Colors - Light Theme */
+  --log-debug: oklch(0.551 0.027 264.364); /* Same as muted-foreground */
+  --log-info: oklch(0.488 0.243 264.376); /* Blue shade */
+  --log-warning: oklch(0.828 0.189 84.429); /* Amber/yellow */
+  --log-error: oklch(0.577 0.245 27.325); /* Same as destructive */
+  --log-critical: oklch(0.494 0.278 325.7); /* Magenta/purple */
+  --log-notice: oklch(0.6 0.118 184.704); /* Cyan shade */
+
+  /* Log Level Background Tints - Light Theme */
+  --log-debug-bg: oklch(0.967 0.003 264.542 / 40%); /* Same as muted */
+  --log-info-bg: oklch(0.95 0.02 264.376 / 40%); /* Very light blue */
+  --log-warning-bg: oklch(0.95 0.05 84.429 / 40%); /* Very light amber */
+  --log-error-bg: oklch(0.95 0.05 27.325 / 40%); /* Very light red */
+  --log-critical-bg: oklch(0.95 0.05 325.7 / 40%); /* Very light magenta */
+  --log-notice-bg: oklch(0.95 0.02 184.704 / 40%); /* Very light cyan */
 }
 
 .dark {
@@ -108,6 +140,22 @@
   --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+
+  /* Log Level Colors - Dark Theme */
+  --log-debug: oklch(0.707 0.022 261.325); /* Lighter gray */
+  --log-info: oklch(0.696 0.17 162.48); /* Brighter blue */
+  --log-warning: oklch(0.828 0.189 84.429); /* Brighter amber */
+  --log-error: oklch(0.704 0.191 22.216); /* Brighter red */
+  --log-critical: oklch(0.627 0.265 303.9); /* Brighter magenta/purple */
+  --log-notice: oklch(0.6 0.118 184.704); /* Cyan shade */
+
+  /* Log Level Background Tints - Dark Theme */
+  --log-debug-bg: oklch(0.18 0.02 261.325 / 30%); /* Dark gray with blue tint */
+  --log-info-bg: oklch(0.16 0.03 162.48 / 30%); /* Dark blue */
+  --log-warning-bg: oklch(0.15 0.04 84.429 / 30%); /* Dark amber */
+  --log-error-bg: oklch(0.15 0.04 22.216 / 30%); /* Dark red */
+  --log-critical-bg: oklch(0.14 0.04 303.9 / 30%); /* Dark magenta */
+  --log-notice-bg: oklch(0.17 0.02 184.704 / 30%); /* Dark cyan */
 }
 
 @layer base {

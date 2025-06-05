@@ -194,8 +194,9 @@ export class RVCWebSocketClient {
       this.cleanup();
       this._state = 'disconnected';
 
-      if (env.isDevelopment) {
-        console.log(`🔌 WebSocket closed: ${this.endpoint}`, { code: event.code, reason: event.reason });
+      // Only log unexpected closures (not normal 1000 closure)
+      if (env.isDevelopment && event.code !== 1000) {
+        console.log(`🔌 WebSocket closed unexpectedly: ${this.endpoint}`, { code: event.code, reason: event.reason });
       }
 
       DEBUG_WS.log('WebSocket closed:', this.endpoint, { code: event.code, reason: event.reason });
@@ -210,8 +211,13 @@ export class RVCWebSocketClient {
     this.socket.onerror = (event) => {
       this._state = 'error';
 
+      // Only log in development mode and avoid logging for common connection issues
       if (env.isDevelopment) {
-        console.error(`❌ WebSocket error: ${this.endpoint}`, event);
+        const target = event.target as WebSocket;
+        // Don't log 403 or other connection errors that are likely config issues
+        if (target && target.readyState !== WebSocket.CONNECTING) {
+          console.error(`❌ WebSocket error: ${this.endpoint}`, event);
+        }
       }
 
       DEBUG_WS.log('WebSocket error:', this.endpoint, event);
@@ -245,6 +251,12 @@ export class RVCWebSocketClient {
    * Handle typed WebSocket messages
    */
   private handleTypedMessage(message: WebSocketMessageType): void {
+    // Only dispatch typed handlers if a type field is present
+    if (!message || typeof message !== 'object' || !('type' in message)) {
+      // No type field: just return silently (message will still be handled by onMessage)
+      return;
+    }
+
     switch (message.type) {
       case 'entity_update':
         this.handlers.onEntityUpdate?.((message as EntityUpdateMessage).data);
@@ -254,6 +266,10 @@ export class RVCWebSocketClient {
         break;
       case 'system_status':
         this.handlers.onSystemStatus?.((message as SystemStatusMessage).data);
+        break;
+      case 'pong':
+      case 'heartbeat_ack':
+        // Handle heartbeat responses silently
         break;
       default:
         // Handle unknown message types gracefully
@@ -411,6 +427,20 @@ export function createSystemStatusWebSocket(
   config: WebSocketConfig = {}
 ): RVCWebSocketClient {
   return new RVCWebSocketClient('/ws/features', handlers, config);
+}
+
+/**
+ * Create a WebSocket client for log streaming
+ *
+ * @param handlers - Event handlers
+ * @param config - Optional configuration
+ * @returns WebSocket client instance
+ */
+export function createLogWebSocket(
+  handlers: WebSocketHandlers = {},
+  config: WebSocketConfig = {}
+): RVCWebSocketClient {
+  return new RVCWebSocketClient('/ws/logs', handlers, config);
 }
 
 //

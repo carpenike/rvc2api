@@ -13,15 +13,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useEntities } from "@/hooks/useEntities"
 import { useCANStatistics, useHealthStatus } from "@/hooks/useSystem"
 import {
-  IconActivity,
-  IconAlertCircle,
-  IconBolt,
-  IconCheck,
-  IconCircuitSwitchOpen,
-  IconCpu,
-  IconHelp,
-  IconWifi,
-  IconX
+    IconActivity,
+    IconAlertCircle,
+    IconBolt,
+    IconCheck,
+    IconCircuitSwitchOpen,
+    IconCpu,
+    IconHelp,
+    IconWifi,
+    IconX
 } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 
@@ -135,7 +135,8 @@ function SystemHealthCard() {
                 <span className="font-semibold text-gray-900">Overall Status</span>
               </div>
               <Badge
-                variant={health?.status === "ok" ? "default" : "destructive"}
+                variant={health?.status === "healthy" ? "default" :
+                        health?.status === "degraded" ? "secondary" : "destructive"}
                 className="capitalize"
               >
                 {health?.status || "unknown"}

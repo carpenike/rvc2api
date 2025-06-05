@@ -467,7 +467,7 @@ export default function UnmappedEntries() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <div className="flex justify-between items-center">
             <div>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -513,7 +513,7 @@ export default function UnmappedEntries() {
   if (error) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <Alert variant="destructive">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertTitle>Error Loading Unmapped Entries</AlertTitle>
@@ -528,7 +528,7 @@ export default function UnmappedEntries() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>

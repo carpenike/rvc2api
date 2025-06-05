@@ -13,7 +13,7 @@ import uvicorn
 from dotenv import load_dotenv
 
 from backend.core.config import get_settings
-from backend.core.logging_config import configure_logging, setup_early_logging
+from backend.core.logging_config import configure_unified_logging, setup_early_logging
 
 # Load environment variables from .env if present
 load_dotenv()
@@ -38,9 +38,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--reload",
-        action="store_true"
-        if os.getenv("RVC2API_RELOAD", "false").lower() in ("1", "true", "yes")
-        else "store_false",
+        action=(
+            "store_true"
+            if os.getenv("RVC2API_RELOAD", "false").lower() in ("1", "true", "yes")
+            else "store_false"
+        ),
         help="Enable auto-reload (default: RVC2API_RELOAD env var)",
     )
     parser.add_argument(
@@ -51,12 +53,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Get settings and configure comprehensive logging
+    # Get settings and configure unified logging for both app and Uvicorn
     settings = get_settings()
-    configure_logging(settings.logging)
+    log_config, root_logger = configure_unified_logging(settings.logging)
 
     logger = logging.getLogger(__name__)
     logger.info("Starting rvc2api backend server")
+    logger.info("Unified logging with consistent formatting enabled for all loggers")
 
     # Normalize and validate log level for uvicorn
     valid_log_levels = {"critical", "error", "warning", "info", "debug", "trace"}
@@ -65,11 +68,12 @@ if __name__ == "__main__":
         logger.warning(f"Invalid log level '{args.log_level}' provided. Falling back to 'info'.")
         log_level = "info"
 
-    # Run the modernized backend
+    # Run the modernized backend with unified logging configuration
     uvicorn.run(
         "backend.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
         log_level=log_level,
+        log_config=log_config,
     )

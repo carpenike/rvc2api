@@ -1,6 +1,6 @@
-import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -17,6 +17,19 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        // Log level variants with stronger contrast and visibility
+        "log-debug":
+          "border-log-debug/30 bg-log-debug-bg text-log-debug font-normal",
+        "log-info":
+          "border-log-info/30 bg-log-info-bg text-log-info font-normal",
+        "log-warning":
+          "border-log-warning/30 bg-log-warning-bg text-log-warning font-medium",
+        "log-error":
+          "border-log-error/30 bg-log-error-bg text-log-error font-medium",
+        "log-critical":
+          "border-log-critical/30 bg-log-critical-bg text-log-critical font-bold",
+        "log-notice":
+          "border-log-notice/30 bg-log-notice-bg text-log-notice font-normal",
       },
     },
     defaultVariants: {

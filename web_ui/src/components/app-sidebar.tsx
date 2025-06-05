@@ -1,35 +1,29 @@
 import {
-    IconBulb,
-    IconChartBar,
-    IconCircuitSwitchOpen,
-    IconCpu,
-    IconDashboard,
-    IconFileDescription,
-    IconFileWord,
-    IconHelp,
-    IconInnerShadowTop,
-    IconListDetails,
-    IconMapPin,
-    IconQuestionMark,
-    IconSettings,
-    IconWifi,
+  IconBulb,
+  IconChartBar,
+  IconCircuitSwitchOpen,
+  IconCpu,
+  IconDashboard,
+  IconFileDescription,
+  IconFileWord,
+  IconHelp,
+  IconInnerShadowTop,
+  IconListDetails,
+  IconMapPin,
+  IconQuestionMark,
+  IconSettings,
+  IconTerminal2,
+  IconWifi,
 } from "@tabler/icons-react"
 import * as React from "react"
 
+import { NavDiagnostics } from "@/components/nav-diagnostics"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavSection } from "@/components/nav-section"
 import { NavUser } from "@/components/nav-user"
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-} from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 
 const data = {
   user: {
@@ -70,8 +64,25 @@ const data = {
       url: "/network-map",
       icon: IconMapPin,
     },
+    {
+      title: "System Status",
+      url: "/system-status",
+      icon: IconListDetails,
+    },
   ],
   navDiagnostics: [
+    {
+      title: "Live Logs",
+      url: "#",
+      icon: IconTerminal2,
+      drawer: true,
+    },
+    {
+      title: "Log History",
+      url: "/log-history",
+      icon: IconTerminal2,
+      badge: false, // TODO: Implement dynamic error-level notification
+    },
     {
       title: "Unknown PGNs",
       url: "/unknown-pgns",
@@ -101,11 +112,6 @@ const data = {
     },
   ],
   documents: [
-    {
-      name: "System Status",
-      url: "#",
-      icon: IconListDetails,
-    },
     {
       name: "Configuration",
       url: "#",
@@ -141,7 +147,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           items={data.navMonitoring}
           className="mt-4"
         />
-        <NavSection
+        <NavDiagnostics
           title="Diagnostics"
           items={data.navDiagnostics}
           className="mt-4"

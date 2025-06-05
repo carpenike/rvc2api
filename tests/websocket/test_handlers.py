@@ -124,22 +124,6 @@ class TestWebSocketHandlers:
             assert "Invalid message format" in response["message"]
 
     @pytest.mark.asyncio
-    async def test_websocket_authentication(self, websocket_test_client):
-        """Test WebSocket authentication and authorization."""
-        # Arrange
-        auth_message = {"type": "auth", "token": "valid_token"}
-
-        # Act & Assert
-        with websocket_test_client.websocket_connect("/ws") as websocket:
-            # Send authentication
-            websocket.send_json(auth_message)
-
-            # Should receive auth success
-            response = websocket.receive_json()
-            assert response["type"] == "auth_success"
-            assert response["authenticated"] is True
-
-    @pytest.mark.asyncio
     async def test_websocket_subscription_management(self, websocket_test_client):
         """Test WebSocket subscription and unsubscription."""
         # Act & Assert

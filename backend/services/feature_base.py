@@ -93,16 +93,17 @@ class Feature(ABC):
         """
         Returns the health status of the feature.
 
-        Valid return values:
-        - "disabled": Feature is not enabled
+        Valid return values (following industry best practices):
         - "healthy": Feature is functioning correctly
-        - "degraded": Feature has non-critical issues
-        - "unhealthy": Feature is not functioning correctly
-        - "unknown": Status cannot be determined (default)
+        - "degraded": Feature has non-critical issues but is operational
+        - "failed": Feature is not functioning correctly
+
+        Note: Disabled features should return "healthy" as they're not failing.
 
         Returns:
             str: Health status string
         """
+        ...
         ...
 
     def to_dict(self) -> dict[str, Any]:
@@ -147,4 +148,4 @@ class GenericFeature(Feature):
 
     @property
     def health(self) -> str:
-        return "healthy" if self.enabled else "disabled"
+        return "healthy"  # Generic features always pass (enabled or disabled)

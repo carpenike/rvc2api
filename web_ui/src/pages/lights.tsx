@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useEntityWebSocket } from "@/hooks"
 import { useLightControl, useLights } from "@/hooks/useEntities"
 import { cn } from "@/lib/utils"
 import { IconBulb, IconBulbOff, IconMinus, IconPlus } from "@tabler/icons-react"
@@ -175,7 +174,6 @@ function LightGroup({ title, lights }: LightGroupProps) {
  * Lights Management Page Component
  */
 export default function Lights() {
-  useEntityWebSocket(); // Ensure WebSocket updates are applied
   const { data: lights, isLoading, error } = useLights()
 
   if (isLoading) {

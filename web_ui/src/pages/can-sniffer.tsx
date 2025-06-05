@@ -350,7 +350,7 @@ export default function CANSniffer() {
   if (isLoading && !messages) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <div className="flex justify-between items-center">
             <div>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -462,7 +462,7 @@ export default function CANSniffer() {
 
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <Alert variant="destructive">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertTitle>{errorDetails.title}</AlertTitle>
@@ -497,7 +497,7 @@ export default function CANSniffer() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>

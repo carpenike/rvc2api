@@ -189,23 +189,22 @@ class GitHubUpdateCheckerFeature(Feature):
         Return the health status of the feature.
 
         Returns:
-            - "disabled": Feature is not enabled
             - "healthy": Feature is functioning correctly
-            - "error": Feature has errors
-            - "unknown": Feature status is unknown
+            - "degraded": Feature has non-critical issues
+            - "failed": Feature has errors
         """
         if not self.enabled:
-            return "disabled"
+            return "healthy"  # Disabled is considered healthy
 
         if self._update_checker is None:
-            return "unknown"
+            return "degraded"  # Not initialized but not failing
 
         status = self._update_checker.get_status()
         if status["error"]:
-            return "error"
+            return "failed"
         if status["last_success"] and (status["last_checked"] - status["last_success"] < 7200):
             return "healthy"
-        return "unknown"
+        return "degraded"  # Outdated but not failing
 
     def get_update_checker(self) -> GitHubUpdateChecker | None:
         """Get the update checker instance."""

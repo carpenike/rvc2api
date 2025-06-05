@@ -1,14 +1,18 @@
-import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/contexts/query-provider";
+import { WebSocketProvider } from "@/contexts/websocket-provider";
 import CanSniffer from "@/pages/can-sniffer";
 import Dashboard from "@/pages/dashboard";
 import DemoDashboard from "@/pages/demo-dashboard";
 import DeviceMapping from "@/pages/device-mapping";
 import Documentation from "@/pages/documentation";
 import Lights from "@/pages/lights";
+import LogHistoryPage from "@/pages/log-history";
 import NetworkMap from "@/pages/network-map";
 
+import { Toaster } from "@/components/ui/sonner";
 import RVCSpec from "@/pages/rvc-spec";
+import SystemStatus from "@/pages/system-status";
 import ThemeTest from "@/pages/theme-test";
 import UnknownPGNs from "@/pages/unknown-pgns";
 import UnmappedEntries from "@/pages/unmapped-entries";
@@ -20,19 +24,21 @@ import "./global.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
+      <WebSocketProvider enableEntityUpdates={true} enableSystemStatus={true} enableCANScan={false}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <Routes>
+          <Toaster />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/demo-dashboard" element={<DemoDashboard />} />
@@ -44,10 +50,13 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/unmapped-entries" element={<UnmappedEntries />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/rvc-spec" element={<RVCSpec />} />
+            <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/theme-test" element={<ThemeTest />} />
+            <Route path="/log-history" element={<LogHistoryPage />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
+      </WebSocketProvider>
     </QueryProvider>
   </StrictMode>
 );

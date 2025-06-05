@@ -15,12 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useUnknownPGNs } from "@/hooks/useSystem"
 import {
-  IconAlertTriangle,
-  IconClock,
-  IconDownload,
-  IconInfoCircle,
-  IconQuestionMark,
-  IconRefresh
+    IconAlertTriangle,
+    IconClock,
+    IconDownload,
+    IconInfoCircle,
+    IconQuestionMark,
+    IconRefresh
 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
@@ -309,7 +309,7 @@ export default function UnknownPGNs() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <div className="flex justify-between items-center">
             <div>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -355,7 +355,7 @@ export default function UnknownPGNs() {
   if (error) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-8">
+        <div className="flex-1 space-y-6 p-4 pt-6">
           <Alert variant="destructive">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertTitle>Error Loading Unknown PGNs</AlertTitle>
@@ -370,7 +370,7 @@ export default function UnknownPGNs() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>

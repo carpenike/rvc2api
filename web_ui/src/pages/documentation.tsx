@@ -82,7 +82,7 @@ export default function Documentation() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold">Documentation</h1>

@@ -64,8 +64,20 @@ async def list_entities(
     This endpoint provides access to all known RV-C entities in the system,
     with optional filtering capabilities to narrow down results.
     """
+    filters = []
+    if device_type:
+        filters.append(f"device_type={device_type}")
+    if area:
+        filters.append(f"area={area}")
+    filter_str = f" with filters: {', '.join(filters)}" if filters else ""
+
+    logger.info(f"GET /entities - Listing entities{filter_str}")
     _check_rvc_feature_enabled(request)
-    return await entity_service.list_entities(device_type=device_type, area=area)
+
+    entities = await entity_service.list_entities(device_type=device_type, area=area)
+
+    logger.info(f"Retrieved {len(entities)} entities{filter_str}")
+    return entities
 
 
 @router.get(
@@ -80,8 +92,12 @@ async def list_entity_ids(
     entity_service: Annotated[Any, Depends(get_entity_service)] = None,
 ) -> list[str]:
     """Return all known entity IDs."""
+    logger.debug("GET /entities/ids - Listing entity IDs")
     _check_rvc_feature_enabled(request)
-    return await entity_service.list_entity_ids()
+
+    entity_ids = await entity_service.list_entity_ids()
+    logger.info(f"Retrieved {len(entity_ids)} entity IDs")
+    return entity_ids
 
 
 @router.get(
@@ -108,13 +124,23 @@ async def get_entity(
     Returns:
         The entity object with current state
     """
+    logger.debug(f"GET /entities/{entity_id} - Retrieving entity details")
     _check_rvc_feature_enabled(request)
-    entity = await entity_service.get_entity(entity_id)
 
-    if entity is None:
-        raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
+    try:
+        entity = await entity_service.get_entity(entity_id)
 
-    return entity
+        if entity is None:
+            logger.warning(f"Entity '{entity_id}' not found")
+            raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
+
+        logger.info(f"Retrieved entity '{entity_id}' with {len(entity)} fields")
+        return entity
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving entity '{entity_id}': {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -145,13 +171,32 @@ async def get_entity_history(
     Returns:
         List of historical state entries
     """
+    params = []
+    if limit is not None:
+        params.append(f"limit={limit}")
+    if since is not None:
+        params.append(f"since={since}")
+    param_str = f" with params: {', '.join(params)}" if params else ""
+
+    logger.debug(f"GET /entities/{entity_id}/history - Retrieving entity history{param_str}")
     _check_rvc_feature_enabled(request)
-    history_data = await entity_service.get_entity_history(entity_id, limit=limit, since=since)
 
-    if history_data is None:
-        raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
+    try:
+        history_data = await entity_service.get_entity_history(entity_id, limit=limit, since=since)
 
-    return history_data
+        if history_data is None:
+            logger.warning(f"Entity '{entity_id}' not found for history request")
+            raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
+
+        logger.info(
+            f"Retrieved {len(history_data)} history entries for entity '{entity_id}'{param_str}"
+        )
+        return history_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving history for entity '{entity_id}': {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post(
@@ -184,9 +229,28 @@ async def control_entity(
     Returns:
         Control command response with execution details
     """
+    logger.info(f"POST /entities/{entity_id}/control - Sending command: {command.command}")
     _check_rvc_feature_enabled(request)
-    result = await entity_service.control_entity(entity_id, command)
-    return result
+
+    try:
+        result = await entity_service.control_entity(entity_id, command)
+
+        if result.success:
+            logger.info(
+                f"Control command '{command.command}' executed successfully for entity '{entity_id}'"
+            )
+        else:
+            logger.warning(
+                f"Control command '{command.command}' failed for entity '{entity_id}': {result.message}"
+            )
+
+        return result
+    except Exception as e:
+        logger.error(
+            f"Error executing control command for entity '{entity_id}': {e}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post(
@@ -217,16 +281,28 @@ async def create_entity_mapping(
     Returns:
         Response with status and entity mapping details
     """
+    logger.info(
+        f"POST /entities/mappings - Creating mapping for entity: {mapping_request.entity_id}"
+    )
     _check_rvc_feature_enabled(request)
-    result = await entity_service.create_entity_mapping(mapping_request)
 
-    # Convert error responses to HTTP exceptions
-    if result.status == "error":
-        # Use 409 for conflicts (entity already exists), 400 for other errors
-        status_code = 409 if "already exists" in result.message else 400
-        raise HTTPException(status_code=status_code, detail=result.message)
+    try:
+        result = await entity_service.create_entity_mapping(mapping_request)
 
-    return result
+        # Convert error responses to HTTP exceptions
+        if result.status == "error":
+            # Use 409 for conflicts (entity already exists), 400 for other errors
+            status_code = 409 if "already exists" in result.message else 400
+            logger.warning(f"Entity mapping creation failed: {result.message}")
+            raise HTTPException(status_code=status_code, detail=result.message)
+
+        logger.info(f"Successfully created entity mapping for '{mapping_request.entity_id}'")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating entity mapping: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -246,40 +322,49 @@ async def get_unmapped_entries(
     This endpoint provides visibility into RV-C messages that are being
     received but don't have corresponding entity mappings in the configuration.
     """
+    logger.debug("GET /unmapped - Retrieving unmapped entries")
     _check_rvc_feature_enabled(request)
-    entries = await entity_service.get_unmapped_entries()
-    if isinstance(entries, dict) and "unmapped_entries" in entries:
-        value = entries["unmapped_entries"]
-        entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
-    elif isinstance(entries, list):
-        entries = {str(i): v for i, v in enumerate(entries)}
 
-    # Fill missing required fields for test mocks
-    def fill_unmapped_fields(v):
-        return {
-            "pgn_hex": v.get("pgn_hex", "0xFF00"),
-            "pgn_name": v.get("pgn_name", "Unknown"),
-            "dgn_hex": v.get("dgn_hex", "0xFF00"),
-            "dgn_name": v.get("dgn_name", "Unknown"),
-            "instance": str(v.get("instance", 1)),
-            "last_data_hex": v.get("last_data_hex", "00"),
-            "decoded_signals": v.get("decoded_signals", {}),
-            "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
-            "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
-            "count": v.get("count", 1),
-            "suggestions": v.get("suggestions", []),
-            "spec_entry": v.get("spec_entry", {}),
+    try:
+        entries = await entity_service.get_unmapped_entries()
+        if isinstance(entries, dict) and "unmapped_entries" in entries:
+            value = entries["unmapped_entries"]
+            entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
+        elif isinstance(entries, list):
+            entries = {str(i): v for i, v in enumerate(entries)}
+
+        # Fill missing required fields for test mocks
+        def fill_unmapped_fields(v):
+            return {
+                "pgn_hex": v.get("pgn_hex", "0xFF00"),
+                "pgn_name": v.get("pgn_name", "Unknown"),
+                "dgn_hex": v.get("dgn_hex", "0xFF00"),
+                "dgn_name": v.get("dgn_name", "Unknown"),
+                "instance": str(v.get("instance", 1)),
+                "last_data_hex": v.get("last_data_hex", "00"),
+                "decoded_signals": v.get("decoded_signals", {}),
+                "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
+                "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
+                "count": v.get("count", 1),
+                "suggestions": v.get("suggestions", []),
+                "spec_entry": v.get("spec_entry", {}),
+            }
+
+        entries = {
+            k: (
+                UnmappedEntryModel(**fill_unmapped_fields(v))
+                if not isinstance(v, UnmappedEntryModel)
+                else v
+            )
+            for k, v in entries.items()
         }
 
-    entries = {
-        k: (
-            UnmappedEntryModel(**fill_unmapped_fields(v))
-            if not isinstance(v, UnmappedEntryModel)
-            else v
-        )
-        for k, v in entries.items()
-    }
-    return {"unmapped_entries": entries}
+        result = {"unmapped_entries": entries}
+        logger.info(f"Retrieved {len(entries)} unmapped entries")
+        return result
+    except Exception as e:
+        logger.error(f"Error retrieving unmapped entries: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -299,28 +384,41 @@ async def get_unknown_pgns(
     This endpoint provides visibility into CAN bus messages with PGNs
     that are not defined in the RV-C specification or configuration.
     """
+    logger.debug("GET /unknown-pgns - Retrieving unknown PGN entries")
     _check_rvc_feature_enabled(request)
-    entries = await entity_service.get_unknown_pgns()
-    if isinstance(entries, dict) and "unknown_pgns" in entries:
-        value = entries["unknown_pgns"]
-        entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
-    elif isinstance(entries, list):
-        entries = {str(i): v for i, v in enumerate(entries)}
 
-    def fill_unknown_fields(v):
-        return {
-            "arbitration_id_hex": v.get("arbitration_id_hex", "0x1FFFF"),
-            "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
-            "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
-            "count": v.get("count", 1),
-            "last_data_hex": v.get("last_data_hex", "00"),
+    try:
+        entries = await entity_service.get_unknown_pgns()
+        if isinstance(entries, dict) and "unknown_pgns" in entries:
+            value = entries["unknown_pgns"]
+            entries = {str(i): v for i, v in enumerate(value)} if isinstance(value, list) else value
+        elif isinstance(entries, list):
+            entries = {str(i): v for i, v in enumerate(entries)}
+
+        def fill_unknown_fields(v):
+            return {
+                "arbitration_id_hex": v.get("arbitration_id_hex", "0x1FFFF"),
+                "first_seen_timestamp": v.get("first_seen_timestamp", 0.0),
+                "last_seen_timestamp": v.get("last_seen_timestamp", 0.0),
+                "count": v.get("count", 1),
+                "last_data_hex": v.get("last_data_hex", "00"),
+            }
+
+        entries = {
+            k: (
+                UnknownPGNEntry(**fill_unknown_fields(v))
+                if not isinstance(v, UnknownPGNEntry)
+                else v
+            )
+            for k, v in entries.items()
         }
 
-    entries = {
-        k: (UnknownPGNEntry(**fill_unknown_fields(v)) if not isinstance(v, UnknownPGNEntry) else v)
-        for k, v in entries.items()
-    }
-    return {"unknown_pgns": entries}
+        result = {"unknown_pgns": entries}
+        logger.info(f"Retrieved {len(entries)} unknown PGN entries")
+        return result
+    except Exception as e:
+        logger.error(f"Error retrieving unknown PGN entries: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -340,9 +438,20 @@ async def get_metadata(
     This endpoint provides information about the entity system structure,
     including available device types, areas, and supported commands.
     """
+    logger.debug("GET /metadata - Retrieving entity metadata")
     _check_rvc_feature_enabled(request)
-    metadata = await entity_service.get_metadata()
-    return metadata
+
+    try:
+        metadata = await entity_service.get_metadata()
+
+        # Count various metadata elements for logging
+        device_types = len(metadata.get("device_types", []))
+        areas = len(metadata.get("areas", []))
+        logger.info(f"Retrieved entity metadata: {device_types} device types, {areas} areas")
+        return metadata
+    except Exception as e:
+        logger.error(f"Error retrieving entity metadata: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -369,6 +478,7 @@ async def get_missing_dgns_endpoint(request: Request) -> dict[int, dict]:
         - can_ids: Set of CAN IDs where this DGN was seen
         - contexts: Set of contexts where this DGN was encountered
     """
+    logger.debug("GET /missing-dgns - Retrieving missing DGN entries")
     _check_rvc_feature_enabled(request)
 
     try:
@@ -384,7 +494,12 @@ async def get_missing_dgns_endpoint(request: Request) -> dict[int, dict]:
             if "contexts" in dgn_data:
                 dgn_data["contexts"] = list(dgn_data["contexts"])
 
+        logger.info(f"Retrieved {len(missing_dgns)} missing DGN entries")
         return missing_dgns
 
     except ImportError as e:
+        logger.error(f"RVC decode module unavailable: {e}")
         raise HTTPException(status_code=500, detail=f"RVC decode module unavailable: {e}") from e
+    except Exception as e:
+        logger.error(f"Error retrieving missing DGNs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e

@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.router_config import configure_routers
 from backend.core.config import get_settings
 from backend.core.dependencies import get_app_state
-from backend.core.logging_config import configure_logging, setup_early_logging
+from backend.core.logging_config import configure_unified_logging, setup_early_logging
 from backend.core.metrics import initialize_backend_metrics
 from backend.integrations.registration import register_custom_features
 from backend.services.can_service import CANService
@@ -53,9 +53,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         settings = get_settings()
         logger.info("Application settings loaded successfully")
 
-        # Configure comprehensive logging (this replaces the basic setup)
-        configure_logging(settings.logging)
-        logger.info("Comprehensive logging configuration completed")
+        # Note: Unified logging is already configured in run_server.py
+        # No need to reconfigure here to avoid overriding early setup
 
         # Initialize feature manager
         feature_manager = get_feature_manager()
@@ -209,9 +208,11 @@ def main():
     )
     parser.add_argument(
         "--reload",
-        action="store_true"
-        if os.getenv("RVC2API_RELOAD", "false").lower() == "true"
-        else "store_false",
+        action=(
+            "store_true"
+            if os.getenv("RVC2API_RELOAD", "false").lower() == "true"
+            else "store_false"
+        ),
         help="Enable auto-reload (development only, or RVC2API_RELOAD=true)",
     )
     parser.add_argument(
@@ -228,18 +229,19 @@ def main():
     # Get settings to potentially configure more comprehensive logging
     settings = get_settings()
 
-    # Configure comprehensive logging for standalone script execution
-    configure_logging(settings.logging)
+    # Configure unified logging for standalone script execution
+    log_config, root_logger = configure_unified_logging(settings.logging)
 
     logger.info("Starting rvc2api backend server in standalone mode")
 
-    # Run the application using the top-level uvicorn import
+    # Run the application using the top-level uvicorn import with unified log config
     uvicorn.run(
         "backend.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
         log_level=args.log_level,
+        log_config=log_config,
     )
 
 

@@ -54,7 +54,7 @@ class AppState(Feature):
         self.entity_manager = EntityManager()
 
         # Configuration and mapping data
-        self.raw_device_mapping: dict[str, Any] = {}
+        self.raw_device_mapping: dict[tuple[str, str], dict[str, Any]] = {}
         self.pgn_hex_to_name_map: dict[str, str] = {}
         self.coach_info: CoachInfo | None = None
         self.max_history_length: int = 1000
@@ -128,9 +128,7 @@ class AppState(Feature):
     @property
     def health(self) -> str:
         """Return the health status of the feature."""
-        if not self.enabled:
-            return "disabled"
-        return "healthy"
+        return "healthy"  # State manager always healthy
 
     def set_broadcast_function(self, broadcast_func) -> None:
         """

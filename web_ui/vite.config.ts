@@ -21,6 +21,8 @@ export default defineConfig({
   },
   // Development server optimizations to prevent resource exhaustion
   server: {
+    // Disable HMR WebSocket since we use direct backend WebSocket connection
+    hmr: false,
     // Limit the number of concurrent requests to prevent browser resource exhaustion
     middlewareMode: false,
     // Enable caching for better performance
@@ -35,7 +37,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      // WebSocket connections are handled directly via WS_BASE in client.ts
+      // Proxy WebSocket requests to backend
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   optimizeDeps: {

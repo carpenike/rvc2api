@@ -1,20 +1,16 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
-// Mock Next.js router if needed
-vi.mock("next/router", () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    pathname: "/",
-    query: {},
-  }),
-}));
-
-// Mock next-themes
-vi.mock("next-themes", () => ({
+// Mock theme hooks
+vi.mock("@/hooks/use-theme", () => ({
   useTheme: () => ({
     theme: "light",
     setTheme: vi.fn(),
+    systemTheme: "light",
+    resolvedTheme: "light",
   }),
+}));
+
+vi.mock("@/components/theme-provider", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
 }));

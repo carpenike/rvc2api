@@ -130,15 +130,14 @@ class RVCFeature(Feature):
         Returns the health status of the feature.
 
         Returns:
-            - "disabled": Feature is not enabled
             - "healthy": Feature is functioning correctly
             - "degraded": Feature has non-critical issues
-            - "unhealthy": Feature is not functioning correctly
+            - "failed": Feature is not functioning correctly
         """
         if not self.enabled:
-            return "disabled"
+            return "healthy"  # Disabled is considered healthy
 
         if self.is_data_loaded():
             return "healthy"
         else:
-            return "unhealthy"
+            return "failed"
