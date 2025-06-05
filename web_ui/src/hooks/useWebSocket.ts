@@ -6,7 +6,7 @@
  */
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     RVCWebSocketClient,
     createCANScanWebSocket,
@@ -28,6 +28,7 @@ import { queryKeys } from '../lib/query-client';
 export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
   const queryClient = useQueryClient();
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
+  const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,6 +89,7 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
     };
 
     const wsClient = createEntityWebSocket(handlers);
+    clientRef.current = wsClient;
     setClient(wsClient);
     wsClient.connect();
 
@@ -99,8 +101,12 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
     };
   }, [autoConnect, queryClient]);
 
-  const connect = () => client?.connect();
-  const disconnect = () => client?.disconnect();
+  const connect = useCallback(() => {
+    clientRef.current?.connect();
+  }, []);
+  const disconnect = useCallback(() => {
+    clientRef.current?.disconnect();
+  }, []);
 
   return {
     client,
@@ -121,6 +127,7 @@ export function useCANScanWebSocket(options?: {
 }) {
   const queryClient = useQueryClient();
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
+  const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messageCount, setMessageCount] = useState(0);
@@ -170,6 +177,7 @@ export function useCANScanWebSocket(options?: {
     };
 
     const wsClient = createCANScanWebSocket(handlers);
+    clientRef.current = wsClient;
     setClient(wsClient);
     wsClient.connect();
 
@@ -181,8 +189,12 @@ export function useCANScanWebSocket(options?: {
     };
   }, [autoConnect, queryClient, messageCount, onMessage]);
 
-  const connect = () => client?.connect();
-  const disconnect = () => client?.disconnect();
+  const connect = useCallback(() => {
+    clientRef.current?.connect();
+  }, []);
+  const disconnect = useCallback(() => {
+    clientRef.current?.disconnect();
+  }, []);
   const clearMessageCount = () => setMessageCount(0);
 
   return {
@@ -203,6 +215,7 @@ export function useCANScanWebSocket(options?: {
 export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
   const queryClient = useQueryClient();
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
+  const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -249,6 +262,7 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
     };
 
     const wsClient = createSystemStatusWebSocket(handlers);
+    clientRef.current = wsClient;
     setClient(wsClient);
     wsClient.connect();
 
@@ -260,8 +274,12 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
     };
   }, [autoConnect, queryClient]);
 
-  const connect = () => client?.connect();
-  const disconnect = () => client?.disconnect();
+  const connect = useCallback(() => {
+    clientRef.current?.connect();
+  }, []);
+  const disconnect = useCallback(() => {
+    clientRef.current?.disconnect();
+  }, []);
 
   return {
     client,
@@ -281,6 +299,7 @@ export function useLogWebSocket(options?: {
   onLog?: (log: unknown) => void;
 }) {
   const [client, setClient] = useState<RVCWebSocketClient | null>(null);
+  const clientRef = useRef<RVCWebSocketClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -346,6 +365,7 @@ export function useLogWebSocket(options?: {
     };
 
     const wsClient = createLogWebSocket(handlers);
+    clientRef.current = wsClient;
     setClient(wsClient);
     wsClient.connect();
 
@@ -357,8 +377,12 @@ export function useLogWebSocket(options?: {
     };
   }, [autoConnect, onLog]);
 
-  const connect = () => client?.connect();
-  const disconnect = () => client?.disconnect();
+  const connect = useCallback(() => {
+    clientRef.current?.connect();
+  }, []);
+  const disconnect = useCallback(() => {
+    clientRef.current?.disconnect();
+  }, []);
 
   return {
     client,
