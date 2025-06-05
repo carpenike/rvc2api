@@ -91,40 +91,16 @@ class ConfigService:
         settings = get_settings()
 
         env_vars = {
-            # CAN-related settings - show None if not set, actual value if set
-            "CAN_BUSTYPE": get_raw_env("CAN_BUSTYPE") or settings.can.bustype,
-            "CAN_INTERFACE": get_raw_env("CAN_INTERFACE"),  # None if not set
-            "CAN_BITRATE": get_raw_env("CAN_BITRATE"),
-            # Application configuration
-            "CONFIG_FILE": get_raw_env("CONFIG_FILE"),
-            "LOG_LEVEL": get_raw_env("LOG_LEVEL") or settings.logging.level,
             "DEBUG": parse_bool_env("DEBUG", settings.debug),
             # Server configuration
             "HOST": get_raw_env("HOST") or settings.server.host,
             "PORT": get_raw_env("PORT") or str(settings.server.port),
             "WORKERS": get_raw_env("WORKERS") or str(settings.server.workers),
             # Feature flags - using expected test names
-            "ENABLE_WEBSOCKETS": parse_bool_env("ENABLE_WEBSOCKETS", settings.websocket.enabled),
+            # (ENABLE_WEBSOCKETS removed, not in config)
             "ENABLE_CAN_SNIFFER": parse_bool_env(
                 "ENABLE_CAN_SNIFFER", settings.features.enable_metrics
             ),
-        }
-
-        # Mask sensitive values
-        masked_vars = {}
-        for key, value in env_vars.items():
-            if value is None:
-                masked_vars[key] = None
-            elif any(
-                sensitive in key.lower() for sensitive in ["password", "secret", "token", "key"]
-            ):
-                masked_vars[key] = "***MASKED***" if value else None
-            else:
-                masked_vars[key] = value
-
-        return {
-            "environment_variables": masked_vars,
-            "total_env_vars": len([v for v in env_vars.values() if v is not None]),
         }
 
         # Mask sensitive values

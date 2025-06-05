@@ -2,13 +2,10 @@
 RVC2API Configuration Management
 
 This module provides centralized configuration management for the RVC2API application
-using Pydantic Settings with comprehensive environment variable support.
-
-Environment variables follow the pattern: RVC2API_<SECTION>__<SETTING>
-For backward compatibility, legacy environment variables are also supported.
+using Pydantic Settings. All environment variables must use the new RVC2API_<SECTION>__<SETTING> pattern.
+Legacy environment variable support has been removed.
 """
 
-import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -205,66 +202,6 @@ class CANSettings(BaseSettings):
         return v
 
 
-class DatabaseSettings(BaseSettings):
-    """Database configuration settings."""
-
-    model_config = SettingsConfigDict(env_prefix="RVC2API_DATABASE__", case_sensitive=False)
-
-    url: str = Field(default="sqlite:///./rvc2api.db", description="Database URL")
-    echo: bool = Field(default=False, description="Enable SQL query logging")
-    pool_size: int = Field(default=5, description="Database connection pool size", ge=1)
-    max_overflow: int = Field(default=10, description="Maximum overflow connections", ge=0)
-
-
-class WebSocketSettings(BaseSettings):
-    """WebSocket configuration settings."""
-
-    model_config = SettingsConfigDict(env_prefix="RVC2API_WEBSOCKET__", case_sensitive=False)
-
-    enabled: bool = Field(default=True, description="Enable WebSocket server")
-    max_connections: int = Field(
-        default=100, description="Maximum concurrent WebSocket connections"
-    )
-    ping_interval: int = Field(default=20, description="WebSocket ping interval in seconds")
-    ping_timeout: int = Field(default=10, description="WebSocket ping timeout in seconds")
-    heartbeat_interval: int = Field(default=30, description="Heartbeat interval in seconds", ge=1)
-
-
-class MaintenanceSettings(BaseSettings):
-    """Maintenance tracking configuration."""
-
-    model_config = SettingsConfigDict(env_prefix="RVC2API_MAINTENANCE__", case_sensitive=False)
-
-    check_interval: int = Field(default=3600, description="Check interval in seconds", ge=60)
-    notification_threshold_days: int = Field(
-        default=7, description="Notification threshold in days", ge=1
-    )
-    database_path: Path | None = Field(default=None, description="Maintenance database path")
-
-    @field_validator("database_path", mode="before")
-    @classmethod
-    def parse_database_path(cls, v):
-        """Parse path from string."""
-        if isinstance(v, str) and v.strip():
-            return Path(v.strip())
-        return v
-
-
-class NotificationsSettings(BaseSettings):
-    """Notification services configuration."""
-
-    model_config = SettingsConfigDict(env_prefix="RVC2API_NOTIFICATIONS__", case_sensitive=False)
-
-    # Pushover settings
-    pushover_user_key: SecretStr | None = Field(default=None, description="Pushover user key")
-    pushover_api_token: SecretStr | None = Field(default=None, description="Pushover API token")
-    pushover_device: str | None = Field(default=None, description="Pushover device name")
-    pushover_priority: int = Field(default=0, description="Pushover priority level", ge=-2, le=2)
-
-    # UptimeRobot settings
-    uptimerobot_api_key: SecretStr | None = Field(default=None, description="UptimeRobot API key")
-
-
 class FeaturesSettings(BaseSettings):
     """Feature flags configuration."""
 
@@ -328,10 +265,6 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     can: CANSettings = Field(default_factory=CANSettings)
-    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
-    websocket: WebSocketSettings = Field(default_factory=WebSocketSettings)
-    maintenance: MaintenanceSettings = Field(default_factory=MaintenanceSettings)
-    notifications: NotificationsSettings = Field(default_factory=NotificationsSettings)
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
 
     @field_validator("environment", mode="before")
@@ -400,64 +333,16 @@ class Settings(BaseSettings):
 
         return config
 
-    @classmethod
-    def create_with_legacy_support(cls) -> "Settings":
-        """
-        Create settings instance with legacy environment variable support.
-
-        This method handles backward compatibility with old environment variable names.
-        """
-        # Legacy mappings: old_var -> new_var
-        legacy_mappings = {
-            # Server settings
-            "HOST": "RVC2API_SERVER__HOST",
-            "PORT": "RVC2API_SERVER__PORT",
-            "RELOAD": "RVC2API_SERVER__RELOAD",
-            "WORKERS": "RVC2API_SERVER__WORKERS",
-            "RVC2API_HOST": "RVC2API_SERVER__HOST",
-            "RVC2API_PORT": "RVC2API_SERVER__PORT",
-            # Logging settings
-            "LOG_LEVEL": "RVC2API_LOGGING__LEVEL",
-            # CAN settings (both CAN_ and CANBUS_ prefixes for compatibility)
-            "CAN_INTERFACE": "RVC2API_CAN__INTERFACE",
-            "CAN_BITRATE": "RVC2API_CAN__BITRATE",
-            "CAN_CHANNELS": "RVC2API_CAN__INTERFACE",  # Map to interface for simplicity
-            "CAN_BUSTYPE": "RVC2API_CAN__BUSTYPE",
-            # Security settings
-            "SECRET_KEY": "RVC2API_SECURITY__SECRET_KEY",
-            "API_KEY": "RVC2API_SECURITY__API_KEY",
-            # Application settings
-            "DEBUG": "RVC2API_DEBUG",
-            "ENVIRONMENT": "RVC2API_ENVIRONMENT",
-            # Database settings
-            "DATABASE_URL": "RVC2API_DATABASE__URL",
-            # CORS settings
-            "CORS_ORIGINS": "RVC2API_CORS__ALLOW_ORIGINS",
-            # Notification settings (legacy)
-            "PUSHOVER_USER_KEY": "RVC2API_NOTIFICATIONS__PUSHOVER_USER_KEY",
-            "PUSHOVER_API_TOKEN": "RVC2API_NOTIFICATIONS__PUSHOVER_API_TOKEN",
-            "UPTIMEROBOT_API_KEY": "RVC2API_NOTIFICATIONS__UPTIMEROBOT_API_KEY",
-            # OpenAI API Key for vector search
-            "OPENAI_API_KEY": "OPENAI_API_KEY",  # Keep as-is, commonly used directly
-        }
-
-        # Apply legacy mappings if new variables don't exist
-        for old_var, new_var in legacy_mappings.items():
-            if old_var in os.environ and new_var not in os.environ:
-                os.environ[new_var] = os.environ[old_var]
-
-        return cls()
-
 
 @lru_cache
 def get_settings() -> Settings:
     """
-    Get cached settings instance with legacy support.
+    Get cached settings instance.
 
     Returns:
         Settings instance
     """
-    return Settings.create_with_legacy_support()
+    return Settings()
 
 
 # Convenience functions for getting specific setting sections
@@ -484,26 +369,6 @@ def get_logging_settings() -> LoggingSettings:
 def get_can_settings() -> CANSettings:
     """Get CAN settings."""
     return get_settings().can
-
-
-def get_database_settings() -> DatabaseSettings:
-    """Get database settings."""
-    return get_settings().database
-
-
-def get_websocket_settings() -> WebSocketSettings:
-    """Get WebSocket settings."""
-    return get_settings().websocket
-
-
-def get_maintenance_settings() -> MaintenanceSettings:
-    """Get maintenance settings."""
-    return get_settings().maintenance
-
-
-def get_notifications_settings() -> NotificationsSettings:
-    """Get notifications settings."""
-    return get_settings().notifications
 
 
 def get_features_settings() -> FeaturesSettings:
