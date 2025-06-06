@@ -978,7 +978,10 @@ EOF
               COACHIQ_SERVER__WORKERS = toString config.coachiq.settings.server.workers;
               COACHIQ_SERVER__RELOAD = if config.coachiq.settings.server.reload then "true" else "false";
               COACHIQ_SERVER__DEBUG = if config.coachiq.settings.server.debug then "true" else "false";
-              COACHIQ_SERVER__ROOT_PATH = config.coachiq.settings.server.rootPath;
+              COACHIQ_SERVER__ROOT_PATH =
+                lib.optionalString
+                  (config.coachiq.settings.server.rootPath != "")
+                  config.coachiq.settings.server.rootPath;
               COACHIQ_SERVER__ACCESS_LOG = if config.coachiq.settings.server.accessLog then "true" else "false";
               COACHIQ_SERVER__KEEP_ALIVE_TIMEOUT = toString config.coachiq.settings.server.keepAliveTimeout;
               COACHIQ_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN = toString config.coachiq.settings.server.timeoutGracefulShutdown;
@@ -1107,7 +1110,10 @@ EOF
               COACHIQ_HOST = config.coachiq.settings.host; # Maps to server.host in new config
               COACHIQ_PORT = toString config.coachiq.settings.port; # Maps to server.port in new config
               DEBUG = if config.coachiq.settings.server.debug then "true" else "false";
-              COACHIQ_ROOT_PATH = config.coachiq.settings.server.rootPath;
+              COACHIQ_ROOT_PATH =
+                lib.optionalString
+                  (config.coachiq.settings.server.rootPath != "")
+                  config.coachiq.settings.server.rootPath;
 
               # CORS legacy
               CORS_ORIGINS = lib.concatStringsSep "," config.coachiq.settings.cors.allowedOrigins;
