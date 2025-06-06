@@ -434,21 +434,28 @@ EOF
               export npm_config_cache=$TMPDIR/.npm
               export npm_config_fund=false
               export npm_config_audit=false
+              export npm_config_progress=false
+              export npm_config_loglevel=error
               export CI=true
+              export NODE_ENV=production
               runHook postConfigure
             '';
 
             buildPhase = ''
               runHook preBuild
               echo "Installing dependencies..."
-              timeout 300 npm ci --no-fund --no-audit || {
-                echo "npm ci failed or timed out"
-                exit 1
+              npm ci --no-fund --no-audit --no-progress --loglevel=error --prefer-offline || {
+                echo "npm ci failed, trying with clean cache..."
+                npm cache clean --force
+                npm ci --no-fund --no-audit --no-progress --loglevel=error || {
+                  echo "npm ci failed completely"
+                  exit 1
+                }
               }
 
               echo "Building frontend..."
-              timeout 600 npm run build || {
-                echo "npm run build failed or timed out"
+              npm run build || {
+                echo "npm run build failed"
                 exit 1
               }
 
