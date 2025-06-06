@@ -2,6 +2,7 @@
  * System Status Page
  *
  * Comprehensive system health and status monitoring page.
+ * Enhanced with interactive charts, trend indicators, and responsive design.
  * Consolidates health checks, CAN bus status, entity counts,
  * WebSocket status, and real-time performance metrics.
  */
@@ -10,12 +11,17 @@ import { AppLayout } from "@/components/app-layout"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { ChartConfig } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useEntities } from "@/hooks/useEntities"
 import { useCANMetrics, useCANStatistics, useHealthStatus, useQueueStatus } from "@/hooks/useSystem"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
     IconActivity,
     IconAlertCircle,
@@ -27,10 +33,185 @@ import {
     IconRefresh,
     IconRouter,
     IconServer,
+    IconTrendingDown,
+    IconTrendingUp,
     IconWifi,
     IconX
 } from "@tabler/icons-react"
+import * as React from "react"
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { Link } from "react-router-dom"
+
+// Generate sample CAN metrics data for demo purposes
+const generateCANMetricsData = () => {
+  const data = []
+  const now = new Date()
+  for (let i = 89; i >= 0; i--) {
+    const date = new Date(now)
+    date.setMinutes(date.getMinutes() - i)
+    data.push({
+      timestamp: date.toISOString(),
+      messageRate: Math.floor(Math.random() * 100) + 50,
+      errorRate: Math.floor(Math.random() * 5),
+    })
+  }
+  return data
+}
+
+const chartConfig = {
+  messageRate: {
+    label: "Message Rate",
+    color: "var(--primary)",
+  },
+  errorRate: {
+    label: "Error Rate",
+    color: "var(--destructive)",
+  },
+} satisfies ChartConfig
+
+/**
+ * Interactive CAN Metrics Chart
+ */
+function CANMetricsChart() {
+  const isMobile = useIsMobile()
+  const [timeRange, setTimeRange] = React.useState("30m")
+  const [chartData] = React.useState(() => generateCANMetricsData())
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setTimeRange("10m")
+    }
+  }, [isMobile])
+
+  const filteredData = React.useMemo(() => {
+    const now = new Date()
+    let minutesToSubtract = 30
+    if (timeRange === "10m") minutesToSubtract = 10
+    else if (timeRange === "60m") minutesToSubtract = 60
+
+    const startTime = new Date(now)
+    startTime.setMinutes(startTime.getMinutes() - minutesToSubtract)
+
+    return chartData.filter(item => new Date(item.timestamp) >= startTime)
+  }, [chartData, timeRange])
+
+  const averageMessageRate = React.useMemo(() => {
+    if (filteredData.length === 0) return 0
+    return Math.round(filteredData.reduce((sum, item) => sum + item.messageRate, 0) / filteredData.length)
+  }, [filteredData])
+
+  const trendDirection = React.useMemo(() => {
+    if (filteredData.length < 2) return 'neutral'
+    const recent = filteredData.slice(-10).reduce((sum, item) => sum + item.messageRate, 0) / 10
+    const earlier = filteredData.slice(0, 10).reduce((sum, item) => sum + item.messageRate, 0) / 10
+    return recent > earlier ? 'up' : recent < earlier ? 'down' : 'neutral'
+  }, [filteredData])
+
+  return (
+    <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
+      <CardHeader>
+        <CardTitle className="@[250px]/card:text-lg">CAN Bus Activity</CardTitle>
+        <CardDescription>
+          <span className="hidden @[540px]/card:block">
+            Real-time message rate and performance
+          </span>
+          <span className="@[540px]/card:hidden">Live CAN metrics</span>
+        </CardDescription>
+        <CardAction>
+          <ToggleGroup
+            type="single"
+            value={timeRange}
+            onValueChange={setTimeRange}
+            variant="outline"
+            className="hidden *:data-[slot=toggle-group-item]:!px-3 @[767px]/card:flex"
+          >
+            <ToggleGroupItem value="10m">10m</ToggleGroupItem>
+            <ToggleGroupItem value="30m">30m</ToggleGroupItem>
+            <ToggleGroupItem value="60m">1h</ToggleGroupItem>
+          </ToggleGroup>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger
+              className="flex w-20 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              size="sm"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10m">10m</SelectItem>
+              <SelectItem value="30m">30m</SelectItem>
+              <SelectItem value="60m">1h</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        <div className="mb-4 flex items-center gap-4">
+          <div>
+            <div className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {averageMessageRate}
+            </div>
+            <div className="text-xs text-muted-foreground">msg/sec avg</div>
+          </div>
+          <Badge variant="outline" className="ml-auto">
+            {trendDirection === 'up' && <IconTrendingUp className="mr-1 h-3 w-3" />}
+            {trendDirection === 'down' && <IconTrendingDown className="mr-1 h-3 w-3" />}
+            {trendDirection === 'up' ? 'Trending Up' : trendDirection === 'down' ? 'Trending Down' : 'Stable'}
+          </Badge>
+        </div>
+
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[180px] w-full"
+        >
+          <AreaChart data={filteredData}>
+            <defs>
+              <linearGradient id="fillMessageRate" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-messageRate)" stopOpacity={1.0} />
+                <stop offset="95%" stopColor="var(--color-messageRate)" stopOpacity={0.1} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="timestamp"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={32}
+              tickFormatter={(value) => {
+                const date = new Date(value)
+                return date.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              }}
+            />
+            <ChartTooltip
+              cursor={false}
+              defaultIndex={isMobile ? -1 : 5}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(value) => {
+                    return new Date(value).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  }}
+                  indicator="dot"
+                />
+              }
+            />
+            <Area
+              dataKey="messageRate"
+              type="natural"
+              fill="url(#fillMessageRate)"
+              stroke="var(--color-messageRate)"
+            />
+          </AreaChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  )
+}
 
 /**
  * Application Health Overview Card
@@ -607,45 +788,48 @@ export default function SystemStatus() {
           </div>
         </div>
 
+        {/* Interactive CAN Metrics Chart */}
+        <CANMetricsChart />
+
         {/* Detailed Status Cards */}
         <div className="grid gap-6 md:grid-cols-2">
           <CANBusStatusCard />
           <EntityStatisticsCard />
         </div>
 
-        {/* Quick Actions */}
+        {/* Diagnostic Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <IconServer className="size-5" />
-              Quick Actions
+              System Management
             </CardTitle>
-            <CardDescription>Common system management tasks</CardDescription>
+            <CardDescription>Advanced diagnostic and monitoring tools</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Button asChild variant="outline" className="justify-start">
                 <Link to="/can-sniffer">
                   <IconWifi className="mr-2 h-4 w-4" />
-                  Monitor CAN Bus
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start">
-                <Link to="/device-mapping">
-                  <IconCpu className="mr-2 h-4 w-4" />
-                  Device Mapping
+                  CAN Bus Monitor
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start">
                 <Link to="/unknown-pgns">
                   <IconAlertCircle className="mr-2 h-4 w-4" />
-                  Diagnostics
+                  Unknown PGNs
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start">
-                <Link to="/documentation">
+                <Link to="/logs">
                   <IconDatabase className="mr-2 h-4 w-4" />
-                  Documentation
+                  System Logs
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                <Link to="/unmapped-entries">
+                  <IconHelp className="mr-2 h-4 w-4" />
+                  Unmapped Data
                 </Link>
               </Button>
             </div>

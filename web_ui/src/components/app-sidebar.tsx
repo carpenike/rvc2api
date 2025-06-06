@@ -38,18 +38,13 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Demo Dashboard",
-      url: "/demo-dashboard",
-      icon: IconChartBar,
-    },
-    {
       title: "Lights",
       url: "/lights",
       icon: IconBulb,
     },
     {
-      title: "Device Mapping",
-      url: "/device-mapping",
+      title: "Entities",
+      url: "/entities",
       icon: IconCpu,
     },
   ],
@@ -98,6 +93,11 @@ const data = {
       title: "RV-C Spec",
       url: "/rvc-spec",
       icon: IconFileWord,
+    },
+    {
+      title: "Demo Dashboard",
+      url: "/demo-dashboard",
+      icon: IconChartBar,
     },
     {
       title: "Theme Test",

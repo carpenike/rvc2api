@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import DemoDashboard from "@/pages/demo-dashboard";
 import DeviceMapping from "@/pages/device-mapping";
 import Documentation from "@/pages/documentation";
+import EntitiesPage from "@/pages/entities";
 import Lights from "@/pages/lights";
 import LogsPage from "@/pages/logs";
 import NetworkMap from "@/pages/network-map";
@@ -44,6 +45,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/demo-dashboard" element={<DemoDashboard />} />
+            <Route path="/entities" element={<EntitiesPage />} />
             <Route path="/lights" element={<Lights />} />
             <Route path="/device-mapping" element={<DeviceMapping />} />
             <Route path="/can-sniffer" element={<CanSniffer />} />

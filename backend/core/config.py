@@ -2,8 +2,18 @@
 RVC2API Configuration Management
 
 This module provides centralized configuration management for the RVC2API application
-using Pydantic Settings. All environment variables must use the new RVC2API_<SECTION>__<SETTING> pattern.
-Legacy environment variable support has been removed.
+using Pydantic Settings.
+
+Environment Variable Patterns:
+- For top-level settings: `RVC2API_SETTING` (e.g., `RVC2API_APP_NAME`)
+- For nested settings: `RVC2API_SECTION__SETTING` (e.g., `RVC2API_SERVER__HOST`)
+
+The loading order for configuration values is:
+1. Default values specified in the Settings classes
+2. Values from .env file (if present)
+3. Environment variables (which override any previous values)
+
+All settings are strongly typed and validated using Pydantic.
 """
 
 from functools import lru_cache
@@ -15,7 +25,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ServerSettings(BaseSettings):
-    """Server configuration settings."""
+    """
+    Server configuration settings.
+
+    Environment Variables:
+        All settings can be configured with the prefix RVC2API_SERVER__
+        For example: RVC2API_SERVER__HOST=0.0.0.0
+    """
 
     model_config = SettingsConfigDict(env_prefix="RVC2API_SERVER__", case_sensitive=False)
 
@@ -27,35 +43,19 @@ class ServerSettings(BaseSettings):
     debug: bool = Field(default=False, description="Enable server debug mode")
     root_path: str = Field(default="", description="Root path for the application")
 
-    # Uvicorn-specific settings
-    keep_alive_timeout: int = Field(default=5, description="Keep alive timeout in seconds", ge=1)
-    timeout_keep_alive: int = Field(default=5, description="Timeout keep alive in seconds", ge=1)
-    timeout_graceful_shutdown: int = Field(
-        default=30, description="Graceful shutdown timeout", ge=1
-    )
-    timeout_notify: int = Field(default=30, description="Timeout notify in seconds", ge=1)
-
-    # Performance settings
-    limit_concurrency: int | None = Field(default=None, description="Limit concurrency")
-    limit_max_requests: int | None = Field(default=None, description="Limit max requests")
-
-    # SSL/TLS settings
-    ssl_keyfile: str | None = Field(default=None, description="SSL key file path")
-    ssl_certfile: str | None = Field(default=None, description="SSL certificate file path")
-    ssl_ca_certs: str | None = Field(default=None, description="SSL CA certificates file path")
-    ssl_cert_reqs: int = Field(default=0, description="SSL certificate requirements level")
-
-    # Worker settings
-    worker_class: str = Field(default="uvicorn.workers.UvicornWorker", description="Worker class")
-    worker_connections: int = Field(default=1000, description="Worker connections", ge=1)
-
-    # Server headers
-    server_header: bool = Field(default=True, description="Include server header")
-    date_header: bool = Field(default=True, description="Include date header")
-
 
 class CORSSettings(BaseSettings):
-    """CORS configuration settings."""
+    """
+    CORS configuration settings.
+
+    Environment Variables:
+        All settings can be configured with the prefix RVC2API_CORS__
+        For example: RVC2API_CORS__ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+    Notes:
+        - Comma-separated strings will be parsed into lists automatically
+        - Use empty string or omit the variable to use defaults
+    """
 
     model_config = SettingsConfigDict(
         env_prefix="RVC2API_CORS__",
@@ -220,7 +220,18 @@ class FeaturesSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
-    """Main application settings."""
+    """
+    Main application settings.
+
+    Environment Variable Patterns:
+        - Top-level settings: RVC2API_SETTING (e.g., `RVC2API_APP_NAME`)
+        - Nested settings: RVC2API_SECTION__SETTING (e.g., `RVC2API_SERVER__HOST`)
+
+    Configuration Loading Order:
+        1. Default values specified in this class
+        2. Values from .env file (if present)
+        3. Environment variables (which override any previous values)
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -337,7 +348,10 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """
-    Get cached settings instance.
+    Get cached settings instance. Uses lru_cache to ensure settings are only loaded once.
+
+    For development or testing scenarios where you need to reload settings,
+    you can access the uncached settings with `Settings()` directly.
 
     Returns:
         Settings instance

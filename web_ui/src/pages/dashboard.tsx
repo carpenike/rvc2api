@@ -8,7 +8,7 @@
 import { AppLayout } from "@/components/app-layout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEntities } from "@/hooks/useEntities"
 import { useHealthStatus } from "@/hooks/useSystem"
@@ -16,18 +16,19 @@ import {
     IconActivity,
     IconAlertCircle,
     IconBolt,
-    IconCircuitSwitchOpen,
     IconCpu,
     IconCheck,
-    IconWifi,
+    IconHelp,
+    IconTrendingUp,
+    IconTrendingDown,
     IconX
 } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 
 /**
- * Simplified system status card for dashboard (user-focused)
+ * Simple system health indicator for dashboard
  */
-function SystemStatusOverviewCard() {
+function SystemHealthCard() {
   const { data: health, isLoading, error } = useHealthStatus()
 
   if (isLoading) {
@@ -40,7 +41,7 @@ function SystemStatusOverviewCard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-16 w-full" />
         </CardContent>
       </Card>
     )
@@ -52,54 +53,46 @@ function SystemStatusOverviewCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <IconX className="size-5" />
-            System Status
+            System Health
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Unable to load system status</p>
+          <p className="text-sm text-muted-foreground">Unable to check system health</p>
         </CardContent>
       </Card>
     )
   }
 
   const isHealthy = health?.status === "healthy"
-  const hasIssues = health?.unhealthy_features && Object.keys(health.unhealthy_features).length > 0
 
   return (
-    <Card>
+    <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="@[250px]/card:text-lg flex items-center gap-2">
           <IconActivity className="size-5" />
-          System Status
+          System Health
         </CardTitle>
-        <CardDescription>Current system health overview</CardDescription>
+        <CardDescription>Overall system status</CardDescription>
+        <CardAction>
+          <Badge variant={isHealthy ? "default" : "destructive"}>
+            {isHealthy ? "Operational" : "Issues"}
+          </Badge>
+        </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center p-6">
+          <div className="text-center">
             {isHealthy ? (
-              <IconCheck className="size-6 text-green-500" />
-            ) : hasIssues ? (
-              <IconX className="size-6 text-red-500" />
+              <IconCheck className="size-12 text-green-500 mx-auto mb-2" />
             ) : (
-              <IconAlertCircle className="size-6 text-amber-500" />
+              <IconAlertCircle className="size-12 text-amber-500 mx-auto mb-2" />
             )}
-            <div>
-              <div className="font-semibold">
-                {isHealthy ? "All Systems Operational" : hasIssues ? "Issues Detected" : "System Status"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {hasIssues ? `${Object.keys(health?.unhealthy_features ?? {}).length} component(s) need attention` : "Systems running normally"}
-              </div>
+            <div className="font-semibold text-lg">
+              {isHealthy ? "System Healthy" : "Attention Needed"}
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Badge variant={isHealthy ? "default" : hasIssues ? "destructive" : "secondary"}>
-              {health?.status?.toUpperCase() || "UNKNOWN"}
-            </Badge>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="ghost" size="sm" className="mt-2">
               <Link to="/system-status">
-                View Details
+                View Details →
               </Link>
             </Button>
           </div>
@@ -111,14 +104,14 @@ function SystemStatusOverviewCard() {
 
 
 /**
- * Device summary card - simplified for dashboard
+ * Enhanced device summary card with trends
  */
 function DeviceOverviewCard() {
   const { data: entities, isLoading, error } = useEntities()
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconCpu className="size-5" />
@@ -134,7 +127,7 @@ function DeviceOverviewCard() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <IconCpu className="size-5" />
@@ -152,36 +145,52 @@ function DeviceOverviewCard() {
   const totalEntities = entityArray.length
   const lightCount = entityArray.filter(e => e.device_type === 'light').length
   const sensorCount = entityArray.filter(e =>
-    e.device_type === 'tank_sensor' || e.device_type === 'temperature_sensor'
+    e.device_type === 'tank_sensor' || e.device_type === 'temperature_sensor' ||
+    e.device_type === 'tank' || e.device_type === 'temperature'
   ).length
 
+  // Calculate online devices (devices seen in last 5 minutes)
+  const onlineDevices = entityArray.filter(e =>
+    e.timestamp && (Date.now() - e.timestamp) < 300000
+  ).length
+
+  // Mock trend calculation (in real app, compare with previous data)
+  const deviceTrend = totalEntities > 0 ? 'up' : 'neutral'
+
   return (
-    <Card>
+    <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="@[250px]/card:text-lg flex items-center gap-2">
           <IconCpu className="size-5" />
           Connected Devices
         </CardTitle>
         <CardDescription>Quick overview of your RV systems</CardDescription>
+        <CardAction>
+          <Badge variant="outline">
+            {deviceTrend === 'up' && <IconTrendingUp className="mr-1 h-3 w-3" />}
+            {deviceTrend === 'down' && <IconTrendingDown className="mr-1 h-3 w-3" />}
+            {onlineDevices}/{totalEntities} Online
+          </Badge>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-2xl font-bold">{totalEntities}</div>
+          <div className="text-center p-3 bg-background/50 rounded-lg">
+            <div className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{totalEntities}</div>
             <div className="text-xs text-muted-foreground">Total</div>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-2xl font-bold">{lightCount}</div>
+          <div className="text-center p-3 bg-background/50 rounded-lg">
+            <div className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{lightCount}</div>
             <div className="text-xs text-muted-foreground">Lights</div>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-2xl font-bold">{sensorCount}</div>
+          <div className="text-center p-3 bg-background/50 rounded-lg">
+            <div className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{sensorCount}</div>
             <div className="text-xs text-muted-foreground">Sensors</div>
           </div>
         </div>
         <div className="mt-4 pt-3 border-t">
           <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to="/lights">
+            <Link to="/entities">
               Manage Devices
             </Link>
           </Button>
@@ -192,7 +201,7 @@ function DeviceOverviewCard() {
 }
 
 /**
- * Quick actions card component
+ * User-focused quick actions card
  */
 function QuickActionsCard() {
   return (
@@ -202,7 +211,7 @@ function QuickActionsCard() {
           <IconBolt className="size-5" />
           Quick Actions
         </CardTitle>
-        <CardDescription>Common tasks and shortcuts</CardDescription>
+        <CardDescription>Control your RV systems</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button asChild className="w-full justify-start" variant="outline">
@@ -212,21 +221,21 @@ function QuickActionsCard() {
           </Link>
         </Button>
         <Button asChild className="w-full justify-start" variant="outline">
-          <Link to="/can-sniffer">
-            <IconWifi className="mr-2 size-4" />
-            Monitor CAN Bus
-          </Link>
-        </Button>
-        <Button asChild className="w-full justify-start" variant="outline">
-          <Link to="/device-mapping">
+          <Link to="/entities">
             <IconCpu className="mr-2 size-4" />
             Manage Devices
           </Link>
         </Button>
         <Button asChild className="w-full justify-start" variant="outline">
-          <Link to="/unknown-pgns">
-            <IconCircuitSwitchOpen className="mr-2 size-4" />
-            View Diagnostics
+          <Link to="/system-status">
+            <IconActivity className="mr-2 size-4" />
+            System Status
+          </Link>
+        </Button>
+        <Button asChild className="w-full justify-start" variant="outline">
+          <Link to="/documentation">
+            <IconHelp className="mr-2 size-4" />
+            Documentation
           </Link>
         </Button>
       </CardContent>
@@ -254,10 +263,10 @@ export default function Dashboard() {
         {/* Overview Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SystemStatusOverviewCard />
+            <DeviceOverviewCard />
           </div>
           <div>
-            <DeviceOverviewCard />
+            <SystemHealthCard />
           </div>
         </div>
 
