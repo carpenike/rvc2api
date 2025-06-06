@@ -426,11 +426,11 @@ EOF
             pname = "coachiq-frontend";
             version = "1.0.0";
             src = ./web_ui;
-            buildInputs = [ pkgs.nodejs pkgs.yarn ];
+            buildInputs = [ pkgs.nodejs ];
             buildPhase = ''
               export HOME=$TMPDIR
-              yarn install --frozen-lockfile || npm install
-              yarn build || npm run build
+              npm ci
+              npm run build
             '';
             installPhase = ''
               mkdir -p $out
