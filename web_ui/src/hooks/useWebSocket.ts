@@ -20,7 +20,7 @@ import type {
     EntityUpdateMessage,
     WebSocketHandlers,
 } from '../api/types';
-import { queryKeys } from '../lib/query-client';
+import { queryKeys } from '@/lib/query-client';
 
 /**
  * Hook for entity updates via WebSocket

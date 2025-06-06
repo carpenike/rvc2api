@@ -97,6 +97,9 @@ export default defineConfig({
     force: true,
   },
   build: {
+    // Reduce memory usage for ARM systems like Raspberry Pi
+    target: 'es2015',
+    minify: 'esbuild', // Faster than terser, uses less memory
     rollupOptions: {
       output: {
         manualChunks: {
