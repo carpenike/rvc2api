@@ -18,7 +18,7 @@ import {
   fetchUnmappedEntries,
   sendCANMessage,
 } from '../api';
-import { queryKeys, STALE_TIMES } from '../lib/query-client';
+import { queryKeys, STALE_TIMES } from '@/lib/query-client';
 import { useEntities } from './useEntities';
 
 /**

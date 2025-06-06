@@ -31,7 +31,7 @@ import type {
   TankSensorEntity,
   TemperatureSensorEntity
 } from '../api/types';
-import { queryKeys, STALE_TIMES } from '../lib/query-client';
+import { queryKeys, STALE_TIMES } from '@/lib/query-client';
 
 /**
  * Hook to fetch all entities

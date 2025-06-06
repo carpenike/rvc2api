@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RVCWebSocketClient, type WebSocketHandlers } from '../api';
 import type { EntityUpdateMessage } from '../api/types';
-import { queryKeys } from '../lib/query-client';
+import { queryKeys } from '@/lib/query-client';
 
 interface UseOptimizedWebSocketOptions {
   autoConnect?: boolean;
