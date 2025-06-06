@@ -3,9 +3,9 @@ requires = [ "poetry-core>=1.8.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "rvc2api"
+name = "coachiq"
 version = "0.1.0"
-description = "CAN-bus web service exposing RV-C network data via HTTP & WebSocket"
+description = "Intelligent RV-C network management system with advanced analytics and control"
 authors = ["Ryan Holt <ryan@ryanholt.net>"]
 license = "MIT"
 readme = "README.md"
@@ -17,10 +17,11 @@ classifiers = [
 ]
 include = [
     "backend/**/*",
-    "web_ui/dist/**/*"
+    "web_ui/dist/**/*",
+    "config/**/*"
 ]
-homepage = "https://github.com/carpenike/rvc2api"
-repository = "https://github.com/carpenike/rvc2api"
+homepage = "https://github.com/carpenike/coachiq"
+repository = "https://github.com/carpenike/coachiq"
 
 [[tool.poetry.packages]]
 include = "backend"
@@ -44,7 +45,7 @@ langchain-community = ">=0.3"
 # CLI entry-points (was in the deleted [project] section)
 # ------------------------------------------------------------------
 [tool.poetry.scripts]
-rvc2api-daemon  = "backend.main:main"
+coachiq-daemon  = "backend.main:main"
 
 [tool.ruff]
 line-length = 100

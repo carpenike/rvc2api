@@ -224,7 +224,7 @@ class CANSettings(BaseSettings):
     )
     interfaces: list[str] = Field(default=["can0"], description="CAN interface names")
     bustype: str = Field(default="socketcan", description="CAN bus type")
-    bitrate: int = Field(default=250000, description="CAN bus bitrate")
+    bitrate: int = Field(default=500000, description="CAN bus bitrate")
     timeout: float = Field(default=1.0, description="CAN timeout in seconds", gt=0)
     buffer_size: int = Field(default=1000, description="Message buffer size", ge=1)
     auto_reconnect: bool = Field(default=True, description="Auto-reconnect on CAN failure")
@@ -257,6 +257,75 @@ class CANSettings(BaseSettings):
             return [self.interface]
         # Use interfaces default
         return self.interfaces
+
+
+class RVCSettings(BaseSettings):
+    """RV-C configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_RVC__", case_sensitive=False)
+
+    config_dir: Path | None = Field(
+        default=None, description="RVC configuration directory override"
+    )
+    spec_path: Path | None = Field(default=None, description="Path to RVC spec JSON file override")
+    coach_mapping_path: Path | None = Field(
+        default=None, description="Path to RVC coach mapping YAML file override"
+    )
+    coach_model: str | None = Field(
+        default=None, description="Coach model to use for mapping selection"
+    )
+
+    @field_validator("config_dir", "spec_path", "coach_mapping_path", mode="before")
+    @classmethod
+    def parse_path(cls, v):
+        """Parse path from string."""
+        if isinstance(v, str) and v.strip():
+            return Path(v.strip())
+        return v
+
+    def get_config_dir(self) -> Path:
+        """Get the RVC configuration directory."""
+        if self.config_dir:
+            return self.config_dir
+
+        # Search paths in order of preference
+        search_paths = [
+            # 1. Top-level config directory
+            Path.cwd() / "config",
+            # 2. System package locations
+            Path("/usr/share/rvc2api/config"),
+            Path("/usr/local/share/rvc2api/config"),
+            Path("/etc/rvc2api"),
+        ]
+
+        for path in search_paths:
+            if path.exists() and path.is_dir():
+                return path
+
+        # Default to top-level config
+        return Path.cwd() / "config"
+
+    def get_spec_path(self) -> Path:
+        """Get the RVC spec JSON file path."""
+        if self.spec_path:
+            return self.spec_path
+        return self.get_config_dir() / "rvc.json"
+
+    def get_coach_mapping_path(self) -> Path:
+        """Get the coach mapping YAML file path."""
+        if self.coach_mapping_path:
+            return self.coach_mapping_path
+
+        config_dir = self.get_config_dir()
+
+        # If coach_model is specified, try to find that specific mapping
+        if self.coach_model:
+            coach_file = config_dir / f"{self.coach_model}.yml"
+            if coach_file.exists():
+                return coach_file
+
+        # Fall back to default coach mapping
+        return config_dir / "coach_mapping.default.yml"
 
 
 class FeaturesSettings(BaseSettings):
@@ -334,6 +403,7 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     can: CANSettings = Field(default_factory=CANSettings)
+    rvc: RVCSettings = Field(default_factory=RVCSettings)
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
 
     @field_validator("environment", mode="before")
@@ -465,6 +535,11 @@ def get_logging_settings() -> LoggingSettings:
 def get_can_settings() -> CANSettings:
     """Get CAN settings."""
     return get_settings().can
+
+
+def get_rvc_settings() -> RVCSettings:
+    """Get RVC settings."""
+    return get_settings().rvc
 
 
 def get_features_settings() -> FeaturesSettings:

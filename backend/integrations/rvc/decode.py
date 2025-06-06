@@ -22,6 +22,7 @@ from importlib import resources
 
 import yaml
 
+from backend.core.config import get_rvc_settings
 from backend.models.common import CoachInfo
 
 logger = logging.getLogger(__name__)  # Added named logger
@@ -86,70 +87,55 @@ def record_missing_dgn(dgn_id: int, can_id: int | None = None, context: str | No
 
 def _default_paths():
     """
-    Determine default paths for the rvc spec and device mapping files.
-
-    Supports multiple deployment scenarios:
-    1. Python package installation (pip install)
-    2. Debian/system package installation
-    3. Nix deployment
-    4. Development mode (running from source)
+    Determine default paths for the rvc spec and device mapping files using the centralized config service.
 
     Returns a tuple of (rvc_spec_path, device_mapping_path) where device_mapping_path
-    is selected based on RVC_COACH_MODEL environment variable or falls back to default.
+    is selected based on configuration or falls back to default.
     """
-    # Try different locations in order of preference
-    search_paths = []
-
-    # 1. Environment variable override (highest priority)
-    if "RVC_CONFIG_DIR" in os.environ:
-        search_paths.append(pathlib.Path(os.environ["RVC_CONFIG_DIR"]))
-
-    # 2. Development/source tree (relative to this module) - prioritized for dev mode
-    current_file = pathlib.Path(__file__)
-    search_paths.append(current_file.parent / "config")
-
-    # 3. Current working directory fallback for development
-    search_paths.append(pathlib.Path.cwd() / "backend/integrations/rvc/config")
-
-    # 4. System package locations (Debian/RPM packages)
-    search_paths.extend(
-        [
-            pathlib.Path("/usr/share/rvc2api/config"),
-            pathlib.Path("/usr/local/share/rvc2api/config"),
-            pathlib.Path("/etc/rvc2api"),
-        ]
-    )
-
-    # Search each path for the config files
-    for config_dir in search_paths:
-        if config_dir.exists() and config_dir.is_dir():
-            rvc_json = config_dir / "rvc.json"
-            if rvc_json.is_file():
-                logger.debug(f"Found RVC config files in: {config_dir}")
-
-                # Determine which coach mapping file to use
-                coach_mapping_path = _select_coach_mapping_file(config_dir)
-
-                return (str(rvc_json), str(coach_mapping_path))
-
-    # 5. Python package installation (importlib.resources) - fallback for pip installs
     try:
-        cfg_dir = resources.files(__package__) / "config"
-        if cfg_dir.joinpath("rvc.json").is_file():
-            logger.debug(f"Found RVC config files via importlib.resources: {cfg_dir}")
+        rvc_settings = get_rvc_settings()
 
-            # Determine which coach mapping file to use
-            coach_mapping_path = _select_coach_mapping_file(cfg_dir)
+        # Get paths from the config service
+        spec_path = rvc_settings.get_spec_path()
+        coach_mapping_path = rvc_settings.get_coach_mapping_path()
 
-            return (str(cfg_dir / "rvc.json"), str(coach_mapping_path))
+        # Validate that the files exist
+        if not spec_path.exists():
+            # Try importlib.resources as fallback for packaged installations
+            try:
+                cfg_dir = resources.files(__package__) / "config"
+                if cfg_dir.joinpath("rvc.json").is_file():
+                    spec_path = cfg_dir / "rvc.json"
+                    logger.debug(f"Using importlib.resources for RVC spec: {spec_path}")
+                else:
+                    raise FileNotFoundError(f"RVC spec file not found: {spec_path}")
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"RVC spec file not found: {spec_path}. Failed importlib fallback: {e}"
+                ) from e
+
+        if not coach_mapping_path.exists():
+            # Try importlib.resources as fallback for packaged installations
+            try:
+                cfg_dir = resources.files(__package__) / "config"
+                if cfg_dir.joinpath("coach_mapping.default.yml").is_file():
+                    coach_mapping_path = cfg_dir / "coach_mapping.default.yml"
+                    logger.debug(
+                        f"Using importlib.resources for coach mapping: {coach_mapping_path}"
+                    )
+                else:
+                    raise FileNotFoundError(f"Coach mapping file not found: {coach_mapping_path}")
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"Coach mapping file not found: {coach_mapping_path}. Failed importlib fallback: {e}"
+                ) from e
+
+        logger.debug(f"Using RVC config files - spec: {spec_path}, mapping: {coach_mapping_path}")
+        return (str(spec_path), str(coach_mapping_path))
+
     except Exception as e:
-        logger.debug(f"Failed to locate config files via importlib.resources: {e}")
-
-    # If nothing is found, raise an error with helpful information
-    searched_paths = [str(p) for p in search_paths]
-    error_msg = f"RVC config files not found. Searched paths: {searched_paths}"
-    logger.error(error_msg)
-    raise FileNotFoundError(error_msg)
+        logger.error(f"Failed to get RVC config paths: {e}")
+        raise
 
 
 def _select_coach_mapping_file(config_dir) -> pathlib.Path:
