@@ -96,9 +96,7 @@ class CORSSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="COACHIQ_CORS__",
         case_sensitive=False,
-        # Disable JSON parsing for list fields to allow custom parsing
         env_parse_none_str="",
-        env_parse_enums=True,
     )
 
     enabled: bool = Field(default=True, description="Enable CORS middleware")
@@ -299,9 +297,6 @@ class Settings(BaseSettings):
         case_sensitive=False,
         env_nested_delimiter="__",
         env_parse_none_str="",
-        # Disable explode_env_vars to prevent automatic JSON parsing of nested fields
-        # This allows nested BaseSettings classes to handle their own environment variables
-        explode_env_vars=False,
         extra="ignore",
     )
 

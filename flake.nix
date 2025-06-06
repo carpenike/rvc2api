@@ -961,147 +961,147 @@ EOF
 
             environment = {
               # App metadata
-              RVC2API_APP_NAME = config.rvc2api.settings.appName;
-              RVC2API_APP_VERSION = config.rvc2api.settings.appVersion;
-              RVC2API_APP_DESCRIPTION = config.rvc2api.settings.appDescription;
-              RVC2API_APP_TITLE = config.rvc2api.settings.appTitle;
+              COACHIQ_APP_NAME = config.rvc2api.settings.appName;
+              COACHIQ_APP_VERSION = config.rvc2api.settings.appVersion;
+              COACHIQ_APP_DESCRIPTION = config.rvc2api.settings.appDescription;
+              COACHIQ_APP_TITLE = config.rvc2api.settings.appTitle;
 
               # Server settings (using new nested structure)
-              RVC2API_SERVER__HOST = config.rvc2api.settings.server.host;
-              RVC2API_SERVER__PORT = toString config.rvc2api.settings.server.port;
-              RVC2API_SERVER__WORKERS = toString config.rvc2api.settings.server.workers;
-              RVC2API_SERVER__RELOAD = if config.rvc2api.settings.server.reload then "true" else "false";
-              RVC2API_SERVER__DEBUG = if config.rvc2api.settings.server.debug then "true" else "false";
-              RVC2API_SERVER__ROOT_PATH = config.rvc2api.settings.server.rootPath;
-              RVC2API_SERVER__ACCESS_LOG = if config.rvc2api.settings.server.accessLog then "true" else "false";
-              RVC2API_SERVER__KEEP_ALIVE_TIMEOUT = toString config.rvc2api.settings.server.keepAliveTimeout;
-              RVC2API_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN = toString config.rvc2api.settings.server.timeoutGracefulShutdown;
-              RVC2API_SERVER__WORKER_CLASS = config.rvc2api.settings.server.workerClass;
-              RVC2API_SERVER__WORKER_CONNECTIONS = toString config.rvc2api.settings.server.workerConnections;
-              RVC2API_SERVER__SERVER_HEADER = if config.rvc2api.settings.server.serverHeader then "true" else "false";
-              RVC2API_SERVER__DATE_HEADER = if config.rvc2api.settings.server.dateHeader then "true" else "false";
+              COACHIQ_SERVER__HOST = config.rvc2api.settings.server.host;
+              COACHIQ_SERVER__PORT = toString config.rvc2api.settings.server.port;
+              COACHIQ_SERVER__WORKERS = toString config.rvc2api.settings.server.workers;
+              COACHIQ_SERVER__RELOAD = if config.rvc2api.settings.server.reload then "true" else "false";
+              COACHIQ_SERVER__DEBUG = if config.rvc2api.settings.server.debug then "true" else "false";
+              COACHIQ_SERVER__ROOT_PATH = config.rvc2api.settings.server.rootPath;
+              COACHIQ_SERVER__ACCESS_LOG = if config.rvc2api.settings.server.accessLog then "true" else "false";
+              COACHIQ_SERVER__KEEP_ALIVE_TIMEOUT = toString config.rvc2api.settings.server.keepAliveTimeout;
+              COACHIQ_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN = toString config.rvc2api.settings.server.timeoutGracefulShutdown;
+              COACHIQ_SERVER__WORKER_CLASS = config.rvc2api.settings.server.workerClass;
+              COACHIQ_SERVER__WORKER_CONNECTIONS = toString config.rvc2api.settings.server.workerConnections;
+              COACHIQ_SERVER__SERVER_HEADER = if config.rvc2api.settings.server.serverHeader then "true" else "false";
+              COACHIQ_SERVER__DATE_HEADER = if config.rvc2api.settings.server.dateHeader then "true" else "false";
 
               # Optional server settings
-              RVC2API_SERVER__LIMIT_CONCURRENCY = lib.mkIf (config.rvc2api.settings.server.limitConcurrency != null)
+              COACHIQ_SERVER__LIMIT_CONCURRENCY = lib.mkIf (config.rvc2api.settings.server.limitConcurrency != null)
                 (toString config.rvc2api.settings.server.limitConcurrency);
-              RVC2API_SERVER__LIMIT_MAX_REQUESTS = lib.mkIf (config.rvc2api.settings.server.limitMaxRequests != null)
+              COACHIQ_SERVER__LIMIT_MAX_REQUESTS = lib.mkIf (config.rvc2api.settings.server.limitMaxRequests != null)
                 (toString config.rvc2api.settings.server.limitMaxRequests);
-              RVC2API_SERVER__TIMEOUT_NOTIFY = toString config.rvc2api.settings.server.timeoutNotify;
+              COACHIQ_SERVER__TIMEOUT_NOTIFY = toString config.rvc2api.settings.server.timeoutNotify;
 
               # SSL/TLS settings
-              RVC2API_SERVER__SSL_KEYFILE =
+              COACHIQ_SERVER__SSL_KEYFILE =
                 lib.optionalString
                   (config.rvc2api.settings.server.sslKeyfile != null)
                   config.rvc2api.settings.server.sslKeyfile;
-              RVC2API_SERVER__SSL_CERTFILE =
+              COACHIQ_SERVER__SSL_CERTFILE =
                 lib.optionalString
                   (config.rvc2api.settings.server.sslCertfile != null)
                   config.rvc2api.settings.server.sslCertfile;
-              RVC2API_SERVER__SSL_CA_CERTS =
+              COACHIQ_SERVER__SSL_CA_CERTS =
                 lib.optionalString
                   (config.rvc2api.settings.server.sslCaCerts != null)
                   config.rvc2api.settings.server.sslCaCerts;
 
               # CORS settings
-              RVC2API_CORS__ALLOW_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
-              RVC2API_CORS__ALLOW_CREDENTIALS = if config.rvc2api.settings.cors.allowedCredentials then "true" else "false";
-              RVC2API_CORS__ALLOW_METHODS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedMethods;
-              RVC2API_CORS__ALLOW_HEADERS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedHeaders;
+              COACHIQ_CORS__ALLOW_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
+              COACHIQ_CORS__ALLOW_CREDENTIALS = if config.rvc2api.settings.cors.allowedCredentials then "true" else "false";
+              COACHIQ_CORS__ALLOW_METHODS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedMethods;
+              COACHIQ_CORS__ALLOW_HEADERS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedHeaders;
 
               # Security settings
-              RVC2API_SECURITY__SECRET_KEY = lib.mkIf (config.rvc2api.settings.security.secretKey != null)
+              COACHIQ_SECURITY__SECRET_KEY = lib.mkIf (config.rvc2api.settings.security.secretKey != null)
                 config.rvc2api.settings.security.secretKey;
 
               # Logging settings
-              RVC2API_LOGGING__LEVEL = config.rvc2api.settings.logging.level;
-              RVC2API_LOGGING__FORMAT = config.rvc2api.settings.logging.format;
-              RVC2API_LOGGING__LOG_TO_FILE = if config.rvc2api.settings.logging.logToFile then "true" else "false";
-              RVC2API_LOGGING__LOG_FILE =
+              COACHIQ_LOGGING__LEVEL = config.rvc2api.settings.logging.level;
+              COACHIQ_LOGGING__FORMAT = config.rvc2api.settings.logging.format;
+              COACHIQ_LOGGING__LOG_TO_FILE = if config.rvc2api.settings.logging.logToFile then "true" else "false";
+              COACHIQ_LOGGING__LOG_FILE =
                 lib.optionalString
                   (config.rvc2api.settings.logging.logFile != null)
                   config.rvc2api.settings.logging.logFile;
-              RVC2API_LOGGING__MAX_BYTES = toString config.rvc2api.settings.logging.maxFileSize;
-              RVC2API_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
+              COACHIQ_LOGGING__MAX_BYTES = toString config.rvc2api.settings.logging.maxFileSize;
+              COACHIQ_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
 
               # CAN bus settings
-              RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
+              COACHIQ_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
 
               # Use the first channel if the list isn’t empty, otherwise blank
-              RVC2API_CAN__INTERFACE =
+              COACHIQ_CAN__INTERFACE =
                 lib.optionalString
                   (config.rvc2api.settings.canbus.channels != [])
                   (builtins.elemAt config.rvc2api.settings.canbus.channels 0);
 
               # Pass all interfaces as comma-separated list
-              RVC2API_CAN__INTERFACES =
+              COACHIQ_CAN__INTERFACES =
                 lib.optionalString
                   (config.rvc2api.settings.canbus.channels != [])
                   (lib.concatStringsSep "," config.rvc2api.settings.canbus.channels);
 
-              RVC2API_CAN__BITRATE =
+              COACHIQ_CAN__BITRATE =
                 toString config.rvc2api.settings.canbus.bitrate;
 
               # Feature flags
-              RVC2API_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";
-              RVC2API_FEATURES__ENABLE_NOTIFICATIONS = if config.rvc2api.settings.features.enableNotifications then "true" else "false";
-              RVC2API_FEATURES__ENABLE_UPTIMEROBOT = if config.rvc2api.settings.features.enableUptimerobot then "true" else "false";
-              RVC2API_FEATURES__ENABLE_PUSHOVER = if config.rvc2api.settings.features.enablePushover then "true" else "false";
-              RVC2API_FEATURES__ENABLE_VECTOR_SEARCH = if config.rvc2api.settings.features.enableVectorSearch then "true" else "false";
-              RVC2API_FEATURES__ENABLE_API_DOCS = if config.rvc2api.settings.features.enableApiDocs then "true" else "false";
-              RVC2API_FEATURES__ENABLE_METRICS = if config.rvc2api.settings.features.enableMetrics then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_NOTIFICATIONS = if config.rvc2api.settings.features.enableNotifications then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_UPTIMEROBOT = if config.rvc2api.settings.features.enableUptimerobot then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_PUSHOVER = if config.rvc2api.settings.features.enablePushover then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_VECTOR_SEARCH = if config.rvc2api.settings.features.enableVectorSearch then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_API_DOCS = if config.rvc2api.settings.features.enableApiDocs then "true" else "false";
+              COACHIQ_FEATURES__ENABLE_METRICS = if config.rvc2api.settings.features.enableMetrics then "true" else "false";
 
               # Maintenance settings
-              RVC2API_MAINTENANCE__CHECK_INTERVAL = toString config.rvc2api.settings.maintenance.checkInterval;
-              RVC2API_MAINTENANCE__NOTIFICATION_THRESHOLD_DAYS = toString config.rvc2api.settings.maintenance.notificationThresholdDays;
-              RVC2API_MAINTENANCE__DATABASE_PATH =
+              COACHIQ_MAINTENANCE__CHECK_INTERVAL = toString config.rvc2api.settings.maintenance.checkInterval;
+              COACHIQ_MAINTENANCE__NOTIFICATION_THRESHOLD_DAYS = toString config.rvc2api.settings.maintenance.notificationThresholdDays;
+              COACHIQ_MAINTENANCE__DATABASE_PATH =
                 lib.optionalString
                   (config.rvc2api.settings.maintenance.databasePath != null)
                   config.rvc2api.settings.maintenance.databasePath;
 
               # Notification settings
-              RVC2API_NOTIFICATIONS__PUSHOVER_USER_KEY =
+              COACHIQ_NOTIFICATIONS__PUSHOVER_USER_KEY =
                 lib.optionalString
                   (config.rvc2api.settings.notifications.pushoverUserKey != null)
                   config.rvc2api.settings.notifications.pushoverUserKey;
-              RVC2API_NOTIFICATIONS__PUSHOVER_API_TOKEN =
+              COACHIQ_NOTIFICATIONS__PUSHOVER_API_TOKEN =
                 lib.optionalString
                   (config.rvc2api.settings.notifications.pushoverApiToken != null)
                   config.rvc2api.settings.notifications.pushoverApiToken;
-              RVC2API_NOTIFICATIONS__PUSHOVER_DEVICE =
+              COACHIQ_NOTIFICATIONS__PUSHOVER_DEVICE =
                 lib.optionalString
                   (config.rvc2api.settings.notifications.pushoverDevice != null)
                   config.rvc2api.settings.notifications.pushoverDevice;
-              RVC2API_NOTIFICATIONS__PUSHOVER_PRIORITY =
+              COACHIQ_NOTIFICATIONS__PUSHOVER_PRIORITY =
                 lib.optionalString
                   (config.rvc2api.settings.notifications.pushoverPriority != null)
                   (toString config.rvc2api.settings.notifications.pushoverPriority);
-              RVC2API_NOTIFICATIONS__UPTIMEROBOT_API_KEY =
+              COACHIQ_NOTIFICATIONS__UPTIMEROBOT_API_KEY =
                 lib.optionalString
                   (config.rvc2api.settings.notifications.uptimerobotApiKey != null)
                   config.rvc2api.settings.notifications.uptimerobotApiKey;
 
               # File paths
-              RVC2API_RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
+              COACHIQ_RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
                 config.rvc2api.settings.rvcSpecPath;
-              RVC2API_RVC_COACH_MAPPING_PATH = lib.mkIf (config.rvc2api.settings.rvcCoachMappingPath != null)
+              COACHIQ_RVC_COACH_MAPPING_PATH = lib.mkIf (config.rvc2api.settings.rvcCoachMappingPath != null)
                 config.rvc2api.settings.rvcCoachMappingPath;
-              RVC2API_STATIC_DIR = config.rvc2api.settings.staticDir;
-              RVC2API_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)
+              COACHIQ_STATIC_DIR = config.rvc2api.settings.staticDir;
+              COACHIQ_USER_COACH_INFO_PATH = lib.mkIf (config.rvc2api.settings.userCoachInfoPath != null)
                 config.rvc2api.settings.userCoachInfoPath;
 
               # Controller settings
-              RVC2API_CONTROLLER_SOURCE_ADDR = config.rvc2api.settings.controllerSourceAddr;
+              COACHIQ_CONTROLLER_SOURCE_ADDR = config.rvc2api.settings.controllerSourceAddr;
 
               # GitHub update checker
-              RVC2API_GITHUB_UPDATE_REPO = lib.mkIf (config.rvc2api.settings.githubUpdateRepo != null)
+              COACHIQ_GITHUB_UPDATE_REPO = lib.mkIf (config.rvc2api.settings.githubUpdateRepo != null)
                 config.rvc2api.settings.githubUpdateRepo;
 
               # Legacy environment variables (for backward compatibility)
               # Server settings
-              RVC2API_HOST = config.rvc2api.settings.host; # Maps to server.host in new config
-              RVC2API_PORT = toString config.rvc2api.settings.port; # Maps to server.port in new config
+              COACHIQ_HOST = config.rvc2api.settings.host; # Maps to server.host in new config
+              COACHIQ_PORT = toString config.rvc2api.settings.port; # Maps to server.port in new config
               DEBUG = if config.rvc2api.settings.server.debug then "true" else "false";
-              RVC2API_ROOT_PATH = config.rvc2api.settings.server.rootPath;
+              COACHIQ_ROOT_PATH = config.rvc2api.settings.server.rootPath;
 
               # CORS legacy
               CORS_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
