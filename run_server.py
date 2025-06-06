@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entry point to run the rvc2api backend server.
+Entry point to run the CoachIQ backend server.
 
 This script runs the modernized backend using the new FastAPI application
 structure with proper service-oriented architecture and centralized configuration.
@@ -22,7 +22,7 @@ load_dotenv()
 
 def create_argument_parser():
     """Create and configure the argument parser."""
-    parser = argparse.ArgumentParser(description="Run the rvc2api backend server.")
+    parser = argparse.ArgumentParser(description="Run the CoachIQ backend server.")
 
     parser.add_argument(
         "--host",
