@@ -231,15 +231,30 @@ def main():
 
     logger.info("Starting rvc2api backend server in standalone mode")
 
+    # Get SSL configuration if available
+    ssl_config = settings.get_uvicorn_ssl_config()
+
+    # Build uvicorn run arguments
+    uvicorn_args = {
+        "app": "backend.main:app",
+        "host": args.host,
+        "port": args.port,
+        "reload": args.reload,
+        "log_level": args.log_level,
+        "log_config": log_config,
+    }
+
+    # Add SSL configuration if available
+    uvicorn_args.update(ssl_config)
+
+    # Log SSL status
+    if ssl_config:
+        logger.info("SSL/TLS enabled - server will run on HTTPS")
+    else:
+        logger.info("SSL/TLS not configured - server will run on HTTP")
+
     # Run the application using the top-level uvicorn import with unified log config
-    uvicorn.run(
-        "backend.main:app",
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-        log_level=args.log_level,
-        log_config=log_config,
-    )
+    uvicorn.run(**uvicorn_args)
 
 
 if __name__ == "__main__":

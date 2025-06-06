@@ -43,6 +43,42 @@ class ServerSettings(BaseSettings):
     debug: bool = Field(default=False, description="Enable server debug mode")
     root_path: str = Field(default="", description="Root path for the application")
 
+    # Advanced server settings
+    keep_alive_timeout: int = Field(default=5, description="Keep-alive timeout in seconds")
+    timeout_graceful_shutdown: int = Field(default=30, description="Graceful shutdown timeout")
+    limit_concurrency: int | None = Field(
+        default=None, description="Maximum number of concurrent connections"
+    )
+    limit_max_requests: int | None = Field(
+        default=None, description="Maximum number of requests before worker restart"
+    )
+    timeout_notify: int = Field(default=30, description="Timeout for worker startup notification")
+    worker_class: str = Field(
+        default="uvicorn.workers.UvicornWorker", description="Worker class to use"
+    )
+    worker_connections: int = Field(
+        default=1000, description="Maximum number of simultaneous clients"
+    )
+    server_header: bool = Field(default=True, description="Include server header in responses")
+    date_header: bool = Field(default=True, description="Include date header in responses")
+
+    # SSL/TLS settings
+    ssl_keyfile: Path | None = Field(default=None, description="SSL private key file path")
+    ssl_certfile: Path | None = Field(default=None, description="SSL certificate file path")
+    ssl_ca_certs: Path | None = Field(default=None, description="SSL CA certificates file path")
+    ssl_cert_reqs: int = Field(
+        default=0,
+        description="SSL certificate verification mode (0=CERT_NONE, 1=CERT_OPTIONAL, 2=CERT_REQUIRED)",
+    )
+
+    @field_validator("ssl_keyfile", "ssl_certfile", "ssl_ca_certs", mode="before")
+    @classmethod
+    def parse_ssl_path(cls, v):
+        """Parse SSL file paths from strings."""
+        if isinstance(v, str) and v.strip():
+            return Path(v.strip())
+        return v
+
 
 class CORSSettings(BaseSettings):
     """
@@ -343,6 +379,30 @@ class Settings(BaseSettings):
             config["reload"] = False
 
         return config
+
+    def get_uvicorn_ssl_config(self) -> dict[str, Any]:
+        """
+        Get SSL/TLS configuration dict for Uvicorn server.
+
+        Returns SSL configuration if SSL certificates are provided,
+        otherwise returns empty dict for HTTP mode.
+        """
+        ssl_config = {}
+
+        # Only add SSL config if both keyfile and certfile are provided
+        if self.server.ssl_keyfile and self.server.ssl_certfile:
+            ssl_config["ssl_keyfile"] = str(self.server.ssl_keyfile)
+            ssl_config["ssl_certfile"] = str(self.server.ssl_certfile)
+
+            # Optional SSL settings
+            if self.server.ssl_ca_certs:
+                ssl_config["ssl_ca_certs"] = str(self.server.ssl_ca_certs)
+
+            # SSL certificate verification mode
+            # 0 = CERT_NONE, 1 = CERT_OPTIONAL, 2 = CERT_REQUIRED
+            ssl_config["ssl_cert_reqs"] = self.server.ssl_cert_reqs
+
+        return ssl_config
 
 
 @lru_cache
