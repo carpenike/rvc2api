@@ -18,6 +18,8 @@ import {
   IconBulb,
   IconBulbOff,
   IconBolt,
+  IconMinus,
+  IconPlus,
   IconPower,
   IconSun,
   IconMoon,
@@ -176,7 +178,7 @@ interface LightControlProps {
 }
 
 function LightControl({ light }: LightControlProps) {
-  const { toggle, setBrightness } = useLightControl()
+  const { toggle, setBrightness, brightnessUp, brightnessDown } = useLightControl()
 
   const isOn = light.state === "on" || light.state === "true"
   const lightEntity = light as LightEntity
@@ -255,16 +257,36 @@ function LightControl({ light }: LightControlProps) {
               </Badge>
             </div>
 
-            {/* Slider Control */}
-            <div className="px-1">
-              <Slider
-                value={[brightness]}
-                onValueChange={handleSliderChange}
-                max={100}
-                step={1}
-                className="w-full"
-                disabled={toggle.isPending || setBrightness.isPending}
-              />
+            {/* Slider Control with +/- buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => brightnessDown.mutate({ entityId: light.entity_id })}
+                disabled={toggle.isPending || setBrightness.isPending || brightness <= 0}
+                className="shrink-0"
+              >
+                <IconMinus className="h-3 w-3" />
+              </Button>
+              <div className="flex-1 px-1">
+                <Slider
+                  value={[brightness]}
+                  onValueChange={handleSliderChange}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                  disabled={toggle.isPending || setBrightness.isPending}
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => brightnessUp.mutate({ entityId: light.entity_id })}
+                disabled={toggle.isPending || setBrightness.isPending || brightness >= 100}
+                className="shrink-0"
+              >
+                <IconPlus className="h-3 w-3" />
+              </Button>
             </div>
 
             {/* Quick Preset Buttons */}
