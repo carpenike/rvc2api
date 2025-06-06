@@ -1038,11 +1038,11 @@ EOF
                   (config.coachiq.settings.canbus.channels != [])
                   (builtins.elemAt config.coachiq.settings.canbus.channels 0);
 
-              # Pass all interfaces as comma-separated list
+              # Pass all interfaces as JSON array
               COACHIQ_CAN__INTERFACES =
                 lib.optionalString
                   (config.coachiq.settings.canbus.channels != [])
-                  (lib.concatStringsSep "," config.coachiq.settings.canbus.channels);
+                  (builtins.toJSON config.coachiq.settings.canbus.channels);
 
               COACHIQ_CAN__BITRATE =
                 toString config.coachiq.settings.canbus.bitrate;
