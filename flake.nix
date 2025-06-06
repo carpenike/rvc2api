@@ -989,13 +989,18 @@ EOF
               RVC2API_SERVER__TIMEOUT_NOTIFY = toString config.rvc2api.settings.server.timeoutNotify;
 
               # SSL/TLS settings
-              RVC2API_SERVER__SSL_KEYFILE = lib.mkIf (config.rvc2api.settings.server.sslKeyfile != null)
-                config.rvc2api.settings.server.sslKeyfile;
-              RVC2API_SERVER__SSL_CERTFILE = lib.mkIf (config.rvc2api.settings.server.sslCertfile != null)
-                config.rvc2api.settings.server.sslCertfile;
-              RVC2API_SERVER__SSL_CA_CERTS = lib.mkIf (config.rvc2api.settings.server.sslCaCerts != null)
-                config.rvc2api.settings.server.sslCaCerts;
-              RVC2API_SERVER__SSL_CERT_REQS = toString config.rvc2api.settings.server.sslCertReqs;
+              RVC2API_SERVER__SSL_KEYFILE =
+                lib.optionalString
+                  (config.rvc2api.settings.server.sslKeyfile != null)
+                  config.rvc2api.settings.server.sslKeyfile;
+              RVC2API_SERVER__SSL_CERTFILE =
+                lib.optionalString
+                  (config.rvc2api.settings.server.sslCertfile != null)
+                  config.rvc2api.settings.server.sslCertfile;
+              RVC2API_SERVER__SSL_CA_CERTS =
+                lib.optionalString
+                  (config.rvc2api.settings.server.sslCaCerts != null)
+                  config.rvc2api.settings.server.sslCaCerts;
 
               # CORS settings
               RVC2API_CORS__ALLOWED_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
@@ -1013,18 +1018,29 @@ EOF
               RVC2API_LOGGING__LEVEL = config.rvc2api.settings.logging.level;
               RVC2API_LOGGING__FORMAT = config.rvc2api.settings.logging.format;
               RVC2API_LOGGING__LOG_TO_FILE = if config.rvc2api.settings.logging.logToFile then "true" else "false";
-              RVC2API_LOGGING__LOG_FILE = lib.mkIf (config.rvc2api.settings.logging.logFile != null)
-                config.rvc2api.settings.logging.logFile;
+              RVC2API_LOGGING__LOG_FILE =
+                lib.optionalString
+                  (config.rvc2api.settings.logging.logFile != null)
+                  config.rvc2api.settings.logging.logFile;
               RVC2API_LOGGING__MAX_FILE_SIZE = toString config.rvc2api.settings.logging.maxFileSize;
               RVC2API_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
 
-              # CAN bus settings
-              RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
-              RVC2API_CAN__INTERFACE = config.rvc2api.settings.canbus.channels[0];
-              RVC2API_CAN__CHANNELS = lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
-              RVC2API_CAN__BITRATE = toString config.rvc2api.settings.canbus.bitrate;
+            # CAN bus settings
+            RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
 
-              # Feature flags
+            # Use the first channel if the list isn’t empty, otherwise blank
+            RVC2API_CAN__INTERFACE =
+              lib.optionalString
+                (config.rvc2api.settings.canbus.channels != [])
+                (builtins.elemAt config.rvc2api.settings.canbus.channels 0);
+
+            RVC2API_CAN__CHANNELS =
+              lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
+
+            RVC2API_CAN__BITRATE =
+              toString config.rvc2api.settings.canbus.bitrate;
+
+             # Feature flags
               RVC2API_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";
               RVC2API_FEATURES__ENABLE_NOTIFICATIONS = if config.rvc2api.settings.features.enableNotifications then "true" else "false";
               RVC2API_FEATURES__ENABLE_UPTIMEROBOT = if config.rvc2api.settings.features.enableUptimerobot then "true" else "false";
@@ -1036,20 +1052,32 @@ EOF
               # Maintenance settings
               RVC2API_MAINTENANCE__CHECK_INTERVAL = toString config.rvc2api.settings.maintenance.checkInterval;
               RVC2API_MAINTENANCE__NOTIFICATION_THRESHOLD_DAYS = toString config.rvc2api.settings.maintenance.notificationThresholdDays;
-              RVC2API_MAINTENANCE__DATABASE_PATH = lib.mkIf (config.rvc2api.settings.maintenance.databasePath != null)
-                config.rvc2api.settings.maintenance.databasePath;
+              RVC2API_MAINTENANCE__DATABASE_PATH =
+                lib.optionalString
+                  (config.rvc2api.settings.maintenance.databasePath != null)
+                  config.rvc2api.settings.maintenance.databasePath;
 
               # Notification settings
-              RVC2API_NOTIFICATIONS__PUSHOVER_USER_KEY = lib.mkIf (config.rvc2api.settings.notifications.pushoverUserKey != null)
-                config.rvc2api.settings.notifications.pushoverUserKey;
-              RVC2API_NOTIFICATIONS__PUSHOVER_API_TOKEN = lib.mkIf (config.rvc2api.settings.notifications.pushoverApiToken != null)
-                config.rvc2api.settings.notifications.pushoverApiToken;
-              RVC2API_NOTIFICATIONS__PUSHOVER_DEVICE = lib.mkIf (config.rvc2api.settings.notifications.pushoverDevice != null)
-                config.rvc2api.settings.notifications.pushoverDevice;
-              RVC2API_NOTIFICATIONS__PUSHOVER_PRIORITY = lib.mkIf (config.rvc2api.settings.notifications.pushoverPriority != null)
-                (toString config.rvc2api.settings.notifications.pushoverPriority);
-              RVC2API_NOTIFICATIONS__UPTIMEROBOT_API_KEY = lib.mkIf (config.rvc2api.settings.notifications.uptimerobotApiKey != null)
-                config.rvc2api.settings.notifications.uptimerobotApiKey;
+              RVC2API_NOTIFICATIONS__PUSHOVER_USER_KEY =
+                lib.optionalString
+                  (config.rvc2api.settings.notifications.pushoverUserKey != null)
+                  config.rvc2api.settings.notifications.pushoverUserKey;
+              RVC2API_NOTIFICATIONS__PUSHOVER_API_TOKEN =
+                lib.optionalString
+                  (config.rvc2api.settings.notifications.pushoverApiToken != null)
+                  config.rvc2api.settings.notifications.pushoverApiToken;
+              RVC2API_NOTIFICATIONS__PUSHOVER_DEVICE =
+                lib.optionalString
+                  (config.rvc2api.settings.notifications.pushoverDevice != null)
+                  config.rvc2api.settings.notifications.pushoverDevice;
+              RVC2API_NOTIFICATIONS__PUSHOVER_PRIORITY =
+                lib.optionalString
+                  (config.rvc2api.settings.notifications.pushoverPriority != null)
+                  (toString config.rvc2api.settings.notifications.pushoverPriority);
+              RVC2API_NOTIFICATIONS__UPTIMEROBOT_API_KEY =
+                lib.optionalString
+                  (config.rvc2api.settings.notifications.uptimerobotApiKey != null)
+                  config.rvc2api.settings.notifications.uptimerobotApiKey;
 
               # File paths
               RVC2API_RVC_SPEC_PATH = lib.mkIf (config.rvc2api.settings.rvcSpecPath != null)
