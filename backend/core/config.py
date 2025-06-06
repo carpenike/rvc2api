@@ -43,6 +43,14 @@ class ServerSettings(BaseSettings):
     debug: bool = Field(default=False, description="Enable server debug mode")
     root_path: str = Field(default="", description="Root path for the application")
 
+    @field_validator("root_path", mode="before")
+    @classmethod
+    def parse_root_path(cls, v):
+        """Handle None values for root_path."""
+        if v is None:
+            return ""
+        return v
+
     # Advanced server settings
     keep_alive_timeout: int = Field(default=5, description="Keep-alive timeout in seconds")
     timeout_graceful_shutdown: int = Field(default=30, description="Graceful shutdown timeout")
