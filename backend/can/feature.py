@@ -48,10 +48,20 @@ class CANBusFeature(Feature):
         if "app_state" not in deps:
             deps.append("app_state")
 
-        # Initialize with provided config or defaults
+        # Initialize with provided config or defaults from settings
         config_dict = config or {}
+
+        # Get interfaces from settings if not provided in config
+        if "interfaces" not in config_dict:
+            from backend.core.config import get_settings
+
+            settings = get_settings()
+            default_interfaces = settings.can.all_interfaces
+        else:
+            default_interfaces = config_dict["interfaces"]
+
         self.config = {
-            "interfaces": config_dict.get("interfaces", ["vcan0"]),
+            "interfaces": config_dict.get("interfaces", default_interfaces),
             "bustype": config_dict.get("bustype", "socketcan"),
             "bitrate": config_dict.get("bitrate", 500000),
             "poll_interval": config_dict.get("poll_interval", 0.1),  # seconds
@@ -160,8 +170,9 @@ class CANBusFeature(Feature):
         else:
             # Start real CAN bus listeners
             try:
-                # Here we would import python-can and set up real listeners
-                # This is placeholder code that would be replaced with actual implementation
+                # Import and initialize CAN interfaces using the existing manager
+                from backend.services.can_service import CANService
+
                 interfaces = self.config["interfaces"]
                 bustype = self.config["bustype"]
                 bitrate = self.config["bitrate"]
@@ -171,12 +182,21 @@ class CANBusFeature(Feature):
                     f"bustype={bustype}, bitrate={bitrate}"
                 )
 
-                # Setup would involve creating python-can Bus objects and listeners
-                # self._listeners = []
-                # for interface in interfaces:
-                #     bus = can.Bus(interface=interface, bustype=bustype, bitrate=bitrate)
-                #     listener = can.Notifier(bus, [self._process_message])
-                #     self._listeners.append((bus, listener))
+                # Initialize CAN interfaces using the CAN service
+                can_service = CANService()
+                initialization_result = await can_service.initialize_can_interfaces(interfaces)
+
+                logger.info(
+                    f"CAN interface initialization complete: "
+                    f"initialized={initialization_result['initialized']}, "
+                    f"failed={initialization_result['failed']}"
+                )
+
+                if initialization_result["failed"]:
+                    logger.warning(
+                        f"Some CAN interfaces failed to initialize: "
+                        f"{initialization_result['failed']}"
+                    )
 
                 # Start the message writer task
                 self._writer_task = asyncio.create_task(self._message_writer_loop())

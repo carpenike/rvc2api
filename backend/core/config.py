@@ -221,13 +221,24 @@ class CANSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="RVC2API_CAN__", case_sensitive=False)
 
-    interface: str = Field(default="vcan0", description="CAN interface name")
+    interface: str = Field(
+        default="can0", description="CAN interface name (deprecated, use interfaces)"
+    )
+    interfaces: list[str] = Field(default=["can0"], description="CAN interface names")
     bustype: str = Field(default="socketcan", description="CAN bus type")
     bitrate: int = Field(default=250000, description="CAN bus bitrate")
     timeout: float = Field(default=1.0, description="CAN timeout in seconds", gt=0)
     buffer_size: int = Field(default=1000, description="Message buffer size", ge=1)
     auto_reconnect: bool = Field(default=True, description="Auto-reconnect on CAN failure")
     filters: list[str] = Field(default=[], description="CAN message filters")
+
+    @field_validator("interfaces", mode="before")
+    @classmethod
+    def parse_interfaces(cls, v):
+        """Parse comma-separated interfaces from environment variable."""
+        if isinstance(v, str):
+            return [f.strip() for f in v.split(",") if f.strip()]
+        return v
 
     @field_validator("filters", mode="before")
     @classmethod
@@ -236,6 +247,18 @@ class CANSettings(BaseSettings):
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
         return v
+
+    @property
+    def all_interfaces(self) -> list[str]:
+        """Get all CAN interfaces, supporting both old and new configuration."""
+        # If interfaces is explicitly set to non-default, use it
+        if self.interfaces != ["can0"]:
+            return self.interfaces
+        # Otherwise, if interface (singular) is set to non-default, use it
+        if self.interface != "can0":
+            return [self.interface]
+        # Use interfaces default
+        return self.interfaces
 
 
 class FeaturesSettings(BaseSettings):

@@ -94,6 +94,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         vector_service = VectorService() if settings.features.enable_vector_search else None
         logger.info("Backend services initialized")
 
+        # Start CAN service with proper multi-interface initialization
+        try:
+            can_startup_result = await can_service.startup()
+            logger.info(f"CAN service started: {can_startup_result}")
+        except Exception as e:
+            logger.error(f"Failed to start CAN service: {e}")
+            logger.warning("CAN service will continue without proper initialization")
+
         # Register custom features with the feature manager
         register_custom_features()
         logger.info("Custom features registered")

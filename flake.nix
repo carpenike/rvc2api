@@ -325,7 +325,7 @@ EOF
                 poetry run ruff format backend
 
                 # Frontend formatting (if web_ui directory exists)
-                if [ -d "web_ui" ]; then
+                if [ -d "web_ui" ];then
                   cd web_ui
                   npm run lint -- --fix
                 fi
@@ -709,10 +709,10 @@ EOF
 
               channels = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
-                default = [ "vcan0" ];
+                default = [ "can0" ];
                 description = ''
                   CAN channels to use.
-                  Default is [ "vcan0" ].
+                  Default is [ "can0" ].
                   To use multiple interfaces, set to e.g. [ "can0" "can1" ] in your configuration.
                 '';
               };
@@ -1003,16 +1003,14 @@ EOF
                   config.rvc2api.settings.server.sslCaCerts;
 
               # CORS settings
-              RVC2API_CORS__ALLOWED_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
-              RVC2API_CORS__ALLOWED_CREDENTIALS = if config.rvc2api.settings.cors.allowedCredentials then "true" else "false";
-              RVC2API_CORS__ALLOWED_METHODS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedMethods;
-              RVC2API_CORS__ALLOWED_HEADERS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedHeaders;
+              RVC2API_CORS__ALLOW_ORIGINS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedOrigins;
+              RVC2API_CORS__ALLOW_CREDENTIALS = if config.rvc2api.settings.cors.allowedCredentials then "true" else "false";
+              RVC2API_CORS__ALLOW_METHODS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedMethods;
+              RVC2API_CORS__ALLOW_HEADERS = lib.concatStringsSep "," config.rvc2api.settings.cors.allowedHeaders;
 
               # Security settings
               RVC2API_SECURITY__SECRET_KEY = lib.mkIf (config.rvc2api.settings.security.secretKey != null)
                 config.rvc2api.settings.security.secretKey;
-              RVC2API_SECURITY__JWT_ALGORITHM = config.rvc2api.settings.security.jwtAlgorithm;
-              RVC2API_SECURITY__JWT_EXPIRE_MINUTES = toString config.rvc2api.settings.security.jwtExpireMinutes;
 
               # Logging settings
               RVC2API_LOGGING__LEVEL = config.rvc2api.settings.logging.level;
@@ -1022,25 +1020,28 @@ EOF
                 lib.optionalString
                   (config.rvc2api.settings.logging.logFile != null)
                   config.rvc2api.settings.logging.logFile;
-              RVC2API_LOGGING__MAX_FILE_SIZE = toString config.rvc2api.settings.logging.maxFileSize;
+              RVC2API_LOGGING__MAX_BYTES = toString config.rvc2api.settings.logging.maxFileSize;
               RVC2API_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
 
-            # CAN bus settings
-            RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
+              # CAN bus settings
+              RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
 
-            # Use the first channel if the list isn’t empty, otherwise blank
-            RVC2API_CAN__INTERFACE =
-              lib.optionalString
-                (config.rvc2api.settings.canbus.channels != [])
-                (builtins.elemAt config.rvc2api.settings.canbus.channels 0);
+              # Use the first channel if the list isn’t empty, otherwise blank
+              RVC2API_CAN__INTERFACE =
+                lib.optionalString
+                  (config.rvc2api.settings.canbus.channels != [])
+                  (builtins.elemAt config.rvc2api.settings.canbus.channels 0);
 
-            RVC2API_CAN__CHANNELS =
-              lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
+              # Pass all interfaces as comma-separated list
+              RVC2API_CAN__INTERFACES =
+                lib.optionalString
+                  (config.rvc2api.settings.canbus.channels != [])
+                  (lib.concatStringsSep "," config.rvc2api.settings.canbus.channels);
 
-            RVC2API_CAN__BITRATE =
-              toString config.rvc2api.settings.canbus.bitrate;
+              RVC2API_CAN__BITRATE =
+                toString config.rvc2api.settings.canbus.bitrate;
 
-             # Feature flags
+              # Feature flags
               RVC2API_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";
               RVC2API_FEATURES__ENABLE_NOTIFICATIONS = if config.rvc2api.settings.features.enableNotifications then "true" else "false";
               RVC2API_FEATURES__ENABLE_UPTIMEROBOT = if config.rvc2api.settings.features.enableUptimerobot then "true" else "false";

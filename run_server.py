@@ -183,6 +183,10 @@ if __name__ == "__main__":
         # Get Uvicorn configuration from settings
         uvicorn_config = settings.get_uvicorn_config()
 
+        # Add SSL configuration if available
+        ssl_config = settings.get_uvicorn_ssl_config()
+        uvicorn_config.update(ssl_config)
+
         # Add log configuration
         uvicorn_config.update(
             {
@@ -190,6 +194,12 @@ if __name__ == "__main__":
                 "log_config": log_config,
             }
         )
+
+        # Log SSL status
+        if ssl_config:
+            logger.info("SSL/TLS enabled - server will run on HTTPS")
+        else:
+            logger.info("SSL/TLS not configured - server will run on HTTP")
 
         logger.info(f"Server starting on {uvicorn_config['host']}:{uvicorn_config['port']}")
 

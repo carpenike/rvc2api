@@ -302,7 +302,8 @@ class CANService:
         Initialize CAN interfaces.
 
         Args:
-            interfaces: List of interface names to initialize
+            interfaces: List of interface names to initialize. If None, uses all
+                       configured interfaces from settings.
 
         Returns:
             dict: Dictionary with initialization status.
@@ -311,20 +312,38 @@ class CANService:
 
         from can.exceptions import CanInterfaceNotImplementedError
 
+        # Use configured interfaces if none provided
         if interfaces is None:
-            interfaces = []
+            from backend.core.config import get_settings
 
-        default_bustype = os.getenv("CAN_BUSTYPE", "socketcan")
+            settings = get_settings()
+            interfaces = settings.can.all_interfaces
+            logger.info(f"Using configured CAN interfaces: {interfaces}")
+
+        # Get CAN settings for bustype and bitrate
+        from backend.core.config import get_settings
+
+        settings = get_settings()
+        default_bustype = os.getenv("CAN_BUSTYPE", settings.can.bustype)
+        default_bitrate = settings.can.bitrate
+
         initialized = []
         failed = []
 
         for interface_name in interfaces:
             try:
                 if interface_name not in buses:
-                    bus = can.interface.Bus(channel=interface_name, bustype=default_bustype)
+                    bus = can.interface.Bus(
+                        channel=interface_name,
+                        bustype=default_bustype,
+                        bitrate=default_bitrate,
+                    )
                     buses[interface_name] = bus
                     initialized.append(interface_name)
-                    logger.info(f"Initialized CAN interface: {interface_name}")
+                    logger.info(
+                        f"Initialized CAN interface: {interface_name} "
+                        f"(bustype={default_bustype}, bitrate={default_bitrate})"
+                    )
                 else:
                     logger.info(f"CAN interface already initialized: {interface_name}")
                     initialized.append(interface_name)
@@ -339,4 +358,37 @@ class CANService:
             "initialized": initialized,
             "failed": failed,
             "total_interfaces": len(buses),
+        }
+
+    async def startup(self) -> dict[str, Any]:
+        """
+        Initialize CAN service during application startup.
+
+        This method ensures all configured CAN interfaces are properly
+        initialized and the CAN writer task is started.
+
+        Returns:
+            dict: Dictionary with startup status and details.
+        """
+        logger.info("Starting CAN service")
+
+        # Initialize all configured CAN interfaces
+        initialization_result = await self.initialize_can_interfaces()
+
+        # Start the CAN writer task if we have app_state
+        if self.app_state:
+            await self.start_can_writer()
+        else:
+            logger.warning("Cannot start CAN writer without AppState dependency")
+
+        logger.info(
+            f"CAN service startup complete: "
+            f"interfaces initialized={initialization_result['initialized']}, "
+            f"failed={initialization_result['failed']}"
+        )
+
+        return {
+            "status": "started",
+            "interfaces": initialization_result,
+            "writer_started": self.app_state is not None,
         }

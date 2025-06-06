@@ -16,6 +16,7 @@ import logging
 import time
 from typing import Any
 
+from backend.core.config import get_can_settings
 from backend.core.entity_manager import EntityManager
 from backend.integrations.can.manager import can_tx_queue
 from backend.integrations.can.message_factory import create_light_can_message
@@ -515,12 +516,17 @@ class EntityService:
                 instance=instance,
                 brightness_can_level=optimistic_raw_val,
             )
-            await can_tx_queue.put((can_message, "vcan0"))  # TODO: Make interface configurable
+
+            # Get the configured CAN interface(s)
+            can_settings = get_can_settings()
+            can_interface = can_settings.all_interfaces[0]  # Use first configured interface
+
+            await can_tx_queue.put((can_message, can_interface))
 
             # Add sniffer entry for TX tracking
             sniffer_entry = {
                 "timestamp": ts,
-                "interface": "vcan0",  # TODO: Make configurable
+                "interface": can_interface,
                 "can_id": f"{can_message.arbitration_id:08X}",
                 "data": can_message.data.hex().upper(),
                 "dlc": len(can_message.data),
