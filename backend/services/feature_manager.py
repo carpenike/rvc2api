@@ -246,27 +246,56 @@ class FeatureManager:
         logger.info("Reloading feature states from configuration")
 
         for feature_name, feature in self._features.items():
-            # Check for environment variable override (format: ENABLE_<FEATURE_NAME>=true/false)
-            env_var = f"ENABLE_{feature_name.upper()}"
-            env_value = os.getenv(env_var)
+            # First check for new standardized environment variable pattern (RVC2API_FEATURES__*)
+            standardized_env_var = f"RVC2API_FEATURES__ENABLE_{feature_name.upper()}"
+            standardized_env_value = os.getenv(standardized_env_var)
+
+            # Fall back to legacy pattern for backward compatibility
+            legacy_env_var = f"ENABLE_{feature_name.upper()}"
+            legacy_env_value = os.getenv(legacy_env_var)
+
+            env_value = standardized_env_value or legacy_env_value
+            env_var_used = standardized_env_var if standardized_env_value else legacy_env_var
 
             if env_value is not None:
                 # Environment variable found - use it to override feature state
                 enabled = env_value.lower() in ("1", "true", "yes", "on")
                 if feature.enabled != enabled:
                     logger.info(
-                        f"Overriding feature '{feature_name}' enabled state: {feature.enabled} -> {enabled} (from {env_var})"
+                        f"Overriding feature '{feature_name}' enabled state: {feature.enabled} -> {enabled} (from {env_var_used})"
                     )
                     feature.enabled = enabled
 
-            # Check for settings-based overrides if available
+            # Check for settings-based feature overrides using the standardized features config
+            elif hasattr(settings, "features"):
+                # Map common feature names to settings attributes
+                feature_mapping = {
+                    "pushover": "enable_pushover",
+                    "uptimerobot": "enable_uptimerobot",
+                    "github_update_checker": "enable_notifications",  # approximate mapping
+                    "log_history": "enable_metrics",  # approximate mapping
+                    "log_streaming": "enable_metrics",  # approximate mapping
+                    "api_docs": "enable_api_docs",
+                    "websocket": "enable_metrics",  # core feature, use metrics as proxy
+                }
+
+                settings_attr = feature_mapping.get(feature_name)
+                if settings_attr and hasattr(settings.features, settings_attr):
+                    enabled = getattr(settings.features, settings_attr)
+                    if feature.enabled != enabled:
+                        logger.info(
+                            f"Overriding feature '{feature_name}' enabled state: {feature.enabled} -> {enabled} (from settings.features.{settings_attr})"
+                        )
+                        feature.enabled = enabled
+
+            # Legacy fallback for old feature_flags structure
             elif hasattr(settings, "feature_flags") and isinstance(settings.feature_flags, dict):
                 feature_config = settings.feature_flags.get(feature_name)
                 if feature_config and "enabled" in feature_config:
                     enabled = bool(feature_config["enabled"])
                     if feature.enabled != enabled:
                         logger.info(
-                            f"Overriding feature '{feature_name}' enabled state: {feature.enabled} -> {enabled} (from settings)"
+                            f"Overriding feature '{feature_name}' enabled state: {feature.enabled} -> {enabled} (from legacy settings)"
                         )
                         feature.enabled = enabled
 

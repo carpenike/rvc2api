@@ -95,12 +95,6 @@
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
           ] ++ [
-            pythonPackages.python-can
-            pythonPackages.pydantic
-            pythonPackages.pyyaml
-            pythonPackages.prometheus_client
-            pythonPackages.coloredlogs
-            pythonPackages.jinja2
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             pythonPackages.pyroute2
           ];
@@ -131,7 +125,7 @@
             pythonPackages.httptools
             pythonPackages.python-dotenv
             pythonPackages.watchfiles
-            pythonPackages."python-can"
+            pythonPackages.python-can
             pythonPackages.pydantic
             pythonPackages.pyyaml
             pythonPackages.prometheus_client
@@ -1025,9 +1019,10 @@ EOF
               RVC2API_LOGGING__BACKUP_COUNT = toString config.rvc2api.settings.logging.backupCount;
 
               # CAN bus settings
-              RVC2API_CANBUS__BUSTYPE = config.rvc2api.settings.canbus.bustype;
-              RVC2API_CANBUS__CHANNELS = lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
-              RVC2API_CANBUS__BITRATE = toString config.rvc2api.settings.canbus.bitrate;
+              RVC2API_CAN__BUSTYPE = config.rvc2api.settings.canbus.bustype;
+              RVC2API_CAN__INTERFACE = config.rvc2api.settings.canbus.channels[0];
+              RVC2API_CAN__CHANNELS = lib.concatStringsSep "," config.rvc2api.settings.canbus.channels;
+              RVC2API_CAN__BITRATE = toString config.rvc2api.settings.canbus.bitrate;
 
               # Feature flags
               RVC2API_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.rvc2api.settings.features.enableMaintenanceTracking then "true" else "false";

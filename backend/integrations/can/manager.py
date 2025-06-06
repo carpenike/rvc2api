@@ -10,13 +10,13 @@ This module is responsible for:
 
 import asyncio
 import logging
-import os
 import time
 
 import can
 from can.bus import BusABC
 from can.exceptions import CanInterfaceNotImplementedError
 
+from backend.core.config import get_settings
 from backend.core.metrics import get_can_tx_queue_length
 from backend.core.state import AppState
 
@@ -32,7 +32,8 @@ async def can_writer(app_state: AppState) -> None:
     Handles sending each message twice as per RV-C specification.
     Attempts to initialize a bus if not already available in the 'buses' dictionary.
     """
-    default_bustype = os.getenv("CAN_BUSTYPE", "socketcan")
+    settings = get_settings()
+    default_bustype = settings.can.bustype
     try:
         while True:
             msg, interface_name = await can_tx_queue.get()
