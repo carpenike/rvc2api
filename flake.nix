@@ -422,70 +422,39 @@ EOF
         packages = {
           coachiq = coachiqPackage;
           default = coachiqPackage;
-          frontend = pkgs.stdenv.mkDerivation {
+          frontend = pkgs.buildNpmPackage {
             pname = "coachiq-frontend";
-            version = "1.0.0";
+            inherit version;
             src = ./web_ui;
-            buildInputs = [ pkgs.nodejs ];
 
-            configurePhase = ''
-              runHook preConfigure
-              export HOME=$TMPDIR
-              export npm_config_cache=$TMPDIR/.npm
-              export npm_config_fund=false
-              export npm_config_audit=false
-              export npm_config_progress=false
-              export npm_config_loglevel=error
-              export CI=true
-              export NODE_ENV=production
-              runHook postConfigure
-            '';
+            npmDepsHash = "sha256-iJcUkGCi+ALmVkAQ/fu0EzsDGRLQZr+8F+ZuuL4EG/s=";
 
+            nativeBuildInputs = [
+              pkgs.nodejs_20
+              pkgs.python3
+              pkgs.pkg-config
+            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+              pkgs.darwin.apple_sdk.frameworks.Security
+            ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+              pkgs.libsecret
+            ];
+
+            # Use Vite directly to avoid TypeScript path resolution issues
             buildPhase = ''
               runHook preBuild
-              echo "Installing dependencies..."
-              npm ci --no-fund --no-audit --no-progress --loglevel=error --prefer-offline || {
-                echo "npm ci failed, trying with clean cache..."
-                npm cache clean --force
-                npm ci --no-fund --no-audit --no-progress --loglevel=error || {
-                  echo "npm ci failed completely"
-                  exit 1
-                }
-              }
-
-              echo "Building frontend..."
-              npm run build || {
-                echo "npm run build failed"
-                exit 1
-              }
-
-              echo "Build completed, checking output..."
-              if [ -d "dist" ]; then
-                ls -la dist/
-              else
-                echo "Error: dist directory not created"
-                exit 1
-              fi
+              npx vite build
               runHook postBuild
             '';
 
             installPhase = ''
-              runHook preInstall
               mkdir -p $out
-              if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
-                cp -r dist/* $out/
-                echo "Frontend files installed to $out"
-                ls -la $out/
-              else
-                echo "Error: dist directory is empty or missing"
-                exit 1
-              fi
-              runHook postInstall
+              cp -r dist/* $out/
             '';
 
             meta = {
               description = "CoachIQ React frontend static files (built with Vite)";
               license = pkgs.lib.licenses.mit;
+              platforms = pkgs.lib.platforms.unix;
             };
           };
         };
