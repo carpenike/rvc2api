@@ -1,12 +1,12 @@
 """
-RVC2API Configuration Management
+CoachIQ Configuration Management
 
-This module provides centralized configuration management for the RVC2API application
+This module provides centralized configuration management for the CoachIQ application
 using Pydantic Settings.
 
 Environment Variable Patterns:
-- For top-level settings: `RVC2API_SETTING` (e.g., `RVC2API_APP_NAME`)
-- For nested settings: `RVC2API_SECTION__SETTING` (e.g., `RVC2API_SERVER__HOST`)
+- For top-level settings: `COACHIQ_SETTING` (e.g., `COACHIQ_APP_NAME`)
+- For nested settings: `COACHIQ_SECTION__SETTING` (e.g., `COACHIQ_SERVER__HOST`)
 
 The loading order for configuration values is:
 1. Default values specified in the Settings classes
@@ -29,11 +29,11 @@ class ServerSettings(BaseSettings):
     Server configuration settings.
 
     Environment Variables:
-        All settings can be configured with the prefix RVC2API_SERVER__
-        For example: RVC2API_SERVER__HOST=0.0.0.0
+        All settings can be configured with the prefix COACHIQ_SERVER__
+        For example: COACHIQ_SERVER__HOST=0.0.0.0
     """
 
-    model_config = SettingsConfigDict(env_prefix="RVC2API_SERVER__", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_SERVER__", case_sensitive=False)
 
     host: str = Field(default="127.0.0.1", description="Server host address")
     port: int = Field(default=8000, description="Server port", ge=1, le=65535)
@@ -85,8 +85,8 @@ class CORSSettings(BaseSettings):
     CORS configuration settings.
 
     Environment Variables:
-        All settings can be configured with the prefix RVC2API_CORS__
-        For example: RVC2API_CORS__ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+        All settings can be configured with the prefix COACHIQ_CORS__
+        For example: COACHIQ_CORS__ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
     Notes:
         - Comma-separated strings will be parsed into lists automatically
@@ -94,7 +94,7 @@ class CORSSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="RVC2API_CORS__",
+        env_prefix="COACHIQ_CORS__",
         case_sensitive=False,
         # Disable JSON parsing for list fields to allow custom parsing
         env_parse_none_str="",
@@ -159,7 +159,7 @@ class CORSSettings(BaseSettings):
 class SecuritySettings(BaseSettings):
     """Security configuration settings."""
 
-    model_config = SettingsConfigDict(env_prefix="RVC2API_SECURITY__", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_SECURITY__", case_sensitive=False)
 
     secret_key: SecretStr = Field(
         default=SecretStr("your-secret-key-change-in-production"),
@@ -182,7 +182,7 @@ class SecuritySettings(BaseSettings):
 class LoggingSettings(BaseSettings):
     """Logging configuration settings."""
 
-    model_config = SettingsConfigDict(env_prefix="RVC2API_LOGGING__", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_LOGGING__", case_sensitive=False)
 
     level: str = Field(default="INFO", description="Logging level")
     format: str = Field(
@@ -219,7 +219,7 @@ class LoggingSettings(BaseSettings):
 class CANSettings(BaseSettings):
     """CAN bus configuration settings."""
 
-    model_config = SettingsConfigDict(env_prefix="RVC2API_CAN__", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_CAN__", case_sensitive=False)
 
     interface: str = Field(
         default="can0", description="CAN interface name (deprecated, use interfaces)"
@@ -264,7 +264,7 @@ class CANSettings(BaseSettings):
 class FeaturesSettings(BaseSettings):
     """Feature flags configuration."""
 
-    model_config = SettingsConfigDict(env_prefix="RVC2API_FEATURES__", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_FEATURES__", case_sensitive=False)
 
     enable_maintenance_tracking: bool = Field(
         default=False, description="Enable maintenance tracking"
@@ -283,8 +283,8 @@ class Settings(BaseSettings):
     Main application settings.
 
     Environment Variable Patterns:
-        - Top-level settings: RVC2API_SETTING (e.g., `RVC2API_APP_NAME`)
-        - Nested settings: RVC2API_SECTION__SETTING (e.g., `RVC2API_SERVER__HOST`)
+        - Top-level settings: COACHIQ_SETTING (e.g., `COACHIQ_APP_NAME`)
+        - Nested settings: COACHIQ_SECTION__SETTING (e.g., `COACHIQ_SERVER__HOST`)
 
     Configuration Loading Order:
         1. Default values specified in this class
@@ -295,7 +295,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_prefix="RVC2API_",
+        env_prefix="COACHIQ_",
         case_sensitive=False,
         env_nested_delimiter="__",
         env_parse_none_str="",
@@ -306,7 +306,7 @@ class Settings(BaseSettings):
     )
 
     # Application info
-    app_name: str = Field(default="RVC2API", description="Application name")
+    app_name: str = Field(default="CoachIQ", description="Application name")
     app_version: str = Field(default="1.0.0", description="Application version")
     app_description: str = Field(
         default="API for RV-C CANbus", description="Application description"

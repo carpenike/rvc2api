@@ -28,7 +28,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 const data = {
   user: {
     name: "RV-C User",
-    email: "user@rvc2api.local",
+    email: "user@coachiq.local",
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [

@@ -1,5 +1,5 @@
 /**
- * API Types for RVC2API Frontend
+ * API Types for CoachIQ Frontend
  *
  * TypeScript interfaces that match the backend API models.
  * These types ensure type safety when working with API responses.

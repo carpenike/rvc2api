@@ -13,7 +13,7 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "rvc2api-ui-theme",
+  storageKey = "coachiq-ui-theme",
   attribute: _attribute = "class",
   enableSystem: _enableSystem = true,
   disableTransitionOnChange: _disableTransitionOnChange = false,

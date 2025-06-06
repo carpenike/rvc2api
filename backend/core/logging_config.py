@@ -1,5 +1,5 @@
 """
-Logging configuration module for the rvc2api backend.
+Logging configuration module for the coachiq backend.
 
 This module provides comprehensive logging configuration that matches the functionality
 of the old core_daemon system, including coloredlogs integration and WebSocket log handler support.
@@ -34,7 +34,7 @@ class JsonFormatter(logging.Formatter):
     and analysis tools.
     """
 
-    def __init__(self, service_name: str = "rvc2api") -> None:
+    def __init__(self, service_name: str = "coachiq") -> None:
         """
         Initialize the JSON formatter.
 
@@ -423,7 +423,7 @@ def create_unified_log_config(
         # Use JsonFormatter for all logs
         log_config["formatters"]["json"] = {
             "()": "backend.core.logging_config_new.JsonFormatter",
-            "service_name": "rvc2api",
+            "service_name": "coachiq",
         }
 
         log_config["handlers"]["console"] = {

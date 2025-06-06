@@ -469,7 +469,7 @@ export default function Documentation() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => window.open("https://github.com/carpenike/rvc2api", "_blank")}
+                      onClick={() => window.open("https://github.com/carpenike/coachiq", "_blank")}
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
                       GitHub Repository

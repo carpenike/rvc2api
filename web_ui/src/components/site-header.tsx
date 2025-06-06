@@ -23,7 +23,7 @@ export function SiteHeader({ pageTitle = "RVC2API" }: SiteHeaderProps) {
           <ModeToggle />
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
-              href="https://github.com/carpenike/rvc2api"
+              href="https://github.com/carpenike/coachiq"
               rel="noopener noreferrer"
               target="_blank"
               className="dark:text-foreground"

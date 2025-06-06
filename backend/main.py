@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Clean main application entry point for the rvc2api backend.
+Clean main application entry point for the coachiq backend.
 
 This module provides a simplified FastAPI application setup with proper
 initialization order to avoid metrics collisions and circular imports.
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Handles startup and shutdown logic for the FastAPI application,
     including service initialization and cleanup.
     """
-    logger.info("Starting rvc2api backend application")
+    logger.info("Starting coachiq backend application")
 
     # Initialize backend metrics FIRST to avoid collisions
     initialize_backend_metrics()
@@ -130,7 +130,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         raise
     finally:
         # Cleanup
-        logger.info("Shutting down rvc2api backend application")
+        logger.info("Shutting down coachiq backend application")
 
         # Shut down all enabled features
         if hasattr(app.state, "feature_manager"):
@@ -147,7 +147,7 @@ def create_app() -> FastAPI:
         Configured FastAPI application instance
     """
     app = FastAPI(
-        title="RVC2API Backend",
+        title="CoachIQ Backend",
         description="Modernized backend API for RV-C CANbus monitoring and control",
         version="2.0.0",
         docs_url="/docs",
@@ -172,7 +172,7 @@ app = create_app()
 @app.get("/")
 async def root():
     """Root endpoint for health checking."""
-    return {"message": "RVC2API Backend is running", "version": "2.0.0"}
+    return {"message": "CoachIQ Backend is running", "version": "2.0.0"}
 
 
 @app.get("/health")
@@ -198,7 +198,7 @@ def main():
     # Get settings to use as CLI defaults
     settings = get_settings()
 
-    parser = argparse.ArgumentParser(description="Start the rvc2api backend server.")
+    parser = argparse.ArgumentParser(description="Start the coachiq backend server.")
     parser.add_argument(
         "--host",
         type=str,
@@ -215,10 +215,10 @@ def main():
         "--reload",
         action=(
             "store_true"
-            if os.getenv("RVC2API_RELOAD", "false").lower() == "true"
+            if os.getenv("COACHIQ_RELOAD", "false").lower() == "true"
             else "store_false"
         ),
-        help="Enable auto-reload (development only, or RVC2API_RELOAD=true)",
+        help="Enable auto-reload (development only, or COACHIQ_RELOAD=true)",
     )
     parser.add_argument(
         "--log-level",
@@ -237,7 +237,7 @@ def main():
     # Configure unified logging for standalone script execution
     log_config, root_logger = configure_unified_logging(settings.logging)
 
-    logger.info("Starting rvc2api backend server in standalone mode")
+    logger.info("Starting coachiq backend server in standalone mode")
 
     # Get SSL configuration if available
     ssl_config = settings.get_uvicorn_ssl_config()

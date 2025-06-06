@@ -1,5 +1,5 @@
 /**
- * API Endpoints for RVC2API Frontend
+ * API Endpoints for CoachIQ Frontend
  *
  * This module provides typed API endpoint functions that match the backend API structure.
  * All functions return Promises with properly typed responses.
