@@ -6,7 +6,8 @@
  */
 
 // Theme Context
-export { ThemeProvider, useTheme } from '../hooks/use-theme.tsx';
+export { ThemeProvider } from '../hooks/use-theme.tsx';
+export { useTheme } from '../hooks/use-theme.ts';
 
 // WebSocket Context
 export { useWebSocketContext } from './use-websocket-context';

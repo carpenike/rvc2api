@@ -20,7 +20,6 @@ import {
     IconCheck,
     IconHelp,
     IconTrendingUp,
-    IconTrendingDown,
     IconX
 } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
@@ -155,7 +154,7 @@ function DeviceOverviewCard() {
   ).length
 
   // Mock trend calculation (in real app, compare with previous data)
-  const deviceTrend = totalEntities > 0 ? 'up' : 'neutral'
+  const deviceTrend: 'up' | 'down' | 'neutral' = totalEntities > 0 ? 'up' : 'neutral'
 
   return (
     <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
@@ -168,7 +167,6 @@ function DeviceOverviewCard() {
         <CardAction>
           <Badge variant="outline">
             {deviceTrend === 'up' && <IconTrendingUp className="mr-1 h-3 w-3" />}
-            {deviceTrend === 'down' && <IconTrendingDown className="mr-1 h-3 w-3" />}
             {onlineDevices}/{totalEntities} Online
           </Badge>
         </CardAction>

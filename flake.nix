@@ -427,15 +427,55 @@ EOF
             version = "1.0.0";
             src = ./web_ui;
             buildInputs = [ pkgs.nodejs ];
-            buildPhase = ''
+
+            configurePhase = ''
+              runHook preConfigure
               export HOME=$TMPDIR
-              npm ci
-              npm run build
+              export npm_config_cache=$TMPDIR/.npm
+              export npm_config_fund=false
+              export npm_config_audit=false
+              export CI=true
+              runHook postConfigure
             '';
+
+            buildPhase = ''
+              runHook preBuild
+              echo "Installing dependencies..."
+              timeout 300 npm ci --no-fund --no-audit || {
+                echo "npm ci failed or timed out"
+                exit 1
+              }
+
+              echo "Building frontend..."
+              timeout 600 npm run build || {
+                echo "npm run build failed or timed out"
+                exit 1
+              }
+
+              echo "Build completed, checking output..."
+              if [ -d "dist" ]; then
+                ls -la dist/
+              else
+                echo "Error: dist directory not created"
+                exit 1
+              fi
+              runHook postBuild
+            '';
+
             installPhase = ''
+              runHook preInstall
               mkdir -p $out
-              cp -r dist/* $out/
+              if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+                cp -r dist/* $out/
+                echo "Frontend files installed to $out"
+                ls -la $out/
+              else
+                echo "Error: dist directory is empty or missing"
+                exit 1
+              fi
+              runHook postInstall
             '';
+
             meta = {
               description = "CoachIQ React frontend static files (built with Vite)";
               license = pkgs.lib.licenses.mit;

@@ -227,7 +227,7 @@ function LightControl({ light }: LightControlProps) {
         </div>
         {!isOnline && (
           <CardDescription>
-            <Badge variant="destructive" size="sm" className="text-xs">
+            <Badge variant="destructive" className="text-xs">
               Offline
             </Badge>
           </CardDescription>

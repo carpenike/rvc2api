@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { LightEntity } from "@/api/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEntities } from "@/hooks/useEntities"
 import { useLightControl } from "@/hooks/useEntities"
@@ -48,7 +49,7 @@ function EntityStatusIndicator({ entity }: { entity: Entity }) {
         {isOnline ? 'Online' : 'Offline'}
       </span>
       {isActive && (
-        <Badge variant="default" size="sm">Active</Badge>
+        <Badge variant="default">Active</Badge>
       )}
     </div>
   )
@@ -234,7 +235,7 @@ function EntityCard({ entity }: { entity: Entity }) {
               <div className="mt-2 flex items-center justify-between">
                 <EntityStatusIndicator entity={entity} />
                 {isActive && (
-                  <Badge variant="default" size="sm" className="text-xs">
+                  <Badge variant="default" className="text-xs">
                     <IconTrendingUp className="mr-1 h-3 w-3" />
                     Active
                   </Badge>
