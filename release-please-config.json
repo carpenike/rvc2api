@@ -1,7 +1,7 @@
 {
   "packages": {
     ".": {
-      "package-name": "rvc2api",
+      "package-name": "coachiq",
       "release-type": "python",
       "extra-files": [
         "VERSION"

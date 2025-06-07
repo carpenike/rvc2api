@@ -177,7 +177,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "React core packages",
       "addLabels": [
@@ -198,7 +198,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "TypeScript type definitions",
       "addLabels": [
@@ -217,7 +217,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "ESLint packages",
       "addLabels": [
@@ -240,7 +240,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "Testing packages",
       "addLabels": [
@@ -264,7 +264,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "Build tools",
       "addLabels": [
@@ -283,7 +283,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "groupName": "CSS tooling",
       "addLabels": [
@@ -302,7 +302,7 @@
         "npm"
       ],
       "matchFileNames": [
-        "web_ui/**"
+        "frontend/**"
       ],
       "matchDepTypes": [
         "dependencies"
