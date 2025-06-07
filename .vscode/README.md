@@ -42,7 +42,7 @@ This directory contains VS Code settings optimized for developing the rvc2api pr
 1. Open the project folder in VS Code
 2. direnv will automatically load the environment from the flake
 3. VS Code will use the Python interpreter and dependencies from this environment
-4. For the React frontend, run `cd web_ui && npm run dev` for development
+4. For the React frontend, run `cd frontend && npm run dev` for development
 
 ## Troubleshooting
 
