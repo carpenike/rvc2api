@@ -102,6 +102,13 @@
           doCheck    = true;
           checkInputs = [ pythonPackages.pytest ];
 
+          # Install configuration files to the package site-packages directory
+          # This allows the NixOS module to reference them at the expected path
+          postInstall = ''
+            mkdir -p $out/${python.sitePackages}/config
+            cp -r $src/config/* $out/${python.sitePackages}/config/
+          '';
+
           meta = with pkgs.lib; {
             description = "CAN‑bus web service exposing RV‑C network data via HTTP & WebSocket";
             homepage    = "https://github.com/carpenike/rvc2api";

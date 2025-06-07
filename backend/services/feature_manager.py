@@ -180,10 +180,17 @@ class FeatureManager:
                 feature = self._features[name]
                 if getattr(feature, "enabled", False):
                     logger.info(f"Shutting down feature: {name}")
-                    if hasattr(feature, "shutdown"):
-                        await feature.shutdown()
+                    try:
+                        if hasattr(feature, "shutdown"):
+                            await feature.shutdown()
+                        logger.debug(f"Feature {name} shut down successfully")
+                    except Exception as e:
+                        logger.error(f"Error shutting down feature {name}: {e}")
+                        # Continue with other features even if one fails
         except ValueError as e:
             logger.error(f"Feature shutdown error: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during feature shutdown: {e}")
         logger.info("All features shut down")
 
     @classmethod

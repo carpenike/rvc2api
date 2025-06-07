@@ -9,6 +9,7 @@ initialization order to avoid metrics collisions and circular imports.
 import argparse
 import logging
 import platform
+import signal
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -392,6 +393,14 @@ def main():
     defined in pyproject.toml.
     """
     import os
+
+    # Set up signal handlers for graceful shutdown
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        raise KeyboardInterrupt()
+
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Get settings to use as CLI defaults
     settings = get_settings()

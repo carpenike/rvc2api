@@ -550,17 +550,20 @@ class Settings(BaseSettings):
 
     def get_uvicorn_config(self) -> dict[str, Any]:
         """Get configuration dict for Uvicorn server."""
+        # Only allow reload in explicit development mode to prevent file watchers in production
+        allow_reload = self.server.reload and self.is_development() and not self.is_production()
+
         config = {
             "host": self.server.host,
             "port": self.server.port,
-            "reload": self.server.reload and self.is_development(),
-            "workers": 1 if self.server.reload else self.server.workers,
+            "reload": allow_reload,
+            "workers": 1 if allow_reload else self.server.workers,
             "access_log": self.server.access_log,
             "log_level": self.logging.level.lower(),
         }
 
-        # Don't use reload in production
-        if self.is_production():
+        # Ensure reload is disabled in any non-development environment
+        if not self.is_development() or self.is_production():
             config["reload"] = False
 
         return config

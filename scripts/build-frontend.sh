@@ -6,7 +6,7 @@ set -e  # Exit on error
 # Determine script location
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-FRONTEND_DIR="$PROJECT_ROOT/web_ui"
+FRONTEND_DIR="$PROJECT_ROOT/frontend"
 
 # Display banner
 echo "🏗️ rvc2api Frontend Build Tool"
