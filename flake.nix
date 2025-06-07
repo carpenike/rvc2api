@@ -751,6 +751,16 @@ EOF
                 default = 500000;
                 description = "CAN bus bitrate (RV-C standard is 500000)";
               };
+
+              interfaceMappings = lib.mkOption {
+                type = lib.types.attrsOf lib.types.str;
+                default = { house = "can0"; chassis = "can1"; };
+                description = ''
+                  Logical to physical CAN interface mappings.
+                  Maps logical interface names (used in coach configs) to physical interfaces.
+                  Example: { house = "can0"; chassis = "can1"; engine = "can2"; }
+                '';
+              };
             };
 
             # Feature flags
@@ -907,6 +917,16 @@ EOF
               type = lib.types.nullOr lib.types.str;
               default = null;
               description = "Coach mapping file path";
+            };
+
+            rvcCoachModel = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                RV-C coach model for automatic mapping selection.
+                Example: "2021_Entegra_Aspire_44R"
+                If set, will load the corresponding coach mapping file with interface requirements.
+              '';
             };
 
             staticDir = lib.mkOption {
@@ -1073,6 +1093,12 @@ EOF
               COACHIQ_CAN__BITRATE =
                 toString config.coachiq.settings.canbus.bitrate;
 
+              # CAN interface mappings (convert Nix attrset to string format)
+              COACHIQ_CAN__INTERFACE_MAPPINGS =
+                lib.concatStringsSep ","
+                  (lib.mapAttrsToList (logical: physical: "${logical}:${physical}")
+                    config.coachiq.settings.canbus.interfaceMappings);
+
               # Feature flags
               COACHIQ_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.coachiq.settings.features.enableMaintenanceTracking then "true" else "false";
               COACHIQ_FEATURES__ENABLE_NOTIFICATIONS = if config.coachiq.settings.features.enableNotifications then "true" else "false";
@@ -1117,6 +1143,8 @@ EOF
                 config.coachiq.settings.rvcSpecPath;
               COACHIQ_RVC_COACH_MAPPING_PATH = lib.mkIf (config.coachiq.settings.rvcCoachMappingPath != null)
                 config.coachiq.settings.rvcCoachMappingPath;
+              COACHIQ_RVC__COACH_MODEL = lib.mkIf (config.coachiq.settings.rvcCoachModel != null)
+                config.coachiq.settings.rvcCoachModel;
               COACHIQ_STATIC_DIR = config.coachiq.settings.staticDir;
               COACHIQ_USER_COACH_INFO_PATH = lib.mkIf (config.coachiq.settings.userCoachInfoPath != null)
                 config.coachiq.settings.userCoachInfoPath;
