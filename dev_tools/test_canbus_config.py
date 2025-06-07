@@ -11,8 +11,8 @@ Usage:
 
 This will:
 1. Test auto-detection without any environment variables set
-2. Test with CAN_CHANNELS=vcan0 environment variable
-3. Test with CAN_CHANNELS=vcan0,vcan1 environment variable
+2. Test with CAN_CHANNELS=can0 environment variable
+3. Test with CAN_CHANNELS=can0,can1 environment variable
 4. Test auto-detection logic on non-Linux systems
 5. Restore the original environment when finished
 """
@@ -61,20 +61,20 @@ def main():
     print(f"Canbus config: {format_config(config1)}")
 
     # Test 2: Single interface specified in environment variable
-    print("\nTest 2: With CAN_CHANNELS=vcan0 environment variable")
-    os.environ["CAN_CHANNELS"] = "vcan0"
+    print("\nTest 2: With CAN_CHANNELS=can0 environment variable")
+    os.environ["CAN_CHANNELS"] = "can0"
     config2 = get_canbus_config()
     print(f"Canbus config: {format_config(config2)}")
 
     # Test 3: Multiple interfaces specified in environment variable
-    print("\nTest 3: With CAN_CHANNELS=vcan0,vcan1 environment variable")
-    os.environ["CAN_CHANNELS"] = "vcan0,vcan1"
+    print("\nTest 3: With CAN_CHANNELS=can0,can1 environment variable")
+    os.environ["CAN_CHANNELS"] = "can0,can1"
     config3 = get_canbus_config()
     print(f"Canbus config: {format_config(config3)}")
 
     # Test 4: Custom bustype and bitrate
     print("\nTest 4: With custom bustype and bitrate")
-    os.environ["CAN_CHANNELS"] = "vcan0"
+    os.environ["CAN_CHANNELS"] = "can0"
     os.environ["CAN_BUSTYPE"] = "custom_bustype"
     os.environ["CAN_BITRATE"] = "125000"
     config4 = get_canbus_config()

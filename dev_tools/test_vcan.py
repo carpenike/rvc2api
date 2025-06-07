@@ -18,7 +18,7 @@ def configure_logging():
     return logging.getLogger("can_test")
 
 
-def send_test_messages(interface="vcan0", count=10, interval=1.0):
+def send_test_messages(interface="can0", count=10, interval=1.0):
     """Send a series of test messages to the specified CAN interface."""
     logger = configure_logging()
 
@@ -49,7 +49,7 @@ def send_test_messages(interface="vcan0", count=10, interval=1.0):
         logger.error(f"Error during CAN communication: {e}")
 
 
-def monitor_can_bus(interface="vcan0", duration=30):
+def monitor_can_bus(interface="can0", duration=30):
     """Monitor and log all messages on the specified CAN interface for a given duration."""
     logger = configure_logging()
 
@@ -84,9 +84,7 @@ if __name__ == "__main__":
         required=True,
         help="Action to perform: send test messages or monitor the bus",
     )
-    parser.add_argument(
-        "--interface", default="vcan0", help="CAN interface to use (default: vcan0)"
-    )
+    parser.add_argument("--interface", default="can0", help="CAN interface to use (default: can0)")
     parser.add_argument(
         "--count", type=int, default=10, help="Number of messages to send (default: 10)"
     )
