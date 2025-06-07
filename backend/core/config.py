@@ -346,15 +346,14 @@ class RVCSettings(BaseSettings):
         if self.spec_path:
             return self.spec_path
 
+        # Try bundled resources first for Nix compatibility
+        bundled_path = self._get_bundled_file("rvc.json")
+        if bundled_path and bundled_path.exists():
+            return bundled_path
+
+        # Fall back to config directory
         config_dir = self.get_config_dir()
         spec_file = config_dir / "rvc.json"
-
-        # If the file doesn't exist in the config dir, try bundled resources
-        if not spec_file.exists():
-            bundled_path = self._get_bundled_file("rvc.json")
-            if bundled_path:
-                return bundled_path
-
         return spec_file
 
     def get_coach_mapping_path(self) -> Path:
@@ -362,29 +361,32 @@ class RVCSettings(BaseSettings):
         if self.coach_mapping_path:
             return self.coach_mapping_path
 
-        config_dir = self.get_config_dir()
-
-        # If coach_model is specified, try to find that specific mapping
+        # If coach_model is specified, try to find that specific mapping first in bundled resources
         if self.coach_model:
+            bundled_model_path = self._get_bundled_file(f"{self.coach_model}.yml")
+            if bundled_model_path and bundled_model_path.exists():
+                return bundled_model_path
+
+            # Then try in config directory
+            config_dir = self.get_config_dir()
             coach_file = config_dir / f"{self.coach_model}.yml"
             if coach_file.exists():
                 return coach_file
 
-        # Fall back to default coach mapping
+        # Try bundled default mapping first for Nix compatibility
+        bundled_path = self._get_bundled_file("coach_mapping.default.yml")
+        if bundled_path and bundled_path.exists():
+            return bundled_path
+
+        # Fall back to config directory
+        config_dir = self.get_config_dir()
         default_file = config_dir / "coach_mapping.default.yml"
-
-        # If the file doesn't exist in the config dir, try bundled resources
-        if not default_file.exists():
-            bundled_path = self._get_bundled_file("coach_mapping.default.yml")
-            if bundled_path:
-                return bundled_path
-
         return default_file
 
     def _get_bundled_file(self, filename: str) -> Path | None:
         """Try to locate a specific bundled config file using importlib.resources."""
         try:
-            # Try to find config files relative to the backend package
+            # First try to find config files relative to the backend package
             import backend
 
             backend_pkg = resources.files(backend)
@@ -401,6 +403,18 @@ class RVCSettings(BaseSettings):
                         return Path(str(candidate))
                 except (AttributeError, OSError):
                     continue
+
+            # If not found, try using importlib.resources directly for bundled resources
+            # This works better in packaged environments like Nix
+            try:
+                # Try to access as a direct package resource
+                config_resource = resources.files("config")
+                if config_resource:
+                    config_file = config_resource / filename
+                    if config_file.is_file():
+                        return Path(str(config_file))
+            except (ImportError, FileNotFoundError, AttributeError):
+                pass
 
         except Exception:
             pass
