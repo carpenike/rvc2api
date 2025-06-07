@@ -1225,177 +1225,24 @@ EOF
               (setArrayIfNotDefault "COACHIQ_CORS__ALLOW_METHODS" config.coachiq.settings.cors.allowedMethods defaults.cors.allowedMethods)
               (setArrayIfNotDefault "COACHIQ_CORS__ALLOW_HEADERS" config.coachiq.settings.cors.allowedHeaders defaults.cors.allowedHeaders)
 
-              # Security settings
-              COACHIQ_SECURITY__SECRET_KEY = lib.mkIf (config.coachiq.settings.security.secretKey != null)
-                config.coachiq.settings.security.secretKey;
+              # Security settings - only set if provided
+              (setIfSet "COACHIQ_SECURITY__SECRET_KEY" config.coachiq.settings.security.secretKey)
 
-              # Logging settings
-              COACHIQ_LOGGING__LEVEL = config.coachiq.settings.logging.level;
-              COACHIQ_LOGGING__FORMAT = config.coachiq.settings.logging.format;
-              COACHIQ_LOGGING__LOG_TO_FILE = if config.coachiq.settings.logging.logToFile then "true" else "false";
-              COACHIQ_LOGGING__LOG_FILE =
-                lib.optionalString
-                  (config.coachiq.settings.logging.logFile != null)
-                  config.coachiq.settings.logging.logFile;
-              COACHIQ_LOGGING__MAX_BYTES = toString config.coachiq.settings.logging.maxFileSize;
-              COACHIQ_LOGGING__BACKUP_COUNT = toString config.coachiq.settings.logging.backupCount;
+              # Logging settings - only if different from defaults
+              (setIfNotDefault "COACHIQ_LOGGING__LEVEL" config.coachiq.settings.logging.level defaults.logging.level)
+              (setIfNotDefault "COACHIQ_LOGGING__FORMAT" config.coachiq.settings.logging.format defaults.logging.format)
+              (setBoolIfNotDefault "COACHIQ_LOGGING__LOG_TO_FILE" config.coachiq.settings.logging.logToFile defaults.logging.logToFile)
+              (setIfSet "COACHIQ_LOGGING__LOG_FILE" config.coachiq.settings.logging.logFile)
+              (setNumIfNotDefault "COACHIQ_LOGGING__MAX_BYTES" config.coachiq.settings.logging.maxFileSize defaults.logging.maxFileSize)
+              (setNumIfNotDefault "COACHIQ_LOGGING__BACKUP_COUNT" config.coachiq.settings.logging.backupCount defaults.logging.backupCount)
 
-              # CAN bus settings
-              COACHIQ_CAN__BUSTYPE = config.coachiq.settings.canbus.bustype;
+              # CAN bus settings - only if different from defaults
+              (setIfNotDefault "COACHIQ_CAN__BUSTYPE" config.coachiq.settings.canbus.bustype defaults.canbus.bustype)
 
-              # Use the first channel if the list isn’t empty, otherwise blank
-              COACHIQ_CAN__INTERFACE =
-                lib.optionalString
-                  (config.coachiq.settings.canbus.channels != [])
-                  (builtins.elemAt config.coachiq.settings.canbus.channels 0);
-
-              # Pass all interfaces as JSON array
-              COACHIQ_CAN__INTERFACES =
-                lib.optionalString
-                  (config.coachiq.settings.canbus.channels != [])
-                  (builtins.toJSON config.coachiq.settings.canbus.channels);
-
-              COACHIQ_CAN__BITRATE =
-                toString config.coachiq.settings.canbus.bitrate;
-
-              # CAN interface mappings (convert Nix attrset to JSON format for Pydantic)
-              COACHIQ_CAN__INTERFACE_MAPPINGS =
-                builtins.toJSON config.coachiq.settings.canbus.interfaceMappings;
-
-              # Persistence settings
-              COACHIQ_PERSISTENCE__ENABLED = if config.coachiq.settings.persistence.enabled then "true" else "false";
-              COACHIQ_PERSISTENCE__DATA_DIR = config.coachiq.settings.persistence.dataDir;
-              COACHIQ_PERSISTENCE__CREATE_DIRS = if config.coachiq.settings.persistence.createDirs then "true" else "false";
-              COACHIQ_PERSISTENCE__BACKUP_ENABLED = if config.coachiq.settings.persistence.backupEnabled then "true" else "false";
-              COACHIQ_PERSISTENCE__BACKUP_RETENTION_DAYS = toString config.coachiq.settings.persistence.backupRetentionDays;
-              COACHIQ_PERSISTENCE__MAX_BACKUP_SIZE_MB = toString config.coachiq.settings.persistence.maxBackupSizeMb;
-
-              # Feature flags
-              COACHIQ_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.coachiq.settings.features.enableMaintenanceTracking then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_NOTIFICATIONS = if config.coachiq.settings.features.enableNotifications then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_UPTIMEROBOT = if config.coachiq.settings.features.enableUptimerobot then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_PUSHOVER = if config.coachiq.settings.features.enablePushover then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_VECTOR_SEARCH = if config.coachiq.settings.features.enableVectorSearch then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_API_DOCS = if config.coachiq.settings.features.enableApiDocs then "true" else "false";
-              COACHIQ_FEATURES__ENABLE_METRICS = if config.coachiq.settings.features.enableMetrics then "true" else "false";
-
-              # Maintenance settings
-              COACHIQ_MAINTENANCE__CHECK_INTERVAL = toString config.coachiq.settings.maintenance.checkInterval;
-              COACHIQ_MAINTENANCE__NOTIFICATION_THRESHOLD_DAYS = toString config.coachiq.settings.maintenance.notificationThresholdDays;
-              COACHIQ_MAINTENANCE__DATABASE_PATH =
-                lib.optionalString
-                  (config.coachiq.settings.maintenance.databasePath != null)
-                  config.coachiq.settings.maintenance.databasePath;
-
-              # Notification settings
-              COACHIQ_NOTIFICATIONS__PUSHOVER_USER_KEY =
-                lib.optionalString
-                  (config.coachiq.settings.notifications.pushoverUserKey != null)
-                  config.coachiq.settings.notifications.pushoverUserKey;
-              COACHIQ_NOTIFICATIONS__PUSHOVER_API_TOKEN =
-                lib.optionalString
-                  (config.coachiq.settings.notifications.pushoverApiToken != null)
-                  config.coachiq.settings.notifications.pushoverApiToken;
-              COACHIQ_NOTIFICATIONS__PUSHOVER_DEVICE =
-                lib.optionalString
-                  (config.coachiq.settings.notifications.pushoverDevice != null)
-                  config.coachiq.settings.notifications.pushoverDevice;
-              COACHIQ_NOTIFICATIONS__PUSHOVER_PRIORITY =
-                lib.optionalString
-                  (config.coachiq.settings.notifications.pushoverPriority != null)
-                  (toString config.coachiq.settings.notifications.pushoverPriority);
-              COACHIQ_NOTIFICATIONS__UPTIMEROBOT_API_KEY =
-                lib.optionalString
-                  (config.coachiq.settings.notifications.uptimerobotApiKey != null)
-                  config.coachiq.settings.notifications.uptimerobotApiKey;
-
-              # File paths
-              COACHIQ_RVC_SPEC_PATH = lib.mkIf (config.coachiq.settings.rvcSpecPath != null)
-                config.coachiq.settings.rvcSpecPath;
-              COACHIQ_RVC_COACH_MAPPING_PATH = lib.mkIf (config.coachiq.settings.rvcCoachMappingPath != null)
-                config.coachiq.settings.rvcCoachMappingPath;
-              COACHIQ_RVC__COACH_MODEL = lib.mkIf (config.coachiq.settings.rvcCoachModel != null)
-                config.coachiq.settings.rvcCoachModel;
-              COACHIQ_STATIC_DIR = config.coachiq.settings.staticDir;
-              COACHIQ_USER_COACH_INFO_PATH = lib.mkIf (config.coachiq.settings.userCoachInfoPath != null)
-                config.coachiq.settings.userCoachInfoPath;
-
-              # Controller settings
-              COACHIQ_CONTROLLER_SOURCE_ADDR = config.coachiq.settings.controllerSourceAddr;
-
-              # GitHub update checker
-              COACHIQ_GITHUB_UPDATE_REPO = lib.mkIf (config.coachiq.settings.githubUpdateRepo != null)
-                config.coachiq.settings.githubUpdateRepo;
-
-              # Legacy environment variables (for backward compatibility)
-              # Server settings
-              COACHIQ_HOST = config.coachiq.settings.host; # Maps to server.host in new config
-              COACHIQ_PORT = toString config.coachiq.settings.port; # Maps to server.port in new config
-              DEBUG = if config.coachiq.settings.server.debug then "true" else "false";
-              COACHIQ_ROOT_PATH =
-                lib.optionalString
-                  (config.coachiq.settings.server.rootPath != "")
-                  config.coachiq.settings.server.rootPath;
-
-              # CORS legacy
-              CORS_ORIGINS = lib.concatStringsSep "," config.coachiq.settings.cors.allowedOrigins;
-
-              # Logging legacy
-              LOG_LEVEL = config.coachiq.settings.logging.level;
-
-              # CAN bus legacy
-              CAN_CHANNELS = lib.concatStringsSep "," config.coachiq.settings.canbus.channels;
-              CAN_BUSTYPE = config.coachiq.settings.canbus.bustype;
-              CAN_BITRATE = toString config.coachiq.settings.canbus.bitrate;
-
-              # Legacy Pushover settings (maintain backward compatibility)
-              ENABLE_PUSHOVER = if (config.coachiq.settings.pushover.enable || config.coachiq.settings.features.enablePushover) then "1" else "0";
-              PUSHOVER_API_TOKEN = if config.coachiq.settings.pushover.apiToken != ""
-                then config.coachiq.settings.pushover.apiToken
-                else (lib.mkIf (config.coachiq.settings.notifications.pushoverApiToken != null) config.coachiq.settings.notifications.pushoverApiToken);
-              PUSHOVER_USER_KEY = if config.coachiq.settings.pushover.userKey != ""
-                then config.coachiq.settings.pushover.userKey
-                else (lib.mkIf (config.coachiq.settings.notifications.pushoverUserKey != null) config.coachiq.settings.notifications.pushoverUserKey);
-              PUSHOVER_DEVICE = lib.mkIf (config.coachiq.settings.pushover.device != null || config.coachiq.settings.notifications.pushoverDevice != null)
-                (if config.coachiq.settings.pushover.device != null
-                 then config.coachiq.settings.pushover.device
-                 else config.coachiq.settings.notifications.pushoverDevice);
-              PUSHOVER_PRIORITY = lib.mkIf (config.coachiq.settings.pushover.priority != null || config.coachiq.settings.notifications.pushoverPriority != null)
-                (toString (if config.coachiq.settings.pushover.priority != null
-                          then config.coachiq.settings.pushover.priority
-                          else config.coachiq.settings.notifications.pushoverPriority));
-
-              # Legacy UptimeRobot settings
-              ENABLE_UPTIMEROBOT = if (config.coachiq.settings.uptimerobot.enable || config.coachiq.settings.features.enableUptimerobot) then "1" else "0";
-              UPTIMEROBOT_API_KEY = if config.coachiq.settings.uptimerobot.apiKey != ""
-                then config.coachiq.settings.uptimerobot.apiKey
-                else (lib.mkIf (config.coachiq.settings.notifications.uptimerobotApiKey != null) config.coachiq.settings.notifications.uptimerobotApiKey);
-
-              # Controller legacy
-              CONTROLLER_SOURCE_ADDR = config.coachiq.settings.controllerSourceAddr;
-
-              # GitHub legacy
-              GITHUB_UPDATE_REPO = lib.mkIf (config.coachiq.settings.githubUpdateRepo != null)
-                config.coachiq.settings.githubUpdateRepo;
-
-              # Model selector (used by RVC integration if RVC_COACH_MAPPING_PATH isn't set)
-              RVC_COACH_MODEL = lib.mkIf (config.coachiq.settings.modelSelector != null)
-                config.coachiq.settings.modelSelector;
-
-              # RVC spec path
-              RVC_SPEC_PATH = lib.mkIf (config.coachiq.settings.rvcSpecPath != null)
-                config.coachiq.settings.rvcSpecPath;
-
-              # Device mapping path - complex logic to select the right path
-              RVC_COACH_MAPPING_PATH =
-                if config.coachiq.settings.deviceMappingPath != null then
-                  config.coachiq.settings.deviceMappingPath
-                else if config.coachiq.settings.modelSelector != null then
-                  "${config.coachiq.package}/lib/python3.12/site-packages/config/" +
-                  config.coachiq.settings.modelSelector + ".yml"
-                else
-                  "${config.coachiq.package}/lib/python3.12/site-packages/config/coach_mapping.default.yml";
-            };
+              (setArrayIfNotDefault "COACHIQ_CAN__INTERFACES" config.coachiq.settings.canbus.channels defaults.canbus.channels)
+              (setNumIfNotDefault "COACHIQ_CAN__BITRATE" config.coachiq.settings.canbus.bitrate defaults.canbus.bitrate)
+              (setJsonIfNotDefault "COACHIQ_CAN__INTERFACE_MAPPINGS" config.coachiq.settings.canbus.interfaceMappings defaults.canbus.interfaceMappings)
+            ]);
           };
         };
       };
