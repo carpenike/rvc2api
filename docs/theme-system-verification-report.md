@@ -9,24 +9,24 @@ The shadcn/ui theming system has been successfully implemented and is functionin
 ### 1. ✅ Fixed Root HTML Element Classes
 - **Problem**: `index.html` was using non-existent `bg-rv-background` class
 - **Solution**: Changed to proper shadcn/ui classes: `bg-background text-foreground`
-- **File**: `/workspace/web_ui/index.html`
+- **File**: `/workspace/frontend/index.html`
 
 ### 2. ✅ Confirmed shadcn/ui CSS Variables
 - **Status**: Properly configured for both light and dark themes
-- **File**: `/workspace/web_ui/src/index.css`
+- **File**: `/workspace/frontend/src/index.css`
 - **Variables**: All standard shadcn/ui variables are defined (`--background`, `--foreground`, `--primary`, etc.)
 
 ### 3. ✅ Verified Tailwind Configuration
 - **Status**: Correctly maps CSS variables to Tailwind utility classes
-- **File**: `/workspace/web_ui/tailwind.config.js`
+- **File**: `/workspace/frontend/tailwind.config.js`
 - **Config**: Proper color mappings using `hsl(var(--variable))` pattern
 
 ### 4. ✅ Theme Context Implementation
 - **Status**: Fully functional React context with localStorage persistence
 - **Files**:
-  - `/workspace/web_ui/src/contexts/ThemeContext.tsx`
-  - `/workspace/web_ui/src/contexts/ThemeUtils.tsx`
-  - `/workspace/web_ui/src/contexts/useTheme.ts`
+  - `/workspace/frontend/src/contexts/ThemeContext.tsx`
+  - `/workspace/frontend/src/contexts/ThemeUtils.tsx`
+  - `/workspace/frontend/src/contexts/useTheme.ts`
 - **Features**: Light/Dark/System theme support with proper HTML class management
 
 ## Current Theme System Features
@@ -135,9 +135,9 @@ The shadcn/ui theming system is working correctly. The main issue was the incorr
 4. Enhanced developer debugging tools
 
 ### Key Files Modified
-- ✅ `/workspace/web_ui/index.html` - Fixed root element classes
-- ✅ `/workspace/web_ui/src/components/ThemeVerificationTest.tsx` - Added for testing
-- ✅ `/workspace/web_ui/src/pages/ThemeTest.tsx` - Added theme test page
-- ✅ `/workspace/web_ui/src/components/AppSidebar.tsx` - Added theme test navigation
+- ✅ `/workspace/frontend/index.html` - Fixed root element classes
+- ✅ `/workspace/frontend/src/components/ThemeVerificationTest.tsx` - Added for testing
+- ✅ `/workspace/frontend/src/pages/ThemeTest.tsx` - Added theme test page
+- ✅ `/workspace/frontend/src/components/AppSidebar.tsx` - Added theme test navigation
 
 The theme system is now ready for production use with full shadcn/ui compatibility.

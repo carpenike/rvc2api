@@ -27,7 +27,7 @@
 - Create a foundation for scalable frontend development and maintenance
 
 ### 1.2. Scope
-- Affected: `web_ui/` directory - React frontend components, hooks, API integration, and tooling
+- Affected: `frontend/` directory - React frontend components, hooks, API integration, and tooling
 - Enhanced: State management patterns, error handling, performance optimization, testing infrastructure
 - Unchanged: Backend API endpoints, WebSocket implementation, core business logic
 - Boundaries: Frontend improvements only; no changes to backend structure or API contracts
@@ -71,7 +71,7 @@
 
 ### 3.2. Code Structure Changes ✅ IMPLEMENTED
 ```
-web_ui/src/
+frontend/src/
 ├── components/
 │   ├── ui/              # Reusable UI components (Button, LoadingSpinner, SkeletonLoader)
 │   ├── ErrorBoundary.tsx ✅ IMPLEMENTED

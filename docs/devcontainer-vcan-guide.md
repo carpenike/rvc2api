@@ -122,7 +122,7 @@ poetry run python run_server.py
 In another terminal:
 
 ```bash
-cd /workspace/web_ui
+cd /workspace/frontend
 npm run dev
 ```
 

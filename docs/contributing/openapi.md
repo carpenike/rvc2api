@@ -54,7 +54,7 @@ You can generate TypeScript types from the OpenAPI schema using tools like `open
 npm install --save-dev openapi-typescript
 
 # Generate types
-npx openapi-typescript docs/api/openapi.json --output web_ui/src/api/generated/types.ts
+npx openapi-typescript docs/api/openapi.json --output frontend/src/api/generated/types.ts
 ```
 
 This ensures that your frontend code uses types that are consistent with the backend API.
@@ -68,7 +68,7 @@ You can also generate a full TypeScript client for the API:
 npm install @openapitools/openapi-generator-cli -g
 
 # Generate a TypeScript client
-openapi-generator-cli generate -i docs/api/openapi.json -g typescript-fetch -o web_ui/src/api/generated
+openapi-generator-cli generate -i docs/api/openapi.json -g typescript-fetch -o frontend/src/api/generated
 ```
 
 This client provides type-safe methods for all API endpoints.

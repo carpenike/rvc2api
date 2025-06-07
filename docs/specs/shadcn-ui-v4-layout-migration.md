@@ -33,7 +33,7 @@ Migrate the RVC2API React frontend to adopt the new shadcn/ui v4 layout architec
 
 **File Structure:**
 ```
-web_ui/src/
+frontend/src/
 ├── App.tsx                    # Main app with routing and WebSocket
 ├── layout/
 │   └── Layout.tsx            # Wrapper with Header/Footer/SideNav
@@ -122,7 +122,7 @@ npx shadcn@latest add sidebar
 
 **3.1.3. Create v4 Component Structure**
 ```
-web_ui/src/components/ui/
+frontend/src/components/ui/
 ├── sidebar.tsx               # v4 sidebar components (from shadcn)
 └── ...                      # Other existing shadcn components
 ```
@@ -155,7 +155,7 @@ web_ui/src/components/ui/
 
 **3.3.1. Create New AppSidebar Component**
 ```typescript
-// New component: web_ui/src/components/AppSidebar.tsx
+// New component: frontend/src/components/AppSidebar.tsx
 import {
   Sidebar,
   SidebarContent,
@@ -265,7 +265,7 @@ export function Layout({ children }: LayoutProps) {
 
 **4.1.1. AppSidebar Component**
 ```typescript
-// web_ui/src/components/AppSidebar.tsx
+// frontend/src/components/AppSidebar.tsx
 export function AppSidebar() {
   return (
     <Sidebar>
@@ -281,7 +281,7 @@ export function AppSidebar() {
 
 **4.1.2. Updated Layout Component**
 ```typescript
-// web_ui/src/layout/Layout.tsx
+// frontend/src/layout/Layout.tsx
 export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>
@@ -524,7 +524,7 @@ interface SidebarContext {
 ### B.1. File Structure Changes
 ```
 BEFORE:                          AFTER:
-web_ui/src/                     web_ui/src/
+frontend/src/                     frontend/src/
 ├── components/                 ├── components/
 │   ├── SideNav.tsx            │   ├── AppSidebar.tsx (NEW)
 │   ├── Header.tsx             │   ├── Header.tsx (UPDATED)

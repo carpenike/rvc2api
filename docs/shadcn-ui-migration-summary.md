@@ -13,12 +13,12 @@ Successfully completed the migration from custom CSS theming system (rv-* custom
 
 ### 2. File Cleanup
 **Removed Files:**
-- `/workspace/web_ui/src/styles/themes.css`
-- `/workspace/web_ui/src/styles/light.css`
-- `/workspace/web_ui/src/styles/dark.css`
+- `/workspace/frontend/src/styles/themes.css`
+- `/workspace/frontend/src/styles/light.css`
+- `/workspace/frontend/src/styles/dark.css`
 
 ### 3. Design Token Implementation
-**Updated `/workspace/web_ui/src/index.css`:**
+**Updated `/workspace/frontend/src/index.css`:**
 - Implemented complete shadcn/UI design token system
 - Enhanced color values for better contrast and modern aesthetics
 - Added comprehensive color palette for both light and dark themes
@@ -26,7 +26,7 @@ Successfully completed the migration from custom CSS theming system (rv-* custom
 - Optimized sidebar colors for RV control interface
 
 ### 4. Theme System Migration
-**Updated `/workspace/web_ui/src/contexts/ThemeContext.tsx`:**
+**Updated `/workspace/frontend/src/contexts/ThemeContext.tsx`:**
 - Migrated from custom rv-light/rv-dark classes to shadcn/UI standard `dark` class
 - Maintained localStorage compatibility with "rv-theme" key for user preferences
 - Simplified theme logic to use shadcn/UI conventions
@@ -40,10 +40,10 @@ Successfully completed the migration from custom CSS theming system (rv-* custom
 
 ### 6. Import Cleanup
 **Removed theme import statements from:**
-- `/workspace/web_ui/src/components/ui/Button.tsx`
-- `/workspace/web_ui/src/components/layout/SideNav.tsx`
-- `/workspace/web_ui/src/components/common/ErrorBoundary.tsx`
-- `/workspace/web_ui/src/components/common/LoadingSpinner.tsx`
+- `/workspace/frontend/src/components/ui/Button.tsx`
+- `/workspace/frontend/src/components/layout/SideNav.tsx`
+- `/workspace/frontend/src/components/common/ErrorBoundary.tsx`
+- `/workspace/frontend/src/components/common/LoadingSpinner.tsx`
 
 ## Enhanced Design Tokens
 
@@ -103,14 +103,14 @@ Successfully completed the migration from custom CSS theming system (rv-* custom
 ## Files Modified
 
 **Core Design System:**
-- `/workspace/web_ui/src/index.css` - Complete design token overhaul
-- `/workspace/web_ui/src/contexts/ThemeContext.tsx` - Theme system modernization
+- `/workspace/frontend/src/index.css` - Complete design token overhaul
+- `/workspace/frontend/src/contexts/ThemeContext.tsx` - Theme system modernization
 
 **Component Updates:**
-- `/workspace/web_ui/src/components/ui/Button.tsx`
-- `/workspace/web_ui/src/components/layout/SideNav.tsx`
-- `/workspace/web_ui/src/components/common/ErrorBoundary.tsx`
-- `/workspace/web_ui/src/components/common/LoadingSpinner.tsx`
+- `/workspace/frontend/src/components/ui/Button.tsx`
+- `/workspace/frontend/src/components/layout/SideNav.tsx`
+- `/workspace/frontend/src/components/common/ErrorBoundary.tsx`
+- `/workspace/frontend/src/components/common/LoadingSpinner.tsx`
 
 ## Future Considerations
 

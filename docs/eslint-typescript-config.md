@@ -8,8 +8,8 @@ This document details the ESLint and TypeScript configuration used in the rvc2ap
 
 The project uses ESLint v9+ with the new flat configuration format, which provides better performance and more flexibility:
 
-- `web_ui/eslint.config.js`: Main configuration file
-- `web_ui/eslint.config.mjs`: Alternative format for module support
+- `frontend/eslint.config.js`: Main configuration file
+- `frontend/eslint.config.mjs`: Alternative format for module support
 
 ### Key ESLint Rules
 
@@ -77,7 +77,7 @@ The pre-commit hook is configured to run ESLint automatically with the `--fix` o
     - id: eslint
       files: \.(js|ts|tsx)$
       types: [file]
-      args: ["--fix", "--config", "web_ui/eslint.config.js"]
+      args: ["--fix", "--config", "frontend/eslint.config.js"]
       additional_dependencies:
         - eslint@9.25.0
         - eslint-plugin-react-hooks@5.2.0
@@ -87,7 +87,7 @@ The pre-commit hook is configured to run ESLint automatically with the `--fix` o
         - "@eslint/js@9.26.0"
         - globals@16.0.0
         - eslint-plugin-jsdoc@50.6.17
-      exclude: ^web_ui/(dist|node_modules)/
+      exclude: ^frontend/(dist|node_modules)/
 ```
 
 ## Fix Scripts

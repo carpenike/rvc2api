@@ -87,7 +87,7 @@ The project uses GitHub Actions to automate CI/CD processes.
 
 2. **Frontend CI** (`frontend.yml`):
 
-   - Triggered by changes to the `web_ui` directory
+   - Triggered by changes to the `frontend` directory
    - Runs linting and type checking
    - Builds the frontend
    - Uploads build artifacts
@@ -142,7 +142,7 @@ poetry run pytest
 poetry run ruff check .
 poetry run pyright src
 
-# Frontend (from web_ui/ directory)
+# Frontend (from frontend/ directory)
 npm run dev
 npm run build
 npm run lint

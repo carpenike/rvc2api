@@ -9,7 +9,7 @@ The documentation is built using [MkDocs](https://www.mkdocs.org/) with the [Mat
 The documentation files are located in the following directories:
 
 - `/docs/`: Main project documentation (markdown files)
-- `/web_ui/docs/`: Frontend-specific documentation
+- `/frontend/docs/`: Frontend-specific documentation
 
 ## Setting Up the Documentation Environment
 

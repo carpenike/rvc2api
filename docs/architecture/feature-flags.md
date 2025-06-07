@@ -29,7 +29,7 @@ canbus:
   core: true
   depends_on: []
 
-web_ui:
+frontend:
   enabled: true
   core: true
   depends_on: []

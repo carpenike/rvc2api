@@ -27,7 +27,7 @@ The project includes a Nix flake that provides a fully configured development en
 
 3. Start developing:
    - Backend: `poetry run python run_server.py`
-   - Frontend: `cd web_ui && npm run dev`
+   - Frontend: `cd frontend && npm run dev`
 
 ### Benefits
 
@@ -63,7 +63,7 @@ If you don't want to use Nix, you can use Poetry directly to manage the Python e
 2. Install frontend dependencies:
 
    ```bash
-   cd web_ui && npm install
+   cd frontend && npm install
    ```
 
 3. Start the backend server:
@@ -75,7 +75,7 @@ If you don't want to use Nix, you can use Poetry directly to manage the Python e
 4. Start the frontend development server:
 
    ```bash
-   cd web_ui && npm run dev
+   cd frontend && npm run dev
    ```
 
 ## VS Code Integration

@@ -22,8 +22,8 @@ cd /Users/ryan/src/rvc2api
 nix develop
 
 # The environment automatically sets up Node.js
-# Navigate to web_ui directory
-cd web_ui
+# Navigate to frontend directory
+cd frontend
 
 # Start the development server
 npm run dev
@@ -38,7 +38,7 @@ If you prefer not to use Nix, you can set up the environment manually:
 node --version
 
 # Install dependencies
-cd /Users/ryan/src/rvc2api/web_ui
+cd /Users/ryan/src/rvc2api/frontend
 npm install
 
 # Start the development server
@@ -52,7 +52,7 @@ npm run dev
 During development, Vite provides fast rebuilds and HMR (Hot Module Replacement):
 
 ```bash
-cd web_ui
+cd frontend
 npm run dev
 ```
 
@@ -70,16 +70,16 @@ For production builds, use either:
 nix run .#build-frontend
 
 # Or manually
-cd web_ui
+cd frontend
 npm run build
 ```
 
-The build output is placed in `web_ui/dist/` and is ready to be served by Caddy.
+The build output is placed in `frontend/dist/` and is ready to be served by Caddy.
 
 ## Project Structure
 
 ```
-web_ui/
+frontend/
 ├── public/           # Static assets copied as-is
 ├── src/
 │   ├── components/   # Reusable React components
@@ -122,6 +122,6 @@ ws.addEventListener('message', (event) => {
 
 ## Deployment
 
-After building, the static files in `web_ui/dist/` should be deployed to a webserver. The project uses Caddy for serving these files and proxying API requests to the backend.
+After building, the static files in `frontend/dist/` should be deployed to a webserver. The project uses Caddy for serving these files and proxying API requests to the backend.
 
 See [React Deployment Guide](react-deployment.md) for detailed deployment instructions.

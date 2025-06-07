@@ -46,7 +46,7 @@ graph TD
 The frontend is built using React, TypeScript, and Vite, with the following structure:
 
 ```
-web_ui/
+frontend/
 ├── public/            # Static assets
 ├── src/
 │   ├── api/           # API integration

@@ -59,14 +59,14 @@ The new frontend can be served in two ways:
 1. **Development Mode**
 
    ```bash
-   cd web_ui
+   cd frontend
    npm run dev
    ```
 
 2. **Production Mode**
 
    ```bash
-   cd web_ui
+   cd frontend
    npm run build
    ```
 

@@ -30,7 +30,7 @@ git clone https://github.com/carpenike/rvc2api.git && cd rvc2api
 
 # Install dependencies
 poetry install
-cd web_ui && npm install
+cd frontend && npm install
 ```
 
 ### Running the Application
@@ -44,7 +44,7 @@ poetry run python run_server.py
 Start the frontend (in a separate terminal):
 
 ```bash
-cd web_ui && npm run dev
+cd frontend && npm run dev
 ```
 
 ## Key Features

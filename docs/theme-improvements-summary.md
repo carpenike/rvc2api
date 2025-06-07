@@ -64,13 +64,13 @@
 ## 🔧 Technical Implementation
 
 ### Files Modified
-1. **`web_ui/src/contexts/ThemeUtils.tsx`**: Enhanced with comprehensive theme configuration
-2. **`web_ui/src/contexts/ThemeContext.tsx`**: Improved system theme detection and utilities
-3. **`web_ui/src/components/ThemeSelector.tsx`**: Enhanced with icons and better UX
-4. **`web_ui/src/components/ThemeDebugger.tsx`**: New development debugging component
-5. **`web_ui/src/App.tsx`**: Added ThemeDebugger for development
-6. **`web_ui/index.html`**: Enhanced theme flash prevention script
-7. **`web_ui/src/index.css`**: Added transitions, accessibility, and semantic colors
+1. **`frontend/src/contexts/ThemeUtils.tsx`**: Enhanced with comprehensive theme configuration
+2. **`frontend/src/contexts/ThemeContext.tsx`**: Improved system theme detection and utilities
+3. **`frontend/src/components/ThemeSelector.tsx`**: Enhanced with icons and better UX
+4. **`frontend/src/components/ThemeDebugger.tsx`**: New development debugging component
+5. **`frontend/src/App.tsx`**: Added ThemeDebugger for development
+6. **`frontend/index.html`**: Enhanced theme flash prevention script
+7. **`frontend/src/index.css`**: Added transitions, accessibility, and semantic colors
 
 ### Current Theme Options
 1. **Light Theme** ☀️ - Clean and bright interface

@@ -40,7 +40,7 @@ You can use the OpenAPI schema to generate client libraries for various programm
 npm install @openapitools/openapi-generator-cli -g
 
 # Generate a TypeScript client
-openapi-generator-cli generate -i docs/api/openapi.json -g typescript-fetch -o web_ui/src/api/generated
+openapi-generator-cli generate -i docs/api/openapi.json -g typescript-fetch -o frontend/src/api/generated
 ```
 
 ### Example: Generating a Python Client

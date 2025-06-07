@@ -40,7 +40,7 @@ The `rvc2api` frontend demonstrates a well-implemented Tailwind CSS v4 and shadc
 
 #### A. Implement System Theme Detection
 ```typescript
-// Enhance theme detection in web_ui/src/contexts/ThemeContext.tsx
+// Enhance theme detection in frontend/src/contexts/ThemeContext.tsx
 const getSystemTheme = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined' && window.matchMedia) {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -51,7 +51,7 @@ const getSystemTheme = (): 'light' | 'dark' => {
 
 #### B. Add Theme Transition Animations
 ```css
-/* Add to web_ui/src/index.css */
+/* Add to frontend/src/index.css */
 :root {
   --theme-transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
@@ -74,7 +74,7 @@ const getSystemTheme = (): 'light' | 'dark' => {
 
 #### A. Semantic Color Naming
 ```css
-/* Enhance web_ui/src/index.css with semantic tokens */
+/* Enhance frontend/src/index.css with semantic tokens */
 :root {
   /* Status colors */
   --color-success: hsl(142 76% 36%);
@@ -170,7 +170,7 @@ const useThemeAwareStyles = () => {
 
 #### A. Theme Type Safety
 ```typescript
-// Enhanced type definitions in web_ui/src/contexts/ThemeUtils.tsx
+// Enhanced type definitions in frontend/src/contexts/ThemeUtils.tsx
 export const THEMES = ['light', 'dark', 'system'] as const;
 export type Theme = typeof THEMES[number];
 
@@ -211,7 +211,7 @@ export const themeConfigs: Record<Theme, ThemeConfig> = {
 
 #### A. High Contrast Mode Support
 ```css
-/* Add to web_ui/src/index.css */
+/* Add to frontend/src/index.css */
 @media (prefers-contrast: high) {
   :root {
     --border: hsl(0 0% 0%);
@@ -274,7 +274,7 @@ export const renderWithTheme = (component: ReactElement, theme: Theme = 'light')
 ## Migration Considerations
 
 ### Legacy Theme System
-The deprecated theme system in `_deprecated/src/core_daemon/web_ui/` should be:
+The deprecated theme system in `_deprecated/src/core_daemon/frontend/` should be:
 1. Documented for reference
 2. Gradually phased out
 3. Migration path clearly defined

@@ -41,7 +41,7 @@ The Caddy configuration is defined in the NixOS module at `modules/caddy.nix`. K
 
 1. Build the React frontend:
    ```
-   cd web_ui
+   cd frontend
    npm install
    npm run build
    ```
@@ -90,7 +90,7 @@ During development:
 
 2. Run the React dev server:
    ```
-   cd web_ui
+   cd frontend
    npm run dev
    ```
 

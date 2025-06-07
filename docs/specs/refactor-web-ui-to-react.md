@@ -8,7 +8,7 @@
 - Prepare for future enhancements (e.g., richer UI, real-time features, easier testing).
 
 ### 1.2. Scope
-- Affected: `src/core_daemon/web_ui/` (all templates, static assets, and related backend integration), API endpoints serving UI assets.
+- Affected: `src/core_daemon/frontend/` (all templates, static assets, and related backend integration), API endpoints serving UI assets.
 - Unchanged: Backend API logic, WebSocket endpoints, business logic, and backend models/services.
 - Boundaries: Only the UI layer and its integration with the backend; no changes to core API or backend state management.
 
@@ -16,7 +16,7 @@
 
 ### 2.1. Code Structure
 - Check in with context7 before starting to refactor to ensure we use the latest recommended practices for use with the languages being proposed.
-- UI is implemented as Jinja2 templates in `src/core_daemon/web_ui/templates/` and static files in `src/core_daemon/web_ui/static/`.
+- UI is implemented as Jinja2 templates in `src/core_daemon/frontend/templates/` and static files in `src/core_daemon/frontend/static/`.
 - Served directly by FastAPI backend.
 - Tightly coupled: UI changes require backend restarts; limited frontend tooling.
 - Pain points: Difficult to modernize, limited interactivity, slow iteration, hard to test UI in isolation.
@@ -34,7 +34,7 @@
 ## 3. Refactoring Plan
 
 ### 3.1. Architectural Changes
-- Scaffold a new React app (using Vite) in a new `web_ui/` directory at the project root.
+- Scaffold a new React app (using Vite) in a new `frontend/` directory at the project root.
 - UI will communicate with backend via REST/WebSocket APIs (no backend modernization or FastAPI changes in this phase).
 - Decouple static asset serving from FastAPI completely - FastAPI will provide API services only.
 - The React frontend will be served directly by Caddy (which already reverse-proxies the FastAPI service).
@@ -42,8 +42,8 @@
 - Ignore authentication and backend modernization for this phase; these will be handled separately.
 
 ### 3.2. Code Structure Changes
-- Create `web_ui/` at project root: contains all React source, assets, and build config.
-- Remove or archive `src/core_daemon/web_ui/`.
+- Create `frontend/` at project root: contains all React source, assets, and build config.
+- Remove or archive `src/core_daemon/frontend/`.
 - Update backend to serve built frontend (optional: only in production; no backend code changes in this phase).
 - Update all relevant `.nix` files in the project root (e.g., `flake.nix`, `devshell.nix`) to include Node.js, frontend build tools, and React app development dependencies for a unified dev environment.
 - Update `pyproject.toml` as appropriate to reflect any changes in backend/frontend integration or developer workflow (but do not change backend logic).
@@ -92,7 +92,7 @@
 
 ### 6.1. Code Documentation
 - Update backend docstrings for UI endpoints.
-- Add README to `web_ui/` with setup/dev instructions.
+- Add README to `frontend/` with setup/dev instructions.
 - Update architecture docs to reflect new UI structure.
 
 ### 6.2. User Documentation

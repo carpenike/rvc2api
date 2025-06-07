@@ -85,7 +85,7 @@ rvc2api/
 ├── src/                  # Shared components
 │   ├── common/           # Shared models and utilities
 │   └── rvc_decoder/      # RV-C protocol decoder
-├── web_ui/               # React frontend
+├── frontend/               # React frontend
 │   ├── src/              # Frontend source code
 │   └── docs/             # Frontend-specific documentation
 ├── docs/                 # Project documentation
