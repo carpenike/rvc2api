@@ -85,3 +85,28 @@ log_streaming:
   core: false
   depends_on: [websocket]
   description: "WebSocket log streaming endpoints and handlers (buffering, filtering, rate limiting)"
+
+# Enhanced dashboard and analytics features
+dashboard_aggregation:
+  enabled: true
+  core: false
+  depends_on: [entity_manager, websocket]
+  description: "Aggregated dashboard endpoints for optimized data loading and real-time updates"
+
+bulk_operations:
+  enabled: true
+  core: false
+  depends_on: [entity_manager, can_interface]
+  description: "Bulk control operations for entities and advanced filtering capabilities"
+
+system_analytics:
+  enabled: true
+  core: false
+  depends_on: [entity_manager, can_interface]
+  description: "System analytics, performance monitoring, and alerting features"
+
+activity_tracking:
+  enabled: true
+  core: false
+  depends_on: [entity_manager, websocket]
+  description: "Activity feed tracking and recent events monitoring"

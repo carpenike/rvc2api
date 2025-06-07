@@ -15,8 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { LightEntity } from "@/api/types"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useEntities } from "@/hooks/useEntities"
-import { useLightControl } from "@/hooks/useEntities"
+import { useOptimisticLightControl, useOptimisticBulkControl } from "@/hooks/useOptimisticMutations"
 import type { Entity, TankEntity, TemperatureEntity } from "@/api/types"
 import {
     IconBulb,
@@ -99,7 +100,7 @@ function getDeviceTypeBadgeVariant(deviceType: string): "default" | "secondary" 
  * Entity quick actions component
  */
 function EntityQuickActions({ entity }: { entity: Entity }) {
-  const lightControl = useLightControl()
+  const optimisticLightControl = useOptimisticLightControl()
 
   if (entity.device_type === 'light') {
     const lightEntity = entity as LightEntity
@@ -110,8 +111,8 @@ function EntityQuickActions({ entity }: { entity: Entity }) {
         <Button
           size="sm"
           variant="outline"
-          onClick={() => lightControl.toggle.mutate({ entityId: entity.entity_id })}
-          disabled={lightControl.toggle.isPending}
+          onClick={() => optimisticLightControl.toggle.mutate({ entityId: entity.entity_id })}
+          disabled={optimisticLightControl.toggle.isPending}
         >
           {isOn ? <IconToggleRight className="h-4 w-4" /> : <IconToggleLeft className="h-4 w-4" />}
         </Button>
@@ -198,15 +199,32 @@ function EntityDetails({ entity }: { entity: Entity }) {
 /**
  * Individual entity card component with enhanced design
  */
-function EntityCard({ entity }: { entity: Entity }) {
+function EntityCard({
+  entity,
+  isSelected = false,
+  onSelectChange
+}: {
+  entity: Entity
+  isSelected?: boolean
+  onSelectChange?: (selected: boolean) => void
+}) {
   const DeviceIcon = getDeviceIcon(entity.device_type)
   const isOnline = entity.timestamp && (Date.now() - entity.timestamp) < 300000
   const isActive = entity.state === 'on' || entity.state === 'unlocked' || entity.state === 'active'
 
   return (
-    <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+    <Card className={`@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs hover:shadow-md transition-all duration-200 hover:scale-[1.02] ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
+          {onSelectChange && (
+            <div className="mr-3 pt-2">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={onSelectChange}
+                aria-label={`Select ${entity.friendly_name || entity.name || entity.entity_id}`}
+              />
+            </div>
+          )}
           <div className="flex items-start gap-3 flex-1">
             <div className={`p-2 rounded-lg transition-colors ${isOnline ? 'bg-primary/10' : 'bg-muted'}`}>
               <DeviceIcon className={`h-5 w-5 ${isOnline ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -351,6 +369,84 @@ function DeviceManagementShortcuts({ deviceTypes }: { deviceTypes: string[] }) {
 }
 
 /**
+ * Bulk control actions component
+ */
+function BulkControlActions({
+  selectedEntities,
+  onClearSelection
+}: {
+  selectedEntities: string[]
+  onClearSelection: () => void
+}) {
+  const optimisticBulkControl = useOptimisticBulkControl()
+
+  const handleBulkAction = async (command: string, parameters: Record<string, unknown> = {}) => {
+    if (selectedEntities.length === 0) return
+
+    await optimisticBulkControl.mutateAsync({
+      entity_ids: selectedEntities,
+      command,
+      parameters,
+      ignore_errors: true
+    })
+
+    onClearSelection()
+  }
+
+  if (selectedEntities.length === 0) {
+    return null
+  }
+
+  return (
+    <Card className="border-primary/50 bg-primary/5">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="text-sm">
+              <span className="font-medium">{selectedEntities.length}</span> entities selected
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handleBulkAction('on')}
+                size="sm"
+                variant="outline"
+                disabled={optimisticBulkControl.isPending}
+              >
+                Turn On
+              </Button>
+              <Button
+                onClick={() => handleBulkAction('off')}
+                size="sm"
+                variant="outline"
+                disabled={optimisticBulkControl.isPending}
+              >
+                Turn Off
+              </Button>
+              <Button
+                onClick={() => handleBulkAction('toggle')}
+                size="sm"
+                variant="outline"
+                disabled={optimisticBulkControl.isPending}
+              >
+                Toggle
+              </Button>
+            </div>
+          </div>
+          <Button
+            onClick={onClearSelection}
+            size="sm"
+            variant="ghost"
+            disabled={optimisticBulkControl.isPending}
+          >
+            Clear Selection
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
  * Main Entities Page Component
  */
 export default function EntitiesPage() {
@@ -358,6 +454,8 @@ export default function EntitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>("all")
   const [areaFilter, setAreaFilter] = useState<string>("all")
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([])
+  const [showBulkActions, setShowBulkActions] = useState(false)
 
   // Convert entities object to array
   const entities = useMemo(() => {
@@ -385,6 +483,31 @@ export default function EntitiesPage() {
       return matchesSearch && matchesDeviceType && matchesArea
     })
   }, [entities, searchTerm, deviceTypeFilter, areaFilter])
+
+  // Selection handlers
+  const handleEntitySelect = (entityId: string, selected: boolean) => {
+    setSelectedEntities(prev =>
+      selected
+        ? [...prev, entityId]
+        : prev.filter(id => id !== entityId)
+    )
+  }
+
+  const handleSelectAll = () => {
+    const allFilteredIds = filteredEntities.map(entity => entity.entity_id)
+    setSelectedEntities(allFilteredIds)
+  }
+
+  const handleClearSelection = () => {
+    setSelectedEntities([])
+  }
+
+  const toggleBulkMode = () => {
+    setShowBulkActions(!showBulkActions)
+    if (showBulkActions) {
+      setSelectedEntities([])
+    }
+  }
 
   if (isLoading) {
     return (
@@ -438,11 +561,33 @@ export default function EntitiesPage() {
     <AppLayout pageTitle="Entities">
       <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Entities</h1>
-          <p className="text-muted-foreground">
-            Manage all your RV devices and sensors in one place
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Entities</h1>
+            <p className="text-muted-foreground">
+              Manage all your RV devices and sensors in one place
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={toggleBulkMode}
+              variant={showBulkActions ? "default" : "outline"}
+              className="gap-2"
+            >
+              <IconSettings className="h-4 w-4" />
+              {showBulkActions ? "Exit Bulk Mode" : "Bulk Actions"}
+            </Button>
+            {showBulkActions && filteredEntities.length > 0 && (
+              <Button
+                onClick={handleSelectAll}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                Select All ({filteredEntities.length})
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Statistics */}
@@ -491,6 +636,14 @@ export default function EntitiesPage() {
           </CardContent>
         </Card>
 
+        {/* Bulk Control Actions */}
+        {showBulkActions && (
+          <BulkControlActions
+            selectedEntities={selectedEntities}
+            onClearSelection={handleClearSelection}
+          />
+        )}
+
         {/* Device Management Shortcuts */}
         <DeviceManagementShortcuts deviceTypes={deviceTypes} />
 
@@ -498,7 +651,12 @@ export default function EntitiesPage() {
         {filteredEntities.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredEntities.map(entity => (
-              <EntityCard key={entity.entity_id} entity={entity} />
+              <EntityCard
+                key={entity.entity_id}
+                entity={entity}
+                isSelected={selectedEntities.includes(entity.entity_id)}
+                onSelectChange={showBulkActions ? (selected) => handleEntitySelect(entity.entity_id, selected) : undefined}
+              />
             ))}
           </div>
         ) : (

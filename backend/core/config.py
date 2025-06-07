@@ -437,6 +437,29 @@ class FeaturesSettings(BaseSettings):
     enable_metrics: bool = Field(default=True, description="Enable metrics collection")
     message_queue_size: int = Field(default=1000, description="Message queue size", ge=1)
 
+    # Enhanced frontend features
+    enable_dashboard_aggregation: bool = Field(
+        default=True, description="Enable aggregated dashboard endpoints"
+    )
+    enable_bulk_operations: bool = Field(default=True, description="Enable bulk entity operations")
+    enable_system_analytics: bool = Field(
+        default=True, description="Enable system analytics and alerting"
+    )
+    enable_activity_tracking: bool = Field(
+        default=True, description="Enable activity feed tracking"
+    )
+
+    # Performance and optimization settings
+    dashboard_cache_ttl: int = Field(
+        default=30, description="Dashboard data cache TTL in seconds", ge=1
+    )
+    bulk_operation_limit: int = Field(
+        default=50, description="Maximum entities per bulk operation", ge=1, le=200
+    )
+    activity_feed_limit: int = Field(
+        default=100, description="Maximum activity feed entries", ge=10, le=1000
+    )
+
 
 class Settings(BaseSettings):
     """

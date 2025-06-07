@@ -349,6 +349,135 @@ export async function fetchQueueStatus(): Promise<QueueStatus> {
 }
 
 //
+// ===== DASHBOARD AGGREGATION API (/api/dashboard) =====
+//
+
+/**
+ * Get complete dashboard summary data
+ *
+ * Optimized endpoint that returns all dashboard data in a single request
+ * @returns Promise resolving to complete dashboard summary
+ */
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  const url = '/api/dashboard/summary';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<DashboardSummary>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get entity summary statistics
+ *
+ * @returns Promise resolving to aggregated entity statistics
+ */
+export async function fetchEntitySummary(): Promise<EntitySummary> {
+  const url = '/api/dashboard/entities';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<EntitySummary>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get system performance metrics
+ *
+ * @returns Promise resolving to system metrics
+ */
+export async function fetchSystemMetrics(): Promise<SystemMetrics> {
+  const url = '/api/dashboard/system';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<SystemMetrics>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get CAN bus summary
+ *
+ * @returns Promise resolving to CAN bus summary
+ */
+export async function fetchCANBusSummary(): Promise<CANBusSummary> {
+  const url = '/api/dashboard/can-bus';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<CANBusSummary>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get activity feed
+ *
+ * @param params - Optional query parameters (limit, since)
+ * @returns Promise resolving to activity feed
+ */
+export async function fetchActivityFeed(params?: { limit?: number; since?: string }): Promise<ActivityFeed> {
+  const queryString = params ? buildQueryString(params) : '';
+  const url = queryString ? `/api/dashboard/activity?${queryString}` : '/api/dashboard/activity';
+
+  logApiRequest('GET', url, params);
+  const result = await apiGet<ActivityFeed>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Perform bulk control operations on multiple entities
+ *
+ * @param request - Bulk control request with entity IDs and command
+ * @returns Promise resolving to bulk control response
+ */
+export async function bulkControlEntities(request: BulkControlRequest): Promise<BulkControlResponse> {
+  const url = '/api/dashboard/bulk-control';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<BulkControlResponse>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get system analytics and monitoring data
+ *
+ * @returns Promise resolving to system analytics
+ */
+export async function fetchSystemAnalytics(): Promise<SystemAnalytics> {
+  const url = '/api/dashboard/analytics';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<SystemAnalytics>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Acknowledge a system alert
+ *
+ * @param alertId - ID of the alert to acknowledge
+ * @returns Promise resolving to acknowledgment response
+ */
+export async function acknowledgeAlert(alertId: string): Promise<{ success: boolean; message: string }> {
+  const url = `/api/dashboard/alerts/${alertId}/acknowledge`;
+
+  logApiRequest('POST', url);
+  const result = await apiPost<{ success: boolean; message: string }>(url, {});
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
 // ===== CONVENIENCE FUNCTIONS =====
 //
 

@@ -21,7 +21,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useEntities } from "@/hooks/useEntities"
 import { useCANMetrics, useCANStatistics, useHealthStatus, useQueueStatus } from "@/hooks/useSystem"
+import { useSystemAnalytics, useAcknowledgeAlert } from "@/hooks/useDashboard"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { LoadingPatterns } from "@/components/loading-states"
 import {
     IconActivity,
     IconAlertCircle,
@@ -765,6 +767,188 @@ function PerformanceMetricsCard() {
 }
 
 /**
+ * System Alerts Card
+ */
+function SystemAlertsCard() {
+  const { data: analytics, isLoading, error } = useSystemAnalytics()
+  const acknowledgeAlert = useAcknowledgeAlert()
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <IconAlertCircle className="size-5" />
+            <Skeleton className="h-5 w-32" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LoadingPatterns.ListItems count={3} />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <IconAlertCircle className="size-5" />
+            System Alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Unable to load system alerts
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const alerts = analytics?.alerts || []
+  const activeAlerts = alerts.filter(alert => !alert.acknowledged)
+  const acknowledgedAlerts = alerts.filter(alert => alert.acknowledged)
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'text-red-600 bg-red-50 border-red-200'
+      case 'error': return 'text-red-500 bg-red-50 border-red-200'
+      case 'warning': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+      case 'info': return 'text-blue-600 bg-blue-50 border-blue-200'
+      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+    }
+  }
+
+  const formatTimeAgo = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+
+    const diffDays = Math.floor(diffHours / 24)
+    return `${diffDays}d ago`
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconAlertCircle className="size-5" />
+          System Alerts
+          {activeAlerts.length > 0 && (
+            <Badge variant="destructive">{activeAlerts.length}</Badge>
+          )}
+        </CardTitle>
+        <CardDescription>Active alerts and notifications</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {alerts.length === 0 ? (
+          <div className="text-center py-6">
+            <IconCheck className="size-8 mx-auto mb-2 text-green-500" />
+            <p className="text-sm text-muted-foreground">No active alerts</p>
+            <p className="text-xs text-muted-foreground">System is operating normally</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Active Alerts */}
+            {activeAlerts.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm mb-3">Active Alerts</h4>
+                <div className="space-y-2">
+                  {activeAlerts.map((alert) => (
+                    <div
+                      key={alert.alert_id}
+                      className={`p-3 rounded-lg border ${getSeverityColor(alert.severity)}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{alert.message}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {alert.severity}
+                            </Badge>
+                          </div>
+                          <div className="text-xs opacity-75">
+                            Triggered {formatTimeAgo(alert.triggered_at)} •
+                            Current: {alert.current_value.toFixed(2)} •
+                            Threshold: {alert.threshold}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => acknowledgeAlert.mutate(alert.alert_id)}
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2 text-xs"
+                          disabled={acknowledgeAlert.isPending}
+                        >
+                          Acknowledge
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Acknowledged Alerts */}
+            {acknowledgedAlerts.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm mb-3 text-muted-foreground">
+                  Acknowledged ({acknowledgedAlerts.length})
+                </h4>
+                <div className="space-y-2">
+                  {acknowledgedAlerts.slice(0, 3).map((alert) => (
+                    <div
+                      key={alert.alert_id}
+                      className="p-2 rounded border border-gray-200 bg-gray-50 opacity-60"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">{alert.message}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTimeAgo(alert.triggered_at)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {acknowledgedAlerts.length > 3 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      +{acknowledgedAlerts.length - 3} more acknowledged alerts
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* System Recommendations */}
+            {analytics?.recommendations && analytics.recommendations.length > 0 && (
+              <div className="pt-3 border-t">
+                <h4 className="font-medium text-sm mb-2">Recommendations</h4>
+                <ul className="space-y-1">
+                  {analytics.recommendations.map((recommendation, index) => (
+                    <li key={index} className="text-xs text-muted-foreground flex items-start gap-2">
+                      <IconHelp className="size-3 mt-0.5 flex-shrink-0" />
+                      {recommendation}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
  * Main System Status Page
  */
 export default function SystemStatus() {
@@ -787,6 +971,9 @@ export default function SystemStatus() {
             <PerformanceMetricsCard />
           </div>
         </div>
+
+        {/* System Alerts */}
+        <SystemAlertsCard />
 
         {/* Interactive CAN Metrics Chart */}
         <CANMetricsChart />

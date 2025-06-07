@@ -16,17 +16,19 @@ import type { APIError } from './types';
 
 /**
  * Base URL for API requests
- * Uses VITE_API_URL environment variable or defaults to '/api'
+ * Uses VITE_API_URL environment variable or defaults to empty string
+ * (endpoints already include /api prefix)
  */
 export const API_BASE = (() => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  if (apiUrl) {
+  if (apiUrl && apiUrl.trim()) {
     return apiUrl;
   }
 
-  // Default to relative path (works with reverse proxy in production)
-  return '/api';
+  // Default to empty string in production so endpoints use full paths
+  // (endpoints already include /api prefix)
+  return '';
 })();
 
 /**
@@ -43,11 +45,11 @@ export const API_BASE = (() => {
  */
 export const WS_BASE = (() => {
   const backendWsUrl = import.meta.env.VITE_BACKEND_WS_URL;
-  if (backendWsUrl) {
+  if (backendWsUrl && backendWsUrl.trim()) {
     return backendWsUrl;
   }
   const wsUrl = import.meta.env.VITE_WS_URL;
-  if (wsUrl) {
+  if (wsUrl && wsUrl.trim()) {
     return wsUrl;
   }
   // Build WebSocket URL based on current location

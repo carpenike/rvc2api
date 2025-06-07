@@ -327,3 +327,107 @@ export interface LightControlCommands {
   brightnessUp: () => ControlCommand;
   brightnessDown: () => ControlCommand;
 }
+
+// Dashboard aggregation types
+export interface EntitySummary {
+  total_entities: number;
+  online_entities: number;
+  active_entities: number;
+  device_type_counts: Record<string, number>;
+  area_counts: Record<string, number>;
+  health_score: number;
+}
+
+export interface SystemMetrics {
+  uptime_seconds: number;
+  message_rate: number;
+  error_rate: number;
+  memory_usage_mb: number;
+  cpu_usage_percent: number;
+  websocket_connections: number;
+}
+
+export interface CANBusSummary {
+  interfaces_count: number;
+  total_messages: number;
+  messages_per_minute: number;
+  error_count: number;
+  queue_length: number;
+  bus_load_percent: number;
+}
+
+export interface ActivityEntry {
+  id: string;
+  timestamp: string;
+  event_type: string;
+  entity_id?: string;
+  title: string;
+  description: string;
+  severity: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ActivityFeed {
+  entries: ActivityEntry[];
+  total_count: number;
+  has_more: boolean;
+}
+
+export interface DashboardSummary {
+  timestamp: string;
+  entities: EntitySummary;
+  system: SystemMetrics;
+  can_bus: CANBusSummary;
+  activity: ActivityFeed;
+  alerts: string[];
+  quick_stats: Record<string, unknown>;
+}
+
+export interface BulkControlRequest {
+  entity_ids: string[];
+  command: string;
+  parameters: Record<string, unknown>;
+  ignore_errors: boolean;
+}
+
+export interface BulkControlResult {
+  entity_id: string;
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
+export interface BulkControlResponse {
+  total_requested: number;
+  successful: number;
+  failed: number;
+  results: BulkControlResult[];
+  summary: string;
+}
+
+export interface AlertDefinition {
+  id: string;
+  name: string;
+  description: string;
+  condition: string;
+  severity: string;
+  enabled: boolean;
+  threshold?: number;
+}
+
+export interface ActiveAlert {
+  alert_id: string;
+  triggered_at: string;
+  current_value: number;
+  threshold: number;
+  message: string;
+  severity: string;
+  acknowledged: boolean;
+}
+
+export interface SystemAnalytics {
+  alerts: ActiveAlert[];
+  performance_trends: Record<string, number[]>;
+  health_checks: Record<string, boolean>;
+  recommendations: string[];
+}

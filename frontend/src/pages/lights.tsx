@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Slider } from "@/components/ui/slider"
-import { useLightControl, useLights } from "@/hooks/useEntities"
+import { useLights } from "@/hooks/useEntities"
+import { useOptimisticLightControl } from "@/hooks/useOptimisticMutations"
 import { cn } from "@/lib/utils"
 import {
   IconBulb,
@@ -83,7 +84,7 @@ function LightingStatistics({ lights }: { lights: EntityData[] }) {
  * Quick presets component
  */
 function LightingPresets({ lights }: { lights: EntityData[] }) {
-  const { toggle, setBrightness } = useLightControl()
+  const { toggle, setBrightness } = useOptimisticLightControl()
 
   const handleAllOff = () => {
     lights.forEach(light => {
@@ -178,7 +179,7 @@ interface LightControlProps {
 }
 
 function LightControl({ light }: LightControlProps) {
-  const { toggle, setBrightness, brightnessUp, brightnessDown } = useLightControl()
+  const { toggle, setBrightness, brightnessUp, brightnessDown } = useOptimisticLightControl()
 
   const isOn = light.state === "on" || light.state === "true"
   const lightEntity = light as LightEntity
@@ -263,7 +264,7 @@ function LightControl({ light }: LightControlProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => brightnessDown.mutate({ entityId: light.entity_id })}
-                disabled={toggle.isPending || setBrightness.isPending || brightness <= 0}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending || brightness <= 0}
                 className="shrink-0"
               >
                 <IconMinus className="h-3 w-3" />
@@ -275,14 +276,14 @@ function LightControl({ light }: LightControlProps) {
                   max={100}
                   step={1}
                   className="w-full"
-                  disabled={toggle.isPending || setBrightness.isPending}
+                  disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending}
                 />
               </div>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => brightnessUp.mutate({ entityId: light.entity_id })}
-                disabled={toggle.isPending || setBrightness.isPending || brightness >= 100}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending || brightness >= 100}
                 className="shrink-0"
               >
                 <IconPlus className="h-3 w-3" />
@@ -295,7 +296,7 @@ function LightControl({ light }: LightControlProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => handlePresetBrightness(25)}
-                disabled={toggle.isPending || setBrightness.isPending}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending}
                 className="flex-1 text-xs"
               >
                 25%
@@ -304,7 +305,7 @@ function LightControl({ light }: LightControlProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => handlePresetBrightness(50)}
-                disabled={toggle.isPending || setBrightness.isPending}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending}
                 className="flex-1 text-xs"
               >
                 50%
@@ -313,7 +314,7 @@ function LightControl({ light }: LightControlProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => handlePresetBrightness(75)}
-                disabled={toggle.isPending || setBrightness.isPending}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending}
                 className="flex-1 text-xs"
               >
                 75%
@@ -322,7 +323,7 @@ function LightControl({ light }: LightControlProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => handlePresetBrightness(100)}
-                disabled={toggle.isPending || setBrightness.isPending}
+                disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending}
                 className="flex-1 text-xs"
               >
                 100%
@@ -394,7 +395,7 @@ interface LightGroupProps {
 }
 
 function LightGroup({ title, lights }: LightGroupProps) {
-  const { toggle, setBrightness } = useLightControl()
+  const { toggle, setBrightness } = useOptimisticLightControl()
 
   if (lights.length === 0) return null
 

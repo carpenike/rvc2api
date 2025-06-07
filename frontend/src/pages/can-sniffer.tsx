@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+// Table components replaced by VirtualizedTable
+import { VirtualizedTable, useVirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
 import { useCANMessages, useCANMetrics } from "@/hooks/useSystem"
 import {
     IconActivity,
@@ -124,7 +125,7 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
 }
 
 /**
- * CAN message table component
+ * Enhanced CAN message table with virtualization
  */
 function CANMessageTable({
   messages,
@@ -133,6 +134,19 @@ function CANMessageTable({
   messages: CANMessage[]
   isPaused: boolean
 }) {
+  const {
+    items: displayMessages,
+    clearItems,
+    isAutoScrollEnabled,
+    toggleAutoScroll,
+    itemCount,
+    hasReachedLimit
+  } = useVirtualizedTable({
+    data: messages,
+    maxItems: 5000, // Increased buffer for CAN messages
+    autoScroll: !isPaused
+  })
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp)
     const timeStr = date.toLocaleTimeString([], {
@@ -161,6 +175,74 @@ function CANMessageTable({
     return knownPGNs[pgn] || 'Unknown'
   }
 
+  // Define columns for virtualized table
+  const columns: VirtualizedTableColumn<CANMessage>[] = [
+    {
+      id: 'timestamp',
+      header: 'Time',
+      width: 100,
+      className: 'font-mono text-xs',
+      accessor: (message) => formatTimestamp(message.timestamp)
+    },
+    {
+      id: 'pgn',
+      header: 'PGN',
+      width: 80,
+      accessor: (message) => (
+        <Badge variant="outline" className="font-mono text-xs">
+          {message.pgn}
+        </Badge>
+      )
+    },
+    {
+      id: 'description',
+      header: 'Description',
+      width: 200,
+      accessor: (message) => (
+        <span className="text-sm">{getPGNDescription(message.pgn)}</span>
+      )
+    },
+    {
+      id: 'instance',
+      header: 'Inst',
+      width: 60,
+      className: 'text-center',
+      accessor: (message) =>
+        message.instance !== undefined ? (
+          <Badge variant="secondary" className="text-xs">
+            {message.instance}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )
+    },
+    {
+      id: 'source',
+      header: 'Src',
+      width: 60,
+      className: 'text-center',
+      accessor: (message) => (
+        <Badge variant="outline" className="text-xs">
+          {message.source}
+        </Badge>
+      )
+    },
+    {
+      id: 'data',
+      header: 'Data',
+      width: 200,
+      className: 'font-mono text-xs',
+      accessor: (message) => formatData(message.data)
+    },
+    {
+      id: 'length',
+      header: 'Len',
+      width: 50,
+      className: 'text-center text-xs',
+      accessor: (message) => message.data.length
+    }
+  ]
+
   return (
     <Card>
       <CardHeader>
@@ -168,77 +250,41 @@ function CANMessageTable({
           <IconActivity className="h-5 w-5" />
           Live CAN Messages
           {isPaused && <Badge variant="secondary">Paused</Badge>}
+          {hasReachedLimit && <Badge variant="outline">Buffer Full</Badge>}
         </CardTitle>
-        <CardDescription>
-          Real-time CAN bus traffic monitoring
+        <CardDescription className="flex items-center justify-between">
+          <span>Real-time CAN bus traffic monitoring ({itemCount.toLocaleString()} messages)</span>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={toggleAutoScroll}
+              size="sm"
+              variant="ghost"
+              className="text-xs"
+            >
+              Auto-scroll: {isAutoScrollEnabled ? 'ON' : 'OFF'}
+            </Button>
+            <Button
+              onClick={clearItems}
+              size="sm"
+              variant="ghost"
+              className="text-xs"
+            >
+              <IconTrash className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <div className="max-h-96 overflow-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  <TableHead className="w-24">Time</TableHead>
-                  <TableHead className="w-20">PGN</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-16">Inst</TableHead>
-                  <TableHead className="w-16">Src</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="w-16">Len</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {messages.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      {isPaused ? "Message capture paused" : "No messages received"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  messages.map((message, index) => (
-                    <TableRow
-                      key={`${message.timestamp}-${index}`}
-                      className={message.error ? "bg-destructive/10" : undefined}
-                    >
-                      <TableCell className="font-mono text-xs">
-                        {formatTimestamp(message.timestamp)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {message.pgn}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {getPGNDescription(message.pgn)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {message.instance !== undefined ? (
-                          <Badge variant="secondary" className="text-xs">
-                            {message.instance}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline" className="text-xs">
-                          {message.source}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {formatData(message.data)}
-                      </TableCell>
-                      <TableCell className="text-center text-xs">
-                        {message.data.length}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+        <VirtualizedTable
+          data={displayMessages}
+          columns={columns}
+          height={400}
+          itemHeight={40}
+          emptyMessage={isPaused ? "Message capture paused" : "No messages received"}
+          getRowKey={(message, index) => `${message.timestamp}-${index}`}
+          className={displayMessages.some(m => m.error) ? "has-errors" : ""}
+        />
       </CardContent>
     </Card>
   )
