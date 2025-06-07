@@ -36,7 +36,7 @@ class ServerSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="COACHIQ_SERVER__", case_sensitive=False)
 
-    host: str = Field(default="127.0.0.1", description="Server host address")
+    host: str = Field(default="0.0.0.0", description="Server host address")
     port: int = Field(default=8000, description="Server port", ge=1, le=65535)
     reload: bool = Field(default=False, description="Enable auto-reload in development")
     workers: int = Field(default=1, description="Number of worker processes", ge=1, le=32)
@@ -68,7 +68,7 @@ class ServerSettings(BaseSettings):
     worker_connections: int = Field(
         default=1000, description="Maximum number of simultaneous clients"
     )
-    server_header: bool = Field(default=True, description="Include server header in responses")
+    server_header: bool = Field(default=False, description="Include server header in responses")
     date_header: bool = Field(default=True, description="Include date header in responses")
 
     # SSL/TLS settings
@@ -110,7 +110,11 @@ class CORSSettings(BaseSettings):
 
     enabled: bool = Field(default=True, description="Enable CORS middleware")
     allow_origins: str | list[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+        default_factory=lambda: (
+            ["http://localhost:3000", "http://127.0.0.1:3000"]
+            if __import__("os").getenv("COACHIQ_ENVIRONMENT", "development") == "development"
+            else []
+        ),
         description="Allowed origins for CORS (comma-separated string or list)",
     )
     allow_credentials: bool = Field(default=True, description="Allow credentials in CORS")
@@ -119,7 +123,16 @@ class CORSSettings(BaseSettings):
         description="Allowed HTTP methods (comma-separated string or list)",
     )
     allow_headers: str | list[str] = Field(
-        default=["*"], description="Allowed headers (comma-separated string or list)"
+        default=[
+            "Accept",
+            "Accept-Language",
+            "Content-Language",
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With",
+            "Cache-Control",
+        ],
+        description="Allowed headers (comma-separated string or list)",
     )
 
     @field_validator("allow_origins", mode="before")
@@ -169,12 +182,14 @@ class SecuritySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="COACHIQ_SECURITY__", case_sensitive=False)
 
     secret_key: SecretStr = Field(
-        default=SecretStr("your-secret-key-change-in-production"),
+        default_factory=lambda: SecretStr(
+            "your-secret-key-change-in-production-" + __import__("secrets").token_urlsafe(32)
+        ),
         description="Secret key for session management",
     )
     api_key: SecretStr | None = Field(default=None, description="API key for authentication")
     allowed_ips: list[str] = Field(default=[], description="Allowed IP addresses")
-    rate_limit_enabled: bool = Field(default=False, description="Enable rate limiting")
+    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
     rate_limit_requests: int = Field(default=100, description="Rate limit requests per minute")
 
     @field_validator("allowed_ips", mode="before")
