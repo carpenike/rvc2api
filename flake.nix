@@ -1093,11 +1093,9 @@ EOF
               COACHIQ_CAN__BITRATE =
                 toString config.coachiq.settings.canbus.bitrate;
 
-              # CAN interface mappings (convert Nix attrset to string format)
+              # CAN interface mappings (convert Nix attrset to JSON format for Pydantic)
               COACHIQ_CAN__INTERFACE_MAPPINGS =
-                lib.concatStringsSep ","
-                  (lib.mapAttrsToList (logical: physical: "${logical}:${physical}")
-                    config.coachiq.settings.canbus.interfaceMappings);
+                builtins.toJSON config.coachiq.settings.canbus.interfaceMappings;
 
               # Feature flags
               COACHIQ_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.coachiq.settings.features.enableMaintenanceTracking then "true" else "false";

@@ -226,7 +226,9 @@ class LoggingSettings(BaseSettings):
 class CANSettings(BaseSettings):
     """CAN bus configuration settings with interface mapping."""
 
-    model_config = SettingsConfigDict(env_prefix="COACHIQ_CAN__", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_CAN__", case_sensitive=False, env_parse_none_str=""
+    )
 
     interface: str = Field(
         default="can0", description="CAN interface name (deprecated, use interfaces)"
@@ -239,8 +241,8 @@ class CANSettings(BaseSettings):
     auto_reconnect: bool = Field(default=True, description="Auto-reconnect on CAN failure")
     filters: list[str] = Field(default=[], description="CAN message filters")
 
-    # New interface mapping
-    interface_mappings: dict[str, str] = Field(
+    # New interface mapping - stored as Any to avoid auto-JSON parsing, validated to dict
+    interface_mappings: Any = Field(
         default={"house": "can0", "chassis": "can1"},
         description="Logical to physical interface mapping",
         json_schema_extra={
@@ -270,20 +272,33 @@ class CANSettings(BaseSettings):
 
     @field_validator("interface_mappings", mode="before")
     @classmethod
-    def parse_interface_mappings(cls, v):
+    def parse_interface_mappings(cls, v) -> dict[str, str]:
         """
         Parse interface mappings from environment variable or dict.
 
         Supports multiple formats:
-        - Dictionary: {"house": "can0", "chassis": "can1"}
-        - String: "house:can0,chassis:can1"
-        - String (alternative): "house=can0,chassis=can1"
+        - Dictionary: {"house": "can0", "chassis": "can1"} (primary format)
+        - JSON string: '{"house": "can0", "chassis": "can1"}' (from NixOS)
+        - Colon-separated: "house:can0,chassis:can1" (fallback)
+        - Equals-separated: "house=can0,chassis=can1" (fallback)
 
         Examples:
+            COACHIQ_CAN__INTERFACE_MAPPINGS='{"house": "can0", "chassis": "can1"}'
             COACHIQ_CAN__INTERFACE_MAPPINGS="house:can0,chassis:can1"
             COACHIQ_CAN__INTERFACE_MAPPINGS="house=can0,chassis=can1"
         """
         if isinstance(v, str):
+            # First try to parse as JSON (primary format from NixOS)
+            import json
+
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+
+            # Fallback to string parsing for manual configuration
             mappings = {}
             # Support both : and = as separators
             for pair in v.split(","):
@@ -304,7 +319,8 @@ class CANSettings(BaseSettings):
             return mappings
         elif isinstance(v, dict):
             return v
-        return v
+        # Return default value if unable to parse
+        return {"house": "can0", "chassis": "can1"}
 
     @property
     def all_interfaces(self) -> list[str]:
