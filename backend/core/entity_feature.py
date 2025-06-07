@@ -31,6 +31,7 @@ class EntityManagerFeature(Feature):
         core: bool = True,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
     ) -> None:
         """
         Initialize the EntityManager feature.
@@ -41,6 +42,7 @@ class EntityManagerFeature(Feature):
             core: Whether this is a core feature (default: True)
             config: Configuration options
             dependencies: Feature dependencies
+            friendly_name: Human-readable display name for the feature
         """
         super().__init__(
             name=name,
@@ -48,6 +50,7 @@ class EntityManagerFeature(Feature):
             core=core,
             config=config or {},
             dependencies=dependencies or [],
+            friendly_name=friendly_name,
         )
 
         # Initialize the EntityManager
