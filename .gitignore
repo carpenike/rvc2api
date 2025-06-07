@@ -15,7 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
-!web_ui/src/lib/
+!frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -194,20 +194,20 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Vite/React/TypeScript
-web_ui/node_modules/
-web_ui/dist/
-web_ui/dist-ssr/
-web_ui/.vite/
-web_ui/.vite-temp/
-web_ui/.eslintcache
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/.vite-temp/
+frontend/.eslintcache
 *.tsbuildinfo
-web_ui/.env.local
-web_ui/.env.*.local
-web_ui/.turbo/
-web_ui/.cache/
-web_ui/.coverage/
-web_ui/coverage/
-web_ui/.nyc_output/
+frontend/.env.local
+frontend/.env.*.local
+frontend/.turbo/
+frontend/.cache/
+frontend/.coverage/
+frontend/coverage/
+frontend/.nyc_output/
 
 # Ignore devcontainer secrets
 devcontainer.env
@@ -216,8 +216,8 @@ devcontainer.env
 .DS_Store
 
 # Project backup directories
-web_ui.backup/
-web_ui_backup/
+frontend.backup/
+frontend_backup/
 _deprecated/
 
 # VS Code
