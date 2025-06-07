@@ -233,13 +233,13 @@ class CANSettings(BaseSettings):
     interface: str = Field(
         default="can0", description="CAN interface name (deprecated, use interfaces)"
     )
-    interfaces: list[str] = Field(default=["can0"], description="CAN interface names")
+    interfaces: Any = Field(default=["can0"], description="CAN interface names")
     bustype: str = Field(default="socketcan", description="CAN bus type")
     bitrate: int = Field(default=500000, description="CAN bus bitrate")
     timeout: float = Field(default=1.0, description="CAN timeout in seconds", gt=0)
     buffer_size: int = Field(default=1000, description="Message buffer size", ge=1)
     auto_reconnect: bool = Field(default=True, description="Auto-reconnect on CAN failure")
-    filters: list[str] = Field(default=[], description="CAN message filters")
+    filters: Any = Field(default=[], description="CAN message filters")
 
     # New interface mapping - stored as Any to avoid auto-JSON parsing, validated to dict
     interface_mappings: Any = Field(
@@ -256,19 +256,25 @@ class CANSettings(BaseSettings):
 
     @field_validator("interfaces", mode="before")
     @classmethod
-    def parse_interfaces(cls, v):
+    def parse_interfaces(cls, v) -> list[str]:
         """Parse comma-separated interfaces from environment variable."""
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
-        return v
+        elif isinstance(v, list):
+            return v
+        # Return default if unable to parse
+        return ["can0"]
 
     @field_validator("filters", mode="before")
     @classmethod
-    def parse_filters(cls, v):
+    def parse_filters(cls, v) -> list[str]:
         """Parse comma-separated filters from environment variable."""
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
-        return v
+        elif isinstance(v, list):
+            return v
+        # Return default if unable to parse
+        return []
 
     @field_validator("interface_mappings", mode="before")
     @classmethod
@@ -733,5 +739,5 @@ def get_features_settings() -> FeaturesSettings:
     return get_settings().features
 
 
-# Create a global settings instance
-settings = get_settings()
+# Note: Use get_settings() function instead of a global instance
+# to ensure environment variables are read correctly

@@ -200,7 +200,7 @@ async def get_activity_feed(
     dashboard_service: Annotated[DashboardService, Depends(_get_dashboard_service)],
     limit: int = Query(50, description="Maximum number of activities to return", ge=1, le=200),
     since: Annotated[
-        datetime | None, Query(None, description="Return activities since this timestamp")
+        datetime | None, Query(description="Return activities since this timestamp")
     ] = None,
 ) -> ActivityFeed:
     """Get recent system activity feed."""
