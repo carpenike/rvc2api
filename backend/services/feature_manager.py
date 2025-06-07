@@ -261,6 +261,7 @@ class FeatureManager:
                     core=bool(data.get("core", False)),
                     config=data,
                     dependencies=data.get("depends_on", []),
+                    friendly_name=data.get("friendly_name"),
                 )
             else:
                 feature = GenericFeature(
@@ -269,6 +270,7 @@ class FeatureManager:
                     core=bool(data.get("core", False)),
                     config=data,
                     dependencies=data.get("depends_on", []),
+                    friendly_name=data.get("friendly_name"),
                 )
             manager.register_feature(feature)
         return manager

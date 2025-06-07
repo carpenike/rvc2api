@@ -763,6 +763,45 @@ EOF
               };
             };
 
+            # Persistence settings
+            persistence = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable data persistence";
+              };
+
+              dataDir = lib.mkOption {
+                type = lib.types.str;
+                default = "/var/lib/coachiq";
+                description = "Base directory for persistent data storage";
+              };
+
+              createDirs = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Automatically create data directories if they don't exist";
+              };
+
+              backupEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable automatic backups";
+              };
+
+              backupRetentionDays = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Number of days to retain backups (1-365)";
+              };
+
+              maxBackupSizeMb = lib.mkOption {
+                type = lib.types.int;
+                default = 500;
+                description = "Maximum backup size in MB (1-10000)";
+              };
+            };
+
             # Feature flags
             features = {
               enableMaintenanceTracking = lib.mkOption {
@@ -996,6 +1035,26 @@ EOF
           # Include the package in systemPackages
           environment.systemPackages = [ config.coachiq.package ];
 
+          # Create persistent data directory with proper permissions
+          systemd.tmpfiles.rules = lib.mkIf config.coachiq.settings.persistence.enabled [
+            "d ${config.coachiq.settings.persistence.dataDir} 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/database 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/backups 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/config 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/themes 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/dashboards 0755 coachiq coachiq -"
+            "d ${config.coachiq.settings.persistence.dataDir}/logs 0755 coachiq coachiq -"
+          ];
+
+          # Create system user for coachiq service
+          users.users.coachiq = {
+            isSystemUser = true;
+            group = "coachiq";
+            description = "CoachIQ service user";
+          };
+
+          users.groups.coachiq = {};
+
           # Set up the systemd service
           systemd.services.coachiq = {
             description = "CoachIQ RV-C HTTP/WebSocket API";
@@ -1006,59 +1065,165 @@ EOF
               ExecStart = "${config.coachiq.package}/bin/coachiq-daemon";
               Restart    = "always";
               RestartSec = 5;
+              User = "coachiq";
+              Group = "coachiq";
+              # Ensure the service can access CAN interfaces if needed
+              SupplementaryGroups = [ "dialout" ];
             };
 
-            environment = {
-              # App metadata
-              COACHIQ_APP_NAME = config.coachiq.settings.appName;
-              COACHIQ_APP_VERSION = config.coachiq.settings.appVersion;
-              COACHIQ_APP_DESCRIPTION = config.coachiq.settings.appDescription;
-              COACHIQ_APP_TITLE = config.coachiq.settings.appTitle;
+            environment = let
+              # Helper function to set environment variable only if value differs from default
+              setIfNotDefault = name: value: default:
+                lib.mkIf (value != default) { ${name} = value; };
 
-              # Server settings (using new nested structure)
-              COACHIQ_SERVER__HOST = config.coachiq.settings.server.host;
-              COACHIQ_SERVER__PORT = toString config.coachiq.settings.server.port;
-              COACHIQ_SERVER__WORKERS = toString config.coachiq.settings.server.workers;
-              COACHIQ_SERVER__RELOAD = if config.coachiq.settings.server.reload then "true" else "false";
-              COACHIQ_SERVER__DEBUG = if config.coachiq.settings.server.debug then "true" else "false";
-              COACHIQ_SERVER__ROOT_PATH =
-                lib.optionalString
-                  (config.coachiq.settings.server.rootPath != "")
-                  config.coachiq.settings.server.rootPath;
-              COACHIQ_SERVER__ACCESS_LOG = if config.coachiq.settings.server.accessLog then "true" else "false";
-              COACHIQ_SERVER__KEEP_ALIVE_TIMEOUT = toString config.coachiq.settings.server.keepAliveTimeout;
-              COACHIQ_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN = toString config.coachiq.settings.server.timeoutGracefulShutdown;
-              COACHIQ_SERVER__WORKER_CLASS = config.coachiq.settings.server.workerClass;
-              COACHIQ_SERVER__WORKER_CONNECTIONS = toString config.coachiq.settings.server.workerConnections;
-              COACHIQ_SERVER__SERVER_HEADER = if config.coachiq.settings.server.serverHeader then "true" else "false";
-              COACHIQ_SERVER__DATE_HEADER = if config.coachiq.settings.server.dateHeader then "true" else "false";
+              # Helper function to check if value is non-empty/non-null and set env var
+              setIfSet = name: value:
+                lib.mkIf (value != null && value != "") { ${name} = value; };
 
-              # Optional server settings
-              COACHIQ_SERVER__LIMIT_CONCURRENCY = lib.mkIf (config.coachiq.settings.server.limitConcurrency != null)
-                (toString config.coachiq.settings.server.limitConcurrency);
-              COACHIQ_SERVER__LIMIT_MAX_REQUESTS = lib.mkIf (config.coachiq.settings.server.limitMaxRequests != null)
-                (toString config.coachiq.settings.server.limitMaxRequests);
-              COACHIQ_SERVER__TIMEOUT_NOTIFY = toString config.coachiq.settings.server.timeoutNotify;
+              # Helper function for boolean values that differ from default
+              setBoolIfNotDefault = name: value: default:
+                lib.mkIf (value != default) { ${name} = if value then "true" else "false"; };
 
-              # SSL/TLS settings
-              COACHIQ_SERVER__SSL_KEYFILE =
-                lib.optionalString
-                  (config.coachiq.settings.server.sslKeyfile != null)
-                  config.coachiq.settings.server.sslKeyfile;
-              COACHIQ_SERVER__SSL_CERTFILE =
-                lib.optionalString
-                  (config.coachiq.settings.server.sslCertfile != null)
-                  config.coachiq.settings.server.sslCertfile;
-              COACHIQ_SERVER__SSL_CA_CERTS =
-                lib.optionalString
-                  (config.coachiq.settings.server.sslCaCerts != null)
-                  config.coachiq.settings.server.sslCaCerts;
+              # Helper function for numeric values that differ from default
+              setNumIfNotDefault = name: value: default:
+                lib.mkIf (value != default) { ${name} = toString value; };
 
-              # CORS settings
-              COACHIQ_CORS__ALLOW_ORIGINS = lib.concatStringsSep "," config.coachiq.settings.cors.allowedOrigins;
-              COACHIQ_CORS__ALLOW_CREDENTIALS = if config.coachiq.settings.cors.allowedCredentials then "true" else "false";
-              COACHIQ_CORS__ALLOW_METHODS = lib.concatStringsSep "," config.coachiq.settings.cors.allowedMethods;
-              COACHIQ_CORS__ALLOW_HEADERS = lib.concatStringsSep "," config.coachiq.settings.cors.allowedHeaders;
+              # Helper function for string arrays that differ from default
+              setArrayIfNotDefault = name: value: default:
+                lib.mkIf (value != default) { ${name} = lib.concatStringsSep "," value; };
+
+              # Helper function for JSON values that differ from default
+              setJsonIfNotDefault = name: value: default:
+                lib.mkIf (value != default) { ${name} = builtins.toJSON value; };
+
+              # Define default values (matching backend/core/config.py)
+              defaults = {
+                # App metadata defaults
+                appName = "CoachIQ";
+                appVersion = "1.0.0";
+                appDescription = "API for RV-C CANbus";
+                appTitle = "RV-C API";
+
+                # Server defaults
+                server = {
+                  host = "127.0.0.1";
+                  port = 8000;
+                  workers = 1;
+                  reload = false;
+                  debug = false;
+                  rootPath = "";
+                  accessLog = true;
+                  keepAliveTimeout = 5;
+                  timeoutGracefulShutdown = 30;
+                  workerClass = "uvicorn.workers.UvicornWorker";
+                  workerConnections = 1000;
+                  serverHeader = true;
+                  dateHeader = true;
+                  timeoutNotify = 30;
+                  sslCertReqs = 0;
+                };
+
+                # CORS defaults
+                cors = {
+                  allowedOrigins = ["http://localhost:3000" "http://127.0.0.1:3000"];
+                  allowedCredentials = true;
+                  allowedMethods = ["GET" "POST" "PUT" "DELETE" "OPTIONS"];
+                  allowedHeaders = ["*"];
+                };
+
+                # Logging defaults
+                logging = {
+                  level = "INFO";
+                  format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s";
+                  logToFile = false;
+                  maxFileSize = 10485760;
+                  backupCount = 5;
+                };
+
+                # CAN defaults
+                canbus = {
+                  bustype = "socketcan";
+                  channels = ["can0"];
+                  bitrate = 500000;
+                  interfaceMappings = { house = "can0"; chassis = "can1"; };
+                };
+
+                # Persistence defaults
+                persistence = {
+                  enabled = false;
+                  dataDir = "/var/lib/coachiq";
+                  createDirs = true;
+                  backupEnabled = true;
+                  backupRetentionDays = 30;
+                  maxBackupSizeMb = 500;
+                };
+
+                # Features defaults
+                features = {
+                  enableMaintenanceTracking = false;
+                  enableNotifications = false;
+                  enableUptimerobot = false;
+                  enablePushover = false;
+                  enableVectorSearch = true;
+                  enableApiDocs = true;
+                  enableMetrics = true;
+                };
+
+                # Maintenance defaults
+                maintenance = {
+                  checkInterval = 3600;
+                  notificationThresholdDays = 7;
+                };
+
+                # Other defaults
+                staticDir = "static";
+                controllerSourceAddr = "0xF9";
+
+                # Legacy defaults
+                host = "0.0.0.0";  # Legacy host default in flake differs from new config
+                port = 8000;       # Legacy port default
+              };
+            in
+            lib.attrsets.filterAttrs (name: value: value != null) (lib.attrsets.mergeAttrsList [
+              # Only set app metadata if different from defaults
+              (setIfNotDefault "COACHIQ_APP_NAME" config.coachiq.settings.appName defaults.appName)
+              (setIfNotDefault "COACHIQ_APP_VERSION" config.coachiq.settings.appVersion defaults.appVersion)
+              (setIfNotDefault "COACHIQ_APP_DESCRIPTION" config.coachiq.settings.appDescription defaults.appDescription)
+              (setIfNotDefault "COACHIQ_APP_TITLE" config.coachiq.settings.appTitle defaults.appTitle)
+
+              # Server settings - only if different from defaults
+              (setIfNotDefault "COACHIQ_SERVER__HOST" config.coachiq.settings.server.host defaults.server.host)
+              (setNumIfNotDefault "COACHIQ_SERVER__PORT" config.coachiq.settings.server.port defaults.server.port)
+              (setNumIfNotDefault "COACHIQ_SERVER__WORKERS" config.coachiq.settings.server.workers defaults.server.workers)
+              (setBoolIfNotDefault "COACHIQ_SERVER__RELOAD" config.coachiq.settings.server.reload defaults.server.reload)
+              (setBoolIfNotDefault "COACHIQ_SERVER__DEBUG" config.coachiq.settings.server.debug defaults.server.debug)
+              (setIfNotDefault "COACHIQ_SERVER__ROOT_PATH" config.coachiq.settings.server.rootPath defaults.server.rootPath)
+              (setBoolIfNotDefault "COACHIQ_SERVER__ACCESS_LOG" config.coachiq.settings.server.accessLog defaults.server.accessLog)
+              (setNumIfNotDefault "COACHIQ_SERVER__KEEP_ALIVE_TIMEOUT" config.coachiq.settings.server.keepAliveTimeout defaults.server.keepAliveTimeout)
+              (setNumIfNotDefault "COACHIQ_SERVER__TIMEOUT_GRACEFUL_SHUTDOWN" config.coachiq.settings.server.timeoutGracefulShutdown defaults.server.timeoutGracefulShutdown)
+              (setIfNotDefault "COACHIQ_SERVER__WORKER_CLASS" config.coachiq.settings.server.workerClass defaults.server.workerClass)
+              (setNumIfNotDefault "COACHIQ_SERVER__WORKER_CONNECTIONS" config.coachiq.settings.server.workerConnections defaults.server.workerConnections)
+              (setBoolIfNotDefault "COACHIQ_SERVER__SERVER_HEADER" config.coachiq.settings.server.serverHeader defaults.server.serverHeader)
+              (setBoolIfNotDefault "COACHIQ_SERVER__DATE_HEADER" config.coachiq.settings.server.dateHeader defaults.server.dateHeader)
+              (setNumIfNotDefault "COACHIQ_SERVER__TIMEOUT_NOTIFY" config.coachiq.settings.server.timeoutNotify defaults.server.timeoutNotify)
+
+              # Optional server settings - only set if not null
+              (lib.mkIf (config.coachiq.settings.server.limitConcurrency != null)
+                { "COACHIQ_SERVER__LIMIT_CONCURRENCY" = toString config.coachiq.settings.server.limitConcurrency; })
+              (lib.mkIf (config.coachiq.settings.server.limitMaxRequests != null)
+                { "COACHIQ_SERVER__LIMIT_MAX_REQUESTS" = toString config.coachiq.settings.server.limitMaxRequests; })
+
+              # SSL/TLS settings - only set if provided
+              (setIfSet "COACHIQ_SERVER__SSL_KEYFILE" config.coachiq.settings.server.sslKeyfile)
+              (setIfSet "COACHIQ_SERVER__SSL_CERTFILE" config.coachiq.settings.server.sslCertfile)
+              (setIfSet "COACHIQ_SERVER__SSL_CA_CERTS" config.coachiq.settings.server.sslCaCerts)
+              (setNumIfNotDefault "COACHIQ_SERVER__SSL_CERT_REQS" config.coachiq.settings.server.sslCertReqs defaults.server.sslCertReqs)
+
+              # CORS settings - only if different from defaults
+              (setArrayIfNotDefault "COACHIQ_CORS__ALLOW_ORIGINS" config.coachiq.settings.cors.allowedOrigins defaults.cors.allowedOrigins)
+              (setBoolIfNotDefault "COACHIQ_CORS__ALLOW_CREDENTIALS" config.coachiq.settings.cors.allowedCredentials defaults.cors.allowedCredentials)
+              (setArrayIfNotDefault "COACHIQ_CORS__ALLOW_METHODS" config.coachiq.settings.cors.allowedMethods defaults.cors.allowedMethods)
+              (setArrayIfNotDefault "COACHIQ_CORS__ALLOW_HEADERS" config.coachiq.settings.cors.allowedHeaders defaults.cors.allowedHeaders)
 
               # Security settings
               COACHIQ_SECURITY__SECRET_KEY = lib.mkIf (config.coachiq.settings.security.secretKey != null)
@@ -1096,6 +1261,14 @@ EOF
               # CAN interface mappings (convert Nix attrset to JSON format for Pydantic)
               COACHIQ_CAN__INTERFACE_MAPPINGS =
                 builtins.toJSON config.coachiq.settings.canbus.interfaceMappings;
+
+              # Persistence settings
+              COACHIQ_PERSISTENCE__ENABLED = if config.coachiq.settings.persistence.enabled then "true" else "false";
+              COACHIQ_PERSISTENCE__DATA_DIR = config.coachiq.settings.persistence.dataDir;
+              COACHIQ_PERSISTENCE__CREATE_DIRS = if config.coachiq.settings.persistence.createDirs then "true" else "false";
+              COACHIQ_PERSISTENCE__BACKUP_ENABLED = if config.coachiq.settings.persistence.backupEnabled then "true" else "false";
+              COACHIQ_PERSISTENCE__BACKUP_RETENTION_DAYS = toString config.coachiq.settings.persistence.backupRetentionDays;
+              COACHIQ_PERSISTENCE__MAX_BACKUP_SIZE_MB = toString config.coachiq.settings.persistence.maxBackupSizeMb;
 
               # Feature flags
               COACHIQ_FEATURES__ENABLE_MAINTENANCE_TRACKING = if config.coachiq.settings.features.enableMaintenanceTracking then "true" else "false";

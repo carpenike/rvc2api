@@ -33,6 +33,7 @@ class Feature(ABC):
 
     Attributes:
         name: Unique identifier for the feature
+        friendly_name: Human-readable display name for the feature
         enabled: Whether the feature is enabled
         core: Whether this is a core feature (always enabled)
         config: Configuration options for the feature
@@ -40,6 +41,7 @@ class Feature(ABC):
     """
 
     name: str
+    friendly_name: str
     enabled: bool
     core: bool
     config: dict[str, Any]
@@ -52,6 +54,7 @@ class Feature(ABC):
         core: bool = False,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
     ) -> None:
         """
         Initialize a Feature instance.
@@ -62,8 +65,10 @@ class Feature(ABC):
             core: Whether this is a core feature (always enabled)
             config: Configuration options for the feature
             dependencies: List of feature names this feature depends on
+            friendly_name: Human-readable display name for the feature
         """
         self.name = name
+        self.friendly_name = friendly_name or name.replace("_", " ").title()
         self.enabled = enabled
         self.core = core
         self.config = config or {}
@@ -115,6 +120,7 @@ class Feature(ABC):
         """
         return {
             "name": self.name,
+            "friendly_name": self.friendly_name,
             "enabled": self.enabled,
             "core": self.core,
             "config": self.config,

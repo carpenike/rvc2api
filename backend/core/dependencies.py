@@ -199,3 +199,23 @@ def get_websocket_manager(request: Request) -> Any:
     if not websocket_feature:
         raise RuntimeError("WebSocket feature not found or not enabled")
     return websocket_feature
+
+
+def get_persistence_service(request: Request) -> Any:
+    """
+    Get the persistence service from the feature manager.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The persistence service
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized or persistence feature is not found
+    """
+    feature_manager = get_feature_manager_from_request(request)
+    persistence_feature = feature_manager.get_feature("persistence")
+    if not persistence_feature:
+        raise RuntimeError("Persistence feature not found or not enabled")
+    return persistence_feature

@@ -494,6 +494,93 @@ class RVCSettings(BaseSettings):
         return None
 
 
+class PersistenceSettings(BaseSettings):
+    """Data persistence configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_PERSISTENCE__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable data persistence")
+    data_dir: Path = Field(
+        default=Path("/var/lib/coachiq"), description="Base directory for persistent data storage"
+    )
+    create_dirs: bool = Field(
+        default=True, description="Automatically create data directories if they don't exist"
+    )
+    backup_enabled: bool = Field(default=True, description="Enable automatic backups")
+    backup_retention_days: int = Field(
+        default=30, description="Number of days to retain backups", ge=1, le=365
+    )
+    max_backup_size_mb: int = Field(
+        default=500, description="Maximum backup size in MB", ge=1, le=10000
+    )
+
+    @field_validator("data_dir", mode="before")
+    @classmethod
+    def parse_data_dir(cls, v):
+        """Parse data directory path from string."""
+        if isinstance(v, str) and v.strip():
+            return Path(v.strip())
+        return v
+
+    def get_database_dir(self) -> Path:
+        """Get the database storage directory."""
+        return self.data_dir / "database"
+
+    def get_backup_dir(self) -> Path:
+        """Get the backup storage directory."""
+        return self.data_dir / "backups"
+
+    def get_config_dir(self) -> Path:
+        """Get the user configuration directory."""
+        return self.data_dir / "config"
+
+    def get_themes_dir(self) -> Path:
+        """Get the custom themes directory."""
+        return self.data_dir / "themes"
+
+    def get_dashboards_dir(self) -> Path:
+        """Get the custom dashboards directory."""
+        return self.data_dir / "dashboards"
+
+    def get_logs_dir(self) -> Path:
+        """Get the persistent logs directory."""
+        return self.data_dir / "logs"
+
+    def ensure_directories(self) -> list[Path]:
+        """
+        Ensure all required directories exist.
+
+        Returns:
+            List of directories that were created
+        """
+        if not self.enabled or not self.create_dirs:
+            return []
+
+        directories = [
+            self.data_dir,
+            self.get_database_dir(),
+            self.get_backup_dir(),
+            self.get_config_dir(),
+            self.get_themes_dir(),
+            self.get_dashboards_dir(),
+            self.get_logs_dir(),
+        ]
+
+        created = []
+        for directory in directories:
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+                created.append(directory)
+            except (OSError, PermissionError) as e:
+                # Log warning but don't fail startup
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to create directory {directory}: {e}")
+
+        return created
+
+
 class FeaturesSettings(BaseSettings):
     """Feature flags configuration."""
 
@@ -593,6 +680,7 @@ class Settings(BaseSettings):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     can: CANSettings = Field(default_factory=CANSettings)
     rvc: RVCSettings = Field(default_factory=RVCSettings)
+    persistence: PersistenceSettings = Field(default_factory=PersistenceSettings)
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
 
     @field_validator("environment", mode="before")
@@ -732,6 +820,11 @@ def get_can_settings() -> CANSettings:
 def get_rvc_settings() -> RVCSettings:
     """Get RVC settings."""
     return get_settings().rvc
+
+
+def get_persistence_settings() -> PersistenceSettings:
+    """Get persistence settings."""
+    return get_settings().persistence
 
 
 def get_features_settings() -> FeaturesSettings:

@@ -13,6 +13,7 @@ test_feature:
   enabled: true
   core: true
   depends_on: []
+  friendly_name: "Test Feature"
 """
 
 
@@ -26,6 +27,7 @@ def test_load_features_from_yaml(tmp_path):
     assert feat.enabled is True
     assert feat.core is True
     assert feat.dependencies == []
+    assert feat.friendly_name == "Test Feature"
 
 
 def test_enable_disable_feature(tmp_path):
@@ -59,6 +61,32 @@ dependent:
     assert dep.dependencies == ["base"]
     base = mgr.features["base"]
     assert base.enabled
+
+
+def test_friendly_name_auto_generation(tmp_path):
+    """Test that friendly names are auto-generated when not specified."""
+    yaml = """
+test_feature_name:
+  enabled: true
+  core: false
+  depends_on: []
+another_test:
+  enabled: true
+  core: false
+  depends_on: []
+  friendly_name: "Custom Name"
+"""
+    yaml_path = tmp_path / "features.yaml"
+    yaml_path.write_text(yaml)
+    mgr = FeatureManager.from_yaml(str(yaml_path))
+
+    # Feature without friendly_name should have auto-generated one
+    feat1 = mgr.features["test_feature_name"]
+    assert feat1.friendly_name == "Test Feature Name"
+
+    # Feature with explicit friendly_name should use that
+    feat2 = mgr.features["another_test"]
+    assert feat2.friendly_name == "Custom Name"
 
 
 @pytest.mark.skip(reason="reload_features_from_config is a placeholder and does not update state")

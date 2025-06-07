@@ -11,23 +11,33 @@
 #     - enable_admin_panel
 
 # Core infrastructure features
+persistence:
+  enabled: false
+  core: false
+  depends_on: []
+  description: "Data persistence service for SQLite databases, backups, themes, and user configurations"
+  friendly_name: "Data Persistence"
+
 entity_manager:
   enabled: true
   core: true
   depends_on: []
   description: "Entity state management and configuration service"
+  friendly_name: "Entity Manager"
 
 app_state:
   enabled: true
   core: true
   depends_on: [entity_manager]
   description: "Application state management service (legacy compatibility)"
+  friendly_name: "Application State"
 
 websocket:
   enabled: true
   core: true
   depends_on: [app_state]
   description: "WebSocket connection management for real-time updates"
+  friendly_name: "Real-time WebSocket"
 
 # CAN bus and protocol features
 can_interface:
@@ -35,24 +45,28 @@ can_interface:
   core: true
   depends_on: [app_state]
   description: "CAN bus interface capability"
+  friendly_name: "CAN Interface"
 
 can_interface_mapping:
   enabled: true
   core: false
   depends_on: [can_interface]
   description: "Logical CAN interface mapping service for portable coach configurations"
+  friendly_name: "CAN Interface Mapping"
 
 can_feature:
   enabled: true
   core: true
   depends_on: [can_interface]
   description: "CANBus feature for device communication"
+  friendly_name: "CAN Bus Communication"
 
 rvc:
   enabled: true
   core: true
   depends_on: [can_interface]
   description: "RV-C protocol integration for recreational vehicle systems"
+  friendly_name: "RV-C Protocol"
 
 # API Documentation
 api_docs:
@@ -60,6 +74,7 @@ api_docs:
   core: true
   depends_on: [websocket]
   description: "API documentation endpoints including Swagger UI and search functionality"
+  friendly_name: "API Documentation"
 
 # Optional features
 pushover:
@@ -67,30 +82,35 @@ pushover:
   core: false
   depends_on: []
   description: "Pushover notification service integration"
+  friendly_name: "Pushover Notifications"
 
 uptimerobot:
   enabled: false
   core: false
   depends_on: []
   description: "UptimeRobot monitoring service integration"
+  friendly_name: "UptimeRobot Monitoring"
 
 github_update_checker:
   enabled: false
   core: false
   depends_on: []
   description: "GitHub update checker service for application updates"
+  friendly_name: "GitHub Update Checker"
 
 log_history:
   enabled: true
   core: false
   depends_on: []
   description: "REST API and WebSocket endpoints for log history and log streaming (journald, JSON logs)"
+  friendly_name: "Log History"
 
 log_streaming:
   enabled: true
   core: false
   depends_on: [websocket]
   description: "WebSocket log streaming endpoints and handlers (buffering, filtering, rate limiting)"
+  friendly_name: "Log Streaming"
 
 # Enhanced dashboard and analytics features
 dashboard_aggregation:
@@ -98,21 +118,25 @@ dashboard_aggregation:
   core: false
   depends_on: [entity_manager, websocket]
   description: "Aggregated dashboard endpoints for optimized data loading and real-time updates"
+  friendly_name: "Dashboard Aggregation"
 
 bulk_operations:
   enabled: true
   core: false
   depends_on: [entity_manager, can_interface]
   description: "Bulk control operations for entities and advanced filtering capabilities"
+  friendly_name: "Bulk Operations"
 
 system_analytics:
   enabled: true
   core: false
   depends_on: [entity_manager, can_interface]
   description: "System analytics, performance monitoring, and alerting features"
+  friendly_name: "System Analytics"
 
 activity_tracking:
   enabled: true
   core: false
   depends_on: [entity_manager, websocket]
   description: "Activity feed tracking and recent events monitoring"
+  friendly_name: "Activity Tracking"
