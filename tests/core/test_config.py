@@ -47,10 +47,10 @@ class TestSettings:
         """Test CAN bus configuration defaults."""
         settings = Settings()
 
-        # Default channels are vcan0,vcan1 based on the failure message
-        assert "vcan0" in settings.canbus.channels
-        assert settings.canbus.bustype == "socketcan"
-        assert settings.canbus.bitrate == 500000  # Default is actually 500000 based on test output
+        # Default interface is can0 (updated from vcan0)
+        assert "can0" in settings.can.all_interfaces
+        assert settings.can.bustype == "socketcan"
+        assert settings.can.bitrate == 250000  # Default is 250000
 
     def test_can_configuration_from_env(self):
         """Test CAN configuration from environment variables."""

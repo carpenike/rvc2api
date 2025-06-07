@@ -55,7 +55,7 @@ def mock_can_message():
 def mock_can_bus():
     """Create a mock CAN bus for testing."""
     mock_bus = Mock()
-    mock_bus.channel = "vcan0"
+    mock_bus.channel = "can0"
     mock_bus.bus_type = "socketcan"
     mock_bus.get_stats = Mock(
         return_value={"messages_sent": 100, "messages_received": 200, "errors": 5}
@@ -133,11 +133,11 @@ class TestInterfaceManagement:
     @patch("backend.services.can_service.buses")
     async def test_get_interfaces_basic(self, mock_buses, can_service):
         """Test basic interface retrieval."""
-        mock_buses.keys.return_value = ["vcan0", "vcan1", "can0"]
+        mock_buses.keys.return_value = ["can0", "can1", "can2"]
 
         result = await can_service.get_interfaces()
 
-        assert result == ["vcan0", "vcan1", "can0"]
+        assert result == ["can0", "can1", "can2"]
 
     @patch("backend.services.can_service.buses")
     async def test_get_interfaces_empty(self, mock_buses, can_service):
@@ -458,7 +458,10 @@ class TestErrorHandling:
         mock_bad_bus = Mock()
         type(mock_bad_bus).channel = PropertyMock(side_effect=RuntimeError("Bad bus"))
 
-        mock_buses.items.return_value = [("vcan0", mock_good_bus), ("bad_bus", mock_bad_bus)]
+        mock_buses.items.return_value = [
+            ("vcan0", mock_good_bus),
+            ("bad_bus", mock_bad_bus),
+        ]
 
         result = await can_service.get_interface_details()
 

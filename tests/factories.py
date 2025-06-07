@@ -170,7 +170,7 @@ class CANMessageFactory:
             "is_extended_id": is_extended_id,
             "timestamp": timestamp,
             "dlc": len(data[:8]),
-            "channel": "vcan0",
+            "channel": "can0",
         }
 
         message.update(kwargs)
@@ -178,7 +178,10 @@ class CANMessageFactory:
 
     @staticmethod
     def create_rvc_message(
-        dgn: int | None = None, source_address: int = 0x10, data: list[int] | None = None, **kwargs
+        dgn: int | None = None,
+        source_address: int = 0x10,
+        data: list[int] | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Create an RV-C protocol message.
@@ -216,7 +219,7 @@ class ConfigFactory:
 
     @staticmethod
     def create_config(
-        can_interface: str = "vcan0", log_level: str = "INFO", **kwargs
+        can_interface: str = "can0", log_level: str = "INFO", **kwargs
     ) -> dict[str, Any]:
         """
         Create test configuration data.

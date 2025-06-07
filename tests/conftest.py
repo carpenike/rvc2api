@@ -311,7 +311,7 @@ def sample_config_data() -> dict[str, str | dict[str, bool | int]]:
     Returns a dictionary with typical configuration properties.
     """
     return {
-        "can_interface": "vcan0",
+        "can_interface": "can0",
         "log_level": "INFO",
         "features": {
             "entity_discovery": True,

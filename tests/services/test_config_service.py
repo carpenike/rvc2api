@@ -34,13 +34,13 @@ def mock_entity_manager():
     light_entity1.config = {
         "device_type": "light",
         "suggested_area": "living_room",
-        "interface": "vcan0",
+        "interface": "can0",
     }
     light_entity2 = Mock()
     light_entity2.config = {
         "device_type": "light",
         "suggested_area": "kitchen",
-        "interface": "vcan1",
+        "interface": "can1",
     }
 
     # Mock entity for get_all_entities - used by _get_unique_device_types and _get_unique_areas
@@ -50,7 +50,10 @@ def mock_entity_manager():
     switch_entity.config = {"device_type": "switch", "suggested_area": "living_room"}
 
     # filter_entities should return a dictionary
-    mock.filter_entities.return_value = {"light1": light_entity1, "light2": light_entity2}
+    mock.filter_entities.return_value = {
+        "light1": light_entity1,
+        "light2": light_entity2,
+    }
 
     # get_all_entities should return all entities
     mock.get_all_entities.return_value = {
@@ -208,7 +211,7 @@ class TestEnvironmentInfo:
         os.environ,
         {
             "CAN_BUSTYPE": "socketcan",
-            "CAN_INTERFACE": "vcan0",
+            "CAN_INTERFACE": "can0",
             "CAN_BITRATE": "250000",
             "LOG_LEVEL": "DEBUG",
             "DEBUG": "true",
@@ -222,7 +225,7 @@ class TestEnvironmentInfo:
 
         env_vars = result["environment_variables"]
         assert env_vars["CAN_BUSTYPE"] == "socketcan"
-        assert env_vars["CAN_INTERFACE"] == "vcan0"
+        assert env_vars["CAN_INTERFACE"] == "can0"
         assert env_vars["CAN_BITRATE"] == "250000"
         assert env_vars["LOG_LEVEL"] == "DEBUG"
         assert env_vars["DEBUG"] is True
@@ -248,7 +251,11 @@ class TestEnvironmentInfo:
 
     @patch.dict(
         os.environ,
-        {"API_SECRET": "supersecret", "DATABASE_PASSWORD": "dbpass", "AUTH_TOKEN": "token123"},
+        {
+            "API_SECRET": "supersecret",
+            "DATABASE_PASSWORD": "dbpass",
+            "AUTH_TOKEN": "token123",
+        },
     )
     async def test_get_environment_info_masks_sensitive(self, config_service):
         """Test that sensitive environment variables are masked."""
@@ -409,9 +416,9 @@ class TestHelperMethods:
 
     def test_get_configured_interfaces(self, config_service):
         """Test _get_configured_interfaces helper method."""
-        with patch.dict(os.environ, {"CAN_INTERFACE": "vcan0,can0"}):
+        with patch.dict(os.environ, {"CAN_INTERFACE": "can0,can1"}):
             result = config_service._get_configured_interfaces()
-            assert "vcan0" in result or "can0" in result
+            assert "can0" in result or "can1" in result
 
         with patch.dict(os.environ, {}, clear=True):
             result = config_service._get_configured_interfaces()
