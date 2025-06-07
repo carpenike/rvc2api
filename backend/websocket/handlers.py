@@ -44,6 +44,7 @@ class WebSocketManager(Feature):
         core: bool = True,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
         app_state: AppState | None = None,
     ) -> None:
         """
@@ -55,6 +56,7 @@ class WebSocketManager(Feature):
             core (bool): Whether this is a core feature (default: True)
             config (dict[str, Any] | None): Configuration options
             dependencies (list[str, Any] | None): Feature dependencies
+            friendly_name (str | None): Human-readable display name for the feature
             app_state (AppState | None): Application state instance
         """
         # Ensure we depend on app_state
@@ -68,6 +70,7 @@ class WebSocketManager(Feature):
             core=core,
             config=config or {},
             dependencies=deps,
+            friendly_name=friendly_name,
         )
 
         # Store reference to app_state
@@ -123,6 +126,17 @@ class WebSocketManager(Feature):
     def health(self) -> str:
         """Return the health status of the feature."""
         return "healthy"  # WebSocket handler always healthy
+
+    @property
+    def total_connections(self) -> int:
+        """Return the total number of active WebSocket connections across all client sets."""
+        return (
+            len(self.data_clients)
+            + len(self.log_clients)
+            + len(self.can_sniffer_clients)
+            + len(self.network_map_clients)
+            + len(self.features_clients)
+        )
 
     # ── Broadcasting Functions ──────────────────────────────────────────────────
 

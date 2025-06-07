@@ -30,6 +30,7 @@ class PersistenceFeature(Feature):
             core=kwargs.get("core", True),
             config=kwargs.get("config", {}),
             dependencies=kwargs.get("dependencies", []),
+            friendly_name=kwargs.get("friendly_name"),
         )
         self._service: PersistenceService | None = None
         self._initialization_error: str | None = None

@@ -160,6 +160,7 @@ class GitHubUpdateCheckerFeature(Feature):
         core: bool = False,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -167,6 +168,7 @@ class GitHubUpdateCheckerFeature(Feature):
             core=core,
             config=config,
             dependencies=dependencies or [],
+            friendly_name=friendly_name,
         )
         self._update_checker: GitHubUpdateChecker | None = None
 

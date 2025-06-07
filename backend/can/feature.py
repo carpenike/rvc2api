@@ -32,6 +32,7 @@ class CANBusFeature(Feature):
         core: bool = True,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
     ) -> None:
         """
         Initialize the CAN bus feature.
@@ -42,6 +43,7 @@ class CANBusFeature(Feature):
             core: Whether this is a core feature (default: True)
             config: Configuration options (default: None)
             dependencies: Feature dependencies (default: ["app_state"])
+            friendly_name: Human-readable display name for the feature
         """
         # Ensure we depend on app_state
         deps = dependencies or []
@@ -74,6 +76,7 @@ class CANBusFeature(Feature):
             core=core,
             config=self.config,
             dependencies=deps,
+            friendly_name=friendly_name,
         )
 
         # CAN bus related attributes

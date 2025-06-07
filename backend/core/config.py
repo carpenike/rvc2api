@@ -411,11 +411,12 @@ class RVCSettings(BaseSettings):
             import backend
 
             backend_pkg = resources.files(backend)
+            backend_path = Path(str(backend_pkg))
 
             # Check if config directory exists relative to backend package
             config_candidates = [
-                backend_pkg.parent / "config",  # ../config from backend/
-                backend_pkg / "config",  # backend/config/
+                backend_path.parent / "config",  # ../config from backend/
+                backend_path / "config",  # backend/config/
             ]
 
             for candidate in config_candidates:
@@ -478,11 +479,12 @@ class RVCSettings(BaseSettings):
             import backend
 
             backend_pkg = resources.files(backend)
+            backend_path = Path(str(backend_pkg))
 
             # Check if file exists relative to backend package
             file_candidates = [
-                backend_pkg.parent / "config" / filename,  # ../config/filename from backend/
-                backend_pkg / "config" / filename,  # backend/config/filename
+                backend_path.parent / "config" / filename,  # ../config/filename from backend/
+                backend_path / "config" / filename,  # backend/config/filename
             ]
 
             for candidate in file_candidates:
@@ -516,10 +518,12 @@ class PersistenceSettings(BaseSettings):
 
     enabled: bool = Field(default=False, description="Enable data persistence")
     data_dir: Path = Field(
-        default=Path("/var/lib/coachiq"), description="Base directory for persistent data storage"
+        default=Path("/var/lib/coachiq"),
+        description="Base directory for persistent data storage",
     )
     create_dirs: bool = Field(
-        default=True, description="Automatically create data directories if they don't exist"
+        default=True,
+        description="Automatically create data directories if they don't exist",
     )
     backup_enabled: bool = Field(default=True, description="Enable automatic backups")
     backup_retention_days: int = Field(

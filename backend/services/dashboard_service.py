@@ -260,7 +260,7 @@ class DashboardService:
 
         # Get CAN statistics
         try:
-            can_stats = await self.can_service.get_statistics()
+            can_stats = await self.can_service.get_bus_statistics()
             summary = can_stats.get("summary", {})
             message_rate = summary.get("message_rate", 0.0)
             error_rate = summary.get("error_rate", 0.0)
@@ -273,7 +273,7 @@ class DashboardService:
         uptime_seconds = int(time.time() - self._start_time)
 
         # Get WebSocket connection count
-        websocket_connections = len(self.websocket_manager.connections)
+        websocket_connections = self.websocket_manager.total_connections
 
         # TODO: Add actual memory and CPU monitoring
         memory_usage_mb = 0.0  # Placeholder
@@ -300,7 +300,7 @@ class DashboardService:
 
         try:
             # Get CAN statistics
-            can_stats = await self.can_service.get_statistics()
+            can_stats = await self.can_service.get_bus_statistics()
             summary = can_stats.get("summary", {})
             interfaces = can_stats.get("interfaces", {})
 
@@ -360,7 +360,7 @@ class DashboardService:
             "entities_online_ratio": entities.online_entities / max(entities.total_entities, 1),
             "can_health": "healthy" if can_bus.error_count < 10 else "degraded",
             "message_rate_trend": "stable",  # TODO: Calculate actual trend
-            "system_status": "operational" if len(active_alerts) == 0 else "attention_needed",
+            "system_status": ("operational" if len(active_alerts) == 0 else "attention_needed"),
         }
 
         return DashboardSummary(
@@ -393,17 +393,24 @@ class DashboardService:
                 # Use existing entity control logic
                 from backend.models.entity import ControlCommand
 
+                # Extract state and brightness from parameters
+                state = request.parameters.get("state")
+                brightness = request.parameters.get("brightness")
+
                 control_command = ControlCommand(
-                    command=request.command, parameters=request.parameters
+                    command=request.command, state=state, brightness=brightness
                 )
 
                 response = await self.entity_service.control_entity(entity_id, control_command)
 
-                if response.success:
+                if response.status == "success":
                     successful += 1
                     results.append(
                         BulkControlResult(
-                            entity_id=entity_id, success=True, message=response.message
+                            entity_id=entity_id,
+                            success=True,
+                            message=f"Command '{request.command}' executed successfully",
+                            error=None,
                         )
                     )
                 else:
@@ -412,8 +419,8 @@ class DashboardService:
                         BulkControlResult(
                             entity_id=entity_id,
                             success=False,
-                            message=response.message,
-                            error=response.error,
+                            message=f"Command '{request.command}' failed",
+                            error=f"Status: {response.status}",
                         )
                     )
 
@@ -479,19 +486,26 @@ class DashboardService:
             # Evaluate alert conditions
             if alert_def.id == "high_error_rate":
                 current_value = metrics.error_rate
-                should_trigger = current_value > alert_def.threshold
+                should_trigger = (
+                    alert_def.threshold is not None and current_value > alert_def.threshold
+                )
 
             elif alert_def.id == "low_entity_health":
                 current_value = entities.health_score
-                should_trigger = current_value < alert_def.threshold
+                should_trigger = (
+                    alert_def.threshold is not None and current_value < alert_def.threshold
+                )
 
             elif alert_def.id == "no_can_activity":
                 current_value = metrics.message_rate
-                should_trigger = current_value < alert_def.threshold
+                should_trigger = (
+                    alert_def.threshold is not None and current_value < alert_def.threshold
+                )
 
             # Check if alert is already active
             existing_alert = next(
-                (alert for alert in self._alerts if alert.alert_id == alert_def.id), None
+                (alert for alert in self._alerts if alert.alert_id == alert_def.id),
+                None,
             )
 
             if should_trigger and not existing_alert:

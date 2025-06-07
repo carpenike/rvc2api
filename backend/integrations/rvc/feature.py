@@ -28,6 +28,7 @@ class RVCFeature(Feature):
         core: bool = True,
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
     ):
         """
         Initialize the RVC feature.
@@ -38,8 +39,16 @@ class RVCFeature(Feature):
             core: Whether this is a core feature (default: True)
             config: Optional configuration dictionary
             dependencies: List of feature names this feature depends on
+            friendly_name: Human-readable display name for the feature
         """
-        super().__init__(name=name, enabled=enabled, core=core, dependencies=dependencies)
+        super().__init__(
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name,
+        )
         self.config = config or {}
         self._rvc_spec_path = self.config.get("rvc_spec_path")
         self._device_mapping_path = self.config.get("device_mapping_path")
