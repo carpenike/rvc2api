@@ -115,6 +115,41 @@ class FeatureManager:
             if not getattr(feature, "core", False)
         }
 
+    def update_feature_state(self, feature_name: str, enabled: bool) -> bool:
+        """
+        Update feature enabled state at runtime.
+
+        Args:
+            feature_name: Name of feature to update
+            enabled: New enabled state
+
+        Returns:
+            True if updated successfully, False if feature not found
+        """
+        feature = self._features.get(feature_name)
+        if not feature:
+            return False
+
+        if feature.enabled != enabled:
+            logger.info(
+                f"Updating feature '{feature_name}' enabled state: {feature.enabled} -> {enabled}"
+            )
+            feature.enabled = enabled
+
+        return True
+
+    def get_configuration_metadata(self) -> dict[str, Any]:
+        """Get metadata about current configuration."""
+        return {
+            "total_features": len(self._features),
+            "enabled_features": len(self.get_enabled_features()),
+            "core_features": len(self.get_core_features()),
+            "feature_dependencies": {
+                name: getattr(feature, "dependencies", [])
+                for name, feature in self._features.items()
+            },
+        }
+
     def _resolve_dependencies(self) -> list[str]:
         """
         Resolve feature dependencies using topological sort.

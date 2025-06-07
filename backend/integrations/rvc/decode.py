@@ -360,7 +360,18 @@ def load_config_data(
             continue
 
         # Skip metadata sections
-        if dgn_hex in ("coach_info", "dgn_pairs", "templates"):
+        if dgn_hex in (
+            "coach_info",
+            "dgn_pairs",
+            "templates",
+            "global_defaults",
+            "areas",
+            "lighting_scenes",
+            "lighting_groups",
+            "validation_rules",
+            "file_metadata",
+            "can_interface_mapping",
+        ):
             continue
 
         for instance_id, devices in instance_dict.items():

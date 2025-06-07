@@ -224,7 +224,7 @@ class LoggingSettings(BaseSettings):
 
 
 class CANSettings(BaseSettings):
-    """CAN bus configuration settings."""
+    """CAN bus configuration settings with interface mapping."""
 
     model_config = SettingsConfigDict(env_prefix="COACHIQ_CAN__", case_sensitive=False)
 
@@ -238,6 +238,19 @@ class CANSettings(BaseSettings):
     buffer_size: int = Field(default=1000, description="Message buffer size", ge=1)
     auto_reconnect: bool = Field(default=True, description="Auto-reconnect on CAN failure")
     filters: list[str] = Field(default=[], description="CAN message filters")
+
+    # New interface mapping
+    interface_mappings: dict[str, str] = Field(
+        default={"house": "can0", "chassis": "can1"},
+        description="Logical to physical interface mapping",
+        json_schema_extra={
+            "examples": [
+                {"house": "can0", "chassis": "can1"},
+                "house:can0,chassis:can1",
+                "house=can0,chassis=can1",
+            ]
+        },
+    )
 
     @field_validator("interfaces", mode="before")
     @classmethod
@@ -253,6 +266,44 @@ class CANSettings(BaseSettings):
         """Parse comma-separated filters from environment variable."""
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
+        return v
+
+    @field_validator("interface_mappings", mode="before")
+    @classmethod
+    def parse_interface_mappings(cls, v):
+        """
+        Parse interface mappings from environment variable or dict.
+
+        Supports multiple formats:
+        - Dictionary: {"house": "can0", "chassis": "can1"}
+        - String: "house:can0,chassis:can1"
+        - String (alternative): "house=can0,chassis=can1"
+
+        Examples:
+            COACHIQ_CAN__INTERFACE_MAPPINGS="house:can0,chassis:can1"
+            COACHIQ_CAN__INTERFACE_MAPPINGS="house=can0,chassis=can1"
+        """
+        if isinstance(v, str):
+            mappings = {}
+            # Support both : and = as separators
+            for pair in v.split(","):
+                pair = pair.strip()
+                if ":" in pair:
+                    logical, physical = pair.split(":", 1)
+                elif "=" in pair:
+                    logical, physical = pair.split("=", 1)
+                else:
+                    continue  # Skip invalid pairs
+
+                logical = logical.strip()
+                physical = physical.strip()
+
+                if logical and physical:
+                    mappings[logical] = physical
+
+            return mappings
+        elif isinstance(v, dict):
+            return v
         return v
 
     @property

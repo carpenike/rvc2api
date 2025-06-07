@@ -1,11 +1,13 @@
 # Configuration Management System Specification
 
 - **Feature Name:** Consolidated Configuration Management System
-- **Status:** Proposed
+- **Status:** Superseded by Revised Plan
 - **Date:** 2025-06-07
 - **Author(s):** GitHub Copilot
-- **Related Spec:** `/docs/specs/config-mgmt-consolidation.md` (original draft)
+- **Superseded By:** `/docs/specs/config-mgmt-consolidation-revised.md`
 - **Related ADR:** [To be created]
+
+> **⚠️ IMPORTANT:** This specification has been superseded by a revised plan that better aligns with the current codebase architecture. See `/docs/specs/config-mgmt-consolidation-revised.md` for the updated approach that leverages existing Pydantic Settings and Feature Manager systems instead of introducing database persistence.
 
 **Summary:**
 Implement a comprehensive configuration management system that consolidates environment variables, persistent database storage, and Pydantic defaults with full API/UI visibility and override capabilities. The system will extend the existing `backend/core/config.py` structure while adding database persistence and administrative UI capabilities.

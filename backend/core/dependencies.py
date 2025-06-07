@@ -161,3 +161,41 @@ def get_github_update_checker(request: Request) -> Any:
         raise RuntimeError("GitHub update checker feature is not enabled")
 
     return update_checker_feature.get_update_checker()
+
+
+def get_can_interface_service(request: Request) -> Any:
+    """
+    Get the CAN interface service from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The CAN interface service
+
+    Raises:
+        RuntimeError: If the CAN interface service is not initialized
+    """
+    if not hasattr(request.app.state, "can_interface_service"):
+        raise RuntimeError("CAN interface service not initialized")
+    return request.app.state.can_interface_service
+
+
+def get_websocket_manager(request: Request) -> Any:
+    """
+    Get the WebSocket manager from the feature manager.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The WebSocket manager
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized or websocket feature is not found
+    """
+    feature_manager = get_feature_manager_from_request(request)
+    websocket_feature = feature_manager.get_feature("websocket")
+    if not websocket_feature:
+        raise RuntimeError("WebSocket feature not found or not enabled")
+    return websocket_feature

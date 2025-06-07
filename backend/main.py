@@ -31,6 +31,7 @@ from backend.core.logging_config import configure_unified_logging, setup_early_l
 from backend.core.metrics import initialize_backend_metrics
 from backend.integrations.registration import register_custom_features
 from backend.middleware.http import configure_cors
+from backend.services.can_interface_service import CANInterfaceService
 from backend.services.can_service import CANService
 from backend.services.config_service import ConfigService
 from backend.services.docs_service import DocsService
@@ -105,6 +106,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         rvc_service = RVCService(app_state)
         docs_service = DocsService()
         vector_service = VectorService() if settings.features.enable_vector_search else None
+        can_interface_service = CANInterfaceService()
         logger.info("Backend services initialized")
 
         # Start CAN service with proper multi-interface initialization
@@ -133,6 +135,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.rvc_service = rvc_service
         app.state.docs_service = docs_service
         app.state.vector_service = vector_service
+        app.state.can_interface_service = can_interface_service
 
         logger.info("Backend services initialized successfully")
 

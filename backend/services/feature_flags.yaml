@@ -36,6 +36,12 @@ can_interface:
   depends_on: [app_state]
   description: "CAN bus interface capability"
 
+can_interface_mapping:
+  enabled: true
+  core: false
+  depends_on: [can_interface]
+  description: "Logical CAN interface mapping service for portable coach configurations"
+
 can_feature:
   enabled: true
   core: true

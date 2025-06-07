@@ -17,14 +17,17 @@ Note: WebSocket endpoints are handled by backend.websocket.routes
 """
 
 import logging
+import os
 import time
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
+from backend.core.config import get_settings
 from backend.core.dependencies import (
     get_app_state,
+    get_can_interface_service,
     get_config_service,
     get_feature_manager_from_request,
     get_github_update_checker,
@@ -283,3 +286,141 @@ async def get_feature_status(request: Request) -> dict[str, Any]:
 # Note: WebSocket endpoints have been moved to backend.websocket.routes
 # The endpoints /ws, /ws/logs, /ws/can-sniffer, /ws/features, and /ws/status
 # are now handled by the proper WebSocket manager with feature integration
+
+
+# Enhanced Configuration Management Endpoints
+
+
+@router.get("/config/settings")
+async def get_settings_overview():
+    """
+    Get current application settings with source information.
+
+    Returns configuration values showing which come from environment
+    variables vs defaults, without exposing sensitive information.
+    """
+    settings = get_settings()
+
+    # Build response with source tracking
+    config_dict = settings.get_config_dict(hide_secrets=True)
+
+    # Add source information for each setting
+    # Environment variables are marked as immutable
+    response = {
+        "sections": {},
+        "metadata": {
+            "environment": settings.environment,
+            "debug": settings.debug,
+            "source_priority": ["environment", "default"],
+        },
+    }
+
+    for section_name, section_data in config_dict.items():
+        if isinstance(section_data, dict):
+            response["sections"][section_name] = {
+                "values": section_data,
+                "editable": section_name not in ["security", "server"],  # Example logic
+                "source": (
+                    "environment" if f"COACHIQ_{section_name.upper()}" in os.environ else "default"
+                ),
+            }
+
+    return response
+
+
+@router.get("/config/features")
+async def get_enhanced_feature_status(
+    feature_manager: Annotated[Any, Depends(get_feature_manager_from_request)] = None,
+):
+    """Get current feature status and availability (enhanced version)."""
+    all_features = feature_manager.get_all_features()
+
+    return {
+        "features": {
+            name: {
+                "enabled": getattr(feature, "enabled", False),
+                "core": getattr(feature, "core", False),
+                "dependencies": getattr(feature, "dependencies", []),
+                "description": getattr(feature, "description", ""),
+            }
+            for name, feature in all_features.items()
+        },
+        "enabled_count": len(feature_manager.get_enabled_features()),
+        "core_count": len(feature_manager.get_core_features()),
+    }
+
+
+@router.get("/config/can/interfaces")
+async def get_can_interface_mappings(
+    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+):
+    """Get current CAN interface mappings."""
+    return {
+        "mappings": can_service.get_all_mappings(),
+        "validation": can_service.validate_mapping(can_service.get_all_mappings()),
+    }
+
+
+@router.put("/config/can/interfaces/{logical_name}")
+async def update_can_interface_mapping(
+    logical_name: str,
+    request: dict[str, str],  # {"physical_interface": "can1"}
+    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+):
+    """Update a CAN interface mapping (runtime only)."""
+    if "physical_interface" not in request:
+        raise HTTPException(400, "Request must contain 'physical_interface' field")
+
+    physical_interface = request["physical_interface"]
+
+    # Validate the mapping
+    test_mappings = can_service.get_all_mappings()
+    test_mappings[logical_name] = physical_interface
+    validation = can_service.validate_mapping(test_mappings)
+
+    if not validation["valid"]:
+        raise HTTPException(400, f"Invalid mapping: {', '.join(validation['issues'])}")
+
+    can_service.update_mapping(logical_name, physical_interface)
+
+    return {
+        "logical_name": logical_name,
+        "physical_interface": physical_interface,
+        "message": "Interface mapping updated (runtime only)",
+    }
+
+
+@router.post("/config/can/interfaces/validate")
+async def validate_interface_mappings(
+    mappings: dict[str, str],
+    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+):
+    """Validate a set of interface mappings."""
+    return can_service.validate_mapping(mappings)
+
+
+@router.get("/config/coach/interface-requirements")
+async def get_coach_interface_requirements(
+    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+):
+    """Get coach interface requirements and compatibility validation."""
+    from backend.services.coach_mapping_service import CoachMappingService
+
+    coach_service = CoachMappingService(can_service)
+
+    return {
+        "interface_requirements": coach_service.get_interface_requirements(),
+        "runtime_mappings": coach_service.get_runtime_interface_mappings(),
+        "compatibility": coach_service.validate_interface_compatibility(),
+    }
+
+
+@router.get("/config/coach/metadata")
+async def get_coach_mapping_metadata(
+    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+):
+    """Get complete coach mapping metadata including interface analysis."""
+    from backend.services.coach_mapping_service import CoachMappingService
+
+    coach_service = CoachMappingService(can_service)
+    return coach_service.get_mapping_metadata()

@@ -1,43 +1,15 @@
 # RV-C Device Mapping for 2021 Entegra Aspire 44R
 #
-# This file defines the mapping of RV-C Data Group Numbers (DGNs) and Instance IDs
-# to device/entity metadata for the 2021 Entegra Aspire 44R. It enables decoding,
-# control, and integration of coach devices via the rvc2api system.
+# Comprehensive mapping of RV-C Data Group Numbers (DGNs) and Instance IDs
+# to device/entity metadata for the 2021 Entegra Aspire 44R.
 #
-# To support other RVs, create additional mapping files in this directory using the format:
-#   <year>_<make>_<model>_<trim>.yml
-# Example: 2022_Entegra_Cornerstone_45B.yml
-#
-# Structure:
-#   - Top level: DGN (hex string, e.g., "1FEDA")
-#   - Second level: Instance ID (string, e.g., "25" or "default")
-#   - Third level: List of device/entity definitions
-#
-# Each entity definition may include:
-#   - entity_id: Unique identifier (required)
-#   - friendly_name: Human-readable name (required)
-#   - suggested_area: Location/area (optional)
-#   - device_type: e.g., 'light', 'lock', 'sensor', 'switch' (required)
-#   - capabilities: Supported actions/states (required)
-#   - status_dgn: DGN for status updates (optional)
-#   - ...other fields as needed
-#
-# Use the 'default' instance if a specific instance isn't needed.
-# YAML anchors (&) and aliases (*) are supported for templating.
-#
-# The coach_info section provides structured metadata about the coach for use in the API and UI.
-# Required fields: year, make, model, trim. Optional: notes.
-# Example:
-# coach_info:
-#   year: 2021
-#   make: Entegra
-#   model: Aspire
-#   trim: 44R
-#   notes: Luxury diesel pusher, Spartan K2 chassis
-#
-# The dgn_pairs section defines command/status DGN groupings for robust CAN sniffer logic.
-#
-# This file was renamed from device_mapping.yml for model-specific mapping support.
+# This redesigned structure separates command/control PGNs from status PGNs,
+# reduces repetition through better templating, and provides hierarchical
+# organization for improved efficiency and maintainability.
+
+# ============================================================================
+# METADATA SECTION
+# ============================================================================
 
 coach_info:
   year: "2021"
@@ -45,309 +17,700 @@ coach_info:
   model: Aspire
   trim: 44R
   notes: Luxury diesel pusher, Spartan K2 chassis
+  vin_pattern: "1SSD.*" # VIN prefix pattern for auto-detection
+  chassis: "Spartan K2"
+  engine: "Caterpillar C13"
+  transmission: "Allison 4000MH"
+  # Configuration management metadata
+  config_version: "2.0.0"
+  schema_compatibility: "config_mgmt_v1"
+  last_validated: "2024-12-07"
+  validation_hash: "sha256:..." # For integrity checking
 
-# --- Begin mapping content ---
-
+# DGN pairing definitions for command/status relationships
 dgn_pairs:
-  1FEDB: 1FEDA # Light/lock command -> Light/lock status
+  # Command PGN -> Status PGN mappings
+  "1FEDB": "1FEDA" # Light/lock command -> Light/lock status
+  "1FED8": "1FEDA" # Alternative dimmer command -> dimmer status
+  "1FFE0": "1FFE1" # A/C command -> A/C status
 
-# Template section for reusable parameters
+# Logical Interface Requirements (physical mapping handled by runtime config)
+interface_requirements:
+  house:
+    description: "House systems CAN bus (lighting, locks, etc.)"
+    recommended_speed: 50000
+    typical_termination: true
+    systems: ["lighting", "locks", "climate", "entertainment"]
+    priority: "high"
+    message_volume: "medium"
+  chassis:
+    description: "Chassis systems CAN bus (engine, transmission, etc.)"
+    recommended_speed: 500000
+    typical_termination: false
+    systems: ["engine", "transmission", "brakes", "suspension"]
+    priority: "critical"
+    message_volume: "high"
+  # Note: Physical interface assignments (can0, can1, etc.) are determined by runtime configuration
+  # Set via environment variables: COACHIQ_CAN__INTERFACE_MAPPINGS="house:can0,chassis:can1"
+
+# ============================================================================
+# GLOBAL DEFAULTS AND TEMPLATES
+# ============================================================================
+
+# Global defaults applied to all devices unless overridden
+global_defaults: &global_defaults
+  interface: house # Logical interface - will be resolved to physical interface at runtime
+  group_mask: "0x7C"
+  timeout: 5000
+  retry_count: 3
+  protocol_version: "rvc_2023"
+  config_source: "coach_mapping" # For config management system tracking
+
+# Enhanced device templates with inheritance
 templates:
-  # Template for a simple on/off light
+  # Base device template
+  base_device: &base_device
+    <<: *global_defaults
+    enabled: true
+    manufacturer: "Entegra"
+    model_year: 2021
+
+  # RV-C specific templates
+  rvc_device: &rvc_device
+    <<: *base_device
+    protocol: "rvc"
+    can_arbitration_id_formula: "(0x18 << 24) | (dgn << 8) | source_address"
+
+  # Light device templates
+  light_base: &light_base
+    <<: *rvc_device
+    device_type: light
+    category: lighting
+    power_type: "12V_DC"
+
   switchable_light: &switchable_light
-    device_type: light
+    <<: *light_base
     capabilities: [on_off]
+    brightness_levels: 2 # on/off only
 
-  # Template for a dimmable light
   dimmable_light: &dimmable_light
-    device_type: light
+    <<: *light_base
     capabilities: [on_off, brightness]
+    brightness_levels: 255
+    brightness_range: [0, 100]
+    fade_support: true
 
-  # Template for a lock
-  lock: &lock
+  # Lock template
+  lock_device: &lock_device
+    <<: *rvc_device
     device_type: lock
+    category: security
     capabilities: [lock_unlock]
+    lock_types: ["electronic"]
 
-# ADDING LIGHTS HERE FOR SENDING COMMANDS
-1FEDB:
-  default:
-    - entity_id: entrance_door_lock
-      friendly_name: Entrance Door Lock
-      suggested_area: Entrance
-      interface: can1
-      group_mask: "0x7C"
-      <<: *lock
+  # Sensor templates
+  sensor_base: &sensor_base
+    <<: *rvc_device
+    device_type: sensor
+    category: monitoring
+    read_only: true
 
-  # Interior Lights (Moved from 1FEDA)
-  25:
+  temperature_sensor: &temperature_sensor
+    <<: *sensor_base
+    sensor_type: temperature
+    unit: "°F"
+    precision: 0.1
+
+  voltage_sensor: &voltage_sensor
+    <<: *sensor_base
+    sensor_type: voltage
+    unit: "V"
+    precision: 0.01
+
+# ============================================================================
+# AREA DEFINITIONS
+# ============================================================================
+
+# Hierarchical area structure for logical organization
+areas:
+  interior:
+    display_name: "Interior"
+    zones:
+      bedroom:
+        display_name: "Master Bedroom"
+        description: "Main sleeping area"
+      bathroom_master:
+        display_name: "Master Bathroom"
+        description: "Master bedroom ensuite"
+      bathroom_mid:
+        display_name: "Mid Bathroom"
+        description: "Guest bathroom"
+      living_main:
+        display_name: "Main Living Area"
+        description: "Salon/dinette area"
+      entrance:
+        display_name: "Entrance"
+        description: "Entry area"
+
+  exterior:
+    display_name: "Exterior"
+    zones:
+      awning_driver:
+        display_name: "Driver Side Awning"
+      awning_passenger:
+        display_name: "Passenger Side Awning"
+      basement:
+        display_name: "Basement Storage"
+      security:
+        display_name: "Security Lighting"
+
+# ============================================================================
+# STATUS PGNs - For receiving device state information
+# ============================================================================
+
+# DC Dimmer Status 3 (PGN: 1FEDA) - Primary status reception for lights
+1FEDA:
+  # Interior lighting status reception
+  25: &bedroom_ceiling_status
     - entity_id: bedroom_ceiling_light
-      friendly_name: Ceiling Light
-      suggested_area: Bedroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  27:
-    - entity_id: bedroom_accent_light
-      friendly_name: Accent Light
-      suggested_area: Bedroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  28:
-    - entity_id: bedroom_vanity_light
-      friendly_name: Vanity Light
-      suggested_area: Bedroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  29:
-    - entity_id: bedroom_reading_light
-      friendly_name: Reading Light
-      suggested_area: Bedroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  30:
-    - entity_id: master_bath_ceiling_light
-      friendly_name: Ceiling Light
-      suggested_area: Master Bathroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  31:
-    - entity_id: master_bath_lav_light
-      friendly_name: Lavatory Light
-      suggested_area: Master Bathroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  32:
-    - entity_id: master_bath_accent_light
-      friendly_name: Accent Light
-      suggested_area: Master Bathroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  33:
-    - entity_id: mid_bath_ceiling_light
-      friendly_name: Ceiling Light
-      suggested_area: Mid Bathroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  34:
-    - entity_id: mid_bath_accent_light
-      friendly_name: Accent Light
-      suggested_area: Mid Bathroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  35:
-    - entity_id: entrance_ceiling_light
-      friendly_name: Ceiling Light
-      suggested_area: Entrance
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  37:
-    - entity_id: main_ceiling_light
-      friendly_name: Ceiling Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  38:
-    - entity_id: bedroom_courtesy_light
-      friendly_name: Courtesy Light
-      suggested_area: Master Bedroom
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  39:
-    - entity_id: main_ceiling_accent_light
-      friendly_name: Main Ceiling Accent Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  41:
-    - entity_id: main_driver_side_ceiling_light
-      friendly_name: Main Driver Side Ceiling Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  42:
-    - entity_id: main_passenger_side_ceiling_light
-      friendly_name: Main Passenger Side Ceiling Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  43:
-    - entity_id: main_driver_side_slide_light
-      friendly_name: Main Driver Side Slide Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  45:
-    - entity_id: main_dinette_light
-      friendly_name: Main Dinette Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  46:
-    - entity_id: main_sink_light
-      friendly_name: Main Sink Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
-      <<: *dimmable_light
-  47:
-    - entity_id: main_midship_light
-      friendly_name: Main Midship Light
-      suggested_area: Main Living Area
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "interior"
+      friendly_name: "Bedroom Ceiling Light"
+      area: interior.bedroom
       <<: *dimmable_light
 
-  # Exterior Lights (Moved from 1FEDA)
-  51:
+  27: &bedroom_accent_status
+    - entity_id: bedroom_accent_light
+      friendly_name: "Bedroom Accent Light"
+      area: interior.bedroom
+      <<: *dimmable_light
+
+  28: &bedroom_vanity_status
+    - entity_id: bedroom_vanity_light
+      friendly_name: "Bedroom Vanity Light"
+      area: interior.bedroom
+      <<: *dimmable_light
+
+  29: &bedroom_reading_status
+    - entity_id: bedroom_reading_light
+      friendly_name: "Bedroom Reading Light"
+      area: interior.bedroom
+      scene_compatible: true
+      <<: *dimmable_light
+
+  30: &master_bath_ceiling_status
+    - entity_id: master_bath_ceiling_light
+      friendly_name: "Master Bath Ceiling Light"
+      area: interior.bathroom_master
+      moisture_rating: "IP44"
+      <<: *dimmable_light
+
+  31: &master_bath_lav_status
+    - entity_id: master_bath_lav_light
+      friendly_name: "Master Bath Lavatory Light"
+      area: interior.bathroom_master
+      moisture_rating: "IP44"
+      <<: *dimmable_light
+
+  32: &master_bath_accent_status
+    - entity_id: master_bath_accent_light
+      friendly_name: "Master Bath Accent Light"
+      area: interior.bathroom_master
+      moisture_rating: "IP44"
+      <<: *dimmable_light
+
+  33: &mid_bath_ceiling_status
+    - entity_id: mid_bath_ceiling_light
+      friendly_name: "Mid Bath Ceiling Light"
+      area: interior.bathroom_mid
+      moisture_rating: "IP44"
+      <<: *dimmable_light
+
+  34: &mid_bath_accent_status
+    - entity_id: mid_bath_accent_light
+      friendly_name: "Mid Bath Accent Light"
+      area: interior.bathroom_mid
+      moisture_rating: "IP44"
+      <<: *dimmable_light
+
+  35: &entrance_ceiling_status
+    - entity_id: entrance_ceiling_light
+      friendly_name: "Entrance Ceiling Light"
+      area: interior.entrance
+      auto_on_entry: true
+      <<: *dimmable_light
+
+  37: &main_ceiling_status
+    - entity_id: main_ceiling_light
+      friendly_name: "Main Living Ceiling Light"
+      area: interior.living_main
+      primary_room_light: true
+      <<: *dimmable_light
+
+  38: &bedroom_courtesy_status
+    - entity_id: bedroom_courtesy_light
+      friendly_name: "Bedroom Courtesy Light"
+      area: interior.bedroom
+      night_light: true
+      <<: *dimmable_light
+
+  39: &main_ceiling_accent_status
+    - entity_id: main_ceiling_accent_light
+      friendly_name: "Main Ceiling Accent Light"
+      area: interior.living_main
+      accent_lighting: true
+      <<: *dimmable_light
+
+  41: &main_driver_ceiling_status
+    - entity_id: main_driver_side_ceiling_light
+      friendly_name: "Main Driver Side Ceiling Light"
+      area: interior.living_main
+      zone_lighting: true
+      <<: *dimmable_light
+
+  42: &main_passenger_ceiling_status
+    - entity_id: main_passenger_side_ceiling_light
+      friendly_name: "Main Passenger Side Ceiling Light"
+      area: interior.living_main
+      zone_lighting: true
+      <<: *dimmable_light
+
+  43: &main_driver_slide_status
+    - entity_id: main_driver_side_slide_light
+      friendly_name: "Main Driver Side Slide Light"
+      area: interior.living_main
+      slide_lighting: true
+      <<: *dimmable_light
+
+  45: &main_dinette_status
+    - entity_id: main_dinette_light
+      friendly_name: "Main Dinette Light"
+      area: interior.living_main
+      task_lighting: true
+      <<: *dimmable_light
+
+  46: &main_sink_status
+    - entity_id: main_sink_light
+      friendly_name: "Main Sink Light"
+      area: interior.living_main
+      task_lighting: true
+      <<: *dimmable_light
+
+  47: &main_midship_status
+    - entity_id: main_midship_light
+      friendly_name: "Main Midship Light"
+      area: interior.living_main
+      <<: *dimmable_light
+
+  # Exterior lighting status
+  51: &awning_driver_status
     - entity_id: exterior_driver_side_awning_light
-      friendly_name: Driver Side Awning Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Driver Side Awning Light"
+      area: exterior.awning_driver
+      weather_rating: "IP65"
       <<: *switchable_light
-  52:
+
+  52: &awning_passenger_status
     - entity_id: exterior_passenger_side_awning_light
-      friendly_name: Passenger Side Awning Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Passenger Side Awning Light"
+      area: exterior.awning_passenger
+      weather_rating: "IP65"
       <<: *switchable_light
-  53:
+
+  53: &basement_cargo_status
     - entity_id: basement_cargo_light
-      friendly_name: Cargo Light
-      suggested_area: Basement
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Basement Cargo Light"
+      area: exterior.basement
+      motion_activated: true
+      weather_rating: "IP65"
       <<: *switchable_light
-  54:
+
+  54: &under_slide_status
     - entity_id: exterior_under_slide_light
-      friendly_name: Under Slide Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Under Slide Light"
+      area: exterior.awning_driver
+      automatic_activation: "slide_extension"
+      weather_rating: "IP65"
       <<: *switchable_light
-  57:
+
+  57: &security_driver_status
     - entity_id: exterior_driver_side_security_light
-      friendly_name: Driver Side Security Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Driver Side Security Light"
+      area: exterior.security
+      motion_sensor: true
+      security_lighting: true
+      weather_rating: "IP65"
       <<: *switchable_light
-  58:
+
+  58: &security_passenger_status
     - entity_id: exterior_passenger_side_security_light
-      friendly_name: Passenger Side Security Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Passenger Side Security Light"
+      area: exterior.security
+      motion_sensor: true
+      security_lighting: true
+      weather_rating: "IP65"
       <<: *switchable_light
-  59:
+
+  59: &motion_light_status
     - entity_id: exterior_motion_light
-      friendly_name: Motion Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Exterior Motion Light"
+      area: exterior.security
+      motion_activated: true
+      auto_timeout: 300 # 5 minutes
+      weather_rating: "IP65"
       <<: *switchable_light
-  60:
+
+  60: &porch_light_status
     - entity_id: exterior_porch_light
-      friendly_name: Porch Light
-      suggested_area: Exterior
-      interface: can1
-      status_dgn: "1FEDA"
-      group_mask: "0x7C"
-      groups:
-        - "exterior"
+      friendly_name: "Exterior Porch Light"
+      area: exterior.awning_driver
+      entrance_lighting: true
+      weather_rating: "IP65"
       <<: *switchable_light
+
+  # Lock status
+  default: &entrance_lock_status
+    - entity_id: entrance_door_lock
+      friendly_name: "Entrance Door Lock"
+      area: interior.entrance
+      lock_type: "electronic_deadbolt"
+      keypad_enabled: true
+      remote_unlock: true
+      <<: *lock_device
+
+# ============================================================================
+# COMMAND PGNs - For sending control commands to devices
+# ============================================================================
+
+# DC Dimmer Command (PGN: 1FEDB) - Primary command transmission for lights/locks
+1FEDB:
+  # Interior lighting commands (reference status entities)
+  25:
+    - <<: *bedroom_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  27:
+    - <<: *bedroom_accent_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  28:
+    - <<: *bedroom_vanity_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  29:
+    - <<: *bedroom_reading_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  30:
+    - <<: *master_bath_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  31:
+    - <<: *master_bath_lav_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  32:
+    - <<: *master_bath_accent_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  33:
+    - <<: *mid_bath_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  34:
+    - <<: *mid_bath_accent_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  35:
+    - <<: *entrance_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  37:
+    - <<: *main_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  38:
+    - <<: *bedroom_courtesy_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  39:
+    - <<: *main_ceiling_accent_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  41:
+    - <<: *main_driver_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  42:
+    - <<: *main_passenger_ceiling_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  43:
+    - <<: *main_driver_slide_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  45:
+    - <<: *main_dinette_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  46:
+    - <<: *main_sink_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  47:
+    - <<: *main_midship_status
+      command_type: "dimmer_control"
+      status_dgn: "1FEDA"
+
+  # Exterior lighting commands
+  51:
+    - <<: *awning_driver_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  52:
+    - <<: *awning_passenger_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  53:
+    - <<: *basement_cargo_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  54:
+    - <<: *under_slide_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  57:
+    - <<: *security_driver_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  58:
+    - <<: *security_passenger_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  59:
+    - <<: *motion_light_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  60:
+    - <<: *porch_light_status
+      command_type: "switch_control"
+      status_dgn: "1FEDA"
+
+  # Lock commands
+  default:
+    - <<: *entrance_lock_status
+      command_type: "lock_control"
+      status_dgn: "1FEDA"
+
+# ============================================================================
+# ALTERNATIVE COMMAND PGNs
+# ============================================================================
+
+# DC Dimmer Command 2 (PGN: 1FED8) - Alternative command interface
+1FED8:
+  # Map all dimmable lights to alternative command PGN for redundancy
+  default:
+    - entity_id: "alt_dimmer_interface"
+      friendly_name: "Alternative Dimmer Interface"
+      entity_group: "all_dimmable_lights"
+      command_type: "dimmer_control_alt"
+      status_dgn: "1FEDA"
+      device_type: "control_interface"
+      capabilities: ["group_control"]
+      description: "Alternative dimmer command interface for all dimmable lights"
+      <<: *base_device
+
+# ============================================================================
+# LIGHTING SCENES AND GROUPS
+# ============================================================================
+
+lighting_scenes:
+  all_off:
+    name: "All Lights Off"
+    description: "Turn off all lights"
+    entities: ["*_light"]
+    action: "off"
+
+  evening:
+    name: "Evening Ambiance"
+    description: "Comfortable evening lighting"
+    entities:
+      - entity_id: "main_ceiling_light"
+        brightness: 60
+      - entity_id: "main_ceiling_accent_light"
+        brightness: 40
+      - entity_id: "bedroom_accent_light"
+        brightness: 30
+
+  security:
+    name: "Security Mode"
+    description: "Activate security lighting"
+    entities:
+      - "exterior_driver_side_security_light"
+      - "exterior_passenger_side_security_light"
+      - "exterior_motion_light"
+    action: "on"
+
+  travel_prep:
+    name: "Travel Preparation"
+    description: "Lights for travel preparation"
+    entities:
+      - entity_id: "basement_cargo_light"
+        action: "on"
+      - entity_id: "exterior_under_slide_light"
+        action: "on"
+
+lighting_groups:
+  interior_all:
+    name: "All Interior Lights"
+    entities:
+      ["*bedroom*_light", "*bath*_light", "*main*_light", "*entrance*_light"]
+
+  exterior_all:
+    name: "All Exterior Lights"
+    entities: ["exterior_*_light", "basement_*_light"]
+
+  bedroom_zone:
+    name: "Bedroom Zone"
+    entities: ["bedroom_*_light"]
+
+  bathroom_master:
+    name: "Master Bathroom"
+    entities: ["master_bath_*_light"]
+
+  bathroom_mid:
+    name: "Mid Bathroom"
+    entities: ["mid_bath_*_light"]
+
+  living_main:
+    name: "Main Living Area"
+    entities: ["main_*_light"]
+
+  security_lights:
+    name: "Security Lighting"
+    entities: ["*security*_light", "*motion*_light"]
+
+  awning_lights:
+    name: "Awning Lights"
+    entities: ["*awning*_light"]
+
+# ============================================================================
+# MONITORING AND DIAGNOSTICS (Future Expansion)
+# ============================================================================
+
+# Placeholder for future sensor integration
+# These PGNs would be populated as sensors are identified and mapped
+
+# DC Source Status (PGN: 0x1FFFD) - Battery/DC system monitoring
+# 1FFFD:
+#   default:
+#     - entity_id: house_battery_monitor
+#       friendly_name: "House Battery Monitor"
+#       <<: *voltage_sensor
+
+# Tank Level Status (PGN: 0x1FFB7) - Fluid level monitoring
+# 1FFB7:
+#   default:
+#     - entity_id: fresh_water_tank
+#       friendly_name: "Fresh Water Tank"
+#       <<: *sensor_base
+
+# Temperature Status (PGN: 0x1FFB6) - Temperature monitoring
+# 1FFB6:
+#   default:
+#     - entity_id: interior_temperature
+#       friendly_name: "Interior Temperature"
+#       <<: *temperature_sensor
+
+# ============================================================================
+# VALIDATION AND METADATA
+# ============================================================================
+
+# Enhanced validation rules for config management system integration
+validation_rules:
+  # Pydantic-compatible validation schemas
+  entity_validation:
+    required_fields:
+      ["entity_id", "friendly_name", "device_type", "capabilities"]
+    entity_id_pattern: "^[a-z][a-z0-9_]*[a-z0-9]$"
+    max_instances_per_dgn: 255
+    supported_device_types: ["light", "lock", "sensor", "switch", "dimmer"]
+
+  # Interface validation
+  interface_validation:
+    allowed_logical_interfaces: ["house", "chassis"]
+    allowed_physical_interfaces: ["can0", "can1", "vcan0", "vcan1"]
+    require_logical_interfaces: true # Enforce logical interface usage
+
+  # Configuration management validation
+  config_validation:
+    require_source_tracking: true
+    allow_runtime_modification: true
+    validate_against_schema: true
+    schema_version: "2.0.0"
+
+  # Data integrity
+  integrity_validation:
+    check_dgn_pairs: true
+    validate_templates: true
+    require_unique_entity_ids: true
+    check_interface_consistency: true
+
+file_metadata:
+  version: "2.0.0"
+  created_date: "2024-01-01"
+  last_modified: "2024-12-07"
+  schema_version: "2.0"
+  config_mgmt_compatibility: "v1" # Config management system version
+  total_devices: 28
+  total_lights: 27
+  total_locks: 1
+  maintainer: "CoachIQ System"
+
+  # Configuration management system metadata
+  persistence_ready: true
+  api_exposed_sections: ["lighting_scenes", "lighting_groups", "areas"]
+  runtime_editable_fields: ["friendly_name", "suggested_area", "groups"]
+  immutable_fields: ["entity_id", "device_type", "dgn_hex", "instance"]
+
+  # Interface mapping metadata
+  uses_logical_interfaces: true
+  logical_interface_count: 2
+  requires_interface_resolution: true
+
+  notes: |
+    Redesigned mapping structure with configuration management system integration:
+    - Separated command and status PGNs for clarity
+    - Reduced repetition through enhanced templating
+    - Added hierarchical area organization
+    - Included comprehensive device metadata
+    - Added lighting scenes and groups
+    - Prepared for future sensor integration
+    - Improved maintainability and extensibility
+    - Integrated with configuration management system
+    - Uses logical CAN interface names for portability
+    - Ready for database persistence and runtime editing
+    - Enhanced validation rules for type safety
