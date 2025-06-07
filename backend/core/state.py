@@ -37,6 +37,7 @@ class AppState(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         controller_source_addr: int = 0xF9,
+        friendly_name: str | None = None,
     ) -> None:
         """
         Initialize the AppState feature.
@@ -47,6 +48,7 @@ class AppState(Feature):
             core=core,
             config=config or {},
             dependencies=dependencies or [],
+            friendly_name=friendly_name,
         )
         self.controller_source_addr: int = controller_source_addr
 
