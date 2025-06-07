@@ -52,8 +52,8 @@ tools: ['context7']
 - [ ] For real-time updates, integrate with WebSocket in `src/core_daemon/websocket.py`
 
 #### 2.4. Web UI Components (Current HTML/JS)
-- [ ] Add HTML templates to `src/core_daemon/web_ui/templates/`
-- [ ] Add static assets to `src/core_daemon/web_ui/static/`
+- [ ] Add HTML templates to `src/core_daemon/frontend/templates/`
+- [ ] Add static assets to `src/core_daemon/frontend/static/`
 - [ ] Add JavaScript for client-side logic
 - [ ] Ensure responsive design for various screen sizes
 

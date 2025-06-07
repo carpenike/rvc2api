@@ -33,7 +33,7 @@ applyTo: "**/src/**"
 - `src/core_daemon/`: Main FastAPI application
   - `api_routers/`: API route definitions by domain
   - `services/`: Business logic implementations
-  - `web_ui/`: Legacy frontend (being migrated to React)
+  - `frontend/`: Legacy frontend (being migrated to React)
 - `src/rvc_decoder/`: DGN decoding, mappings, instance management
 - `typings/`: Custom type stubs for third-party libraries
 

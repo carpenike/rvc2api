@@ -23,7 +23,7 @@ applyTo: "**"
   - `backend/websocket/`: WebSocket management
   - `backend/integrations/`: Protocol integrations
   - `backend/models/`: Domain models
-- `web_ui/`: React frontend with TypeScript, Vite, and Tailwind CSS
+- `frontend/`: React frontend with TypeScript, Vite, and Tailwind CSS
 
 ## Migration Complete
 

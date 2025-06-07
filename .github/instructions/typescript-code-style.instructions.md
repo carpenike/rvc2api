@@ -11,11 +11,11 @@ applyTo: "**/*.{ts,tsx,js,jsx}"
 - **TypeScript**: Strict mode enabled with project references
 - **ESLint**: Using flat config system with both eslint.config.js and eslint.config.mjs
 - **Commands**:
-  - Lint: `cd web_ui && npm run lint`
-  - Fix: `cd web_ui && npm run lint:fix`
-  - Style fixes: `cd web_ui && npm run fix:style`
-  - Interface fixes: `cd web_ui && npm run fix:interfaces`
-  - Type check: `cd web_ui && npm run typecheck`
+  - Lint: `cd frontend && npm run lint`
+  - Fix: `cd frontend && npm run lint:fix`
+  - Style fixes: `cd frontend && npm run fix:style`
+  - Interface fixes: `cd frontend && npm run fix:interfaces`
+  - Type check: `cd frontend && npm run typecheck`
 - **Line Length**: 100 characters
 - **Formatting Rules**:
   - No trailing commas (comma-dangle: ["error", "never"])

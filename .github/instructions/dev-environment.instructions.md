@@ -36,7 +36,7 @@ The `.pre-commit-config.yaml` file defines **what** checks to run, while `nix ru
 2. **Daily development**: Let Git hooks run automatically
 3. **Before pushing**: Run `nix run .#precommit` to match CI
 4. **Debugging CI failures**: Use `nix run .#ci` to reproduce CI locallyn dependencies in pyproject.toml)
-- npm (JavaScript dependencies in web_ui/package.json)
+- npm (JavaScript dependencies in frontend/package.json)
 - nix (reproducible environments via flake)
 - Version-locked dependencies
 
@@ -67,7 +67,7 @@ nix run .#format    # Format code (Ruff + ESLint --fix)
 ## Frontend Dev Commands
 
 ```bash
-cd web_ui
+cd frontend
 npm install  # Install dependencies
 npm run dev  # Start development server
 npm run build  # Build for production
@@ -82,14 +82,14 @@ npm run typecheck  # Run TypeScript type checking
 
 ```bash
 git clone https://github.com/carpenike/rvc2api.git && cd rvc2api
-nix develop  # Or: poetry install && cd web_ui && npm install
+nix develop  # Or: poetry install && cd frontend && npm install
 cp .env.example .env
 ```
 
 ## Running Both Frontend and Backend
 
 1. Start the backend server: `poetry run python run_server.py`
-2. In a separate terminal: `cd web_ui && npm run dev`
+2. In a separate terminal: `cd frontend && npm run dev`
 3. Access the frontend at http://localhost:5173
 
 ## VS Code Tasks

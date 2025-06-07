@@ -52,7 +52,7 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 | Task Name                            | Description                             | Command                                     |
 | ------------------------------------ | --------------------------------------- | ------------------------------------------- |
 | `Server: Start Backend`              | Start the FastAPI backend server        | `poetry run python run_server.py` |
-| `Server: Start Frontend Dev Server`  | Start the Vite development server       | `cd web_ui && npm run dev`                  |
+| `Server: Start Frontend Dev Server`  | Start the Vite development server       | `cd frontend && npm run dev`                  |
 | `Server: Start Full Dev Environment` | Start both backend and frontend servers | _Compound task_                             |
 | `Server: Serve Documentation`        | Preview documentation with mkdocs serve | `poetry run mkdocs serve`                   |
 
@@ -81,7 +81,7 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 
 | Task Name                  | Description                               | Command                       |
 | -------------------------- | ----------------------------------------- | ----------------------------- |
-| `Build: Frontend (npm)`    | Build frontend with npm                   | `cd web_ui && npm run build`  |
+| `Build: Frontend (npm)`    | Build frontend with npm                   | `cd frontend && npm run build`  |
 | `Build: Frontend (Nix)`    | Build frontend in reproducible environment | `nix run .#build-frontend`    |
 | `Build: Documentation`     | Build MkDocs documentation               | `poetry run mkdocs build`     |
 
@@ -89,11 +89,11 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 
 | Task Name                        | Description                  | Command                               |
 | -------------------------------- | ---------------------------- | ------------------------------------- |
-| `Frontend: Lint (ESLint)`        | Run ESLint                   | `cd web_ui && npm run lint`           |
-| `Frontend: Fix Lint Issues`      | Fix lint issues              | `cd web_ui && npm run lint:fix`       |
-| `Frontend: Fix Style Issues`     | Fix style issues             | `cd web_ui && npm run fix:style`      |
-| `Frontend: Fix Interface Issues` | Fix interface parsing issues | `cd web_ui && npm run fix:interfaces` |
-| `Frontend: Type Check`           | Run TypeScript type checking | `cd web_ui && npm run typecheck`      |
+| `Frontend: Lint (ESLint)`        | Run ESLint                   | `cd frontend && npm run lint`           |
+| `Frontend: Fix Lint Issues`      | Fix lint issues              | `cd frontend && npm run lint:fix`       |
+| `Frontend: Fix Style Issues`     | Fix style issues             | `cd frontend && npm run fix:style`      |
+| `Frontend: Fix Interface Issues` | Fix interface parsing issues | `cd frontend && npm run fix:interfaces` |
+| `Frontend: Type Check`           | Run TypeScript type checking | `cd frontend && npm run typecheck`      |
 | `Frontend: Clean`                | Remove build artifacts       | _Clean script_                        |
 
 ### Development Environment
@@ -109,7 +109,7 @@ Use the "CI:" prefixed tasks to match the exact CI environment:
 | ----------------------- | ---------------------------- | ------------------------- |
 | `Deps: Update Poetry`   | Update Poetry dependencies   | `poetry update`           |
 | `Deps: Lock Poetry`     | Lock Poetry dependencies     | `poetry lock --no-update` |
-| `Deps: Update Frontend` | Update frontend dependencies | `cd web_ui && npm update` |
+| `Deps: Update Frontend` | Update frontend dependencies | `cd frontend && npm update` |
 
 ### API and Documentation Tasks
 

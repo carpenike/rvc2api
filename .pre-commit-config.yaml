@@ -41,17 +41,17 @@ repos:
       - id: djlint
         args: [--reformat]
         stages: [pre-commit]
-        files: ^src/core_daemon/web_ui/templates/
+        files: ^src/core_daemon/frontend/templates/
 
-  # Frontend linting (run from web_ui directory)
+  # Frontend linting (run from frontend directory)
   - repo: local
     hooks:
       - id: eslint
-        name: eslint (web_ui)
-        entry: bash -c 'cd web_ui && npm run lint'
+        name: eslint (frontend)
+        entry: bash -c 'cd frontend && npm run lint'
         language: system
         pass_filenames: false
-        files: ^web_ui/
+        files: ^frontend/
 
   # Poetry check (local)
   - repo: local

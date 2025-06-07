@@ -1,5 +1,5 @@
 ---
-applyTo: "**/web_ui/**"
+applyTo: "**/frontend/**"
 ---
 
 # ESLint and TypeScript Configuration
@@ -36,12 +36,12 @@ rules: {
 
 ## Monorepo Path Handling & Ignore Patterns
 
-- **Root ESLint Config**: The repo root contains `eslint.config.js` which imports the frontend config (`web_ui/eslint.config.js`). Always run ESLint and pre-commit from the repo root for correct path resolution.
-- **Absolute Ignore Patterns**: Legacy and legacy-adjacent files (e.g., `src/core_daemon/web_ui/`) are excluded using absolute ignore patterns in both ESLint config and pre-commit. Example:
+- **Root ESLint Config**: The repo root contains `eslint.config.js` which imports the frontend config (`frontend/eslint.config.js`). Always run ESLint and pre-commit from the repo root for correct path resolution.
+- **Absolute Ignore Patterns**: Legacy and legacy-adjacent files (e.g., `src/core_daemon/frontend/`) are excluded using absolute ignore patterns in both ESLint config and pre-commit. Example:
   ```js
   ignores: [
     // ...other ignores...
-    path.resolve(__dirname, "../src/core_daemon/web_ui/**"),
+    path.resolve(__dirname, "../src/core_daemon/frontend/**"),
   ];
   ```
 - **Pre-commit Hook**: The `.pre-commit-config.yaml` is set to run ESLint from the root, using the root config and correct args. It uses absolute ignore patterns to ensure legacy files are not checked.
@@ -55,7 +55,7 @@ rules: {
 
 ## Legacy Code Exclusion
 
-- All files in `src/core_daemon/web_ui/` and other legacy directories are excluded from linting and type checking.
+- All files in `src/core_daemon/frontend/` and other legacy directories are excluded from linting and type checking.
 - This is enforced in both ESLint config and pre-commit hook using robust ignore patterns.
 - If new legacy files are added, update ignore patterns in both configs.
 
@@ -70,7 +70,7 @@ All build, cache, and output files are excluded from linting and type checking. 
 - `.cache/`
 - `*.log`
 
-These patterns are enforced in both the monorepo root and `web_ui` ESLint flat configs. If you see lint errors from these files, check your ignore patterns.
+These patterns are enforced in both the monorepo root and `frontend` ESLint flat configs. If you see lint errors from these files, check your ignore patterns.
 
 ## TypeScript Project Reference & ESLint Integration
 
@@ -111,7 +111,7 @@ The pre-commit hook is configured to run ESLint with the `--fix` option:
     - id: eslint
       files: \.(js|ts|tsx)$
       types: [file]
-      args: ["--fix", "--config", "web_ui/eslint.config.js"]
+      args: ["--fix", "--config", "frontend/eslint.config.js"]
       additional_dependencies:
         - eslint@9.25.0
         - eslint-plugin-react-hooks@5.2.0
@@ -121,7 +121,7 @@ The pre-commit hook is configured to run ESLint with the `--fix` option:
         - "@eslint/js@9.26.0"
         - globals@16.0.0
         - eslint-plugin-jsdoc@50.6.17
-      exclude: ^web_ui/(dist|node_modules)/
+      exclude: ^frontend/(dist|node_modules)/
 ```
 
 ## Troubleshooting
@@ -148,18 +148,18 @@ If you encounter persistent ESLint errors even after running fix scripts:
 
 ```js
 // eslint.config.js (root)
-import webUiConfig from "./web_ui/eslint.config.js";
+import webUiConfig from "./frontend/eslint.config.js";
 export default [webUiConfig];
 ```
 
 ```js
-// web_ui/eslint.config.js (ignore pattern example)
+// frontend/eslint.config.js (ignore pattern example)
 import path from "path";
 export default [
   // ...other config...
   {
     ignores: [
-      path.resolve(__dirname, "../src/core_daemon/web_ui/**"),
+      path.resolve(__dirname, "../src/core_daemon/frontend/**"),
       // ...other ignores...
     ],
   },

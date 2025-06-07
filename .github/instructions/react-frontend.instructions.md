@@ -1,5 +1,5 @@
 ---
-applyTo: "**/web_ui/**"
+applyTo: "**/frontend/**"
 ---
 
 # React Frontend Architecture
@@ -31,11 +31,11 @@ applyTo: "**/web_ui/**"
 
 ## Directory Structure
 
-- `web_ui/src/components/`: Reusable UI components
-- `web_ui/src/pages/`: Top-level page components
-- `web_ui/src/hooks/`: Custom React hooks
-- `web_ui/src/utils/`: Utility functions and helpers
-- `web_ui/src/api.ts`: Backend API interaction
+- `frontend/src/components/`: Reusable UI components
+- `frontend/src/pages/`: Top-level page components
+- `frontend/src/hooks/`: Custom React hooks
+- `frontend/src/utils/`: Utility functions and helpers
+- `frontend/src/api.ts`: Backend API interaction
 
 ## Features
 
@@ -126,18 +126,18 @@ const connectWebSocket = () => {
 ## Development Process
 
 1. Run backend: `poetry run python run_server.py`
-2. Run frontend: `cd web_ui && npm run dev`
+2. Run frontend: `cd frontend && npm run dev`
 3. Access development server at http://localhost:5173
 
 ## Building for Production
 
 ```bash
-cd web_ui
+cd frontend
 npm run build
-# Output in web_ui/dist/
+# Output in frontend/dist/
 ```
 
 ## Deployment
 
-The built files from `web_ui/dist/` should be deployed to `/var/lib/rvc2api-web-ui/dist/`
+The built files from `frontend/dist/` should be deployed to `/var/lib/rvc2api-web-ui/dist/`
 on the target system where Caddy is configured to serve them.

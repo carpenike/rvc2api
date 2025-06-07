@@ -116,7 +116,7 @@ def export_openapi():
 
 ## Frontend Type Generation
 
-TypeScript types are generated from the OpenAPI schema using the script at `web_ui/scripts/generate-api-types.js`:
+TypeScript types are generated from the OpenAPI schema using the script at `frontend/scripts/generate-api-types.js`:
 
 ```javascript
 // Example of the TypeScript type generation script
@@ -156,7 +156,7 @@ The following VS Code tasks are available for working with documentation:
 
 3. **Generate Frontend Types** (if needed):
 
-   - Run `cd web_ui && npm run generate:api-types`
+   - Run `cd frontend && npm run generate:api-types`
 
 4. **Build Documentation**:
 

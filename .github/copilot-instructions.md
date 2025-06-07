@@ -65,7 +65,7 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 
 ## Monorepo ESLint & TypeScript Configuration (Frontend)
 
-- **Monorepo Flat Config**: ESLint is configured at the repo root (`eslint.config.js`) and imports the frontend config (`web_ui/eslint.config.js`) for monorepo compatibility. Always run ESLint and pre-commit from the repo root.
+- **Monorepo Flat Config**: ESLint is configured at the repo root (`eslint.config.js`) and imports the frontend config (`frontend/eslint.config.js`) for monorepo compatibility. Always run ESLint and pre-commit from the repo root.
 - **TypeScript Project References**: The frontend uses strict TypeScript project references (`tsconfig.json`, `tsconfig.app.json`, `tsconfig.test.json`, etc.) for modularity and performance. ESLint is pointed to the correct `tsconfig.eslint.json` using absolute paths.
 - **Legacy Code Exclusion**: ESLint configuration excludes build artifacts and cache files using robust absolute ignore patterns in ESLint config and pre-commit hooks. This ensures only source code is checked.
 - **Pre-commit Integration**: The `.pre-commit-config.yaml` runs ESLint from the repo root, using the root config and correct args. It is set up to ignore legacy files and only check relevant frontend code.
@@ -81,7 +81,7 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 - `src/common/`: Shared models and utilities (Pydantic models, type definitions)
 - `src/rvc_decoder/`: DGN decoding, mappings, instance management
 - `backend/`: FastAPI app, API routes, services, and business logic
-- `web_ui/`: React frontend with TypeScript, Vite, and Tailwind CSS
+- `frontend/`: React frontend with TypeScript, Vite, and Tailwind CSS
 
 ## Deployment Architecture
 
@@ -99,7 +99,7 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 - **Services**: Business logic organized in `backend/services/` by domain
 - **Error handling**: Structured exceptions with proper logging
 - **Testing**: pytest with mocked CANbus interfaces
-- **React Components**: Organized by feature in the `web_ui/src/` directory
+- **React Components**: Organized by feature in the `frontend/src/` directory
 - **API Integration**: REST and WebSocket connections between frontend and backend
 - **Documentation**: MkDocs-based documentation with OpenAPI schema integration
   - API endpoints documented with FastAPI's metadata and docstring features
@@ -127,4 +127,4 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
   - `@perplexity`: External research for protocols and general concepts
   - `@github`: Repository and issue queries
 - **MCP Best Practice**: Always default to `@context7` for library and framework questions before using general LLM knowledge
-- **Testing**: Use `poetry run pytest` for backend tests and `cd web_ui && npm test` for frontend
+- **Testing**: Use `poetry run pytest` for backend tests and `cd frontend && npm test` for frontend
