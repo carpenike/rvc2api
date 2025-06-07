@@ -746,6 +746,16 @@ class Settings(BaseSettings):
             "log_level": self.logging.level.lower(),
         }
 
+        # Add reload directories to prevent PermissionError on protected directories
+        if allow_reload:
+            # Use absolute path to backend directory to handle cases where working directory is /
+            import os
+
+            backend_dir = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            )
+            config["reload_dirs"] = [os.path.join(backend_dir, "backend")]
+
         # Ensure reload is disabled in any non-development environment
         if not self.is_development() or self.is_production():
             config["reload"] = False

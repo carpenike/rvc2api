@@ -423,11 +423,8 @@ def main():
     )
     parser.add_argument(
         "--reload",
-        action=(
-            "store_true"
-            if os.getenv("COACHIQ_RELOAD", "false").lower() == "true"
-            else "store_false"
-        ),
+        action="store_true",
+        default=os.getenv("COACHIQ_RELOAD", "false").lower() == "true",
         help="Enable auto-reload (development only, or COACHIQ_RELOAD=true)",
     )
     parser.add_argument(
@@ -461,6 +458,14 @@ def main():
         "log_level": args.log_level,
         "log_config": log_config,
     }
+
+    # Add reload directories to prevent PermissionError on protected directories
+    if args.reload:
+        # Use absolute path to backend directory to handle cases where working directory is /
+        import os
+
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        uvicorn_args["reload_dirs"] = [os.path.join(backend_dir, "backend")]
 
     # Add SSL configuration if available
     uvicorn_args.update(ssl_config)
