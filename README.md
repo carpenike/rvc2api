@@ -1,10 +1,10 @@
-# RVC2API
+# CoachIQ
 
-Python-based API and WebSocket server for interacting with an RV-C (Recreational Vehicle Controller Area Network) bus. This project provides a backend daemon, a web UI for monitoring and control, and a console client for direct interaction.
+Intelligent RV-C network management system with advanced analytics and control. This project provides a backend daemon, a web UI for monitoring and control, and a console client for direct interaction.
 
 ## Overview
 
-`rvc2api` is designed to bridge RV-C networks with modern applications by providing a structured API and real-time data streaming. It decodes RV-C messages, manages device states, and allows for sending commands to the RV-C bus.
+`CoachIQ` is designed to intelligently bridge RV-C networks with modern applications by providing a structured API and real-time data streaming. It decodes RV-C messages, manages device states, and allows for sending commands to the RV-C bus.
 
 ## Version Management
 
@@ -24,7 +24,7 @@ This project uses the [VERSION](./VERSION) file as the single source of truth fo
 - **RV-C Decoder (`src/rvc_decoder/`):**
   - `decode.py`: Contains the logic for decoding RV-C messages based on PGNs and SPNs, using configuration files from `config/`.
   - `config/`: Contains `rvc.json` (RV-C specification details) and `coach_mapping.default.yml` (custom device name mappings).
-- **React Frontend (`web_ui/`):**
+- **React Frontend (`frontend/`):
   - Modern React SPA built with Vite and Tailwind CSS
   - Communicates with the backend via REST API and WebSockets
   - See [Frontend Development Guide](docs/frontend-development.md) for details
@@ -73,7 +73,7 @@ This project uses the [VERSION](./VERSION) file as the single source of truth fo
 
 ### Option 1: Using NixOS
 
-If you're using NixOS, you can easily integrate `rvc2api` using the provided NixOS module:
+If you're using NixOS, you can easily integrate `CoachIQ` using the provided NixOS module:
 
 - [NixOS Integration Guide](docs/nixos-integration.md)
 - [NixOS Module Configuration Reference](docs/nixos-module.md)
@@ -89,8 +89,8 @@ For quick start:
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/carpenike/rvc2api
-    cd rvc2api
+    git clone https://github.com/carpenike/coachiq
+    cd coachiq
     ```
 
 2.  **Install dependencies:**
@@ -100,7 +100,7 @@ For quick start:
     poetry install
 
     # Frontend
-    cd web_ui && npm install
+    cd frontend && npm install
     ```
 
 3.  **Running the application:**
@@ -120,7 +120,7 @@ For quick start:
     - **Frontend Development Server:**
 
       ```bash
-      cd web_ui && npm run dev
+      cd frontend && npm run dev
       ```
 
       The frontend dev server will be accessible at `http://localhost:5173/`.
@@ -128,7 +128,7 @@ For quick start:
     - **Console Client:**
       ```bash
       # Console client not yet implemented - use the web frontend instead
-      # Future: poetry run rvc2api-console --help
+      # Future: poetry run coachiq-console --help
       ```
 
 ## RV-C Documentation Search
@@ -237,8 +237,8 @@ We have enhanced the development environment with several tools to streamline th
   - Located in `typings/` directory
   - Includes custom type definitions for FastAPI WebSocket components
   - See `typings/fastapi/README.md` for details on organization and usage
-- **NixOS Integration**: Using rvc2api in other NixOS systems
-  - See [NixOS Integration](docs/nixos-integration.md) for how to include rvc2api in other flakes and NixOS configurations
+- **NixOS Integration**: Using CoachIQ in other NixOS systems
+  - See [NixOS Integration](docs/nixos-integration.md) for how to include CoachIQ in other flakes and NixOS configurations
 
 ## Contributing
 

@@ -17,7 +17,7 @@ classifiers = [
 ]
 include = [
     "backend/**/*",
-    "web_ui/dist/**/*",
+    "frontend/dist/**/*",
     "config/**/*"
 ]
 homepage = "https://github.com/carpenike/coachiq"

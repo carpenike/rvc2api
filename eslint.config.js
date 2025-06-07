@@ -1,6 +1,6 @@
 // Root ESLint Flat Config for rvc2api monorepo
 // This file provides ignore patterns for the entire repository
-// Frontend-specific linting is handled in web_ui/eslint.config.js
+// Frontend-specific linting is handled in frontend/eslint.config.js
 
 export default [
   // Global ignores (covers all build/output/generated/cache files everywhere)
@@ -25,7 +25,7 @@ export default [
       "**/.storybook-static/**",
       "**/coverage/**",
       "**/assets/javascripts/workers/*.min.js", // Minified/generated JS (e.g., search workers)
-      "web_ui/scripts/generate-api-types.js", // Exclude Node.js utility script from linting
+      "frontend/scripts/generate-api-types.js", // Exclude Node.js utility script from linting
       "**/CNAME",
       "**/objects.inv",
       "**/sitemap.xml*",

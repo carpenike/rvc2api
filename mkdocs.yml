@@ -1,7 +1,7 @@
-site_name: rvc2api Documentation
-site_description: Documentation for the rvc2api project
-site_url: https://carpenike.github.io/rvc2api
-repo_url: https://github.com/carpenike/rvc2api
+site_name: CoachIQ Documentation
+site_description: Documentation for the CoachIQ project
+site_url: https://carpenike.github.io/coachiq
+repo_url: https://github.com/carpenike/coachiq
 edit_uri: edit/main/docs/
 
 # If using a custom domain, ensure a CNAME file exists in docs/ with your domain name
@@ -115,5 +115,5 @@ nav:
       - Diagrams Test: test-mermaid.md
 
   - Specs:
-      - React Frontend Migration: specs/refactor-web-ui-to-react.md
+      - React Frontend Migration: specs/refactor-frontend-to-react.md
       - Spec-Aware Decoder: specs/spec-aware-decoder.md

@@ -187,7 +187,7 @@ EOF
               fi
             fi
             # Set up Node.js environment
-            export NODE_PATH=$PWD/web_ui/node_modules
+            export NODE_PATH=$PWD/frontend/node_modules
 
             echo "🐚 Entered rvc2api devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
             echo "💡 Backend commands:"
@@ -199,19 +199,19 @@ EOF
             echo "  • poetry run pyright backend  # Type checking"
             echo ""
             echo "💡 Frontend commands:"
-            echo "  • cd web_ui && npm install    # Install frontend dependencies"
-            echo "  • cd web_ui && npm run dev    # Start React dev server"
-            echo "  • cd web_ui && npm run build  # Build production frontend"
+            echo "  • cd frontend && npm install    # Install frontend dependencies"
+            echo "  • cd frontend && npm run dev    # Start React dev server"
+            echo "  • cd frontend && npm run build  # Build production frontend"
             echo ""
             echo "💡 Dev Tools commands:"
             echo "  • poetry install --with devtools  # Install dev tools dependencies"
             echo "  • python dev_tools/generate_embeddings.py  # Process RV-C spec PDF"
             echo "  • python dev_tools/query_faiss.py \"query\"  # Search RV-C spec"
 
-            # Setup frontend if web_ui directory exists
-            if [ -d "web_ui" ] && [ ! -d "web_ui/node_modules" ]; then
+            # Setup frontend if frontend directory exists
+            if [ -d "frontend" ] && [ ! -d "frontend/node_modules" ]; then
               echo "🔧 Setting up frontend development environment..."
-              (cd web_ui && npm install)
+              (cd frontend && npm install)
               echo "✅ Frontend dependencies installed"
             fi
           '';
@@ -299,9 +299,9 @@ EOF
                 poetry run ruff check .
                 poetry run pyright backend
 
-                # Frontend linting (if web_ui directory exists)
-                if [ -d "web_ui" ]; then
-                  cd web_ui
+                # Frontend linting (if frontend directory exists)
+                if [ -d "frontend" ]; then
+                  cd frontend
                   npm run lint
                   npm run typecheck
                 fi
@@ -324,9 +324,9 @@ EOF
                 poetry install --no-root
                 poetry run ruff format backend
 
-                # Frontend formatting (if web_ui directory exists)
-                if [ -d "web_ui" ];then
-                  cd web_ui
+                # Frontend formatting (if frontend directory exists)
+                if [ -d "frontend" ];then
+                  cd frontend
                   npm run lint -- --fix
                 fi
               '';
@@ -344,18 +344,18 @@ EOF
               name = "build-frontend";
               runtimeInputs = [ pkgs.nodejs_20 ];
               text = ''
-                if [ ! -d "web_ui" ]; then
-                  echo "Error: web_ui directory not found"
+                if [ ! -d "frontend" ]; then
+                  echo "Error: frontend directory not found"
                   exit 1
                 fi
 
-                cd web_ui
+                cd frontend
                 echo "📦 Installing frontend dependencies..."
                 npm ci
                 echo "🏗️ Building frontend..."
                 npm run build
 
-                echo "✅ Frontend built successfully to web_ui/dist/"
+                echo "✅ Frontend built successfully to frontend/dist/"
                 echo "To deploy, copy the dist directory to your webserver"
               '';
             };
@@ -378,9 +378,9 @@ EOF
                 poetry check --lock --no-interaction
 
                 # Frontend deps must be installed before pre-commit
-                if [ -d "web_ui" ]; then
+                if [ -d "frontend" ]; then
                   echo "🔍 Installing frontend dependencies..."
-                  cd web_ui
+                  cd frontend
                   npm ci
                   cd ..
                 fi
@@ -388,9 +388,9 @@ EOF
                 poetry run pre-commit run --all-files
 
                 # Frontend checks
-                # if [ -d "web_ui" ]; then
+                # if [ -d "frontend" ]; then
                 #   echo "🔍 Running frontend checks..."
-                #   cd web_ui
+                #   cd frontend
                 #   npm run lint
                 #   npm run typecheck
                 #   npm run build
@@ -425,7 +425,7 @@ EOF
           frontend = pkgs.buildNpmPackage {
             pname = "coachiq-frontend";
             inherit version;
-            src = ./web_ui;
+            src = ./frontend;
 
             npmDepsHash = "sha256-iJcUkGCi+ALmVkAQ/fu0EzsDGRLQZr+8F+ZuuL4EG/s=";
 
