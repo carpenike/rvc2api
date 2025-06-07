@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import pathlib
-from importlib import resources
 
 import yaml
 
@@ -95,40 +94,16 @@ def _default_paths():
     try:
         rvc_settings = get_rvc_settings()
 
-        # Get paths from the config service
+        # Get paths from the config service - let it handle all fallback logic
         spec_path = rvc_settings.get_spec_path()
         coach_mapping_path = rvc_settings.get_coach_mapping_path()
 
         # Validate that the files exist
         if not spec_path.exists():
-            # Try importlib.resources as fallback for packaged installations
-            try:
-                cfg_dir = resources.files(__package__) / "config"
-                if cfg_dir.joinpath("rvc.json").is_file():
-                    spec_path = cfg_dir / "rvc.json"
-                    logger.debug(f"Using importlib.resources for RVC spec: {spec_path}")
-                else:
-                    raise FileNotFoundError(f"RVC spec file not found: {spec_path}")
-            except Exception as e:
-                raise FileNotFoundError(
-                    f"RVC spec file not found: {spec_path}. Failed importlib fallback: {e}"
-                ) from e
+            raise FileNotFoundError(f"RVC spec file not found: {spec_path}")
 
         if not coach_mapping_path.exists():
-            # Try importlib.resources as fallback for packaged installations
-            try:
-                cfg_dir = resources.files(__package__) / "config"
-                if cfg_dir.joinpath("coach_mapping.default.yml").is_file():
-                    coach_mapping_path = cfg_dir / "coach_mapping.default.yml"
-                    logger.debug(
-                        f"Using importlib.resources for coach mapping: {coach_mapping_path}"
-                    )
-                else:
-                    raise FileNotFoundError(f"Coach mapping file not found: {coach_mapping_path}")
-            except Exception as e:
-                raise FileNotFoundError(
-                    f"Coach mapping file not found: {coach_mapping_path}. Failed importlib fallback: {e}"
-                ) from e
+            raise FileNotFoundError(f"Coach mapping file not found: {coach_mapping_path}")
 
         logger.debug(f"Using RVC config files - spec: {spec_path}, mapping: {coach_mapping_path}")
         return (str(spec_path), str(coach_mapping_path))

@@ -17,6 +17,7 @@ All settings are strongly typed and validated using Pydantic.
 """
 
 from functools import lru_cache
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -298,26 +299,63 @@ class RVCSettings(BaseSettings):
 
         # Search paths in order of preference
         search_paths = [
-            # 1. Top-level config directory
+            # 1. Top-level config directory (for development)
             Path.cwd() / "config",
-            # 2. System package locations
-            Path("/usr/share/rvc2api/config"),
-            Path("/usr/local/share/rvc2api/config"),
-            Path("/etc/rvc2api"),
+            # 2. Try to find bundled config files using importlib.resources
+            self._get_bundled_config_dir(),
+            # 3. System package locations
+            Path("/usr/share/coachiq/config"),
+            Path("/usr/local/share/coachiq/config"),
+            Path("/etc/coachiq"),
         ]
 
         for path in search_paths:
-            if path.exists() and path.is_dir():
+            if path and path.exists() and path.is_dir():
                 return path
 
         # Default to top-level config
         return Path.cwd() / "config"
 
+    def _get_bundled_config_dir(self) -> Path | None:
+        """Try to locate bundled config files using importlib.resources."""
+        try:
+            # Try to find config files relative to the backend package
+            import backend
+
+            backend_pkg = resources.files(backend)
+
+            # Check if config directory exists relative to backend package
+            config_candidates = [
+                backend_pkg.parent / "config",  # ../config from backend/
+                backend_pkg / "config",  # backend/config/
+            ]
+
+            for candidate in config_candidates:
+                try:
+                    if candidate.is_dir() and candidate.joinpath("rvc.json").is_file():
+                        return Path(str(candidate))
+                except (AttributeError, OSError):
+                    continue
+
+        except Exception:
+            pass
+        return None
+
     def get_spec_path(self) -> Path:
         """Get the RVC spec JSON file path."""
         if self.spec_path:
             return self.spec_path
-        return self.get_config_dir() / "rvc.json"
+
+        config_dir = self.get_config_dir()
+        spec_file = config_dir / "rvc.json"
+
+        # If the file doesn't exist in the config dir, try bundled resources
+        if not spec_file.exists():
+            bundled_path = self._get_bundled_file("rvc.json")
+            if bundled_path:
+                return bundled_path
+
+        return spec_file
 
     def get_coach_mapping_path(self) -> Path:
         """Get the coach mapping YAML file path."""
@@ -333,7 +371,40 @@ class RVCSettings(BaseSettings):
                 return coach_file
 
         # Fall back to default coach mapping
-        return config_dir / "coach_mapping.default.yml"
+        default_file = config_dir / "coach_mapping.default.yml"
+
+        # If the file doesn't exist in the config dir, try bundled resources
+        if not default_file.exists():
+            bundled_path = self._get_bundled_file("coach_mapping.default.yml")
+            if bundled_path:
+                return bundled_path
+
+        return default_file
+
+    def _get_bundled_file(self, filename: str) -> Path | None:
+        """Try to locate a specific bundled config file using importlib.resources."""
+        try:
+            # Try to find config files relative to the backend package
+            import backend
+
+            backend_pkg = resources.files(backend)
+
+            # Check if file exists relative to backend package
+            file_candidates = [
+                backend_pkg.parent / "config" / filename,  # ../config/filename from backend/
+                backend_pkg / "config" / filename,  # backend/config/filename
+            ]
+
+            for candidate in file_candidates:
+                try:
+                    if candidate.is_file():
+                        return Path(str(candidate))
+                except (AttributeError, OSError):
+                    continue
+
+        except Exception:
+            pass
+        return None
 
 
 class FeaturesSettings(BaseSettings):
