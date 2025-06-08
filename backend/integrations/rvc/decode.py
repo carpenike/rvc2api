@@ -14,6 +14,7 @@ Notes:
     - Mapping/model selection logic supports model-specific mapping files and full-path overrides.
 """
 
+import functools
 import json
 import logging
 import os
@@ -45,6 +46,12 @@ def clear_missing_dgns() -> None:
     """Clear the missing DGNs storage."""
     global _missing_dgns_storage
     _missing_dgns_storage.clear()
+
+
+def clear_config_cache() -> None:
+    """Clear the configuration cache to force reloading."""
+    load_config_data.cache_clear()
+    logger.debug("Configuration cache cleared")
 
 
 def record_missing_dgn(dgn_id: int, can_id: int | None = None, context: str | None = None) -> None:
@@ -252,6 +259,7 @@ def decode_payload_safe(
         return {}, {}, False
 
 
+@functools.cache
 def load_config_data(
     rvc_spec_path_override: str | None = None,
     device_mapping_path_override: str | None = None,
@@ -269,6 +277,10 @@ def load_config_data(
 ]:
     """
     Load and parse RVC spec and device mapping data.
+
+    This function uses @functools.cache to automatically cache the loaded data
+    and avoid redundant file I/O and parsing when the same configuration is
+    requested multiple times during startup.
 
     Args:
         rvc_spec_path_override: Optional path override for RVC spec JSON
