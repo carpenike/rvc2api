@@ -12,7 +12,7 @@
 
 # Core infrastructure features
 persistence:
-  enabled: false
+  enabled: true
   core: false
   depends_on: []
   description: "Data persistence service for SQLite databases, backups, themes, and user configurations"

@@ -352,7 +352,16 @@ def _create_entity_manager_feature(**kwargs):
     return EntityManagerFeature(**kwargs)
 
 
+# Register Persistence factory
+def _create_persistence_feature(**kwargs):
+    """Factory function for PersistenceFeature."""
+    from backend.core.persistence_feature import PersistenceFeature
+
+    return PersistenceFeature(**kwargs)
+
+
 FeatureManager.register_feature_factory("entity_manager", _create_entity_manager_feature)
+FeatureManager.register_feature_factory("persistence", _create_persistence_feature)
 
 
 # Global instance for use with dependency injection
@@ -374,7 +383,9 @@ def get_feature_manager(
         Initialized FeatureManager instance
     """
     global _feature_manager
-    from backend.core.config import get_settings  # local import to avoid circular import
+    from backend.core.config import (
+        get_settings,
+    )
 
     if settings is None:
         settings = get_settings()

@@ -8,6 +8,7 @@ and integration with the feature manager system.
 import logging
 
 from backend.core.config import get_persistence_settings
+from backend.models.persistence import StorageInfo
 from backend.services.feature_base import Feature
 from backend.services.persistence_service import PersistenceService
 
@@ -66,17 +67,16 @@ class PersistenceFeature(Feature):
             # Log storage information
             if self._service.enabled:
                 storage_info = await self._service.get_storage_info()
-                if "directories" in storage_info:
+                if storage_info.directories:
                     logger.info(
-                        f"Persistence directories available: {list(storage_info['directories'].keys())}"
+                        f"Persistence directories available: {list(storage_info.directories.keys())}"
                     )
 
                 # Log disk space information if available
-                if "disk_usage" in storage_info:
-                    disk = storage_info["disk_usage"]
+                if storage_info.disk_usage:
+                    disk = storage_info.disk_usage
                     logger.info(
-                        f"Disk usage: {disk.get('usage_percent', 0):.1f}% "
-                        f"({disk.get('free_gb', 0):.1f}GB free)"
+                        f"Disk usage: {disk.usage_percent:.1f}% ({disk.free_gb:.1f}GB free)"
                     )
 
         except Exception as e:
@@ -143,21 +143,35 @@ class PersistenceFeature(Feature):
 
         return self._service
 
-    async def get_storage_info(self) -> dict:
+    async def get_storage_info(self) -> StorageInfo:
         """
         Get storage information from the persistence service.
 
         Returns:
-            Storage information dictionary
+            Storage information object
         """
         if not self.enabled or not self._service:
-            return {"enabled": False, "error": "Service not available"}
+            return StorageInfo(
+                enabled=False,
+                data_dir=None,
+                directories=None,
+                disk_usage=None,
+                backup_settings=None,
+                error="Service not available",
+            )
 
         try:
             return await self._service.get_storage_info()
         except Exception as e:
             logger.error(f"Failed to get storage info: {e}")
-            return {"enabled": True, "error": str(e)}
+            return StorageInfo(
+                enabled=True,
+                data_dir=None,
+                directories=None,
+                disk_usage=None,
+                backup_settings=None,
+                error=str(e),
+            )
 
     async def backup_database(self, database_path, backup_name=None):
         """

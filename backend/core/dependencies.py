@@ -203,7 +203,7 @@ def get_websocket_manager(request: Request) -> Any:
 
 def get_persistence_service(request: Request) -> Any:
     """
-    Get the persistence service from the feature manager.
+    Get the persistence service from the FastAPI application state.
 
     Args:
         request: The FastAPI request object
@@ -212,10 +212,62 @@ def get_persistence_service(request: Request) -> Any:
         The persistence service
 
     Raises:
-        RuntimeError: If the feature manager is not initialized or persistence feature is not found
+        RuntimeError: If the persistence service is not initialized
     """
-    feature_manager = get_feature_manager_from_request(request)
-    persistence_feature = feature_manager.get_feature("persistence")
-    if not persistence_feature:
-        raise RuntimeError("Persistence feature not found or not enabled")
-    return persistence_feature
+    if not hasattr(request.app.state, "persistence_service"):
+        raise RuntimeError("Persistence service not initialized")
+    return request.app.state.persistence_service
+
+
+def get_database_manager(request: Request) -> Any:
+    """
+    Get the database manager from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The database manager
+
+    Raises:
+        RuntimeError: If the database manager is not initialized
+    """
+    if not hasattr(request.app.state, "database_manager"):
+        raise RuntimeError("Database manager not initialized")
+    return request.app.state.database_manager
+
+
+def get_config_repository(request: Request) -> Any:
+    """
+    Get the configuration repository from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The configuration repository
+
+    Raises:
+        RuntimeError: If the configuration repository is not initialized
+    """
+    if not hasattr(request.app.state, "config_repository"):
+        raise RuntimeError("Configuration repository not initialized")
+    return request.app.state.config_repository
+
+
+def get_dashboard_repository(request: Request) -> Any:
+    """
+    Get the dashboard repository from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The dashboard repository
+
+    Raises:
+        RuntimeError: If the dashboard repository is not initialized
+    """
+    if not hasattr(request.app.state, "dashboard_repository"):
+        raise RuntimeError("Dashboard repository not initialized")
+    return request.app.state.dashboard_repository

@@ -1,0 +1,16 @@
+# Ignore all database files in this directory
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Ignore database backups
+*.bak
+*.backup
+*.dump
+
+# Keep this .gitignore file and any README
+!.gitignore
+!README.md

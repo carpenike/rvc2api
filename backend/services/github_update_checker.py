@@ -251,6 +251,7 @@ def register_github_update_checker_feature(
     core: bool,
     config: dict[str, Any],
     dependencies: list[str],
+    friendly_name: str | None = None,
 ) -> GitHubUpdateCheckerFeature:
     """
     Factory function for creating GitHub update checker feature instances.
@@ -263,6 +264,7 @@ def register_github_update_checker_feature(
         core: Whether this is a core feature
         config: Feature configuration from YAML
         dependencies: List of feature dependencies
+        friendly_name: Human-readable name for the feature
 
     Returns:
         Initialized GitHubUpdateCheckerFeature instance
@@ -273,6 +275,7 @@ def register_github_update_checker_feature(
         core=core,
         config=config,
         dependencies=dependencies,
+        friendly_name=friendly_name,
     )
 
     # Store as global instance for dependency injection

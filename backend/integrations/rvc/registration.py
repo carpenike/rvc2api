@@ -19,6 +19,7 @@ def register_rvc_feature(
     core: bool,
     config: dict[str, Any],
     dependencies: list[str],
+    friendly_name: str | None = None,
 ) -> Feature:
     """
     Factory function for creating an RVCFeature instance.
@@ -32,6 +33,7 @@ def register_rvc_feature(
         core: Whether this is a core feature
         config: Feature configuration
         dependencies: Feature dependencies
+        friendly_name: Human-readable name for the feature
 
     Returns:
         Initialized RVCFeature instance
@@ -45,6 +47,7 @@ def register_rvc_feature(
         core=core,
         config=config,
         dependencies=dependencies,
+        friendly_name=friendly_name,
     )
 
     return rvc_feature
