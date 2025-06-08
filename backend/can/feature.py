@@ -221,8 +221,10 @@ class CANBusFeature(Feature):
         self._is_running = True
 
     async def _setup_can_listeners(self) -> None:
-        """Set up CAN message listeners for all active interfaces."""
+        """Set up CAN message listeners for all active interfaces using python-can's asyncio support."""
         try:
+            import can
+
             from backend.integrations.can.manager import buses
 
             if not buses:
@@ -235,12 +237,29 @@ class CANBusFeature(Feature):
 
             for interface_name, bus in buses.items():
                 try:
+                    # Create AsyncBufferedReader for non-blocking message reception
+                    reader = can.AsyncBufferedReader()  # type: ignore
+
+                    # Create Notifier with asyncio event loop integration
+                    loop = asyncio.get_running_loop()
+                    notifier = can.Notifier(bus, [reader], loop=loop)  # type: ignore
+
                     # Create a listener task for this interface
                     listener_task = asyncio.create_task(
-                        self._can_listener_task(interface_name, bus),
+                        self._can_listener_task(interface_name, reader),
                         name=f"can_listener_{interface_name}",
                     )
-                    self._listeners.append(listener_task)
+
+                    # Store both the task and notifier for cleanup
+                    self._listeners.append(
+                        {
+                            "task": listener_task,
+                            "notifier": notifier,
+                            "reader": reader,
+                            "interface": interface_name,
+                        }
+                    )
+
                     logger.info(f"Started CAN listener for interface: {interface_name}")
 
                 except Exception as e:
@@ -249,21 +268,21 @@ class CANBusFeature(Feature):
         except Exception as e:
             logger.error(f"Failed to set up CAN listeners: {e}", exc_info=True)
 
-    async def _can_listener_task(self, interface_name: str, bus) -> None:
+    async def _can_listener_task(self, interface_name: str, reader) -> None:
         """
-        Async task to continuously listen for CAN messages on a specific interface.
+        Async task to continuously listen for CAN messages using AsyncBufferedReader.
 
         Args:
             interface_name: Name of the CAN interface (e.g., 'can0', 'can1')
-            bus: python-can Bus object for the interface
+            reader: can.AsyncBufferedReader object for non-blocking message reception
         """
         logger.info(f"CAN listener started for interface: {interface_name}")
 
         try:
             while self._is_running:
                 try:
-                    # Receive message with timeout to allow graceful shutdown
-                    message = bus.recv(timeout=1.0)
+                    # Non-blocking async message reception
+                    message = await reader.get_message()
 
                     if message is not None:
                         # Process the received message
@@ -359,12 +378,32 @@ class CANBusFeature(Feature):
         # Writer task cleanup is handled by CANService
 
         # Cleanup CAN bus listeners
-        for listener_task in self._listeners:
+        for listener_info in self._listeners:
             try:
-                if isinstance(listener_task, asyncio.Task):
-                    listener_task.cancel()
+                if isinstance(listener_info, dict):
+                    # New dictionary structure with task, notifier, reader
+                    interface = listener_info.get("interface", "unknown")
+
+                    # Cancel the async task
+                    task = listener_info.get("task")
+                    if task and isinstance(task, asyncio.Task):
+                        task.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await task
+
+                    # Stop the notifier
+                    notifier = listener_info.get("notifier")
+                    if notifier:
+                        notifier.stop()
+
+                    logger.debug(f"Cleaned up CAN listener for {interface}")
+
+                elif isinstance(listener_info, asyncio.Task):
+                    # Legacy task-only structure (for compatibility)
+                    listener_info.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
-                        await listener_task
+                        await listener_info
+
             except Exception as e:
                 logger.error(f"Error cleaning up CAN listener: {e}")
 
