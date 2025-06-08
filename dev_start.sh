@@ -27,6 +27,10 @@ export COACHIQ_SERVER__DEBUG=true
 # Logging Configuration
 export COACHIQ_LOGGING__LEVEL=DEBUG
 
+# Persistence Configuration for development
+export COACHIQ_PERSISTENCE__ENABLED=true
+export COACHIQ_PERSISTENCE__DATA_DIR=backend/data
+
 # CORS Configuration (allow frontend development)
 export COACHIQ_CORS__ALLOW_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
 
