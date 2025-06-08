@@ -401,6 +401,171 @@ class CANBusFeature(Feature):
 
     # CAN message sending is now handled by CANService
 
+    async def _update_entity_from_can_message(
+        self,
+        entity_id: str,
+        device_config: dict[str, Any],
+        decoded_data: dict[str, Any],
+        raw_data: dict[str, Any],
+        msg: dict[str, Any],
+    ) -> None:
+        """
+        Update entity state based on a decoded CAN message.
+
+        Args:
+            entity_id: The entity ID to update
+            device_config: Device configuration from the mapping
+            decoded_data: Decoded signal values from the CAN message
+            raw_data: Raw signal values from the CAN message
+            msg: Original CAN message dictionary
+        """
+        try:
+            from backend.services.feature_manager import get_feature_manager
+            from backend.websocket.entity_integration import notify_entity_update
+
+            # Get entity manager from feature manager
+            feature_manager = get_feature_manager()
+            entity_manager_feature = feature_manager.get_feature("entity_manager")
+            if entity_manager_feature is None:
+                logger.warning("EntityManager feature not found in feature manager")
+                return
+
+            entity_manager = entity_manager_feature.get_entity_manager()
+            entity = entity_manager.get_entity(entity_id)
+
+            if not entity:
+                logger.warning(f"Entity {entity_id} not found in entity manager")
+                return
+
+            # Build state update payload
+            timestamp = msg.get("timestamp", time.time())
+
+            # Start with the decoded and raw data
+            payload = {
+                "entity_id": entity_id,
+                "timestamp": timestamp,
+                "value": decoded_data or {},
+                "raw": raw_data or {},
+            }
+
+            # Add configuration fields from device config
+            for config_field in [
+                "suggested_area",
+                "device_type",
+                "capabilities",
+                "friendly_name",
+                "groups",
+            ]:
+                if config_field in device_config:
+                    payload[config_field] = device_config[config_field]
+
+            # Handle light-specific state updates
+            if device_config.get("device_type") == "light":
+                await self._update_light_state(payload, decoded_data, raw_data)
+
+            # Update the entity state
+            updated_entity = entity_manager.update_entity_state(entity_id, payload)
+
+            if updated_entity:
+                logger.debug(f"Updated entity {entity_id} state from CAN message")
+
+                # Broadcast the update via WebSocket
+                await notify_entity_update(entity_id, updated_entity.to_dict())
+
+                # Check if this completes a pending command (for optimistic UI updates)
+                await self._check_pending_command_completion(entity_id, payload)
+            else:
+                logger.warning(f"Failed to update entity {entity_id} state")
+
+        except Exception as e:
+            logger.error(f"Error updating entity {entity_id} from CAN message: {e}", exc_info=True)
+
+    async def _update_light_state(
+        self, payload: dict[str, Any], decoded_data: dict[str, Any], raw_data: dict[str, Any]
+    ) -> None:
+        """
+        Update light-specific state fields based on decoded CAN data.
+
+        Args:
+            payload: The payload being built for entity state update
+            decoded_data: Decoded signal values
+            raw_data: Raw signal values
+        """
+        try:
+            # Extract operating status (brightness level in CAN terms)
+            operating_status = raw_data.get("operating_status", 0)
+
+            if isinstance(operating_status, str):
+                operating_status = int(operating_status)
+
+            # Convert CAN operating status (0-200) to UI brightness (0-100)
+            brightness_pct = int((operating_status / 200.0) * 100)
+            brightness_pct = max(0, min(100, brightness_pct))  # Clamp to 0-100
+
+            # Determine on/off state
+            is_on = operating_status > 0
+            state_str = "on" if is_on else "off"
+
+            # Update payload with light-specific fields
+            payload.update(
+                {
+                    "state": state_str,
+                    "brightness": brightness_pct,
+                }
+            )
+
+            logger.debug(
+                f"Light state: operating_status={operating_status}, brightness={brightness_pct}%, state={state_str}"
+            )
+
+        except Exception as e:
+            logger.error(f"Error processing light state: {e}")
+            # Fallback to safe defaults
+            payload.update(
+                {
+                    "state": "off",
+                    "brightness": 0,
+                }
+            )
+
+    async def _check_pending_command_completion(
+        self, entity_id: str, payload: dict[str, Any]
+    ) -> None:
+        """
+        Check if this state update completes a pending command.
+
+        Args:
+            entity_id: The entity that was updated
+            payload: The state update payload
+        """
+        try:
+            from backend.core.state import app_state
+
+            # Get the timestamp from the payload
+            update_timestamp = payload.get("timestamp", time.time())
+
+            # Check if there are any pending commands for this entity
+            # This will help correlate commands with responses for UI feedback
+            pending_commands = [
+                cmd
+                for cmd in app_state.pending_commands
+                if cmd.get("entity_id") == entity_id
+                and (update_timestamp - cmd.get("timestamp", 0)) < 5.0  # Within 5 seconds
+            ]
+
+            if pending_commands:
+                logger.debug(
+                    f"Found {len(pending_commands)} pending commands for {entity_id}, state update may complete them"
+                )
+
+                # Mark commands as potentially completed
+                # The actual command correlation is handled by the app_state.try_group_response method
+                for _cmd in pending_commands:
+                    app_state.try_group_response(payload)
+
+        except Exception as e:
+            logger.error(f"Error checking pending command completion: {e}")
+
     async def _process_message(self, msg: dict[str, Any]) -> None:
         """
         Process an incoming CAN message.
@@ -455,6 +620,10 @@ class CANBusFeature(Feature):
                             entity_id = device_config.get("entity_id")
                             if entity_id:
                                 logger.debug(f"Mapped to entity: {entity_id}")
+                                # Update entity state with the decoded CAN message
+                                await self._update_entity_from_can_message(
+                                    entity_id, device_config, decoded_data, raw_data, msg
+                                )
                         else:
                             logger.debug(f"Unmapped device: {dgn_hex}:{instance}")
 
