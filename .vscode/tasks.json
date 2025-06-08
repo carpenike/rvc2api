@@ -19,7 +19,7 @@
     {
       "label": "Server: Start Frontend Dev Server",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run dev",
+      "command": "cd ${workspaceFolder}/frontend && npm run dev",
       "group": "build",
       "isBackground": true,
       "presentation": {
@@ -200,7 +200,7 @@
     {
       "label": "Build: Frontend (npm)",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run build",
+      "command": "cd ${workspaceFolder}/frontend && npm run build",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -239,7 +239,7 @@
     {
       "label": "Frontend: Lint (ESLint)",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run lint",
+      "command": "cd ${workspaceFolder}/frontend && npm run lint",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -252,7 +252,7 @@
     {
       "label": "Frontend: Fix Lint Issues",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run lint:fix",
+      "command": "cd ${workspaceFolder}/frontend && npm run lint:fix",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -263,35 +263,9 @@
       "problemMatcher": ["$eslint-stylish"]
     },
     {
-      "label": "Frontend: Fix Style Issues",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run fix:style",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "detail": "Fix style issues",
-      "problemMatcher": []
-    },
-    {
-      "label": "Frontend: Fix Interface Issues",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run fix:interfaces",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "detail": "Fix interface parsing issues",
-      "problemMatcher": []
-    },
-    {
       "label": "Frontend: Type Check",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm run typecheck",
+      "command": "cd ${workspaceFolder}/frontend && npm run typecheck",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -302,9 +276,49 @@
       "problemMatcher": ["$tsc"]
     },
     {
+      "label": "Frontend: Test",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/frontend && npm run test",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run frontend tests with Vitest",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Test with Coverage",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/frontend && npm run test:coverage",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run frontend tests with coverage",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Preview Build",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/frontend && npm run preview",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "Preview built frontend",
+      "problemMatcher": []
+    },
+    {
       "label": "Frontend: Clean",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && rm -rf dist node_modules/.vite",
+      "command": "cd ${workspaceFolder}/frontend && rm -rf dist node_modules/.vite",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -330,7 +344,7 @@
     {
       "label": "Dev: Clean All",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && rm -rf .pytest_cache .ruff_cache .mypy_cache __pycache__ && cd web_ui && rm -rf dist node_modules/.vite",
+      "command": "cd ${workspaceFolder} && rm -rf .pytest_cache .ruff_cache .mypy_cache __pycache__ && cd frontend && rm -rf dist node_modules/.vite",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -369,7 +383,7 @@
     {
       "label": "Deps: Update Frontend",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/web_ui && npm update",
+      "command": "cd ${workspaceFolder}/frontend && npm update",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -564,22 +578,9 @@
       "problemMatcher": []
     },
     {
-      "label": "System: Setup Colima vcan",
-      "type": "shell",
-      "command": "cd ${workspaceFolder} && scripts/setup_colima_vcan.sh",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "detail": "Set up vcan interfaces in Colima VM",
-      "problemMatcher": []
-    },
-    {
       "label": "System: Ensure vcan Interfaces",
       "type": "shell",
-      "command": "cd ${workspaceFolder} && scripts/ensure_vcan_interfaces.sh",
+      "command": "cd ${workspaceFolder} && .devcontainer/ensure_vcan_interfaces.sh",
       "group": "build",
       "presentation": {
         "reveal": "always",
