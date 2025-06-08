@@ -227,3 +227,38 @@ _deprecated/
 .devcontainer/home-cache
 .devcontainer/nix-store
 .devcontainer/nix-profile
+
+# Database files and application data
+# SQLite database files (all environments)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Database backups and dumps
+*.bak
+*.backup
+*.dump
+*.sql.gz
+
+# Application data directories
+data/*.db
+data/*.sqlite*
+backend/data/*.db
+backend/data/*.sqlite*
+
+# Production data directory content
+/var/lib/coachiq/
+
+# Migration logs and temporary files
+*.log
+*.temp
+alembic/logs/
+
+# Environment-specific database configs
+.env.local
+.env.production
+
+/.mcp.json
