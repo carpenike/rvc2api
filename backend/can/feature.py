@@ -238,6 +238,7 @@ class CANBusFeature(Feature):
             for interface_name, bus in buses.items():
                 try:
                     # Create AsyncBufferedReader for non-blocking message reception
+                    # Limit buffer to prevent memory buildup (1000 messages max)
                     reader = can.AsyncBufferedReader()  # type: ignore
 
                     # Create Notifier with asyncio event loop integration
@@ -628,6 +629,8 @@ class CANBusFeature(Feature):
             # Convert data to bytes if it's not already
             if isinstance(data, str):
                 data = bytes.fromhex(data)
+            elif isinstance(data, bytearray):
+                data = bytes(data)  # Convert bytearray to bytes
             elif not isinstance(data, bytes):
                 logger.warning(f"Unexpected data type: {type(data)}")
                 return

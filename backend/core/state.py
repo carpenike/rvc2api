@@ -177,6 +177,9 @@ class AppState(Feature):
                     "reason": "mapping",
                 }
                 self.can_sniffer_grouped.append(group)
+                # Limit grouped entries to prevent memory buildup (keep last 500 groups)
+                if len(self.can_sniffer_grouped) > 500:
+                    self.can_sniffer_grouped.pop(0)
                 if self._broadcast_can_sniffer_group:
                     task = asyncio.create_task(self._broadcast_can_sniffer_group(group))
                     self.background_tasks.add(task)
@@ -193,6 +196,9 @@ class AppState(Feature):
                     "reason": "heuristic",
                 }
                 self.can_sniffer_grouped.append(group)
+                # Limit grouped entries to prevent memory buildup (keep last 500 groups)
+                if len(self.can_sniffer_grouped) > 500:
+                    self.can_sniffer_grouped.pop(0)
                 if self._broadcast_can_sniffer_group:
                     task = asyncio.create_task(self._broadcast_can_sniffer_group(group))
                     self.background_tasks.add(task)
