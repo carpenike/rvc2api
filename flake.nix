@@ -84,6 +84,7 @@
             pythonPackages.langchain-community
             pythonPackages.langchain-core
             pythonPackages.prometheus_client
+            pythonPackages.psutil
             pythonPackages.pydantic
             pythonPackages.pyroute2
             pythonPackages.python-can
