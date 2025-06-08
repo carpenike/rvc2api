@@ -93,14 +93,59 @@ When dealing with import errors even with proper type stubs:
    "python.analysis.ignore": ["httpx", "other-problem-module"]
    ```
 
+## Service Dependency Patterns (MANDATORY)
+
+### Management Service Usage
+**ALL backend code must follow these dependency injection patterns:**
+
+```python
+# CORRECT: Use dependency injection for all services
+from backend.core.dependencies import (
+    get_feature_manager, get_entity_manager, get_config_service
+)
+
+@router.get("/status")
+async def get_status(
+    feature_manager: FeatureManager = Depends(get_feature_manager),
+    entity_manager: EntityManager = Depends(get_entity_manager)
+):
+    """Always use dependency injection for service access."""
+    return {"features": feature_manager.get_enabled_features()}
+
+# WRONG: Never import services directly
+from backend.services.feature_manager import feature_manager  # DON'T DO THIS
+```
+
+### Feature Development Pattern
+```python
+# ALL features must extend Feature base class
+from backend.services.feature_base import Feature
+
+class NewFeature(Feature):
+    def __init__(self, friendly_name: str = "New Feature"):
+        super().__init__(friendly_name)
+
+    async def start(self) -> None:
+        """Initialize feature resources."""
+        pass
+
+    async def stop(self) -> None:
+        """Cleanup feature resources."""
+        pass
+```
+
 ## MCP Tools for Python Development
 
 ### @context7 Use Cases
 
-- Find coding patterns: `@context7 FastAPI route implementation`
-- Check API models: `@context7 Pydantic model for entities`
-- Review error handling: `@context7 exception handling in can_manager`
-- See WebSocket usage: `@context7 WebSocket connection handling`
+- Find service patterns: `@context7 FeatureManager dependency injection`
+- Check entity operations: `@context7 EntityManager usage patterns`
+- Review configuration: `@context7 ConfigService implementation`
+- Find database patterns: `@context7 DatabaseManager session handling`
+- Check coding patterns: `@context7 FastAPI route implementation`
+- Review API models: `@context7 Pydantic model for entities`
+- See error handling: `@context7 exception handling in services`
+- Find WebSocket usage: `@context7 WebSocketManager connection handling`
 
 ### @perplexity Use Cases
 

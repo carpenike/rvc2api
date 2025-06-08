@@ -4,7 +4,6 @@
 - All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 - **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
-- **All Shell activities should be done within the Nix Develop Shell.** Use `nix develop` before running any cli command
 
 This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns.
 
@@ -78,9 +77,28 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 
 ## Core Architecture
 
-- `src/common/`: Shared models and utilities (Pydantic models, type definitions)
-- `src/rvc_decoder/`: DGN decoding, mappings, instance management
-- `backend/`: FastAPI app, API routes, services, and business logic
+### Management Services (REQUIRED FOR ALL BACKEND CODE)
+All backend development MUST use these management services via dependency injection:
+
+#### Core Management Services
+- **FeatureManager** (`backend/services/feature_manager.py`): Feature registration, lifecycle management
+- **EntityManager** (`backend/core/entity_manager.py`): Entity operations, state management, device lookups
+- **AppState** (`backend/core/state.py`): Application state management, entity tracking
+- **DatabaseManager** (`backend/services/database_manager.py`): Database connections, health checks
+- **PersistenceService** (`backend/services/persistence_service.py`): Data persistence, backup operations
+- **ConfigService** (`backend/services/config_service.py`): Configuration management, environment variables
+
+#### Domain Services (Use via dependency injection)
+- **EntityService**: RV-C entity operations, light control, state management
+- **CANService**: CAN bus operations, interface monitoring, message sending
+- **RVCService**: RV-C protocol operations, message translation
+- **DashboardService**: Dashboard data aggregation, activity feeds
+- **WebSocketManager**: Client connections, real-time broadcasting
+
+### Project Structure
+- `backend/core/`: Core management services (EntityManager, AppState, dependencies)
+- `backend/services/`: Business logic services and FeatureManager
+- `backend/api/routers/`: FastAPI routes organized by domain
 - `frontend/`: React frontend with TypeScript, Vite, and Tailwind CSS
 
 ## Deployment Architecture
@@ -91,12 +109,35 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 
 ## Code Patterns
 
+### Backend Service Access (MANDATORY)
+```python
+# ALWAYS use dependency injection for services
+from backend.core.dependencies import (
+    get_feature_manager, get_entity_manager, get_app_state,
+    get_database_manager, get_config_service, get_entity_service
+)
+
+@router.get("/entities")
+async def get_entities(
+    entity_manager: EntityManager = Depends(get_entity_manager),
+    entity_service: EntityService = Depends(get_entity_service)
+):
+    """Use EntityManager for core operations, EntityService for business logic."""
+    entities = entity_manager.get_all_entities()
+    return entities
+
+# WRONG: Never access services directly
+from backend.services.feature_manager import feature_manager  # DON'T DO THIS
+```
+
+### Development Patterns
 - **FastAPI routes**: Organized by domain in `backend/api/routers/` using APIRouter
-- **Router Configuration**: Uses FastAPI dependency injection via `backend/api/router_config.py`
-- **WebSockets**: Used for real-time updates in `backend/websocket/handlers.py`
-- **State management**: Centralized in `backend/core/state.py`
-- **Configuration**: Environment variables with Pydantic Settings in `backend/core/config.py`
-- **Services**: Business logic organized in `backend/services/` by domain
+- **Management Services**: ALWAYS access via dependency injection from `backend.core.dependencies`
+- **Feature Registration**: ALL features must extend Feature base class and register with FeatureManager
+- **WebSockets**: Use WebSocketManager feature for client connections and broadcasting
+- **State management**: Use AppState and EntityManager for application state
+- **Configuration**: Use ConfigService for all configuration access
+- **Database**: Use DatabaseManager and PersistenceService for data operations
 - **Error handling**: Structured exceptions with proper logging
 - **Testing**: pytest with mocked CANbus interfaces
 - **React Components**: Organized by feature in the `frontend/src/` directory
@@ -109,6 +150,49 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 - **Type Stubs**: Custom type stubs in `typings/` for third-party libraries
   - Use Protocol-based implementations for complex interfaces
   - Only include required parts of the API that are actually used
+
+## Environment Configuration
+
+### Environment Variable Pattern
+All configuration uses the `COACHIQ_` prefix with hierarchical naming:
+- **Top-level**: `COACHIQ_SETTING` (e.g., `COACHIQ_APP_NAME`)
+- **Nested**: `COACHIQ_SECTION__SETTING` (e.g., `COACHIQ_SERVER__HOST`)
+
+### Key Configuration Files
+- **`.env.example`**: Comprehensive documentation of all environment variables
+- **`.env`**: Active configuration (not committed to git)
+- **`backend/core/config.py`**: Pydantic Settings classes with validation
+
+### Configuration Access
+```python
+# ALWAYS use ConfigService for configuration
+from backend.core.dependencies import get_config_service
+
+config_service: ConfigService = Depends(get_config_service)
+settings = await config_service.get_config_summary()
+```
+
+### Persistence Modes
+1. **Memory-only**: `COACHIQ_PERSISTENCE__ENABLED=false` (default)
+2. **Development**: Local file storage in `backend/data/`
+3. **Production**: System directory (e.g., `/var/lib/coachiq`)
+
+## Nix Development Environment (Optional)
+
+### Nix Flake
+The project includes an optional Nix flake providing:
+- **Reproducible environment** with all dependencies
+- **CLI apps**: `nix run .#test`, `nix run .#lint`, `nix run .#format`
+- **NixOS module** for production deployment
+- **Automatic Poetry configuration** with correct library paths
+
+### Nix Benefits (if used)
+- **Cross-platform consistency**: Same environment on macOS and Linux
+- **No Python version conflicts**: Uses Python 3.12
+- **Automatic library path configuration**: Poetry works seamlessly
+- **Built-in development tools**: pyright, ruff, nodejs included
+
+**Note**: Nix is optional. All standard Poetry and npm commands work without Nix.
 
 ## Development Tools
 
