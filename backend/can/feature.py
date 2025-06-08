@@ -81,7 +81,7 @@ class CANBusFeature(Feature):
 
         # CAN bus related attributes
         self._listeners: list[Any] = []  # Will store CAN listeners or notifiers
-        self._writer_task: asyncio.Task | None = None
+        # Writer task is now handled by CANService
         self._message_queue: asyncio.Queue = asyncio.Queue()
 
         # State
@@ -185,24 +185,23 @@ class CANBusFeature(Feature):
                     f"bustype={bustype}, bitrate={bitrate}"
                 )
 
-                # Initialize CAN interfaces using the CAN service
+                # Initialize CAN service with full startup (interfaces + writer)
                 can_service = CANService()
-                initialization_result = await can_service.initialize_can_interfaces(interfaces)
+                startup_result = await can_service.startup()
 
                 logger.info(
                     f"CAN interface initialization complete: "
-                    f"initialized={initialization_result['initialized']}, "
-                    f"failed={initialization_result['failed']}"
+                    f"initialized={startup_result['interfaces']['initialized']}, "
+                    f"failed={startup_result['interfaces']['failed']}"
                 )
 
-                if initialization_result["failed"]:
+                if startup_result["interfaces"]["failed"]:
                     logger.warning(
                         f"Some CAN interfaces failed to initialize: "
-                        f"{initialization_result['failed']}"
+                        f"{startup_result['interfaces']['failed']}"
                     )
 
-                # Start the message writer task
-                self._writer_task = asyncio.create_task(self._message_writer_loop())
+                # CAN writer task is started by the CAN service startup method
 
             except ImportError:
                 logger.warning(
@@ -234,11 +233,7 @@ class CANBusFeature(Feature):
             with contextlib.suppress(asyncio.CancelledError):
                 await self._simulation_task
 
-        # Cancel writer task if running
-        if self._writer_task:
-            self._writer_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._writer_task
+        # Writer task cleanup is handled by CANService
 
         # Cleanup CAN bus listeners
         for _listener in self._listeners:
@@ -390,49 +385,7 @@ class CANBusFeature(Feature):
         except Exception as e:
             logger.error(f"Error processing CAN message: {e}")
 
-    async def _message_writer_loop(self) -> None:
-        """
-        Background task to process and send queued CAN messages.
-        """
-        logger.info("Starting CAN message writer loop")
-
-        while self._is_running:
-            try:
-                # Get the next message from the queue
-                message = await self._message_queue.get()
-
-                # Send the message to all configured interfaces
-                sent = False
-                for _listener in self._listeners:
-                    try:
-                        # In a real implementation, we'd send to the bus
-                        # bus = listener[0]  # Assuming first item is the bus
-                        # message = can.Message(
-                        #     arbitration_id=message["arbitration_id"],
-                        #     data=message["data"],
-                        #     extended_id=message["extended_id"],
-                        # )
-                        # bus.send(message)
-                        sent = True
-                    except Exception as e:
-                        logger.error(f"Failed to send CAN message: {e}")
-
-                if sent:
-                    logger.debug(
-                        f"Sent CAN message: "
-                        f"id=0x{message['arbitration_id']:x}, "
-                        f"data={message['data'].hex() if isinstance(message['data'], bytes) else message['data']}"
-                    )
-
-                # Mark the task as done
-                self._message_queue.task_done()
-
-            except asyncio.CancelledError:
-                logger.info("CAN message writer loop cancelled")
-                break
-            except Exception as e:
-                logger.error(f"Error in CAN message writer loop: {e}")
-                await asyncio.sleep(1)  # Avoid tight loop on persistent errors
+    # CAN message writing is now handled by CANService
 
     async def _simulate_can_messages(self) -> None:
         """
