@@ -40,19 +40,13 @@ def register_performance_analytics_feature(
         Configured PerformanceAnalyticsFeature instance
     """
     try:
-        # Get settings (this is required by PerformanceAnalyticsFeature)
-        from backend.core.config import get_settings
-
-        settings = get_settings()
-
         feature = PerformanceAnalyticsFeature(
-            settings,
             name=name,
             enabled=enabled,
             core=core,
             config=config,
             dependencies=dependencies,
-            friendly_name=friendly_name or "Performance Analytics",
+            friendly_name=friendly_name,
         )
         logger.info(
             f"Performance analytics feature '{name}' created successfully (enabled={enabled})"

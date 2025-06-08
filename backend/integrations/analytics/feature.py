@@ -11,7 +11,6 @@ import time
 import uuid
 from typing import Any
 
-from backend.core.config import Settings
 from backend.integrations.analytics.benchmark import BenchmarkingEngine
 from backend.integrations.analytics.config import PerformanceAnalyticsSettings
 from backend.integrations.analytics.models import (
@@ -38,15 +37,29 @@ class PerformanceAnalyticsFeature(Feature):
     optimization recommendations following established feature management patterns.
     """
 
-    def __init__(self, settings: Settings, **kwargs):
+    def __init__(
+        self,
+        name: str = "performance_analytics",
+        enabled: bool = False,
+        core: bool = False,
+        config: dict[str, Any] | None = None,
+        dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
+    ):
         """Initialize the performance analytics feature."""
-        # Set default name if not provided
-        if "name" not in kwargs:
-            kwargs["name"] = "performance_analytics"
-        if "friendly_name" not in kwargs:
-            kwargs["friendly_name"] = "Performance Analytics"
+        super().__init__(
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Performance Analytics",
+        )
 
-        super().__init__(**kwargs)
+        # Get settings internally
+        from backend.core.config import get_settings
+
+        settings = get_settings()
 
         # Store settings reference
         self.settings = settings

@@ -9,10 +9,13 @@ import asyncio
 import logging
 from typing import Any
 
-from backend.core.config import Settings
 from backend.integrations.diagnostics.config import AdvancedDiagnosticsSettings
 from backend.integrations.diagnostics.handler import DiagnosticHandler
-from backend.integrations.diagnostics.models import DTCSeverity, ProtocolType, SystemType
+from backend.integrations.diagnostics.models import (
+    DTCSeverity,
+    ProtocolType,
+    SystemType,
+)
 from backend.integrations.diagnostics.predictive import PredictiveMaintenanceEngine
 from backend.services.feature_base import Feature
 
@@ -28,9 +31,29 @@ class AdvancedDiagnosticsFeature(Feature):
     to provide unified fault analysis, correlation, and predictive maintenance.
     """
 
-    def __init__(self, settings: Settings, **kwargs):
+    def __init__(
+        self,
+        name: str = "advanced_diagnostics",
+        enabled: bool = False,
+        core: bool = False,
+        config: dict[str, Any] | None = None,
+        dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
+    ):
         """Initialize the advanced diagnostics feature."""
-        super().__init__(**kwargs)
+        super().__init__(
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Advanced Diagnostics",
+        )
+
+        # Get settings internally
+        from backend.core.config import get_settings
+
+        settings = get_settings()
 
         # Store settings reference
         self.settings = settings
@@ -353,7 +376,13 @@ class AdvancedDiagnosticsFeature(Feature):
             available_features = await feature_manager.get_enabled_features()
 
             for feature_name in available_features:
-                if feature_name in ["rvc", "j1939", "firefly", "spartan_k2", "multi_network"]:
+                if feature_name in [
+                    "rvc",
+                    "j1939",
+                    "firefly",
+                    "spartan_k2",
+                    "multi_network",
+                ]:
                     self._protocol_integrations[feature_name] = True
                     logger.debug(f"Advanced diagnostics integrated with {feature_name} feature")
 

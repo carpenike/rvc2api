@@ -26,14 +26,22 @@ class MultiNetworkCANFeature(Feature):
     providing configuration-driven network setup and health monitoring.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        name: str = "multi_network_can",
+        enabled: bool = False,
+        core: bool = False,
+        config: dict[str, Any] | None = None,
+        dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
+    ):
         super().__init__(
-            name=kwargs.get("name", "multi_network_can"),
-            enabled=kwargs.get("enabled", False),
-            core=kwargs.get("core", False),
-            config=kwargs.get("config", {}),
-            dependencies=kwargs.get("dependencies", ["can_interface"]),
-            friendly_name=kwargs.get("friendly_name", "Multi-Network CAN Manager"),
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies or ["can_interface"],
+            friendly_name=friendly_name or "Multi-Network CAN Manager",
         )
         self.manager = get_multi_network_manager()
         self.settings = get_multi_network_settings()

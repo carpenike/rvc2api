@@ -8,7 +8,6 @@ established pattern from other features.
 import logging
 from typing import Any
 
-from backend.core.config import get_settings
 from backend.integrations.diagnostics.feature import AdvancedDiagnosticsFeature
 from backend.services.feature_base import Feature
 
@@ -44,12 +43,8 @@ def register_advanced_diagnostics_feature(
         f"Registering advanced diagnostics feature: {name} (enabled={enabled}, core={core})"
     )
 
-    # Get application settings
-    settings = get_settings()
-
     # Create the advanced diagnostics feature with the provided configuration
     diagnostics_feature = AdvancedDiagnosticsFeature(
-        settings,
         name=name,
         enabled=enabled,
         core=core,
