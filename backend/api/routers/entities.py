@@ -235,13 +235,13 @@ async def control_entity(
     try:
         result = await entity_service.control_entity(entity_id, command)
 
-        if result.success:
+        if result.status == "success":
             logger.info(
                 f"Control command '{command.command}' executed successfully for entity '{entity_id}'"
             )
         else:
             logger.warning(
-                f"Control command '{command.command}' failed for entity '{entity_id}': {result.message}"
+                f"Control command '{command.command}' failed for entity '{entity_id}': {result.status}"
             )
 
         return result
