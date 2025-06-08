@@ -92,6 +92,11 @@
             pythonPackages.uvicorn
             pythonPackages.watchfiles
             pythonPackages.websockets
+            # Database dependencies
+            pythonPackages.sqlalchemy
+            pythonPackages.aiosqlite
+            pythonPackages.asyncpg
+            pythonPackages.alembic
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
           ] ++ [
