@@ -13,6 +13,58 @@
 ### Management Services (REQUIRED)
 All backend code MUST use the following management services for consistency and maintainability:
 
+### CAN Bus Architecture (CRITICAL)
+**Real-time CAN message processing with proper memory management and asyncio integration:**
+
+```mermaid
+graph TD
+    A[CAN Interfaces] --> B[AsyncBufferedReader + Notifier]
+    B --> C[Message Processing Pipeline]
+    C --> D[Entity State Updates]
+    C --> E[Sniffer Log Buffer]
+    D --> F[WebSocket Broadcast]
+    E --> G[Dashboard Metrics]
+    F --> H[Frontend Real-time Updates]
+    E --> I[Memory Management]
+    I --> J[FIFO Culling + Time-based Cleanup]
+```
+
+#### CAN Message Reception (REQUIRED PATTERN)
+```python
+# CORRECT: Use python-can's asyncio integration
+import can
+reader = can.AsyncBufferedReader()
+notifier = can.Notifier(bus, [reader], loop=asyncio.get_running_loop())
+message = await reader.get_message()  # Non-blocking
+
+# WRONG: Never use blocking calls in async context
+message = bus.recv(timeout=1.0)  # BLOCKS EVENT LOOP!
+```
+
+#### CAN Data Type Handling (REQUIRED)
+```python
+# Handle all expected CAN message data types
+if isinstance(data, str):
+    data = bytes.fromhex(data)
+elif isinstance(data, bytearray):  # From AsyncBufferedReader
+    data = bytes(data)
+elif not isinstance(data, bytes):
+    logger.warning(f"Unexpected data type: {type(data)}")
+    return
+```
+
+#### Memory Management for Real-time Systems (REQUIRED)
+```python
+# ALL buffers MUST have size limits with FIFO culling
+can_command_sniffer_log.append(entry)
+if len(can_command_sniffer_log) > 1000:  # Hard limit
+    can_command_sniffer_log.pop(0)  # FIFO removal
+
+# Time-based cleanup for short-lived data
+pending_commands = [cmd for cmd in pending_commands
+                   if time.time() - cmd["timestamp"] < 2.0]
+```
+
 #### Core Management Services
 - **FeatureManager** (`backend/services/feature_manager.py`): Register and manage all features, handle dependencies
 - **EntityManager** (`backend/core/entity_manager.py`): Unified entity registration, state management, device lookups
@@ -171,6 +223,62 @@ class CANFeature(Feature):
 
 # AVOID: Don't initialize the same service in multiple places
 # main.py should NOT call can_service.startup() if feature already does it
+```
+
+## CAN System Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### "No CAN Activity" Alert on Dashboard
+- **Cause**: Message rate calculation returning 0
+- **Check**: Backend logs for "CAN listener started for interface: canX"
+- **Verify**: `candump can1` shows actual traffic exists
+- **Fix**: Ensure `_calculate_message_rate()` in CAN service is working
+- **Config**: Check `COACHIQ_CAN__INTERFACES` includes all active interfaces
+
+#### CAN Listener Startup Hanging
+- **Cause**: Blocking `bus.recv()` calls in async context
+- **Solution**: Use `AsyncBufferedReader` + `Notifier` pattern
+- **Check**: Startup logs should show all interfaces starting quickly
+- **Error Pattern**: "Unexpected data type: <class 'bytearray'>" floods logs
+
+#### WebSocket Connection Issues
+- **Health Endpoint**: Frontend should call `/healthz` NOT `/api/healthz`
+- **Real-time Data**: Use WebSocket for CAN messages, not REST polling
+- **Connection Check**: Browser dev tools → Network → WS connections
+- **Fallback**: Implement REST polling fallback for WebSocket failures
+
+#### Memory Growth in Long-running Systems
+- **Buffers**: All CAN buffers MUST have size limits (1000 sniffer, 500 grouped)
+- **Cleanup**: Implement time-based cleanup for pending commands (2s)
+- **Monitoring**: Check entity history growth with entity count
+- **Pattern**: Use FIFO culling + time-based expiration
+
+#### Message Processing Pipeline Issues
+- **Data Types**: Handle `str`, `bytearray`, and `bytes` in CAN processing
+- **Entity Updates**: Verify decoded CAN → entity state → WebSocket broadcast
+- **Correlation**: Check command/response correlation for UI feedback
+- **Timeout**: Frontend 2-second timeout requires proper WebSocket updates
+
+#### Interface Configuration Problems
+- **Physical vs Logical**: Map logical ("house") to physical ("can0") interfaces
+- **Multiple Interfaces**: Verify both `can0` and `can1` are configured
+- **Startup Order**: CAN service → interfaces → listeners → message processing
+- **Error Recovery**: Implement interface reconnection on failures
+
+### Debugging Commands
+```bash
+# Check actual CAN traffic exists
+candump can1
+
+# Verify interface configuration
+COACHIQ_CAN__INTERFACES="can0,can1"
+
+# Monitor memory usage
+poetry run python -c "import psutil; print(f'Memory: {psutil.Process().memory_info().rss / 1024 / 1024:.1f}MB')"
+
+# Check WebSocket connections
+# Browser Dev Tools → Network → WS connections should show active streams
 ```
 
 ## Code Quality Requirements

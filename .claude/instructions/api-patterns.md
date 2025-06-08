@@ -68,7 +68,7 @@ interface EntityControlCommand {
 ### Command Response Format
 ```typescript
 interface EntityControlResponse {
-  success: boolean;
+  status: "success" | "error" | "pending";  // Use status instead of success boolean
   entity_id: string;
   command: EntityControlCommand;
   result?: {
@@ -120,6 +120,11 @@ async def control_entity(
     """
     try:
         result = await entity_service.control_entity(entity_id, command)
+
+        # CRITICAL: Use result.status, not result.success
+        if result.status == "success":
+            logger.info(f"Control command '{command.command}' executed successfully for entity '{entity_id}'")
+
         return result
     except EntityNotFoundError:
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
@@ -333,7 +338,7 @@ export function useControlEntity() {
             "content": {
                 "application/json": {
                     "example": {
-                        "success": True,
+                        "status": "success",
                         "entity_id": "light_1",
                         "command": {"command": "set", "state": "on", "brightness": 75},
                         "result": {
@@ -477,11 +482,75 @@ async def control_entity(
         raise InvalidCommandError("Entity does not support brightness control")
 ```
 
+## Health Endpoint Standards
+
+### Health Check Pattern
+Health endpoints should be at the root level, not under `/api/`:
+
+```typescript
+// CORRECT: Frontend health check
+export async function fetchHealthStatus(): Promise<HealthStatus> {
+  const url = '/healthz';  // Root level, not /api/healthz
+  const response = await fetch(url);
+  return response.json();
+}
+
+// WRONG: Do not use API prefix for health
+const url = '/api/healthz';  // Incorrect pattern
+```
+
+### Health Implementation
+```python
+@app.get("/healthz", tags=["health"])
+async def health_check():
+    """System health check endpoint."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+```
+
+## Real-time Data Patterns
+
+### WebSocket vs REST Polling
+Use WebSocket for real-time data streams, REST for one-time queries:
+
+```typescript
+// CORRECT: WebSocket for real-time CAN data
+const { isConnected, error } = useCANScanWebSocket({
+  autoConnect: !isPaused,
+  onMessage: (message: CANMessage) => {
+    setMessages(prev => [...prev, message].slice(-maxMessages))
+  }
+})
+
+// WRONG: Polling for real-time data
+useEffect(() => {
+  const interval = setInterval(async () => {
+    const data = await fetchCANMessages(); // Creates unnecessary load
+  }, 100);
+}, []);
+```
+
+### WebSocket Fallback Strategy
+Always implement graceful fallback from WebSocket to REST:
+
+```typescript
+const [connectionMethod, setConnectionMethod] = useState<'websocket' | 'polling'>('websocket');
+
+// Fallback to polling if WebSocket fails
+useEffect(() => {
+  if (wsError && connectionMethod === 'websocket') {
+    console.warn('WebSocket failed, falling back to polling');
+    setConnectionMethod('polling');
+  }
+}, [wsError]);
+```
+
 ## Critical Requirements
 
 - **Unified Endpoints**: Use `/api/entities` pattern only, never separate device-type endpoints
 - **Standardized Commands**: All entity control uses the same command structure
+- **Health Endpoints**: Use `/healthz` at root level, not `/api/healthz`
+- **Real-time Data**: Use WebSocket for streams, REST for queries, implement fallback
+- **Response Format**: Use `status` field instead of boolean `success`
 - **Comprehensive Documentation**: Include examples, error scenarios, and response schemas
-- **Real-time Updates**: WebSocket integration for immediate state synchronization
 - **Error Handling**: Structured error responses with proper HTTP status codes
 - **Type Safety**: Full TypeScript types generated from OpenAPI schema

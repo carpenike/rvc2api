@@ -172,6 +172,9 @@ class CANService:
         Returns:
             dict: Dictionary containing bus statistics and metrics.
         """
+        # Calculate message rate from recent CAN activity
+        message_rate = self._calculate_message_rate()
+
         stats = {
             "interfaces": {},
             "queue": await self.get_queue_status(),
@@ -181,6 +184,9 @@ class CANService:
                 "queue_utilization": (
                     can_tx_queue.qsize() / can_tx_queue.maxsize if can_tx_queue.maxsize else 0
                 ),
+                "message_rate": message_rate,
+                "total_messages": self._get_total_message_count(),
+                "total_errors": 0,  # TODO: Implement error tracking
             },
         }
 
@@ -204,6 +210,51 @@ class CANService:
             stats["interfaces"][interface_name] = interface_stats
 
         return stats
+
+    def _calculate_message_rate(self) -> float:
+        """
+        Calculate the recent CAN message rate from app state.
+
+        Returns:
+            float: Messages per second over the last 10 seconds
+        """
+        try:
+            if not self.app_state:
+                return 0.0
+
+            # Get recent CAN sniffer entries from app state
+            import time
+
+            current_time = time.time()
+            recent_messages = [
+                entry
+                for entry in self.app_state.can_command_sniffer_log
+                if current_time - entry.get("timestamp", 0) <= 10.0  # Last 10 seconds
+            ]
+
+            # Calculate rate as messages per second
+            if len(recent_messages) > 0:
+                return len(recent_messages) / 10.0
+            return 0.0
+
+        except Exception as e:
+            logger.warning(f"Failed to calculate message rate: {e}")
+            return 0.0
+
+    def _get_total_message_count(self) -> int:
+        """
+        Get the total number of CAN messages seen.
+
+        Returns:
+            int: Total message count from app state
+        """
+        try:
+            if not self.app_state:
+                return 0
+            return len(self.app_state.can_command_sniffer_log)
+        except Exception as e:
+            logger.warning(f"Failed to get total message count: {e}")
+            return 0
 
     async def start_can_writer(self) -> None:
         """

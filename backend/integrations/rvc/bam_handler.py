@@ -1,0 +1,274 @@
+"""
+BAM (Broadcast Announce Message) handler for multi-packet RV-C messages.
+
+This module handles the reassembly of multi-packet messages sent via the
+J1939/RV-C transport protocol. BAM is used for messages larger than 8 bytes
+that need to be split across multiple CAN frames.
+
+Transport Protocol PGNs:
+- 0xEC00 (60416): Transport Protocol Control (TP.CM) - BAM announcement
+- 0xEB00 (60160): Transport Protocol Data Transfer (TP.DT) - Data packets
+"""
+
+import logging
+import time
+from dataclasses import dataclass, field
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class BAMSession:
+    """Represents an active BAM message reassembly session."""
+
+    source_address: int
+    target_pgn: int
+    total_size: int
+    total_packets: int
+    received_packets: dict[int, bytes] = field(default_factory=dict)
+    timestamp: float = field(default_factory=time.time)
+    complete: bool = False
+    reassembled_data: bytes | None = None
+
+
+class BAMHandler:
+    """
+    Handles reassembly of multi-packet BAM messages.
+
+    The BAM protocol is used for broadcasting messages larger than 8 bytes
+    to all nodes on the network. Unlike the peer-to-peer protocol, BAM
+    doesn't require acknowledgments from receivers.
+    """
+
+    # Transport Protocol PGNs
+    TP_CM_PGN = 0xEC00  # Transport Protocol Control
+    TP_DT_PGN = 0xEB00  # Transport Protocol Data Transfer
+    BAM_CONTROL_BYTE = 0x20  # Identifies a BAM start message
+
+    def __init__(self, session_timeout: float = 30.0, max_concurrent_sessions: int = 100):
+        """
+        Initialize the BAM handler.
+
+        Args:
+            session_timeout: Maximum time in seconds to wait for a complete message
+            max_concurrent_sessions: Maximum number of concurrent BAM sessions to track
+        """
+        self.sessions: dict[tuple[int, int], BAMSession] = {}
+        self.session_timeout = session_timeout
+        self.max_concurrent_sessions = max_concurrent_sessions
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 10.0  # Run cleanup every 10 seconds
+
+    def process_frame(self, pgn: int, data: bytes, source_address: int) -> tuple[int, bytes] | None:
+        """
+        Process a CAN frame that might be part of a BAM transfer.
+
+        Args:
+            pgn: The Parameter Group Number of the message
+            data: The 8-byte data payload
+            source_address: The source address of the message
+
+        Returns:
+            Tuple of (target_pgn, reassembled_data) if a complete message is available,
+            None otherwise
+        """
+        # Periodic cleanup of stale sessions
+        if time.time() - self._last_cleanup > self._cleanup_interval:
+            self._cleanup_stale_sessions()
+
+        if pgn == self.TP_CM_PGN:
+            return self._handle_control_message(data, source_address)
+        elif pgn == self.TP_DT_PGN:
+            return self._handle_data_transfer(data, source_address)
+
+        return None
+
+    def _handle_control_message(self, data: bytes, source_address: int) -> tuple[int, bytes] | None:
+        """Handle a Transport Protocol Control message."""
+        if len(data) < 8:
+            logger.warning(f"TP.CM message too short: {len(data)} bytes")
+            return None
+
+        control_byte = data[0]
+
+        # Check if this is a BAM start message
+        if control_byte != self.BAM_CONTROL_BYTE:
+            # Not a BAM message, might be RTS/CTS
+            return None
+
+        # Extract BAM header information
+        total_size = int.from_bytes(data[1:3], "little")
+        total_packets = data[3]
+        # data[4] is reserved (0xFF)
+        pgn_bytes = data[5:8]
+        # PGN is stored in J1939 format (3 bytes, little-endian)
+        target_pgn = int.from_bytes(pgn_bytes, "little")
+
+        # Limit concurrent sessions to prevent memory issues
+        if len(self.sessions) >= self.max_concurrent_sessions:
+            self._cleanup_oldest_session()
+
+        # Create new session
+        session_key = (source_address, target_pgn)
+
+        if session_key in self.sessions:
+            logger.warning(
+                f"Overwriting existing BAM session for source={source_address:02X}, "
+                f"PGN={target_pgn:05X}"
+            )
+
+        self.sessions[session_key] = BAMSession(
+            source_address=source_address,
+            target_pgn=target_pgn,
+            total_size=total_size,
+            total_packets=total_packets,
+        )
+
+        logger.debug(
+            f"Started BAM session: source={source_address:02X}, PGN={target_pgn:05X}, "
+            f"size={total_size}, packets={total_packets}"
+        )
+
+        return None
+
+    def _handle_data_transfer(self, data: bytes, source_address: int) -> tuple[int, bytes] | None:
+        """Handle a Transport Protocol Data Transfer message."""
+        if len(data) < 8:
+            logger.warning(f"TP.DT message too short: {len(data)} bytes")
+            return None
+
+        sequence_number = data[0]
+        payload = data[1:8]  # 7 bytes of actual data per packet
+
+        # Find the active session for this source
+        session = None
+        session_key = None
+
+        # We need to find which session this data belongs to
+        # In BAM, we only know the source address from the CAN frame
+        for key, sess in self.sessions.items():
+            if key[0] == source_address and not sess.complete:
+                session = sess
+                session_key = key
+                break
+
+        if not session:
+            logger.debug(f"Received TP.DT from source={source_address:02X} with no active session")
+            return None
+
+        # Validate sequence number
+        if sequence_number < 1 or sequence_number > session.total_packets:
+            logger.warning(
+                f"Invalid sequence number {sequence_number} for session with "
+                f"{session.total_packets} packets"
+            )
+            return None
+
+        # Store the packet
+        session.received_packets[sequence_number] = payload
+
+        # Check if we have all packets
+        if len(session.received_packets) >= session.total_packets:
+            # Reassemble the message
+            reassembled = self._reassemble_message(session)
+
+            if reassembled:
+                session.complete = True
+                session.reassembled_data = reassembled
+
+                # Clean up the completed session
+                if session_key:
+                    del self.sessions[session_key]
+
+                logger.debug(
+                    f"Completed BAM message: PGN={session.target_pgn:05X}, "
+                    f"size={len(reassembled)} bytes"
+                )
+
+                return (session.target_pgn, reassembled)
+
+        return None
+
+    def _reassemble_message(self, session: BAMSession) -> bytes | None:
+        """Reassemble a complete message from received packets."""
+        try:
+            reassembled = bytearray()
+
+            # Combine packets in sequence order
+            for seq_num in range(1, session.total_packets + 1):
+                if seq_num not in session.received_packets:
+                    logger.error(
+                        f"Missing packet {seq_num} in BAM reassembly for "
+                        f"PGN={session.target_pgn:05X}"
+                    )
+                    return None
+
+                reassembled.extend(session.received_packets[seq_num])
+
+            # Trim to the expected size
+            reassembled = reassembled[: session.total_size]
+
+            return bytes(reassembled)
+
+        except Exception as e:
+            logger.error(f"Error reassembling BAM message: {e}")
+            return None
+
+    def _cleanup_stale_sessions(self) -> None:
+        """Remove sessions that have timed out."""
+        current_time = time.time()
+        keys_to_remove = []
+
+        for key, session in self.sessions.items():
+            if current_time - session.timestamp > self.session_timeout:
+                logger.warning(
+                    f"BAM session timeout: source={session.source_address:02X}, "
+                    f"PGN={session.target_pgn:05X}, received {len(session.received_packets)}/"
+                    f"{session.total_packets} packets"
+                )
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            del self.sessions[key]
+
+        self._last_cleanup = current_time
+
+    def _cleanup_oldest_session(self) -> None:
+        """Remove the oldest session when at capacity."""
+        if not self.sessions:
+            return
+
+        oldest_key = min(self.sessions.keys(), key=lambda k: self.sessions[k].timestamp)
+        oldest_session = self.sessions[oldest_key]
+
+        logger.warning(
+            f"Removing oldest BAM session due to capacity: source={oldest_session.source_address:02X}, "
+            f"PGN={oldest_session.target_pgn:05X}"
+        )
+
+        del self.sessions[oldest_key]
+
+    def get_active_session_count(self) -> int:
+        """Get the number of active BAM sessions."""
+        return len(self.sessions)
+
+    def get_session_info(self) -> list[dict[str, Any]]:
+        """Get information about all active sessions for debugging."""
+        info = []
+        current_time = time.time()
+
+        for (source, pgn), session in self.sessions.items():
+            info.append(
+                {
+                    "source_address": f"{source:02X}",
+                    "target_pgn": f"{pgn:05X}",
+                    "total_packets": session.total_packets,
+                    "received_packets": len(session.received_packets),
+                    "total_size": session.total_size,
+                    "age_seconds": current_time - session.timestamp,
+                    "complete": session.complete,
+                }
+            )
+
+        return info

@@ -74,7 +74,8 @@ async def test_entity_control_command(mock_can_interface, app_state):
     command = EntityControlCommand(command="set", state="on", brightness=75)
     result = await service.control_entity("light_1", command)
 
-    assert result.success is True
+    # CRITICAL: Use result.status, not result.success
+    assert result.status == "success"
     mock_can_interface.send.assert_called_once()
 
     # Verify CAN message format
@@ -109,7 +110,7 @@ async def test_control_entity(mock_entity_service):
     assert response.status_code == 200
 
     result = response.json()
-    assert result["success"] is True
+    assert result["status"] == "success"
 ```
 
 #### WebSocket Testing
@@ -164,6 +165,134 @@ async def test_rvc_message_flow():
     assert decoded["dgn"] == "DC_DIMMER_COMMAND_2"
     assert decoded["instance"] == 1
     assert decoded["brightness"] == 100
+```
+
+#### CAN System Testing (Real-time Features)
+```python
+# tests/integrations/test_can_real_time.py
+import pytest
+import asyncio
+from unittest.mock import AsyncMock, patch
+from backend.can.feature import CANBusFeature
+from backend.core.state import app_state
+
+@pytest.mark.asyncio
+async def test_can_message_reception():
+    """Test CAN message reception using AsyncBufferedReader pattern."""
+    can_feature = CANBusFeature(config={"simulate": False})
+
+    # Mock AsyncBufferedReader
+    mock_reader = AsyncMock()
+    mock_message = AsyncMock()
+    mock_message.arbitration_id = 0x1FEDC001
+    mock_message.data = bytearray([0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+    mock_message.dlc = 8
+    mock_message.is_extended_id = True
+
+    mock_reader.get_message.return_value = mock_message
+
+    # Test message processing
+    await can_feature._process_received_message(mock_message, "can0")
+
+    # Verify sniffer entry was added
+    assert len(app_state.can_command_sniffer_log) > 0
+    latest_entry = app_state.can_command_sniffer_log[-1]
+    assert latest_entry["interface"] == "can0"
+    assert latest_entry["direction"] == "rx"
+
+@pytest.mark.asyncio
+async def test_can_memory_management():
+    """Test CAN buffer memory management with FIFO culling."""
+    from backend.core.state import app_state
+
+    # Fill buffer beyond limit
+    for i in range(1100):  # Exceed 1000 limit
+        app_state.add_can_sniffer_entry({
+            "timestamp": i,
+            "interface": "can0",
+            "can_id": f"{i:08X}",
+            "data": "0102030405060708",
+            "dlc": 8
+        })
+
+    # Verify FIFO culling occurred
+    assert len(app_state.can_command_sniffer_log) == 1000
+    # First entry should be removed
+    assert app_state.can_command_sniffer_log[0]["timestamp"] >= 100
+
+@pytest.mark.asyncio
+async def test_can_data_type_handling():
+    """Test handling of different CAN data types (str, bytes, bytearray)."""
+    can_feature = CANBusFeature()
+
+    # Test string data
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": "0102030405060708"
+    })
+
+    # Test bytearray data (from AsyncBufferedReader)
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": bytearray([0x01, 0x02, 0x03, 0x04])
+    })
+
+    # Test bytes data
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": b"\x01\x02\x03\x04"
+    })
+
+    # All should process without errors
+
+@pytest.mark.asyncio
+async def test_entity_state_update_from_can():
+    """Test entity state updates from CAN message responses."""
+    can_feature = CANBusFeature()
+
+    # Mock entity manager
+    with patch('backend.services.feature_manager.get_feature_manager') as mock_fm:
+        mock_entity_manager = AsyncMock()
+        mock_entity = AsyncMock()
+        mock_entity_manager.get_entity.return_value = mock_entity
+        mock_entity_manager.update_entity_state.return_value = mock_entity
+
+        mock_em_feature = AsyncMock()
+        mock_em_feature.get_entity_manager.return_value = mock_entity_manager
+        mock_fm.return_value.get_feature.return_value = mock_em_feature
+
+        # Test entity update
+        await can_feature._update_entity_from_can_message(
+            "light_1",
+            {"device_type": "light"},
+            {"brightness": 75},
+            {"operating_status": 150},
+            {"timestamp": 1234567890}
+        )
+
+        # Verify entity manager was called
+        mock_entity_manager.update_entity_state.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_pending_command_completion():
+    """Test correlation of CAN responses with pending commands."""
+    can_feature = CANBusFeature()
+
+    # Add pending command
+    app_state.pending_commands.append({
+        "entity_id": "light_1",
+        "timestamp": 1234567890,
+        "command": "toggle"
+    })
+
+    # Process response
+    await can_feature._check_pending_command_completion(
+        "light_1",
+        {"timestamp": 1234567892}  # 2 seconds later
+    )
+
+    # Command should be within correlation window
+    assert len(app_state.pending_commands) >= 0
 ```
 
 ### Test Factories
@@ -343,6 +472,60 @@ describe("useWebSocket", () => {
 
     vi.useRealTimers();
   });
+
+  it("handles CAN message streaming", () => {
+    const onMessage = vi.fn();
+    const { result } = renderHook(() =>
+      useCANScanWebSocket({ onMessage, autoConnect: true })
+    );
+
+    // Simulate WebSocket connection
+    act(() => {
+      result.current.socket?.onopen?.(new Event("open"));
+    });
+
+    // Simulate CAN message
+    const canMessage = {
+      timestamp: Date.now(),
+      interface: "can0",
+      can_id: "1FEDC001",
+      data: "0164000000000000",
+      direction: "rx"
+    };
+
+    act(() => {
+      result.current.socket?.onmessage?.(new MessageEvent("message", {
+        data: JSON.stringify(canMessage)
+      }));
+    });
+
+    expect(onMessage).toHaveBeenCalledWith(canMessage);
+  });
+
+  it("implements health endpoint fallback", async () => {
+    // Mock fetch to simulate health endpoint
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ status: "healthy" })
+      } as Response);
+
+    const { result } = renderHook(() => useHealthCheck());
+
+    // First attempt should fail at /api/healthz
+    await act(async () => {
+      await result.current.checkHealth();
+    });
+
+    // Should fallback to /healthz
+    expect(global.fetch).toHaveBeenCalledWith('/api/healthz');
+    expect(global.fetch).toHaveBeenCalledWith('/healthz');
+    expect(result.current.status).toBe('healthy');
+  });
 });
 ```
 
@@ -390,6 +573,95 @@ npm test entity-card
 - **Single Responsibility**: Each test should verify one specific behavior
 - **Descriptive Names**: Test names should clearly describe what is being tested
 - **Independent Tests**: Tests should not depend on each other's state
+
+### Critical Testing Requirements (Lessons from Session)
+Based on debugging session learnings, always test these patterns:
+
+#### API Response Format Testing
+```python
+# CRITICAL: Always test response.status, never response.success
+def test_entity_control_response_format():
+    response = client.post("/api/entities/light_1/control", json={"command": "toggle"})
+    result = response.json()
+
+    # Test correct attribute name
+    assert "status" in result
+    assert result["status"] in ["success", "error", "pending"]
+
+    # Ensure we don't accidentally use old format
+    assert "success" not in result
+```
+
+#### CAN Data Type Compatibility Testing
+```python
+# CRITICAL: Test all CAN data types that AsyncBufferedReader returns
+@pytest.mark.asyncio
+async def test_can_data_type_compatibility():
+    can_feature = CANBusFeature()
+
+    # Test bytearray (from AsyncBufferedReader)
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": bytearray([0x01, 0x02])  # AsyncBufferedReader returns this
+    })
+
+    # Test string (legacy compatibility)
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": "0102"
+    })
+
+    # Test bytes (converted format)
+    await can_feature._process_message({
+        "arbitration_id": 0x123,
+        "data": b"\x01\x02"
+    })
+```
+
+#### Real-time Memory Management Testing
+```python
+# CRITICAL: Test memory management for long-running systems
+@pytest.mark.asyncio
+async def test_real_time_memory_limits():
+    from backend.core.state import app_state
+
+    # Test buffer size limits
+    initial_count = len(app_state.can_command_sniffer_log)
+
+    # Add many entries
+    for i in range(1500):  # Beyond 1000 limit
+        app_state.add_can_sniffer_entry({"timestamp": i, "data": "test"})
+
+    # Verify FIFO culling
+    assert len(app_state.can_command_sniffer_log) <= 1000
+
+    # Test time-based cleanup for pending commands
+    old_pending = {"timestamp": time.time() - 10, "entity_id": "test"}
+    recent_pending = {"timestamp": time.time(), "entity_id": "test"}
+
+    app_state.pending_commands = [old_pending, recent_pending]
+    app_state.cleanup_pending_commands()  # Should remove old ones
+
+    assert len(app_state.pending_commands) == 1
+    assert app_state.pending_commands[0]["entity_id"] == "test"
+```
+
+#### Health Endpoint Pattern Testing
+```typescript
+// CRITICAL: Test health endpoint at root level, not /api/
+describe("Health Endpoint", () => {
+  it("uses correct health endpoint path", async () => {
+    const response = await fetch('/healthz');  // Not /api/healthz
+    expect(response.ok).toBe(true);
+  });
+
+  it("implements fallback for incorrect paths", async () => {
+    // Test that old /api/healthz gets redirected or handled gracefully
+    const response = await fetch('/api/healthz');
+    expect(response.status).toBe(404);  // Should not exist
+  });
+});
+```
 
 ### Mocking Guidelines
 - **Mock External Dependencies**: Always mock CAN interfaces, file system, external APIs

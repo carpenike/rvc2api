@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any
 
-from backend.integrations.rvc import decode_payload, load_config_data
+from backend.integrations.rvc import BAMHandler, decode_payload, decode_product_id, load_config_data
 from backend.services.feature_base import Feature
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,9 @@ class CANBusFeature(Feature):
         self.raw_device_mapping: dict = {}
         self.entity_id_lookup: dict[str, dict] = {}
 
+        # BAM handler for multi-packet messages
+        self.bam_handler: BAMHandler | None = None
+
     async def startup(self) -> None:
         """
         Start CAN bus listeners and message processing.
@@ -107,6 +110,9 @@ class CANBusFeature(Feature):
         # Mark the feature as running before spawning listener/simulation tasks
         # so that they don't exit immediately when checking this flag.
         self._is_running = True
+
+        # Initialize BAM handler for multi-packet message support
+        self.bam_handler = BAMHandler(session_timeout=30.0, max_concurrent_sessions=50)
 
         # Load RVC decoder configuration
         try:
@@ -220,7 +226,6 @@ class CANBusFeature(Feature):
             except Exception as e:
                 logger.error(f"Failed to start CAN bus listeners: {e}", exc_info=True)
                 return
-
 
     async def _setup_can_listeners(self) -> None:
         """Set up CAN message listeners for all active interfaces using python-can's asyncio support."""
@@ -639,6 +644,31 @@ class CANBusFeature(Feature):
 
             # Log the message at debug level
             logger.debug(f"CAN message received: id=0x{arbitration_id:x}, data={data.hex()}")
+
+            # Extract PGN and source address from arbitration ID
+            # RV-C uses 29-bit extended CAN IDs: Priority (3 bits) + PGN (18 bits) + Source (8 bits)
+            pgn = (arbitration_id >> 8) & 0x3FFFF
+            source_address = arbitration_id & 0xFF
+
+            # Check if this is a BAM transport protocol message
+            if self.bam_handler and pgn in [BAMHandler.TP_CM_PGN, BAMHandler.TP_DT_PGN]:
+                # Process through BAM handler
+                result = self.bam_handler.process_frame(pgn, data, source_address)
+
+                if result:
+                    # We have a complete multi-packet message
+                    target_pgn, reassembled_data = result
+
+                    # Handle specific multi-packet PGNs
+                    if target_pgn == 0x1FEF2:  # Product Identification
+                        decoded = decode_product_id(reassembled_data)
+                        logger.info(f"Decoded Product ID: {decoded}")
+                        # TODO: Update entity with product information
+                    else:
+                        logger.debug(f"Reassembled multi-packet message for PGN {target_pgn:05X}")
+
+                # Don't process transport protocol messages further
+                return
 
             # Try to decode the message using RVC decoder
             if self.decoder_map and arbitration_id in self.decoder_map:
