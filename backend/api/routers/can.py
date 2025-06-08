@@ -72,7 +72,7 @@ def _check_can_interface_feature_enabled(request: Request) -> None:
 )
 async def get_queue_status(
     request: Request,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> dict[str, Any]:
     """
     Return the current status of the CAN transmission queue.
@@ -102,7 +102,7 @@ async def get_queue_status(
 )
 async def get_interfaces(
     request: Request,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> list[str]:
     """
     Return a list of active CAN interfaces.
@@ -131,7 +131,7 @@ async def get_interfaces(
 )
 async def get_interface_details(
     request: Request,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> dict[str, dict[str, Any]]:
     """
     Return detailed information about all CAN interfaces.
@@ -164,7 +164,7 @@ async def send_raw_message(
     arbitration_id: int,
     data: str,
     interface: str,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> dict[str, Any]:
     """
     Send a raw CAN message to the specified interface.
@@ -221,8 +221,8 @@ async def send_raw_message(
 )
 async def get_recent_can_messages(
     request: Request,
+    can_service: Annotated[Any, Depends(get_can_service)],
     limit: int = 100,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
 ) -> list[dict[str, Any]]:
     """
     Return recent CAN messages captured on the bus.
@@ -262,7 +262,7 @@ async def get_recent_can_messages(
 )
 async def get_bus_statistics(
     request: Request,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> dict[str, Any]:
     """
     Return statistics for all CAN bus interfaces.
@@ -402,7 +402,7 @@ def get_stats_from_pyroute2_link(link: Any) -> CANInterfaceStats:
 @router.get("/status", response_model=AllCANStats)
 async def get_can_status(
     request: Request,
-    can_service: Annotated[Any, Depends(get_can_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_service)],
 ) -> AllCANStats:
     """
     Retrieves detailed status for all CAN interfaces the service is listening on.

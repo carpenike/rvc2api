@@ -3,6 +3,12 @@ RV-C feature module for the feature management system.
 
 This module provides a Feature class implementation for RV-C protocol integration,
 allowing it to be dynamically enabled/disabled and managed by the FeatureManager.
+
+Enhanced with Phase 1 improvements:
+- RVC Encoder for bidirectional communication
+- Message Validator for enhanced validation
+- Security Manager for CANbus security
+- Performance Handler for message prioritization
 """
 
 import logging
@@ -15,10 +21,14 @@ logger = logging.getLogger(__name__)
 
 class RVCFeature(Feature):
     """
-    RVC protocol integration feature.
+    RVC protocol integration feature with Phase 1 enhancements.
 
-    This feature manages the RV-C protocol integration, providing decoding and encoding
-    of RV-C messages and maintaining state related to RV-C devices.
+    This feature manages the RV-C protocol integration, providing:
+    - Decoding and encoding of RV-C messages
+    - Enhanced message validation
+    - Security monitoring and protection
+    - Performance optimization and prioritization
+    - State management for RV-C devices
     """
 
     def __init__(
@@ -54,20 +64,45 @@ class RVCFeature(Feature):
         self._device_mapping_path = self.config.get("device_mapping_path")
         self._data_loaded = False
 
+        # Phase 1 enhancement components
+        self.encoder = None
+        self.validator = None
+        self.security_manager = None
+        self.performance_handler = None
+
+        # Phase 1 feature flags from config
+        self._enable_encoder = self.config.get("enable_encoder", True)
+        self._enable_validator = self.config.get("enable_validator", True)
+        self._enable_security = self.config.get("enable_security", True)
+        self._enable_performance = self.config.get("enable_performance", True)
+
     async def startup(self) -> None:
         """
         Start the RVC feature.
 
-        This loads the RVC spec and device mapping data.
+        This loads the RVC spec and device mapping data, then initializes
+        the Phase 1 enhancement components.
         """
-        logger.info("Starting RVC feature")
+        logger.info("Starting RVC feature with Phase 1 enhancements")
         await self._load_rvc_data()
+
+        if self._data_loaded:
+            await self._initialize_phase1_components()
 
     async def shutdown(self) -> None:
         """
-        Stop the RVC feature.
+        Stop the RVC feature and clean up Phase 1 components.
         """
         logger.info("Stopping RVC feature")
+
+        # Shutdown Phase 1 components
+        if self.performance_handler:
+            self.performance_handler.stop_processing()
+
+        self.encoder = None
+        self.validator = None
+        self.security_manager = None
+        self.performance_handler = None
         self._data_loaded = False
 
     async def _load_rvc_data(self) -> None:
@@ -124,6 +159,52 @@ class RVCFeature(Feature):
             logger.error(f"Failed to load RVC data: {e}")
             self._data_loaded = False
 
+    async def _initialize_phase1_components(self) -> None:
+        """Initialize Phase 1 enhancement components."""
+        from backend.core.config import get_settings
+
+        settings = get_settings()
+
+        try:
+            # Initialize RVC Encoder
+            if self._enable_encoder:
+                from backend.integrations.rvc.encoder import RVCEncoder
+
+                self.encoder = RVCEncoder(settings)
+                logger.info("RVC Encoder initialized")
+
+            # Initialize Message Validator
+            if self._enable_validator:
+                from backend.integrations.rvc.validator import MessageValidator
+
+                self.validator = MessageValidator(settings)
+                logger.info("Message Validator initialized")
+
+            # Initialize Security Manager
+            if self._enable_security:
+                from backend.integrations.rvc.security import SecurityManager
+
+                self.security_manager = SecurityManager(settings)
+                logger.info("Security Manager initialized")
+
+            # Initialize Performance Handler
+            if self._enable_performance:
+                from backend.integrations.rvc.performance import PriorityMessageHandler
+
+                max_queue_size = self.config.get("max_queue_size", 10000)
+                self.performance_handler = PriorityMessageHandler(settings, max_queue_size)
+                logger.info("Performance Handler initialized")
+
+            logger.info("Phase 1 enhancement components initialized successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize Phase 1 components: {e}")
+            # Continue operation with basic functionality
+            self.encoder = None
+            self.validator = None
+            self.security_manager = None
+            self.performance_handler = None
+
     def is_data_loaded(self) -> bool:
         """
         Check if RVC data is loaded.
@@ -136,7 +217,7 @@ class RVCFeature(Feature):
     @property
     def health(self) -> str:
         """
-        Returns the health status of the feature.
+        Returns the health status of the feature including Phase 1 components.
 
         Returns:
             - "healthy": Feature is functioning correctly
@@ -146,7 +227,67 @@ class RVCFeature(Feature):
         if not self.enabled:
             return "healthy"  # Disabled is considered healthy
 
-        if self.is_data_loaded():
-            return "healthy"
-        else:
+        if not self.is_data_loaded():
             return "failed"
+
+        # Check Phase 1 component health
+        component_issues = 0
+
+        if self._enable_encoder and not self.encoder:
+            component_issues += 1
+        if self._enable_validator and not self.validator:
+            component_issues += 1
+        if self._enable_security and not self.security_manager:
+            component_issues += 1
+        if self._enable_performance and not self.performance_handler:
+            component_issues += 1
+
+        # Encoder failure is more critical than others
+        if self._enable_encoder and not self.encoder:
+            return "degraded"
+
+        # Multiple component failures indicate degraded state
+        if component_issues > 1:
+            return "degraded"
+
+        return "healthy"
+
+    def get_component_status(self) -> dict[str, Any]:
+        """
+        Get detailed status of all RVC components.
+
+        Returns:
+            Dictionary with component status information
+        """
+        return {
+            "data_loaded": self.is_data_loaded(),
+            "coach_info": getattr(self, "coach_info", None),
+            "spec_version": getattr(self, "spec_meta", {}).get("version", "unknown"),
+            "components": {
+                "encoder": {
+                    "enabled": self._enable_encoder,
+                    "available": self.encoder is not None,
+                    "ready": self.encoder.is_ready() if self.encoder else False,
+                    "info": self.encoder.get_encoder_info() if self.encoder else None,
+                },
+                "validator": {
+                    "enabled": self._enable_validator,
+                    "available": self.validator is not None,
+                    "stats": self.validator.get_validation_stats() if self.validator else None,
+                },
+                "security": {
+                    "enabled": self._enable_security,
+                    "available": self.security_manager is not None,
+                    "status": self.security_manager.get_security_status()
+                    if self.security_manager
+                    else None,
+                },
+                "performance": {
+                    "enabled": self._enable_performance,
+                    "available": self.performance_handler is not None,
+                    "metrics": self.performance_handler.get_performance_metrics()
+                    if self.performance_handler
+                    else None,
+                },
+            },
+        }

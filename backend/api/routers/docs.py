@@ -51,7 +51,7 @@ def _check_api_docs_feature_enabled(request: Request) -> None:
 )
 async def get_search_status(
     request: Request,
-    vector_service: Annotated[Any, Depends(get_vector_service)] = None,
+    vector_service: Annotated[Any, Depends(get_vector_service)],
 ) -> dict[str, Any]:
     """Get the status of the vector search service."""
     logger.debug("GET /docs/status - Retrieving documentation search status")
@@ -89,9 +89,9 @@ async def get_search_status(
 )
 async def search_documentation(
     request: Request,
+    vector_service: Annotated[Any, Depends(get_vector_service)],
     query: str = Query(..., description="Search query string"),
     k: int = Query(3, description="Number of results to return", ge=1, le=10),
-    vector_service: Annotated[Any, Depends(get_vector_service)] = None,
 ) -> list[dict[str, Any]]:
     """
     Search the RV-C documentation using vector-based semantic search.
@@ -152,7 +152,7 @@ async def search_documentation(
 )
 async def get_openapi_schema(
     request: Request,
-    docs_service: Annotated[Any, Depends(get_docs_service)] = None,
+    docs_service: Annotated[Any, Depends(get_docs_service)],
 ) -> dict[str, Any]:
     """Get the complete OpenAPI schema for the API."""
     logger.debug("GET /docs/openapi - Retrieving OpenAPI schema")

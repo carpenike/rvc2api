@@ -17,8 +17,9 @@ import {
   IconLoader2
 } from "@tabler/icons-react"
 
+
 // Loading skeleton patterns
-export const LoadingPatterns = {
+const LoadingPatterns = {
   // Card grid loading (for dashboards, entity lists)
   CardGrid: ({ count = 6, columns = 3 }: { count?: number; columns?: number }) => (
     <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-${columns}`}>
@@ -195,7 +196,7 @@ export function ErrorDisplay({
 }
 
 // Quick error states for common scenarios
-export const ErrorStates = {
+const ErrorStates = {
   // Network/API errors
   NetworkError: ({ onRetry }: { onRetry?: () => void }) => (
     <ErrorDisplay
@@ -316,3 +317,6 @@ export function LoadingWrapper({
 
   return <>{children}</>
 }
+
+// Export patterns and states
+export { LoadingPatterns, ErrorStates }

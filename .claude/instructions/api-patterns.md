@@ -30,6 +30,38 @@ interface EntityControlCommand {
 }
 ```
 
+### Cross-Protocol Entity Control (NEW)
+Enhanced command structure for multi-protocol environments:
+
+```typescript
+interface CrossProtocolEntityControlCommand extends EntityControlCommand {
+  target_protocol?: "rvc" | "j1939" | "firefly" | "spartan_k2";
+  bridge_protocols?: boolean;  // Enable automatic protocol bridging
+  safety_validation?: boolean; // Enable safety interlock validation
+  network_segment?: string;    // Target specific network segment
+  chassis_safety_override?: boolean; // Allow authorized chassis safety override
+  firefly_multiplexed?: boolean; // Handle Firefly multiplexed operations
+}
+```
+
+### Safety Interlock Commands (NEW)
+For chassis and safety-critical operations:
+
+```typescript
+interface SafetyInterlockCommand {
+  system_type: "slides" | "awnings" | "leveling_jacks" | "chassis" | "brakes" | "suspension";
+  operation: "extend" | "retract" | "position" | "emergency_stop";
+  safety_conditions: {
+    park_brake_engaged?: boolean;
+    engine_off?: boolean;
+    wind_speed_below?: number;  // mph
+    level_within_tolerance?: boolean;
+  };
+  validation_level: "strict" | "warn" | "bypass";
+  override_code?: string;  // For authorized overrides
+}
+```
+
 ### Command Examples
 ```json
 // Turn light on
@@ -63,24 +95,78 @@ interface EntityControlCommand {
     "auto_retract": true
   }
 }
+
+// Cross-protocol chassis control with safety validation
+{
+  "command": "set",
+  "target_protocol": "spartan_k2",
+  "safety_validation": true,
+  "custom_data": {
+    "brake_pressure_target": 85.0,
+    "system_check_required": true
+  }
+}
+
+// Firefly multiplexed operation
+{
+  "command": "custom",
+  "target_protocol": "firefly",
+  "firefly_multiplexed": true,
+  "custom_data": {
+    "zone_lighting": {
+      "living_room": {"brightness": 75, "scene": "evening"},
+      "bedroom": {"brightness": 50, "scene": "nighttime"}
+    }
+  }
+}
+
+// Safety interlock operation
+{
+  "command": "custom",
+  "system_type": "slides",
+  "operation": "extend",
+  "safety_conditions": {
+    "park_brake_engaged": true,
+    "engine_off": true,
+    "level_within_tolerance": true
+  },
+  "validation_level": "strict"
+}
 ```
 
 ### Command Response Format
 ```typescript
 interface EntityControlResponse {
-  status: "success" | "error" | "pending";  // Use status instead of success boolean
+  status: "success" | "error" | "pending" | "safety_blocked";  // Use status instead of success boolean
   entity_id: string;
-  command: EntityControlCommand;
+  command: EntityControlCommand | CrossProtocolEntityControlCommand;
   result?: {
     previous_state?: string;
     new_state?: string;
     timestamp: string;
+    protocol_used?: string;  // Which protocol executed the command
+    safety_validation?: SafetyValidationResult;
+    network_segment?: string;
   };
   error?: {
     code: string;
     message: string;
     details?: Record<string, any>;
+    safety_violations?: string[];  // Safety interlock violations
   };
+}
+
+interface SafetyValidationResult {
+  is_safe: boolean;
+  violations: string[];
+  system_status: {
+    brake_pressure?: number;
+    suspension_level_differential?: number;
+    steering_pressure?: number;
+    park_brake_engaged?: boolean;
+    engine_status?: string;
+  };
+  override_available?: boolean;
 }
 ```
 
@@ -91,39 +177,58 @@ interface EntityControlResponse {
 from fastapi import APIRouter, Depends, HTTPException
 from backend.models.entity import EntityControlCommand, EntityControlResponse
 from backend.services.entity_service import EntityService
+from backend.core.dependencies import get_entity_service
 
 router = APIRouter(prefix="/api/entities", tags=["entities"])
 
 @router.post("/{entity_id}/control", response_model=EntityControlResponse)
 async def control_entity(
     entity_id: str,
-    command: EntityControlCommand,
-    entity_service: EntityService = Depends(get_entity_service)
+    command: CrossProtocolEntityControlCommand,
+    entity_service: EntityService = Depends(get_entity_service),
+    diagnostics: DiagnosticsHandler = Depends(get_diagnostics_handler),
+    spartan_k2: SpartanK2Service = Depends(get_spartan_k2_service)
 ) -> EntityControlResponse:
     """
-    Control an entity with the specified command.
+    Control an entity with cross-protocol support and safety validation.
 
-    Supports all RV-C device types including lights, locks, awnings,
-    slides, and custom device commands.
+    Supports all RV-C, J1939, Firefly, and Spartan K2 device types including
+    lights, locks, awnings, slides, chassis systems, and custom device commands.
 
     Args:
         entity_id: Unique identifier for the entity
-        command: Control command with action and parameters
+        command: Cross-protocol control command with safety validation
 
     Returns:
-        Result of the control operation
+        Result of the control operation with safety status
 
     Raises:
         404: Entity not found
-        400: Invalid command for entity type
+        400: Invalid command for entity type or safety interlock failure
         503: CAN bus communication error
     """
     try:
-        result = await entity_service.control_entity(entity_id, command)
+        # Validate safety interlocks for chassis/safety-critical commands
+        if command.safety_validation and command.target_protocol == "spartan_k2":
+            safety_result = await spartan_k2.validate_safety_interlocks()
+            if not safety_result.is_safe:
+                return EntityControlResponse(
+                    status="safety_blocked",
+                    entity_id=entity_id,
+                    command=command,
+                    error={
+                        "code": "SAFETY_INTERLOCK_VIOLATION",
+                        "message": "Safety interlock validation failed",
+                        "safety_violations": safety_result.violations
+                    }
+                )
+
+        # Execute cross-protocol control with automatic protocol bridging
+        result = await entity_service.control_entity_cross_protocol(entity_id, command)
 
         # CRITICAL: Use result.status, not result.success
         if result.status == "success":
-            logger.info(f"Control command '{command.command}' executed successfully for entity '{entity_id}'")
+            logger.info(f"Cross-protocol command '{command.command}' executed successfully for entity '{entity_id}' via {result.result.protocol_used}")
 
         return result
     except EntityNotFoundError:
@@ -132,6 +237,8 @@ async def control_entity(
         raise HTTPException(status_code=400, detail=str(e))
     except CANBusError as e:
         raise HTTPException(status_code=503, detail=f"CAN bus error: {e}")
+    except SafetyInterlockError as e:
+        raise HTTPException(status_code=400, detail=f"Safety interlock failed: {e}")
 ```
 
 ### Query Filtering
@@ -141,37 +248,57 @@ async def list_entities(
     device_type: Optional[str] = None,
     state: Optional[str] = None,
     location: Optional[str] = None,
+    protocol: Optional[str] = Query(None, regex="^(rvc|j1939|firefly|spartan_k2)$"),
+    network_segment: Optional[str] = None,
+    health_status: Optional[str] = Query(None, regex="^(healthy|warning|critical|unknown)$"),
     limit: int = Query(100, le=1000),
     offset: int = Query(0, ge=0),
-    entity_service: EntityService = Depends(get_entity_service)
+    entity_service: EntityService = Depends(get_entity_service),
+    diagnostics: DiagnosticsHandler = Depends(get_diagnostics_handler)
 ) -> EntityListResponse:
     """
-    List entities with optional filtering.
+    List entities with optional cross-protocol filtering and health status.
 
     Query Parameters:
-        device_type: Filter by device type (light, lock, slide, etc.)
+        device_type: Filter by device type (light, lock, slide, chassis, etc.)
         state: Filter by current state (on, off, open, closed, etc.)
         location: Filter by physical location
+        protocol: Filter by protocol (rvc, j1939, firefly, spartan_k2)
+        network_segment: Filter by network segment (house, chassis, etc.)
+        health_status: Filter by diagnostic health status
         limit: Maximum number of entities to return
         offset: Number of entities to skip for pagination
     """
-    filters = EntityFilters(
+    filters = CrossProtocolEntityFilters(
         device_type=device_type,
         state=state,
-        location=location
+        location=location,
+        protocol=protocol,
+        network_segment=network_segment,
+        health_status=health_status
     )
 
-    entities = await entity_service.list_entities(
+    # Get entities with cross-protocol health status
+    entities = await entity_service.list_entities_cross_protocol(
         filters=filters,
         limit=limit,
         offset=offset
     )
 
+    # Enhance with diagnostic health information
+    if health_status:
+        health_data = await diagnostics.get_entities_health_status(
+            entity_ids=[e.id for e in entities]
+        )
+        for entity in entities:
+            entity.health_status = health_data.get(entity.id, "unknown")
+
     return EntityListResponse(
         entities=entities,
         total=len(entities),
         limit=limit,
-        offset=offset
+        offset=offset,
+        protocols_included=list(set(e.protocol for e in entities if hasattr(e, 'protocol')))
     )
 ```
 
@@ -180,15 +307,43 @@ async def list_entities(
 ### Message Format
 ```typescript
 interface WebSocketMessage {
-  type: "entity_update" | "entity_added" | "entity_removed" | "system_status";
+  type: "entity_update" | "entity_added" | "entity_removed" | "system_status" |
+        "cross_protocol_event" | "safety_alert" | "diagnostic_event";
   timestamp: string;
-  data: EntityUpdate | SystemStatus;
+  data: EntityUpdate | SystemStatus | CrossProtocolEvent | SafetyAlert | DiagnosticEvent;
 }
 
 interface EntityUpdate {
   entity_id: string;
   changes: Partial<EntityState>;
-  source: "user_command" | "can_bus" | "system" | "schedule";
+  source: "user_command" | "can_bus" | "system" | "schedule" | "safety_interlock";
+  protocol: "rvc" | "j1939" | "firefly" | "spartan_k2";
+  network_segment?: string;
+}
+
+interface CrossProtocolEvent {
+  event_type: "protocol_bridge" | "network_switch" | "fault_correlation";
+  source_protocol: string;
+  target_protocol: string;
+  entities_affected: string[];
+  correlation_id?: string;
+}
+
+interface SafetyAlert {
+  alert_type: "interlock_violation" | "system_fault" | "emergency_stop";
+  system: "brakes" | "suspension" | "steering" | "slides" | "awnings";
+  severity: "warning" | "critical" | "emergency";
+  violations: string[];
+  override_available: boolean;
+}
+
+interface DiagnosticEvent {
+  event_type: "fault_detected" | "fault_cleared" | "prediction_updated";
+  protocol: string;
+  system_type: string;
+  fault_codes: string[];
+  prediction_confidence?: number;
+  maintenance_urgency?: "immediate" | "urgent" | "soon" | "scheduled";
 }
 ```
 
@@ -546,11 +701,28 @@ useEffect(() => {
 
 ## Critical Requirements
 
+### Core API Patterns (MANDATORY)
 - **Unified Endpoints**: Use `/api/entities` pattern only, never separate device-type endpoints
-- **Standardized Commands**: All entity control uses the same command structure
+- **Cross-Protocol Commands**: All entity control supports multi-protocol operations with safety validation
 - **Health Endpoints**: Use `/healthz` at root level, not `/api/healthz`
 - **Real-time Data**: Use WebSocket for streams, REST for queries, implement fallback
 - **Response Format**: Use `status` field instead of boolean `success`
 - **Comprehensive Documentation**: Include examples, error scenarios, and response schemas
 - **Error Handling**: Structured error responses with proper HTTP status codes
 - **Type Safety**: Full TypeScript types generated from OpenAPI schema
+
+### Multi-Protocol Requirements (NEW)
+- **Protocol Support**: All endpoints must handle RV-C, J1939, Firefly, and Spartan K2 protocols
+- **Safety Validation**: Chassis and safety-critical operations require interlock validation
+- **Cross-Protocol Bridging**: Enable automatic protocol translation when beneficial
+- **Network Awareness**: Support multi-network environments with fault isolation
+- **Diagnostic Integration**: Include health status and fault correlation in entity operations
+- **Performance Monitoring**: Integrate with performance analytics for optimization recommendations
+
+### Safety Compliance (CRITICAL)
+- **Interlock Validation**: All chassis operations must validate safety interlocks
+- **Emergency Stop**: Support immediate emergency stop across all protocols
+- **Authorization**: Safety overrides require proper authorization codes
+- **Audit Logging**: All safety-related operations must be logged for compliance
+- **Real-time Alerts**: Safety violations must trigger immediate WebSocket alerts
+- **Graceful Degradation**: System must continue operating safely when components fail

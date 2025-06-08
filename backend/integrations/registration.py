@@ -8,6 +8,10 @@ import logging
 
 from backend.can.feature import CANBusFeature
 from backend.core.state import AppState
+from backend.integrations.analytics.registration import register_performance_analytics_feature
+from backend.integrations.can.multi_network_registration import register_multi_network_feature
+from backend.integrations.diagnostics.registration import register_advanced_diagnostics_feature
+from backend.integrations.j1939.registration import register_j1939_feature
 from backend.integrations.rvc.registration import register_rvc_feature
 from backend.services.feature_manager import FeatureManager
 from backend.services.github_update_checker import register_github_update_checker_feature
@@ -46,6 +50,14 @@ FeatureManager.register_feature_factory("websocket", _create_websocket_feature)
 FeatureManager.register_feature_factory("can_feature", _create_can_feature)
 FeatureManager.register_feature_factory("app_state", _create_app_state_feature)
 FeatureManager.register_feature_factory("rvc", register_rvc_feature)
+FeatureManager.register_feature_factory("j1939", register_j1939_feature)
+FeatureManager.register_feature_factory("multi_network_can", register_multi_network_feature)
+FeatureManager.register_feature_factory(
+    "advanced_diagnostics", register_advanced_diagnostics_feature
+)
+FeatureManager.register_feature_factory(
+    "performance_analytics", register_performance_analytics_feature
+)
 FeatureManager.register_feature_factory(
     "github_update_checker", register_github_update_checker_feature
 )

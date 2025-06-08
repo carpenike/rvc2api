@@ -6,6 +6,7 @@ Provides configuration path utilities for the backend application.
 
 import logging
 import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,9 @@ def get_actual_paths() -> tuple[str | None, str | None]:
 
     # Try to get paths from RVC integration module
     try:
-        from backend.integrations.rvc.decode import _default_paths
+        from backend.integrations.rvc.config_loader import get_default_paths
 
-        decoder_default_spec_path, decoder_default_map_path = _default_paths()
+        decoder_default_spec_path, decoder_default_map_path = get_default_paths()
     except ImportError as e:
         logger.warning(f"Could not import backend.integrations.rvc.decode._default_paths: {e}")
         decoder_default_spec_path = None
@@ -75,4 +76,22 @@ def get_actual_paths() -> tuple[str | None, str | None]:
     return ACTUAL_SPEC_PATH, ACTUAL_MAP_PATH
 
 
-__all__ = ["get_actual_paths"]
+def get_config_dir() -> Path:
+    """
+    Get the configuration directory path.
+
+    Returns:
+        Path: The path to the configuration directory
+    """
+    # Get the project root directory (where config/ is located)
+    current_file = Path(__file__)
+    project_root = current_file.parent.parent.parent  # backend/core/config_utils.py -> project root
+    config_dir = project_root / "config"
+
+    if not config_dir.exists():
+        logger.warning(f"Configuration directory does not exist: {config_dir}")
+
+    return config_dir
+
+
+__all__ = ["get_actual_paths", "get_config_dir"]

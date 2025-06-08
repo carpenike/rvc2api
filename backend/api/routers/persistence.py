@@ -6,7 +6,7 @@ dashboards, backups, and storage information.
 """
 
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/persistence", tags=["persistence"])
 
 @router.get("/status", summary="Get persistence service status")
 async def get_persistence_status(
-    persistence_service: PersistenceService = Depends(get_persistence_service),  # noqa: B008
+    persistence_service: Annotated[PersistenceService, Depends(get_persistence_service)],
 ) -> dict[str, Any]:
     """
     Get the current status of the persistence service.
@@ -70,7 +70,7 @@ async def get_persistence_status(
 
 @router.get("/storage", response_model=StorageInfo, summary="Get storage information")
 async def get_storage_info(
-    persistence_service: PersistenceService = Depends(get_persistence_service),  # noqa: B008
+    persistence_service: Annotated[PersistenceService, Depends(get_persistence_service)],
 ) -> StorageInfo:
     """
     Get detailed information about persistent storage usage.
@@ -85,7 +85,7 @@ async def get_storage_info(
 
 @router.get("/backups", response_model=list[BackupInfo], summary="List available backups")
 async def list_backups(
-    persistence_service: PersistenceService = Depends(get_persistence_service),  # noqa: B008
+    persistence_service: Annotated[PersistenceService, Depends(get_persistence_service)],
 ) -> list[BackupInfo]:
     """
     List all available database backups.
@@ -101,9 +101,9 @@ async def list_backups(
 
 @router.post("/backups", response_model=BackupInfo | None, summary="Create database backup")
 async def create_backup(
+    persistence_service: Annotated[PersistenceService, Depends(get_persistence_service)],
     database_name: str = "coachiq.db",
     backup_name: str | None = None,
-    persistence_service: PersistenceService = Depends(get_persistence_service),  # noqa: B008
 ) -> BackupInfo | None:
     """
     Create a backup of the specified database.
@@ -141,7 +141,7 @@ async def create_backup(
 @router.delete("/backups/{backup_name}", summary="Delete a backup")
 async def delete_backup(
     backup_name: str,
-    persistence_service: PersistenceService = Depends(get_persistence_service),  # noqa: B008
+    persistence_service: Annotated[PersistenceService, Depends(get_persistence_service)],
 ) -> dict[str, str]:
     """
     Delete a specific backup file.
@@ -167,7 +167,7 @@ async def delete_backup(
 @router.get("/config/{namespace}", summary="Get configuration for namespace")
 async def get_config_namespace(
     namespace: str,
-    config_repo: ConfigRepository = Depends(get_config_repository),  # noqa: B008
+    config_repo: Annotated[ConfigRepository, Depends(get_config_repository)],
 ) -> dict[str, Any]:
     """
     Get all configuration values for a specific namespace.
@@ -185,7 +185,7 @@ async def get_config_namespace(
 async def get_config_value(
     namespace: str,
     key: str,
-    config_repo: ConfigRepository = Depends(get_config_repository),  # noqa: B008
+    config_repo: Annotated[ConfigRepository, Depends(get_config_repository)],
 ) -> dict[str, Any]:
     """
     Get a specific configuration value.
@@ -213,7 +213,7 @@ async def set_config_value(
     namespace: str,
     key: str,
     value: Any,
-    config_repo: ConfigRepository = Depends(get_config_repository),  # noqa: B008
+    config_repo: Annotated[ConfigRepository, Depends(get_config_repository)],
 ) -> dict[str, Any]:
     """
     Set a configuration value.
@@ -235,7 +235,7 @@ async def set_config_value(
 async def delete_config_value(
     namespace: str,
     key: str,
-    config_repo: ConfigRepository = Depends(get_config_repository),  # noqa: B008
+    config_repo: Annotated[ConfigRepository, Depends(get_config_repository)],
 ) -> dict[str, str]:
     """
     Delete a specific configuration value.
@@ -261,7 +261,7 @@ async def delete_config_value(
 @router.delete("/config/{namespace}", summary="Delete all configuration for namespace")
 async def delete_config_namespace(
     namespace: str,
-    config_repo: ConfigRepository = Depends(get_config_repository),  # noqa: B008
+    config_repo: Annotated[ConfigRepository, Depends(get_config_repository)],
 ) -> dict[str, str]:
     """
     Delete all configuration values for a namespace.
@@ -280,7 +280,7 @@ async def delete_config_namespace(
 # Dashboard endpoints
 @router.get("/dashboards", summary="List all dashboards")
 async def list_dashboards(
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> list[dict[str, Any]]:
     """
     Get a list of all dashboard configurations.
@@ -293,7 +293,7 @@ async def list_dashboards(
 
 @router.get("/dashboards/default", summary="Get default dashboard")
 async def get_default_dashboard(
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> dict[str, Any]:
     """
     Get the default dashboard configuration.
@@ -315,7 +315,7 @@ async def get_default_dashboard(
 @router.get("/dashboards/{dashboard_id}", summary="Get dashboard by ID")
 async def get_dashboard(
     dashboard_id: int,
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> dict[str, Any]:
     """
     Get a specific dashboard by ID.
@@ -340,7 +340,7 @@ async def get_dashboard(
 @router.post("/dashboards", summary="Create new dashboard")
 async def create_dashboard(
     dashboard_data: dict[str, Any],
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> dict[str, Any]:
     """
     Create a new dashboard configuration.
@@ -372,7 +372,7 @@ async def create_dashboard(
 async def update_dashboard(
     dashboard_id: int,
     dashboard_data: dict[str, Any],
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> dict[str, Any]:
     """
     Update an existing dashboard configuration.
@@ -408,7 +408,7 @@ async def update_dashboard(
 @router.delete("/dashboards/{dashboard_id}", summary="Delete dashboard")
 async def delete_dashboard(
     dashboard_id: int,
-    dashboard_repo: DashboardRepository = Depends(get_dashboard_repository),  # noqa: B008
+    dashboard_repo: Annotated[DashboardRepository, Depends(get_dashboard_repository)],
 ) -> dict[str, str]:
     """
     Delete a dashboard configuration.

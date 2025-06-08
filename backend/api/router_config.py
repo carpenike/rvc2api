@@ -10,7 +10,16 @@ from typing import Any
 
 from fastapi import FastAPI
 
-from backend.api.routers import can, config, dashboard, docs, entities, logs
+from backend.api.routers import (
+    advanced_diagnostics,
+    can,
+    config,
+    dashboard,
+    docs,
+    entities,
+    logs,
+    performance_analytics,
+)
 from backend.websocket.routes import router as websocket_router
 
 logger = logging.getLogger(__name__)
@@ -35,6 +44,10 @@ def configure_routers(app: FastAPI) -> None:
     app.include_router(dashboard.router)
     app.include_router(docs.router)
     app.include_router(logs.router)
+    app.include_router(advanced_diagnostics.router, prefix="/api/diagnostics", tags=["diagnostics"])
+    app.include_router(
+        performance_analytics.router, prefix="/api/performance", tags=["performance"]
+    )
 
     # Include WebSocket routes that integrate with feature manager
     app.include_router(websocket_router)
@@ -57,8 +70,14 @@ def get_router_info() -> dict[str, Any]:
             {"prefix": "/api/dashboard", "tags": ["dashboard"], "name": "dashboard"},
             {"prefix": "/api", "tags": ["docs"], "name": "docs"},
             {"prefix": "/api", "tags": ["logs"], "name": "logs"},
+            {"prefix": "/api/diagnostics", "tags": ["diagnostics"], "name": "advanced_diagnostics"},
+            {
+                "prefix": "/api/performance",
+                "tags": ["performance"],
+                "name": "performance_analytics",
+            },
             {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 7,
+        "total_routers": 9,
         "dependency_injection": True,
     }

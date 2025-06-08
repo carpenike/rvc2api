@@ -640,6 +640,501 @@ class FeaturesSettings(BaseSettings):
     )
 
 
+class MultiNetworkSettings(BaseSettings):
+    """Multi-network CAN management configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_MULTI_NETWORK__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable multi-network CAN management")
+
+    # Network definitions
+    default_networks: dict[str, dict[str, Any]] = Field(
+        default={
+            "house": {
+                "interface": "can0",
+                "protocol": "rvc",
+                "priority": "high",
+                "isolation": True,
+                "description": "RV coach/house systems network",
+            },
+            "chassis": {
+                "interface": "can1",
+                "protocol": "j1939",
+                "priority": "critical",
+                "isolation": True,
+                "description": "Vehicle chassis and engine systems network",
+            },
+        },
+        description="Default network definitions with protocol mapping",
+    )
+
+    # Fault tolerance and health monitoring
+    enable_fault_isolation: bool = Field(
+        default=True, description="Enable automatic network fault isolation"
+    )
+    enable_health_monitoring: bool = Field(
+        default=True, description="Enable continuous network health monitoring"
+    )
+    health_check_interval: int = Field(
+        default=5, description="Health check interval in seconds", ge=1, le=60
+    )
+
+    # Cross-network communication policies
+    enable_cross_network_routing: bool = Field(
+        default=False, description="Enable controlled cross-network message routing"
+    )
+    cross_network_whitelist: list[str] = Field(
+        default=[], description="Whitelisted message types for cross-network routing"
+    )
+
+    # Security and filtering
+    enable_network_security: bool = Field(
+        default=True, description="Enable network-level security filtering"
+    )
+    max_networks: int = Field(
+        default=8, description="Maximum number of concurrent networks", ge=1, le=16
+    )
+
+    # Performance optimization
+    message_routing_timeout: float = Field(
+        default=0.1, description="Message routing timeout in seconds", gt=0
+    )
+    network_priority_scheduling: bool = Field(
+        default=True, description="Enable priority-based network scheduling"
+    )
+
+    @field_validator("cross_network_whitelist", mode="before")
+    @classmethod
+    def parse_whitelist(cls, v):
+        """Parse comma-separated whitelist from environment variable."""
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(",") if item.strip()]
+        elif isinstance(v, list):
+            return v
+        return []
+
+
+class J1939Settings(BaseSettings):
+    """J1939 protocol configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_J1939__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable J1939 protocol support")
+
+    # J1939 specification file paths
+    spec_path: Path | None = Field(
+        default=None, description="Path to J1939 spec JSON file override"
+    )
+    standard_pgns_path: Path | None = Field(
+        default=None, description="Path to standard J1939 PGNs definition file"
+    )
+
+    # Engine and transmission manufacturer support
+    enable_cummins_extensions: bool = Field(
+        default=True, description="Enable Cummins engine-specific PGNs and extensions"
+    )
+    enable_allison_extensions: bool = Field(
+        default=True, description="Enable Allison transmission-specific PGNs and extensions"
+    )
+    enable_chassis_extensions: bool = Field(
+        default=True, description="Enable chassis-specific PGNs (Spartan K2, etc.)"
+    )
+
+    # Network configuration
+    default_interface: str = Field(
+        default="chassis",
+        description="Default logical interface for J1939 (maps to physical CAN interface)",
+    )
+    address_range_start: int = Field(
+        default=128, description="Start of J1939 address range for this ECU", ge=128, le=247
+    )
+    address_range_end: int = Field(
+        default=247, description="End of J1939 address range for this ECU", ge=128, le=247
+    )
+
+    # Message filtering and priorities
+    priority_critical_pgns: list[int] = Field(
+        default=[61444, 65262, 65265], description="PGNs treated as critical priority"
+    )
+    priority_high_pgns: list[int] = Field(
+        default=[65266, 65272, 61443], description="PGNs treated as high priority"
+    )
+
+    # Security and validation
+    enable_address_validation: bool = Field(
+        default=True, description="Enable J1939 source address validation"
+    )
+    enable_pgn_validation: bool = Field(
+        default=True, description="Enable PGN structure and range validation"
+    )
+    rate_limit_enabled: bool = Field(
+        default=True, description="Enable rate limiting for J1939 messages"
+    )
+    max_messages_per_second: int = Field(
+        default=500, description="Maximum J1939 messages per second per source", ge=1
+    )
+
+    # Protocol bridge settings
+    enable_rvc_bridge: bool = Field(
+        default=True, description="Enable automatic translation between J1939 and RV-C"
+    )
+    bridge_engine_data: bool = Field(
+        default=True, description="Bridge engine data from J1939 to RV-C format"
+    )
+    bridge_transmission_data: bool = Field(
+        default=True, description="Bridge transmission data from J1939 to RV-C format"
+    )
+
+    @field_validator("spec_path", "standard_pgns_path", mode="before")
+    @classmethod
+    def parse_path(cls, v):
+        """Parse path from string."""
+        if isinstance(v, str) and v.strip():
+            return Path(v.strip())
+        return v
+
+    @field_validator("priority_critical_pgns", "priority_high_pgns", mode="before")
+    @classmethod
+    def parse_pgn_list(cls, v):
+        """Parse comma-separated PGN list from environment variable."""
+        if isinstance(v, str):
+            return [int(pgn.strip()) for pgn in v.split(",") if pgn.strip().isdigit()]
+        elif isinstance(v, list):
+            return [int(pgn) for pgn in v if isinstance(pgn, int | str) and str(pgn).isdigit()]
+        return v
+
+    def get_spec_path(self) -> Path:
+        """Get the J1939 spec JSON file path."""
+        if self.spec_path:
+            return self.spec_path
+
+        # Try bundled resources first for Nix compatibility
+        bundled_path = self._get_bundled_file("j1939.json")
+        if bundled_path and bundled_path.exists():
+            return bundled_path
+
+        # Fall back to config directory
+        from backend.core.config_utils import get_config_dir
+
+        config_dir = get_config_dir()
+        spec_file = config_dir / "j1939.json"
+        return spec_file
+
+    def get_standard_pgns_path(self) -> Path:
+        """Get the standard J1939 PGNs definition file path."""
+        if self.standard_pgns_path:
+            return self.standard_pgns_path
+
+        # Try bundled resources first
+        bundled_path = self._get_bundled_file("j1939_standard_pgns.json")
+        if bundled_path and bundled_path.exists():
+            return bundled_path
+
+        # Fall back to config directory
+        from backend.core.config_utils import get_config_dir
+
+        config_dir = get_config_dir()
+        pgns_file = config_dir / "j1939_standard_pgns.json"
+        return pgns_file
+
+    def _get_bundled_file(self, filename: str) -> Path | None:
+        """Try to locate a specific bundled config file using importlib.resources."""
+        try:
+            # First try to find config files relative to the backend package
+            from importlib import resources
+
+            import backend
+
+            backend_pkg = resources.files(backend)
+            backend_path = Path(str(backend_pkg))
+
+            # Check if file exists relative to backend package
+            file_candidates = [
+                backend_path.parent / "config" / filename,  # ../config/filename from backend/
+                backend_path / "config" / filename,  # backend/config/filename
+            ]
+
+            for candidate in file_candidates:
+                try:
+                    if candidate.is_file():
+                        return Path(str(candidate))
+                except (AttributeError, OSError):
+                    continue
+
+        except Exception:
+            pass
+        return None
+
+
+class FireflySettings(BaseSettings):
+    """Firefly RV systems configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_FIREFLY__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable Firefly RV systems support")
+
+    # Firefly-specific configuration
+    enable_multiplexing: bool = Field(
+        default=True, description="Enable Firefly message multiplexing support"
+    )
+    enable_custom_dgns: bool = Field(
+        default=True, description="Enable Firefly proprietary DGN support"
+    )
+    enable_state_interlocks: bool = Field(
+        default=True, description="Enable Firefly safety interlock monitoring"
+    )
+    enable_can_detective_integration: bool = Field(
+        default=False, description="Enable integration with Firefly CAN Detective tool"
+    )
+
+    # Network and interface configuration
+    default_interface: str = Field(
+        default="house", description="Default logical interface for Firefly systems"
+    )
+
+    # Firefly-specific DGN ranges (based on research findings)
+    custom_dgn_range_start: int = Field(
+        default=0x1F000, description="Start of Firefly custom DGN range", ge=0x1F000
+    )
+    custom_dgn_range_end: int = Field(
+        default=0x1FFFF, description="End of Firefly custom DGN range", le=0x1FFFF
+    )
+
+    # Message handling configuration
+    multiplex_buffer_size: int = Field(
+        default=100, description="Buffer size for multiplexed message assembly", ge=10
+    )
+    multiplex_timeout_ms: int = Field(
+        default=1000, description="Timeout for multiplexed message assembly in milliseconds", ge=100
+    )
+
+    # Component management
+    supported_components: list[str] = Field(
+        default=[
+            "lighting",
+            "climate",
+            "slides",
+            "awnings",
+            "tanks",
+            "inverters",
+            "generators",
+            "transfer_switches",
+            "pumps",
+        ],
+        description="List of Firefly components to support",
+    )
+
+    # Safety and interlock configuration
+    safety_interlock_components: list[str] = Field(
+        default=["slides", "awnings", "leveling_jacks"],
+        description="Components that require safety interlock checks",
+    )
+    required_interlocks: dict[str, list[str]] = Field(
+        default={
+            "slides": ["park_brake", "engine_off"],
+            "awnings": ["wind_speed", "vehicle_level"],
+            "leveling_jacks": ["park_brake", "engine_off"],
+        },
+        description="Required safety conditions for each component",
+    )
+
+    # Message validation and security
+    enable_message_validation: bool = Field(
+        default=True, description="Enable Firefly-specific message validation"
+    )
+    enable_sequence_validation: bool = Field(
+        default=True, description="Enable message sequence validation for multiplexed data"
+    )
+
+    # Performance settings
+    priority_dgns: list[int] = Field(
+        default=[0x1FECA, 0x1FEDB, 0x1FEDA], description="Firefly DGNs treated as high priority"
+    )
+    background_dgns: list[int] = Field(
+        default=[0x1FFB7, 0x1FFB6],
+        description="Firefly DGNs treated as background priority (tank levels, sensors)",
+    )
+
+    # CAN Detective integration (if enabled)
+    can_detective_path: Path | None = Field(
+        default=None, description="Path to CAN Detective tool executable"
+    )
+    can_detective_config_path: Path | None = Field(
+        default=None, description="Path to CAN Detective configuration file"
+    )
+
+    @field_validator("can_detective_path", "can_detective_config_path", mode="before")
+    @classmethod
+    def parse_path(cls, v):
+        """Parse path from string."""
+        if isinstance(v, str) and v.strip():
+            return Path(v.strip())
+        return v
+
+    @field_validator("supported_components", "safety_interlock_components", mode="before")
+    @classmethod
+    def parse_component_list(cls, v):
+        """Parse comma-separated component list from environment variable."""
+        if isinstance(v, str):
+            return [comp.strip() for comp in v.split(",") if comp.strip()]
+        return v
+
+    @field_validator("priority_dgns", "background_dgns", mode="before")
+    @classmethod
+    def parse_dgn_list(cls, v):
+        """Parse comma-separated DGN list from environment variable."""
+        if isinstance(v, str):
+            # Handle both hex (0x1FECA) and decimal formats
+            dgns = []
+            for dgn_str in v.split(","):
+                dgn_str = dgn_str.strip()
+                if dgn_str.startswith("0x") or dgn_str.startswith("0X"):
+                    dgns.append(int(dgn_str, 16))
+                elif dgn_str.isdigit():
+                    dgns.append(int(dgn_str))
+            return dgns
+        elif isinstance(v, list):
+            return [int(dgn) if isinstance(dgn, str) and dgn.isdigit() else dgn for dgn in v]
+        return v
+
+
+class SpartanK2Settings(BaseSettings):
+    """Spartan K2 chassis configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_SPARTAN_K2__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable Spartan K2 chassis support")
+
+    # Spartan K2-specific configuration
+    enable_safety_interlocks: bool = Field(
+        default=True, description="Enable Spartan K2 safety interlock monitoring and validation"
+    )
+    enable_advanced_diagnostics: bool = Field(
+        default=True, description="Enable Spartan K2 advanced diagnostic capabilities"
+    )
+    enable_brake_monitoring: bool = Field(
+        default=True, description="Enable comprehensive brake system monitoring"
+    )
+    enable_suspension_control: bool = Field(
+        default=True, description="Enable suspension and leveling system control"
+    )
+    enable_steering_monitoring: bool = Field(
+        default=True, description="Enable power steering system monitoring"
+    )
+
+    # Network and interface configuration
+    chassis_interface: str = Field(
+        default="chassis", description="Default logical interface for Spartan K2 chassis systems"
+    )
+
+    # Spartan K2-specific PGN ranges
+    custom_pgn_range_start: int = Field(
+        default=65280, description="Start of Spartan K2 custom PGN range", ge=65280
+    )
+    custom_pgn_range_end: int = Field(
+        default=65300, description="End of Spartan K2 custom PGN range", le=65300
+    )
+
+    # Message handling configuration
+    message_buffer_size: int = Field(
+        default=100, description="Buffer size for Spartan K2 message handling", ge=10
+    )
+    diagnostic_cache_size: int = Field(
+        default=500, description="Cache size for diagnostic trouble codes", ge=50
+    )
+
+    # Safety interlock configuration
+    brake_pressure_threshold: float = Field(
+        default=80.0, description="Minimum brake pressure for safety validation (psi)", ge=0
+    )
+    level_differential_threshold: float = Field(
+        default=15.0, description="Maximum chassis level differential (percentage)", ge=0, le=50
+    )
+    steering_pressure_threshold: float = Field(
+        default=1000.0, description="Minimum power steering pressure (psi)", ge=0
+    )
+    max_steering_angle: float = Field(
+        default=720.0, description="Maximum allowed steering angle (degrees)", ge=0
+    )
+
+    # Diagnostic and maintenance settings
+    enable_predictive_maintenance: bool = Field(
+        default=False, description="Enable predictive maintenance based on system data"
+    )
+    maintenance_alert_threshold: int = Field(
+        default=30, description="Days ahead to alert for maintenance", ge=1, le=365
+    )
+    system_health_check_interval: int = Field(
+        default=60, description="System health check interval in seconds", ge=10, le=3600
+    )
+
+    # Advanced chassis features
+    supported_systems: list[str] = Field(
+        default=[
+            "brakes",
+            "suspension",
+            "steering",
+            "electrical",
+            "diagnostics",
+            "safety",
+            "leveling",
+        ],
+        description="List of Spartan K2 systems to support",
+    )
+
+    # Safety-critical component monitoring
+    safety_critical_components: list[str] = Field(
+        default=["brakes", "steering", "suspension"],
+        description="Components requiring continuous safety monitoring",
+    )
+    safety_check_frequency: int = Field(
+        default=5, description="Safety check frequency in seconds", ge=1, le=60
+    )
+
+    # Message validation and security
+    enable_message_validation: bool = Field(
+        default=True, description="Enable Spartan K2-specific message validation"
+    )
+    enable_source_validation: bool = Field(
+        default=True, description="Enable J1939 source address validation for chassis messages"
+    )
+
+    # Performance settings
+    priority_pgns: list[int] = Field(
+        default=[65280, 65281, 65282], description="Spartan K2 PGNs treated as high priority"
+    )
+    critical_pgns: list[int] = Field(
+        default=[65280],  # Brake system controller
+        description="Spartan K2 PGNs treated as critical priority",
+    )
+
+    @field_validator("supported_systems", "safety_critical_components", mode="before")
+    @classmethod
+    def parse_component_list(cls, v):
+        """Parse comma-separated component list from environment variable."""
+        if isinstance(v, str):
+            return [comp.strip() for comp in v.split(",") if comp.strip()]
+        return v
+
+    @field_validator("priority_pgns", "critical_pgns", mode="before")
+    @classmethod
+    def parse_pgn_list(cls, v):
+        """Parse comma-separated PGN list from environment variable."""
+        if isinstance(v, str):
+            # Handle both hex (0xFF00) and decimal formats
+            pgns = []
+            for pgn_str in v.split(","):
+                pgn_str = pgn_str.strip()
+                if pgn_str.startswith("0x") or pgn_str.startswith("0X"):
+                    pgns.append(int(pgn_str, 16))
+                elif pgn_str.isdigit():
+                    pgns.append(int(pgn_str))
+            return pgns
+        elif isinstance(v, list):
+            return [int(pgn) if isinstance(pgn, str) and pgn.isdigit() else pgn for pgn in v]
+        return v
+
+
 class Settings(BaseSettings):
     """
     Main application settings.
@@ -699,8 +1194,45 @@ class Settings(BaseSettings):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     can: CANSettings = Field(default_factory=CANSettings)
     rvc: RVCSettings = Field(default_factory=RVCSettings)
+    j1939: J1939Settings = Field(default_factory=J1939Settings)
+    firefly: FireflySettings = Field(default_factory=FireflySettings)
+    spartan_k2: SpartanK2Settings = Field(default_factory=SpartanK2Settings)
+    multi_network: MultiNetworkSettings = Field(default_factory=MultiNetworkSettings)
     persistence: PersistenceSettings = Field(default_factory=PersistenceSettings)
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
+
+    def __init__(self, **data):
+        # Import here to avoid circular dependency and initialize advanced_diagnostics field
+        try:
+            from backend.integrations.diagnostics.config import AdvancedDiagnosticsSettings
+
+            if "advanced_diagnostics" not in data:
+                data["advanced_diagnostics"] = AdvancedDiagnosticsSettings()
+        except ImportError:
+            # Diagnostics module not available - set None to avoid field errors
+            if "advanced_diagnostics" not in data:
+                data["advanced_diagnostics"] = None
+
+        # Import here to avoid circular dependency and initialize performance_analytics field
+        try:
+            from backend.integrations.analytics.config import PerformanceAnalyticsSettings
+
+            if "performance_analytics" not in data:
+                data["performance_analytics"] = PerformanceAnalyticsSettings()
+        except ImportError:
+            # Analytics module not available - set None to avoid field errors
+            if "performance_analytics" not in data:
+                data["performance_analytics"] = None
+
+        super().__init__(**data)
+
+    # Add the fields with defaults
+    advanced_diagnostics: Any = Field(
+        default=None, exclude=True, description="Advanced diagnostics settings"
+    )
+    performance_analytics: Any = Field(
+        default=None, exclude=True, description="Performance analytics settings"
+    )
 
     @field_validator("environment", mode="before")
     @classmethod
@@ -859,6 +1391,16 @@ def get_persistence_settings() -> PersistenceSettings:
 def get_features_settings() -> FeaturesSettings:
     """Get features settings."""
     return get_settings().features
+
+
+def get_multi_network_settings() -> MultiNetworkSettings:
+    """Get multi-network settings."""
+    return get_settings().multi_network
+
+
+def get_firefly_settings() -> FireflySettings:
+    """Get Firefly settings."""
+    return get_settings().firefly
 
 
 # Note: Use get_settings() function instead of a global instance

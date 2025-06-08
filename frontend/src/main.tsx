@@ -3,14 +3,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/contexts/query-provider";
 import { WebSocketProvider } from "@/contexts/websocket-provider";
 import CanSniffer from "@/pages/can-sniffer";
+import ConfigurationPage from "@/pages/config";
 import Dashboard from "@/pages/dashboard";
 import DemoDashboard from "@/pages/demo-dashboard";
 import DeviceMapping from "@/pages/device-mapping";
+import DiagnosticsPage from "@/pages/diagnostics";
 import Documentation from "@/pages/documentation";
 import EntitiesPage from "@/pages/entities";
 import Lights from "@/pages/lights";
 import LogsPage from "@/pages/logs";
 import NetworkMap from "@/pages/network-map";
+import PerformancePage from "@/pages/performance";
 
 import { Toaster } from "@/components/ui/sonner";
 import RVCSpec from "@/pages/rvc-spec";
@@ -50,11 +53,14 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/device-mapping" element={<DeviceMapping />} />
             <Route path="/can-sniffer" element={<CanSniffer />} />
             <Route path="/network-map" element={<NetworkMap />} />
+            <Route path="/diagnostics" element={<DiagnosticsPage />} />
             <Route path="/unknown-pgns" element={<UnknownPGNs />} />
             <Route path="/unmapped-entries" element={<UnmappedEntries />} />
+            <Route path="/config" element={<ConfigurationPage />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/rvc-spec" element={<RVCSpec />} />
             <Route path="/system-status" element={<SystemStatus />} />
+            <Route path="/performance" element={<PerformancePage />} />
             <Route path="/theme-test" element={<ThemeTest />} />
             <Route path="/logs" element={<LogsPage />} />
           </Routes>

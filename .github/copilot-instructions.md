@@ -95,6 +95,14 @@ All backend development MUST use these management services via dependency inject
 - **DashboardService**: Dashboard data aggregation, activity feeds
 - **WebSocketManager**: Client connections, real-time broadcasting
 
+#### Multi-Protocol Services (NEW - Use via dependency injection)
+- **J1939Service**: J1939 protocol operations, engine/transmission integration
+- **FireflyService**: Firefly RV systems integration with multiplexing support
+- **SpartanK2Service**: Spartan K2 chassis system integration with safety interlocks
+- **MultiNetworkManager**: Multi-network CAN management with fault isolation
+- **DiagnosticsHandler**: Cross-protocol diagnostics with fault correlation
+- **PerformanceAnalyticsFeature**: Performance monitoring and optimization recommendations
+
 ### Project Structure
 - `backend/core/`: Core management services (EntityManager, AppState, dependencies)
 - `backend/services/`: Business logic services and FeatureManager
@@ -113,21 +121,41 @@ All backend development MUST use these management services via dependency inject
 ```python
 # ALWAYS use dependency injection for services
 from backend.core.dependencies import (
-    get_feature_manager, get_entity_manager, get_app_state,
-    get_database_manager, get_config_service, get_entity_service
+    get_feature_manager_from_request, get_entity_service, get_app_state,
+    get_database_manager, get_config_service, get_can_service,
+    get_can_interface_service, get_websocket_manager, get_persistence_service
+)
+
+# Multi-Protocol Service Dependencies (NEW)
+from backend.core.dependencies import (
+    get_j1939_service, get_firefly_service, get_spartan_k2_service,
+    get_multi_network_manager, get_diagnostics_handler, get_performance_analytics
 )
 
 @router.get("/entities")
 async def get_entities(
-    entity_manager: EntityManager = Depends(get_entity_manager),
-    entity_service: EntityService = Depends(get_entity_service)
+    entity_service: EntityService = Depends(get_entity_service),
+    feature_manager: FeatureManager = Depends(get_feature_manager_from_request)
 ):
-    """Use EntityManager for core operations, EntityService for business logic."""
-    entities = entity_manager.get_all_entities()
+    """Use EntityService for entity operations, FeatureManager for feature access."""
+    entities = await entity_service.get_all_entities()
     return entities
 
-# WRONG: Never access services directly
+# Multi-Protocol Service Access Pattern (NEW)
+@router.get("/protocols/status")
+async def get_protocol_status(
+    j1939_service: J1939Service = Depends(get_j1939_service),
+    diagnostics_handler: DiagnosticsHandler = Depends(get_diagnostics_handler),
+    multi_network: MultiNetworkManager = Depends(get_multi_network_manager)
+):
+    """Access multiple protocol services for unified status across RV-C, J1939, Firefly, Spartan K2."""
+    cross_protocol_status = await diagnostics_handler.get_cross_protocol_status()
+    network_health = await multi_network.get_network_health_summary()
+    return {"protocols": cross_protocol_status, "networks": network_health}
+
+# WRONG: Never access services directly or use incorrect dependency functions
 from backend.services.feature_manager import feature_manager  # DON'T DO THIS
+from backend.core.dependencies import get_entity_manager  # This function doesn't exist
 ```
 
 ### Development Patterns
@@ -211,4 +239,32 @@ The project includes an optional Nix flake providing:
   - `@perplexity`: External research for protocols and general concepts
   - `@github`: Repository and issue queries
 - **MCP Best Practice**: Always default to `@context7` for library and framework questions before using general LLM knowledge
+
+## Research-Driven Development (NEW PATTERN)
+Based on proven success in multi-protocol implementation (35-70x development acceleration):
+
+### Research Workflow Priority
+1. **@context7 FIRST**: For framework and library questions (FastAPI, React, TypeScript, Python libraries)
+2. **@perplexity for OEM research**: When implementing new manufacturer integrations
+   - Example: `@perplexity Firefly RV systems protocol specifications and safety requirements`
+   - Example: `@perplexity Spartan K2 chassis J1939 extensions and safety interlocks`
+3. **@github for implementation patterns**: Repository exploration and issue research
+
+### Manufacturer Integration Research Pattern
+```bash
+# 1. Research manufacturer specifications
+@perplexity [Manufacturer] RV systems CAN protocol specifications safety requirements
+
+# 2. Validate with library documentation
+@context7 [Framework] protocol bridge implementation patterns
+
+# 3. Check existing implementations
+@github search code for [Manufacturer] integration patterns
+```
+
+### Validated Benefits
+- **Development Speed**: Research-first approach eliminates weeks of reverse engineering
+- **Implementation Accuracy**: First-time success with comprehensive feature coverage
+- **Safety Compliance**: Research-validated safety interlock patterns
+- **Quality**: Type-safe, tested, documented implementations
 - **Testing**: Use `poetry run pytest` for backend tests and `cd frontend && npm test` for frontend

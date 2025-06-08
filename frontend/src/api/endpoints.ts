@@ -16,23 +16,55 @@ import {
 } from './client';
 
 import type {
+    ActivityFeed,
     AllCANStats,
+    BaselineDeviation,
+    BulkControlRequest,
+    BulkControlResponse,
+    CANBusSummary,
     CANMessage,
     CANMetrics,
     CANSendParams,
+    CANInterfaceMapping,
+    CoachConfiguration,
+    ConfigurationSystemStatus,
+    ConfigurationUpdateRequest,
+    ConfigurationUpdateResponse,
+    ConfigurationValidation,
     ControlCommand,
     ControlEntityResponse,
     CreateEntityMappingRequest,
     CreateEntityMappingResponse,
+    DashboardSummary,
+    DiagnosticStats,
+    DiagnosticTroubleCode,
+    DTCCollection,
+    DTCFilters,
+    DTCResolutionResponse,
     EntitiesQueryParams,
     Entity,
     EntityCollection,
+    EntitySummary,
+    FaultCorrelation,
+    FeatureManagementResponse,
     FeatureStatusResponse,
     HealthStatus,
     HistoryEntry,
     HistoryQueryParams,
+    MaintenancePrediction,
     MetadataResponse,
+    OptimizationSuggestion,
+    PerformanceAnalyticsStats,
+    PerformanceMetrics,
+    PerformanceReport,
+    ProtocolBridgeStatus,
     QueueStatus,
+    ResourceUsage,
+    SystemAnalytics,
+    SystemHealthResponse,
+    SystemMetrics,
+    SystemSettings,
+    TrendData,
     UnknownPGNResponse,
     UnmappedResponse
 } from './types';
@@ -478,6 +510,367 @@ export async function acknowledgeAlert(alertId: string): Promise<{ success: bool
 }
 
 //
+// ===== ADVANCED DIAGNOSTICS API (/api/advanced-diagnostics) =====
+//
+
+/**
+ * Get comprehensive system health status
+ *
+ * @param systemType - Optional specific system to query, or null for all systems
+ * @returns Promise resolving to system health response
+ */
+export async function fetchSystemHealth(systemType?: string): Promise<SystemHealthResponse> {
+  const queryString = systemType ? buildQueryString({ system_type: systemType }) : '';
+  const url = queryString ? `/api/advanced-diagnostics/health?${queryString}` : '/api/advanced-diagnostics/health';
+
+  logApiRequest('GET', url, { systemType });
+  const result = await apiGet<SystemHealthResponse>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get active diagnostic trouble codes with optional filtering
+ *
+ * @param filters - Optional filtering parameters (system_type, severity, protocol)
+ * @returns Promise resolving to DTC collection
+ */
+export async function fetchActiveDTCs(filters?: DTCFilters): Promise<DTCCollection> {
+  const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
+  const url = queryString ? `/api/advanced-diagnostics/dtcs?${queryString}` : '/api/advanced-diagnostics/dtcs';
+
+  logApiRequest('GET', url, filters);
+  const rawResult = await apiGet<DiagnosticTroubleCode[]>(url);
+  logApiResponse(url, rawResult);
+
+  // Transform the raw array response to DTCCollection format
+  const result: DTCCollection = {
+    dtcs: rawResult,
+    total_count: rawResult.length,
+    active_count: rawResult.filter(dtc => !dtc.resolved).length,
+    by_severity: rawResult.reduce((acc, dtc) => {
+      acc[dtc.severity] = (acc[dtc.severity] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    by_protocol: rawResult.reduce((acc, dtc) => {
+      acc[dtc.protocol] = (acc[dtc.protocol] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
+
+  return result;
+}
+
+/**
+ * Resolve a diagnostic trouble code
+ *
+ * @param protocol - Protocol name
+ * @param code - DTC code number
+ * @param sourceAddress - CAN source address
+ * @returns Promise resolving to resolution response
+ */
+export async function resolveDTC(
+  protocol: string,
+  code: number,
+  sourceAddress: number = 0
+): Promise<DTCResolutionResponse> {
+  const url = '/api/advanced-diagnostics/dtc';
+  const request = { protocol, code, source_address: sourceAddress };
+
+  logApiRequest('DELETE', url, request);
+  const result = await fetch(`${API_BASE}${url}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  });
+
+  if (!result.ok) {
+    throw new APIClientError(`HTTP ${result.status}: ${result.statusText}`, result.status);
+  }
+
+  const response = await result.json() as { resolved: boolean };
+  const dtcResponse: DTCResolutionResponse = {
+    resolved: response.resolved,
+    dtc_id: `${protocol}-${code}-${sourceAddress}`,
+    message: response.resolved ? 'DTC resolved successfully' : 'Failed to resolve DTC',
+    timestamp: new Date().toISOString()
+  };
+
+  logApiResponse(url, dtcResponse);
+  return dtcResponse;
+}
+
+/**
+ * Get fault correlations within a specified time window
+ *
+ * @param timeWindowSeconds - Optional time window for correlation analysis (seconds)
+ * @returns Promise resolving to fault correlations
+ */
+export async function fetchFaultCorrelations(timeWindowSeconds?: number): Promise<FaultCorrelation[]> {
+  const queryString = timeWindowSeconds ? buildQueryString({ time_window_seconds: timeWindowSeconds }) : '';
+  const url = queryString ? `/api/advanced-diagnostics/correlations?${queryString}` : '/api/advanced-diagnostics/correlations';
+
+  logApiRequest('GET', url, { timeWindowSeconds });
+  const result = await apiGet<FaultCorrelation[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get maintenance predictions for the specified time horizon
+ *
+ * @param timeHorizonDays - Planning horizon in days (default: 90)
+ * @returns Promise resolving to maintenance predictions
+ */
+export async function fetchMaintenancePredictions(timeHorizonDays: number = 90): Promise<MaintenancePrediction[]> {
+  const queryString = buildQueryString({ time_horizon_days: timeHorizonDays });
+  const url = `/api/advanced-diagnostics/predictions?${queryString}`;
+
+  logApiRequest('GET', url, { timeHorizonDays });
+  const result = await apiGet<MaintenancePrediction[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get comprehensive diagnostic processing statistics
+ *
+ * @returns Promise resolving to diagnostic statistics
+ */
+export async function fetchDiagnosticStatistics(): Promise<DiagnosticStats> {
+  const url = '/api/advanced-diagnostics/statistics';
+
+  logApiRequest('GET', url);
+  const rawResult = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, rawResult);
+
+  // Transform the backend response to our expected DiagnosticStats format
+  const diagnostics = rawResult.diagnostics as Record<string, unknown> || {};
+  const predictive = rawResult.predictive as Record<string, unknown> || {};
+
+  const result: DiagnosticStats = {
+    total_dtcs: (diagnostics.total_dtcs as number) || 0,
+    active_dtcs: (diagnostics.active_dtcs as number) || 0,
+    resolved_dtcs: (diagnostics.resolved_dtcs as number) || 0,
+    processing_rate: (diagnostics.processing_rate as number) || 0,
+    correlation_accuracy: (predictive.correlation_accuracy as number) || 0,
+    prediction_accuracy: (predictive.prediction_accuracy as number) || 0,
+    system_health_trend: (diagnostics.system_health_trend as "improving" | "stable" | "degrading") || "stable",
+    last_updated: new Date().toISOString()
+  };
+
+  return result;
+}
+
+/**
+ * Get diagnostic feature status
+ *
+ * @returns Promise resolving to diagnostics status
+ */
+export async function fetchDiagnosticsStatus(): Promise<Record<string, unknown>> {
+  const url = '/api/advanced-diagnostics/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
+// ===== PERFORMANCE ANALYTICS API (/api/performance-analytics) =====
+//
+
+/**
+ * Get performance metrics across all protocols and systems
+ *
+ * @returns Promise resolving to performance metrics
+ */
+export async function fetchPerformanceMetrics(): Promise<PerformanceMetrics> {
+  const url = '/api/performance/metrics';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<PerformanceMetrics>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get system resource utilization metrics
+ *
+ * @returns Promise resolving to resource usage data
+ */
+export async function fetchResourceUtilization(): Promise<ResourceUsage> {
+  const url = '/api/performance/resource-utilization';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<ResourceUsage>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get performance trends for a specified time range
+ *
+ * @param timeRange - Time range for trend analysis (e.g., '1h', '24h', '7d')
+ * @returns Promise resolving to trend data
+ */
+export async function fetchPerformanceTrends(timeRange: string): Promise<TrendData[]> {
+  const queryString = buildQueryString({ time_range: timeRange });
+  const url = `/api/performance/trends?${queryString}`;
+
+  logApiRequest('GET', url, { timeRange });
+  const result = await apiGet<TrendData[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get optimization recommendations for system performance
+ *
+ * @returns Promise resolving to optimization suggestions
+ */
+export async function fetchOptimizationRecommendations(): Promise<OptimizationSuggestion[]> {
+  const url = '/api/performance/optimization-recommendations';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<OptimizationSuggestion[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get performance analytics feature status
+ *
+ * @returns Promise resolving to performance analytics status
+ */
+export async function fetchPerformanceStatus(): Promise<Record<string, unknown>> {
+  const url = '/api/performance/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get baseline deviations for performance metrics
+ *
+ * @param timeWindowSeconds - Time window for deviation analysis (default: 3600)
+ * @returns Promise resolving to baseline deviation alerts
+ */
+export async function fetchBaselineDeviations(timeWindowSeconds: number = 3600): Promise<BaselineDeviation[]> {
+  const queryString = buildQueryString({ time_window_seconds: timeWindowSeconds });
+  const url = `/api/performance/baseline-deviations?${queryString}`;
+
+  logApiRequest('GET', url, { timeWindowSeconds });
+  const result = await apiGet<BaselineDeviation[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get protocol throughput metrics
+ *
+ * @returns Promise resolving to protocol throughput data
+ */
+export async function fetchProtocolThroughput(): Promise<Record<string, number>> {
+  const url = '/api/performance/protocol-throughput';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, number>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get comprehensive performance analytics statistics
+ *
+ * @returns Promise resolving to analytics statistics
+ */
+export async function fetchPerformanceStatistics(): Promise<PerformanceAnalyticsStats> {
+  const url = '/api/performance/statistics';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<PerformanceAnalyticsStats>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Generate comprehensive performance analysis report
+ *
+ * @param timeWindowSeconds - Time window for report (default: 3600)
+ * @returns Promise resolving to performance report
+ */
+export async function generatePerformanceReport(timeWindowSeconds: number = 3600): Promise<PerformanceReport> {
+  const url = '/api/performance/report';
+
+  logApiRequest('POST', url, { time_window_seconds: timeWindowSeconds });
+  const result = await apiPost<PerformanceReport>(url, { time_window_seconds: timeWindowSeconds });
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
+// ===== MULTI-PROTOCOL API (/api/entities with protocol filtering) =====
+//
+
+/**
+ * Fetch J1939 protocol entities
+ *
+ * @returns Promise resolving to J1939 entity collection
+ */
+export async function fetchJ1939Entities(): Promise<EntityCollection> {
+  return fetchEntities({ protocol: 'j1939' } as EntitiesQueryParams);
+}
+
+/**
+ * Fetch Firefly protocol entities
+ *
+ * @returns Promise resolving to Firefly entity collection
+ */
+export async function fetchFireflyEntities(): Promise<EntityCollection> {
+  return fetchEntities({ protocol: 'firefly' } as EntitiesQueryParams);
+}
+
+/**
+ * Fetch Spartan K2 protocol entities
+ *
+ * @returns Promise resolving to Spartan K2 entity collection
+ */
+export async function fetchSpartanK2Entities(): Promise<EntityCollection> {
+  return fetchEntities({ protocol: 'spartan_k2' } as EntitiesQueryParams);
+}
+
+/**
+ * Get cross-protocol bridge status
+ *
+ * @returns Promise resolving to protocol bridge status
+ */
+export async function fetchProtocolBridgeStatus(): Promise<ProtocolBridgeStatus> {
+  const url = '/api/multi-network/bridge-status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<ProtocolBridgeStatus>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
 // ===== CONVENIENCE FUNCTIONS =====
 //
 
@@ -614,4 +1007,212 @@ export async function lockEntity(entityId: string): Promise<ControlEntityRespons
  */
 export async function unlockEntity(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'unlock', parameters: {} });
+}
+
+//
+// ===== CONFIGURATION MANAGEMENT API (/api/config) =====
+//
+
+/**
+ * Fetch complete system settings overview
+ *
+ * @returns Promise resolving to system settings with all configuration sections
+ */
+export async function fetchSystemSettings(): Promise<SystemSettings> {
+  const url = '/api/config/settings';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<SystemSettings>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch feature management information with dependencies
+ *
+ * @returns Promise resolving to feature management response
+ */
+export async function fetchFeatureManagement(): Promise<FeatureManagementResponse> {
+  const url = '/api/config/features';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<FeatureManagementResponse>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Update a configuration setting
+ *
+ * @param request - Configuration update request
+ * @returns Promise resolving to update response
+ */
+export async function updateConfiguration(request: ConfigurationUpdateRequest): Promise<ConfigurationUpdateResponse> {
+  const url = '/api/config/update';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<ConfigurationUpdateResponse>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Validate configuration settings
+ *
+ * @param section - Configuration section to validate
+ * @returns Promise resolving to validation result
+ */
+export async function validateConfiguration(section?: string): Promise<ConfigurationValidation> {
+  const url = section ? `/api/config/validate?section=${section}` : '/api/config/validate';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<ConfigurationValidation>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch CAN interface mappings
+ *
+ * @returns Promise resolving to CAN interface mappings
+ */
+export async function fetchCANInterfaceMappings(): Promise<CANInterfaceMapping[]> {
+  const url = '/api/config/can/interfaces';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<CANInterfaceMapping[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Update a CAN interface mapping
+ *
+ * @param logicalName - Logical interface name
+ * @param physicalInterface - Physical interface name
+ * @returns Promise resolving to updated mapping
+ */
+export async function updateCANInterfaceMapping(
+  logicalName: string,
+  physicalInterface: string
+): Promise<CANInterfaceMapping> {
+  const url = `/api/config/can/interfaces/${logicalName}`;
+
+  logApiRequest('PUT', url, { physical_interface: physicalInterface });
+  const result = await apiPost<CANInterfaceMapping>(url, { physical_interface: physicalInterface });
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Validate CAN interface mappings
+ *
+ * @returns Promise resolving to validation result
+ */
+export async function validateCANInterfaceMappings(): Promise<ConfigurationValidation> {
+  const url = '/api/config/can/interfaces/validate';
+
+  logApiRequest('POST', url);
+  const result = await apiPost<ConfigurationValidation>(url, {});
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch coach configuration metadata
+ *
+ * @returns Promise resolving to coach configuration
+ */
+export async function fetchCoachConfiguration(): Promise<CoachConfiguration> {
+  const url = '/api/config/coach/metadata';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<CoachConfiguration>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch device mapping file content
+ *
+ * @returns Promise resolving to device mapping data
+ */
+export async function fetchDeviceMapping(): Promise<Record<string, unknown>> {
+  const url = '/api/config/device_mapping';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch RV-C specification file content
+ *
+ * @returns Promise resolving to RV-C spec data
+ */
+export async function fetchRVCSpecification(): Promise<Record<string, unknown>> {
+  const url = '/api/config/spec';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Fetch system status for configuration monitoring
+ *
+ * @returns Promise resolving to configuration system status
+ */
+export async function fetchConfigurationSystemStatus(): Promise<ConfigurationSystemStatus> {
+  const url = '/api/config/system/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<ConfigurationSystemStatus>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Enable a feature flag
+ *
+ * @param featureName - Name of the feature to enable
+ * @returns Promise resolving to feature management response
+ */
+export async function enableFeature(featureName: string): Promise<FeatureManagementResponse> {
+  return updateConfiguration({
+    section: 'features',
+    key: featureName,
+    value: true,
+    persist: true,
+    validate_before_apply: true
+  }).then(() => fetchFeatureManagement());
+}
+
+/**
+ * Disable a feature flag
+ *
+ * @param featureName - Name of the feature to disable
+ * @returns Promise resolving to feature management response
+ */
+export async function disableFeature(featureName: string): Promise<FeatureManagementResponse> {
+  return updateConfiguration({
+    section: 'features',
+    key: featureName,
+    value: false,
+    persist: true,
+    validate_before_apply: true
+  }).then(() => fetchFeatureManagement());
 }

@@ -1,26 +1,29 @@
 """
-Persistence Feature
+Simplified Persistence Feature
 
-Feature wrapper for the PersistenceService, providing lifecycle management
-and integration with the feature manager system.
+Feature wrapper for persistence services, using dependency injection
+to provide appropriate implementations based on configuration.
 """
 
 import logging
+from pathlib import Path
 
-from backend.core.config import get_persistence_settings
+from backend.core.config import get_persistence_settings, get_settings
 from backend.models.persistence import StorageInfo
 from backend.services.feature_base import Feature
-from backend.services.persistence_service import PersistenceService
+from backend.services.in_memory_persistence import InMemoryPersistenceService
+from backend.services.persistence_interface import PersistenceServiceInterface
+from backend.services.sqlite_persistence import SQLitePersistenceService
 
 logger = logging.getLogger(__name__)
 
 
 class PersistenceFeature(Feature):
     """
-    Feature wrapper for the PersistenceService.
+    Simplified persistence feature using dependency injection.
 
-    Provides lifecycle management, health monitoring, and integration
-    with the feature management system for data persistence capabilities.
+    Automatically selects the appropriate persistence implementation
+    based on the persistence settings without complex conditional logic.
     """
 
     def __init__(self, **kwargs):
@@ -33,8 +36,9 @@ class PersistenceFeature(Feature):
             dependencies=kwargs.get("dependencies", []),
             friendly_name=kwargs.get("friendly_name"),
         )
-        self._service: PersistenceService | None = None
+        self._service: PersistenceServiceInterface | None = None
         self._initialization_error: str | None = None
+        self._persistence_enabled: bool = False
 
     async def startup(self) -> None:
         """Initialize the persistence service during startup."""
@@ -45,39 +49,38 @@ class PersistenceFeature(Feature):
         try:
             logger.info("Starting persistence feature")
 
-            # Load settings
-            settings = get_persistence_settings()
+            # Load settings to determine persistence mode
+            settings = get_settings()
+            persistence_settings = get_persistence_settings()
+            self._persistence_enabled = persistence_settings.enabled
 
-            # Create service instance
-            self._service = PersistenceService(settings)
+            # Use dependency injection to select implementation
+            if self._persistence_enabled:
+                # Use SQLite persistence
+                if settings.is_development():
+                    # Development-friendly path
+                    db_path = "backend/data/persistent/database/coachiq.db"
+                    # Ensure directory exists
+                    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+                else:
+                    # Production path
+                    db_path = str(persistence_settings.get_database_dir() / "coachiq.db")
+                    # Ensure directory exists
+                    persistence_settings.ensure_directories()
+
+                logger.info(f"Initializing SQLite persistence with database: {db_path}")
+                self._service = SQLitePersistenceService(db_path)
+            else:
+                # Use in-memory persistence
+                logger.info("Initializing in-memory persistence (no database persistence)")
+                self._service = InMemoryPersistenceService()
 
             # Initialize the service
-            success = await self._service.initialize()
-
-            if not success:
-                self._initialization_error = "Failed to initialize persistence service"
-                logger.error(self._initialization_error)
-                return
+            await self._service.initialize()
 
             logger.info(
-                f"Persistence feature started successfully. "
-                f"Data directory: {self._service.data_dir}"
+                f"Persistence feature started successfully in {'SQLite' if self._persistence_enabled else 'in-memory'} mode"
             )
-
-            # Log storage information
-            if self._service.enabled:
-                storage_info = await self._service.get_storage_info()
-                if storage_info.directories:
-                    logger.info(
-                        f"Persistence directories available: {list(storage_info.directories.keys())}"
-                    )
-
-                # Log disk space information if available
-                if storage_info.disk_usage:
-                    disk = storage_info.disk_usage
-                    logger.info(
-                        f"Disk usage: {disk.usage_percent:.1f}% ({disk.free_gb:.1f}GB free)"
-                    )
 
         except Exception as e:
             self._initialization_error = f"Persistence feature startup failed: {e}"
@@ -115,22 +118,14 @@ class PersistenceFeature(Feature):
         if not self._service:
             return "failed"
 
-        # Check if the service is properly initialized
-        if not self._service._initialized:
-            return "failed"
-
-        # If persistence is disabled but feature is enabled, that's degraded
-        if not self._service.enabled:
-            return "degraded"
-
         return "healthy"
 
-    def get_service(self) -> PersistenceService:
+    def get_service(self) -> PersistenceServiceInterface:
         """
         Get the persistence service instance.
 
         Returns:
-            The PersistenceService instance
+            The PersistenceServiceInterface instance
 
         Raises:
             RuntimeError: If the service is not initialized
@@ -142,6 +137,10 @@ class PersistenceFeature(Feature):
             raise RuntimeError("Persistence service not initialized")
 
         return self._service
+
+    def is_persistence_enabled(self) -> bool:
+        """Check if database persistence is enabled."""
+        return self._persistence_enabled
 
     async def get_storage_info(self) -> StorageInfo:
         """
@@ -160,81 +159,34 @@ class PersistenceFeature(Feature):
                 error="Service not available",
             )
 
-        try:
-            return await self._service.get_storage_info()
-        except Exception as e:
-            logger.error(f"Failed to get storage info: {e}")
-            return StorageInfo(
-                enabled=True,
-                data_dir=None,
-                directories=None,
-                disk_usage=None,
-                backup_settings=None,
-                error=str(e),
-            )
+        # For now, return simplified storage info
+        # The full storage info implementation would require extending the interface
+        return StorageInfo(
+            enabled=self._persistence_enabled,
+            data_dir="/var/lib/coachiq" if self._persistence_enabled else None,
+            directories=None,
+            disk_usage=None,
+            backup_settings=None,
+            error=None,
+        )
 
-    async def backup_database(self, database_path, backup_name=None):
-        """
-        Create a database backup.
-
-        Args:
-            database_path: Path to the database to backup
-            backup_name: Optional custom backup name
-
-        Returns:
-            Path to backup file if successful, None otherwise
-        """
-        if not self.enabled or not self._service:
-            logger.warning("Cannot backup database: persistence service not available")
+    def get_config_repository(self):
+        """Get the configuration repository."""
+        if not self._service:
             return None
+        return self._service.config_repo
 
-        return await self._service.backup_database(database_path, backup_name)
-
-    async def list_backups(self, database_name=None):
-        """
-        List available database backups.
-
-        Args:
-            database_name: Optional filter by database name
-
-        Returns:
-            List of backup information
-        """
-        if not self.enabled or not self._service:
-            return []
-
-        return await self._service.list_backups(database_name)
-
-    async def save_user_config(self, config_name: str, config_data: dict) -> bool:
-        """
-        Save user configuration data.
-
-        Args:
-            config_name: Name of the configuration
-            config_data: Configuration data to save
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if not self.enabled or not self._service:
-            return False
-
-        return await self._service.save_user_config(config_name, config_data)
-
-    async def load_user_config(self, config_name: str) -> dict | None:
-        """
-        Load user configuration data.
-
-        Args:
-            config_name: Name of the configuration
-
-        Returns:
-            Configuration data if found, None otherwise
-        """
-        if not self.enabled or not self._service:
+    def get_dashboard_repository(self):
+        """Get the dashboard repository."""
+        if not self._service:
             return None
+        return self._service.dashboard_repo
 
-        return await self._service.load_user_config(config_name)
+    def get_unmapped_repository(self):
+        """Get the unmapped PGN repository."""
+        if not self._service:
+            return None
+        return self._service.unmapped_repo
 
 
 # Global instance for singleton access

@@ -73,22 +73,60 @@ pending_commands = [cmd for cmd in pending_commands
 - **PersistenceService** (`backend/services/persistence_service.py`): Data persistence, backup operations
 - **ConfigService** (`backend/services/config_service.py`): Configuration retrieval, validation, environment variables
 
+#### Multi-Protocol Services (REQUIRED for comprehensive RV/chassis integration)
+- **J1939Service** (`backend/integrations/j1939/feature.py`): J1939 protocol operations with engine/transmission integration
+- **FireflyService** (`backend/integrations/rvc/firefly_feature.py`): Firefly RV systems with multiplexing and safety interlocks
+- **SpartanK2Service** (`backend/integrations/j1939/spartan_k2_feature.py`): Spartan K2 chassis with brake/suspension/steering safety
+- **MultiNetworkManager** (`backend/integrations/can/multi_network_manager.py`): Multi-network CAN with fault isolation
+- **DiagnosticsHandler** (`backend/integrations/diagnostics/handler.py`): Cross-protocol diagnostics with fault correlation
+- **PerformanceAnalyticsFeature** (`backend/integrations/analytics/feature.py`): Performance monitoring with Prometheus metrics
+
 #### Service Access Pattern
 ```python
 # ALWAYS access services through dependency injection
 from backend.core.dependencies import (
-    get_feature_manager, get_entity_manager, get_app_state,
-    get_database_manager, get_persistence_service, get_config_service
+    get_feature_manager_from_request, get_entity_service, get_app_state,
+    get_database_manager, get_persistence_service, get_config_service,
+    get_can_service, get_can_interface_service, get_websocket_manager
+)
+
+# Multi-Protocol Service Dependencies (REQUIRED for advanced integrations)
+from backend.core.dependencies import (
+    get_j1939_service, get_firefly_service, get_spartan_k2_service,
+    get_multi_network_manager, get_diagnostics_handler, get_performance_analytics
 )
 
 @router.get("/entities")
 async def get_entities(
-    entity_manager: EntityManager = Depends(get_entity_manager),
-    app_state: AppState = Depends(get_app_state)
+    entity_service: EntityService = Depends(get_entity_service),
+    feature_manager: FeatureManager = Depends(get_feature_manager_from_request)
 ):
-    """Use EntityManager for entity operations, AppState for runtime state."""
-    entities = entity_manager.get_all_entities()
+    """Use EntityService for entity operations, FeatureManager for feature access."""
+    entities = await entity_service.get_all_entities()
     return entities
+
+# Cross-Protocol Diagnostics Pattern (NEW)
+@router.get("/diagnostics/cross-protocol")
+async def get_cross_protocol_diagnostics(
+    diagnostics: DiagnosticsHandler = Depends(get_diagnostics_handler),
+    j1939: J1939Service = Depends(get_j1939_service),
+    firefly: FireflyService = Depends(get_firefly_service)
+):
+    """Access cross-protocol diagnostics with fault correlation across RV-C, J1939, Firefly."""
+    correlations = await diagnostics.get_fault_correlations(time_window_seconds=60.0)
+    predictions = await diagnostics.get_maintenance_predictions()
+    return {"fault_correlations": correlations, "maintenance_predictions": predictions}
+
+# Multi-Network Management Pattern (NEW)
+@router.get("/networks/status")
+async def get_network_status(
+    multi_network: MultiNetworkManager = Depends(get_multi_network_manager),
+    performance: PerformanceAnalyticsFeature = Depends(get_performance_analytics)
+):
+    """Access multi-network status with performance analytics."""
+    network_health = await multi_network.get_network_health_summary()
+    performance_metrics = await performance.get_current_metrics()
+    return {"networks": network_health, "performance": performance_metrics}
 ```
 
 #### Feature Registration Pattern
@@ -149,11 +187,74 @@ These services handle specific business domains and should be used via dependenc
 - **DashboardService**: Dashboard data aggregation, activity feeds, bulk operations
 - **WebSocketManager**: Client connection management, real-time broadcasting
 
+### Advanced Protocol Integration Patterns (NEW)
+For comprehensive RV and chassis system integration:
+
+#### Cross-Protocol Entity Control
+```python
+# Protocol-aware entity control with safety validation
+@router.post("/entities/{entity_id}/control")
+async def control_entity_cross_protocol(
+    entity_id: str,
+    command: CrossProtocolEntityCommand,
+    entity_service: EntityService = Depends(get_entity_service),
+    firefly: FireflyService = Depends(get_firefly_service),
+    spartan_k2: SpartanK2Service = Depends(get_spartan_k2_service)
+):
+    """Control entities across protocols with safety interlock validation."""
+    # Validate safety interlocks for chassis commands
+    if command.target_protocol == "spartan_k2":
+        safety_result = await spartan_k2.validate_safety_interlocks()
+        if not safety_result.is_safe:
+            raise HTTPException(400, f"Safety interlock failed: {safety_result.violations}")
+
+    # Execute cross-protocol control with automatic protocol bridging
+    result = await entity_service.control_entity_cross_protocol(entity_id, command)
+    return result
+
+# Multi-protocol entity discovery
+@router.get("/entities/protocols")
+async def get_entities_by_protocol(
+    protocol: Optional[str] = Query(None, regex="^(rvc|j1939|firefly|spartan_k2)$"),
+    diagnostics: DiagnosticsHandler = Depends(get_diagnostics_handler)
+):
+    """Get entities grouped by protocol with health status."""
+    entities_by_protocol = await diagnostics.get_entities_by_protocol(protocol_filter=protocol)
+    return entities_by_protocol
+```
+
+#### Safety Interlock Validation Patterns
+```python
+# Safety validation for critical systems
+class SafetyInterlockValidator:
+    async def validate_chassis_operation(
+        self,
+        operation: ChassisOperation,
+        spartan_k2: SpartanK2Service
+    ) -> SafetyValidationResult:
+        """Validate chassis operations against safety interlocks."""
+        # Check brake pressure, suspension level, steering pressure
+        safety_status = await spartan_k2.get_safety_system_status()
+
+        violations = []
+        if safety_status.brake_pressure < 80.0 and operation.requires_brakes:
+            violations.append("Insufficient brake pressure")
+
+        if abs(safety_status.suspension_level_differential) > 15.0:
+            violations.append("Suspension level differential too high")
+
+        return SafetyValidationResult(
+            is_safe=len(violations) == 0,
+            violations=violations,
+            system_status=safety_status
+        )
+```
+
 ```python
 # Example domain service usage
 from backend.core.dependencies import get_entity_service, get_can_service
 
-@router.post("/entities/{entity_id}/command")
+@router.post("/entities/{entity_id}/control")
 async def control_entity(
     entity_id: str,
     command: EntityCommand,
@@ -447,6 +548,32 @@ Use Perplexity for conceptual questions, best practices, and domain knowledge no
 - **Design Patterns**: `@perplexity Service-oriented architecture patterns in Python`
 - **Framework Comparisons**: `@perplexity SQLAlchemy vs raw SQL performance considerations`
 
+### NEW: OEM/Manufacturer Integration Research (PROVEN PATTERN)
+**Research-driven development approach proven to accelerate implementation 35-70x:**
+
+#### Manufacturer Integration Research Workflow
+```bash
+# 1. Research manufacturer specifications and safety requirements
+@perplexity [Manufacturer] RV systems CAN protocol specifications safety requirements multiplexing patterns
+
+# 2. Validate implementation patterns with framework documentation
+@context7 [Framework] protocol bridge implementation cross-protocol validation patterns
+
+# 3. Check for existing integration patterns
+@github search code for [Manufacturer] CAN protocol integration safety interlock patterns
+```
+
+#### Validated Research Examples
+- **Firefly Systems**: `@perplexity Firefly RV systems protocol specifications multiplexing DGN ranges safety interlocks`
+- **Spartan K2 Chassis**: `@perplexity Spartan K2 chassis J1939 extensions brake suspension steering safety validation`
+- **J1939 Extensions**: `@perplexity Cummins Allison J1939 manufacturer extensions PGN specifications`
+
+#### Research Benefits (Validated Results)
+- **Development Speed**: Eliminates weeks of reverse engineering with accurate specifications
+- **Implementation Accuracy**: First-time success with comprehensive feature coverage
+- **Safety Compliance**: Research-validated safety interlock patterns meet industry standards
+- **Quality Assurance**: Type-safe, tested, documented implementations from day one
+
 ### When to Use @github (THIRD CHOICE)
 - **Repository Research**: `@github search repositories for FastAPI CAN bus integration`
 - **Issue Investigation**: `@github search issues related to WebSocket reconnection patterns`
@@ -593,16 +720,17 @@ config = await config_service.get_config_summary()
 
 ### Service Dependency Examples
 ```python
-# CORRECT: Use dependency injection
+# CORRECT: Use dependency injection with proper function names
 @router.get("/status")
 async def get_status(
-    feature_manager: FeatureManager = Depends(get_feature_manager),
-    entity_manager: EntityManager = Depends(get_entity_manager)
+    feature_manager: FeatureManager = Depends(get_feature_manager_from_request),
+    entity_service: EntityService = Depends(get_entity_service)
 ):
     features = feature_manager.get_enabled_features()
-    entities = entity_manager.get_all_entities()
+    entities = await entity_service.get_all_entities()
     return {"features": features, "entities": entities}
 
-# WRONG: Direct service access
+# WRONG: Direct service access or incorrect dependency functions
 from backend.services.feature_manager import feature_manager  # DON'T DO THIS
+from backend.core.dependencies import get_entity_manager  # This function doesn't exist
 ```

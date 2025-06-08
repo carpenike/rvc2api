@@ -31,7 +31,6 @@ class DatabaseBackend(str, Enum):
     SQLITE = "sqlite"
     POSTGRESQL = "postgresql"
     MYSQL = "mysql"
-    NULL = "null"  # Special backend for no-database mode
 
 
 class DatabaseSettings(BaseSettings):
@@ -45,12 +44,7 @@ class DatabaseSettings(BaseSettings):
     )
 
     def get_effective_backend(self) -> DatabaseBackend:
-        """Get the effective database backend, with dynamic null detection."""
-        # Check if we're in null mode based on persistence settings
-        if self.backend == DatabaseBackend.SQLITE:
-            db_path = self.get_database_path()
-            if db_path == ":null:":
-                return DatabaseBackend.NULL
+        """Get the effective database backend."""
         return self.backend
 
     # SQLite settings - integrate with persistence system
@@ -83,12 +77,6 @@ class DatabaseSettings(BaseSettings):
         """
         Get the resolved database path using the persistence system.
 
-        For SQLite, this will use the configured persistence data directory
-        when persistence is enabled, or fall back to the default path.
-
-        In development mode with persistence enabled, uses a development-friendly
-        path in the project directory rather than system paths.
-
         Returns:
             Resolved database file path
         """
@@ -102,22 +90,16 @@ class DatabaseSettings(BaseSettings):
             settings = get_settings()
             persistence_settings = settings.persistence
 
-            # Check if persistence is disabled - return null backend indication
-            if not persistence_settings.enabled:
-                logger.info("Persistence disabled - database operations will be skipped")
-                return ":null:"
-
-            if persistence_settings.enabled:
-                # In development mode, use a development-friendly path
-                if settings.is_development():
-                    # Use project-relative path for development
-                    dev_data_dir = Path("backend/data/persistent")
-                    db_dir = dev_data_dir / "database"
-                    return str(db_dir / "coachiq.db")
-                else:
-                    # Use the configured persistent data directory for production
-                    db_dir = persistence_settings.get_database_dir()
-                    return str(db_dir / "coachiq.db")
+            # In development mode, use a development-friendly path
+            if settings.is_development():
+                # Use project-relative path for development
+                dev_data_dir = Path("backend/data/persistent")
+                db_dir = dev_data_dir / "database"
+                return str(db_dir / "coachiq.db")
+            else:
+                # Use the configured persistent data directory for production
+                db_dir = persistence_settings.get_database_dir()
+                return str(db_dir / "coachiq.db")
         except Exception:
             # Fall back to configured path if persistence system is unavailable
             pass
@@ -139,11 +121,6 @@ class DatabaseSettings(BaseSettings):
         """
         if self.backend == DatabaseBackend.SQLITE:
             db_path = self.get_database_path()
-
-            # Handle null backend for no-persistence mode
-            if db_path == ":null:":
-                return "null://memory"
-
             return f"sqlite+aiosqlite:///{db_path}"
 
         elif self.backend == DatabaseBackend.POSTGRESQL:
@@ -158,9 +135,6 @@ class DatabaseSettings(BaseSettings):
                 f"mysql+aiomysql://{self.postgres_user}:{self.postgres_password}"
                 f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
             )
-
-        elif self.backend == DatabaseBackend.NULL:
-            return "null://memory"
 
         else:
             raise ValueError(f"Unsupported database backend: {self.backend}")
@@ -267,11 +241,6 @@ class DatabaseEngine:
         try:
             database_url = self._settings.get_database_url()
 
-            # Check for null backend (no persistence)
-            if database_url == "null://memory":
-                logger.info("Persistence disabled - skipping database engine initialization")
-                return
-
             # Ensure database directory exists for SQLite
             if self._settings.backend == DatabaseBackend.SQLITE:
                 await self._ensure_sqlite_directory()
@@ -309,11 +278,6 @@ class DatabaseEngine:
         Returns:
             True if the database is healthy, False otherwise
         """
-        # Handle null backend (no persistence)
-        database_url = self._settings.get_database_url()
-        if database_url == "null://memory":
-            return True
-
         if not self._engine:
             return False
 
@@ -335,13 +299,6 @@ class DatabaseEngine:
         Raises:
             RuntimeError: If the engine is not initialized
         """
-        # Handle null backend (no persistence)
-        database_url = self._settings.get_database_url()
-        if database_url == "null://memory":
-            logger.warning("Database session requested but persistence is disabled")
-            yield None  # type: ignore
-            return
-
         if not self._session_factory:
             raise RuntimeError("Database engine not initialized")
 
@@ -375,10 +332,6 @@ class DatabaseEngine:
         """
         async_url = self._settings.get_database_url()
 
-        # Handle null backend (no persistence)
-        if async_url == "null://memory":
-            return "null://memory"
-
         # Convert async URLs to sync URLs for Alembic
         if "sqlite+aiosqlite" in async_url:
             return async_url.replace("sqlite+aiosqlite", "sqlite")
@@ -390,66 +343,16 @@ class DatabaseEngine:
         return async_url
 
 
-class NullDatabaseEngine:
-    """
-    Null database engine for memory-only operation.
-
-    This engine provides the same interface as DatabaseEngine but performs
-    no actual database operations, allowing the application to run without
-    any persistent storage when persistence is disabled.
-    """
-
-    def __init__(self, settings: "DatabaseSettings | None" = None):
-        """Initialize the null database engine."""
-        self._settings = settings or DatabaseSettings()
-        self._settings.backend = DatabaseBackend.NULL
-
-    @property
-    def settings(self) -> "DatabaseSettings":
-        """Get database settings."""
-        return self._settings
-
-    @property
-    def backend(self) -> DatabaseBackend:
-        """Get the configured database backend."""
-        return DatabaseBackend.NULL
-
-    async def initialize(self) -> None:
-        """No-op initialization for null engine."""
-        logger.info("Null database engine initialized - no persistence enabled")
-
-    async def health_check(self) -> bool:
-        """Always return healthy for null engine."""
-        return True
-
-    async def get_session(self) -> AsyncGenerator[None, None]:
-        """Null session that yields nothing."""
-        logger.warning("Database session requested but persistence is disabled")
-        yield None
-
-    async def close(self) -> None:
-        """No-op close for null engine."""
-        logger.debug("Null database engine closed")
-
-    async def cleanup(self) -> None:
-        """No-op cleanup for null engine."""
-        await self.close()
-
-    def get_sync_url(self) -> str:
-        """Return a placeholder URL for null engine."""
-        return "null://memory"
-
-
 # Global database engine instance
-_db_engine: DatabaseEngine | NullDatabaseEngine | None = None
+_db_engine: DatabaseEngine | None = None
 
 
-def get_database_engine() -> DatabaseEngine | NullDatabaseEngine:
+def get_database_engine() -> DatabaseEngine:
     """
     Get the global database engine instance.
 
     Returns:
-        DatabaseEngine or NullDatabaseEngine instance
+        DatabaseEngine instance
 
     Raises:
         RuntimeError: If the engine is not initialized
@@ -462,7 +365,7 @@ def get_database_engine() -> DatabaseEngine | NullDatabaseEngine:
 
 async def initialize_database_engine(
     settings: DatabaseSettings | None = None,
-) -> DatabaseEngine | NullDatabaseEngine:
+) -> DatabaseEngine:
     """
     Initialize the global database engine.
 
@@ -470,7 +373,7 @@ async def initialize_database_engine(
         settings: Database configuration settings
 
     Returns:
-        Initialized DatabaseEngine instance (or NullDatabaseEngine for no-persistence mode)
+        Initialized DatabaseEngine instance
     """
     global _db_engine
 
@@ -478,13 +381,7 @@ async def initialize_database_engine(
     if settings is None:
         settings = DatabaseSettings()
 
-    # Check if we should use null backend (no persistence)
-    if settings.get_effective_backend() == DatabaseBackend.NULL:
-        logger.info("Initializing null database engine - no persistence enabled")
-        engine = NullDatabaseEngine(settings)
-    else:
-        engine = DatabaseEngine(settings)
-
+    engine = DatabaseEngine(settings)
     _db_engine = engine
     await engine.initialize()
     return engine

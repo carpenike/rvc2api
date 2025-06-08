@@ -21,6 +21,12 @@ Each file contains targeted guidance for specific development workflows and cont
 - `/run-full-dev` - Start complete development environment
 - `/code-quality-check` - Run all linting, formatting, and type checks
 - `/build-and-test` - Full build and test cycle
+- `/setup-can-testing` - Set up virtual CAN environment and run comprehensive message tests
+- `/manage-db` - Database development workflow including migrations, testing, and data management
+- `/vector-search-dev` - Set up and develop FAISS-based vector search functionality
+- `/deploy-docs` - Build and deploy documentation with OpenAPI schemas and PDF processing
+- `/sync-deps` - Synchronize dependencies across Poetry, Nix, and frontend package managers
+- `/rvc-debug` - Debug RV-C protocol encoding/decoding and real-time message monitoring
 
 > **For any code generation or development tasks involving these topics, refer to the relevant instruction file in `.claude/instructions/` for detailed guidance.**
 

@@ -12,6 +12,7 @@ import {
   IconMapPin,
   IconQuestionMark,
   IconSettings,
+  IconShield,
   IconTerminal2,
   IconWifi,
 } from "@tabler/icons-react"
@@ -64,8 +65,19 @@ const data = {
       url: "/system-status",
       icon: IconListDetails,
     },
+    {
+      title: "Performance Analytics",
+      url: "/performance",
+      icon: IconChartBar,
+    },
   ],
   navDiagnostics: [
+    {
+      title: "Advanced Diagnostics",
+      url: "/diagnostics",
+      icon: IconShield,
+      badge: false, // TODO: Implement dynamic DTC count notification
+    },
     {
       title: "Logs",
       url: "/logs",
@@ -84,6 +96,11 @@ const data = {
     },
   ],
   navSecondary: [
+    {
+      title: "Configuration",
+      url: "/config",
+      icon: IconSettings,
+    },
     {
       title: "Documentation",
       url: "/documentation",

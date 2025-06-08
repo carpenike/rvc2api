@@ -24,3 +24,6 @@ export {
   useCANScanWebSocket, useEntityWebSocket, useSystemStatusWebSocket,
   useWebSocketManager
 } from './useWebSocket';
+
+// Table and virtualization hooks
+export { useVirtualizedTable } from './useVirtualizedTable';

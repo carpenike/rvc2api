@@ -330,7 +330,7 @@ async def get_settings_overview():
 
 @router.get("/config/features")
 async def get_enhanced_feature_status(
-    feature_manager: Annotated[Any, Depends(get_feature_manager_from_request)] = None,
+    feature_manager: Annotated[Any, Depends(get_feature_manager_from_request)],
 ):
     """Get current feature status and availability (enhanced version)."""
     all_features = feature_manager.get_all_features()
@@ -352,7 +352,7 @@ async def get_enhanced_feature_status(
 
 @router.get("/config/can/interfaces")
 async def get_can_interface_mappings(
-    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_interface_service)],
 ):
     """Get current CAN interface mappings."""
     return {
@@ -365,7 +365,7 @@ async def get_can_interface_mappings(
 async def update_can_interface_mapping(
     logical_name: str,
     request: dict[str, str],  # {"physical_interface": "can1"}
-    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_interface_service)],
 ):
     """Update a CAN interface mapping (runtime only)."""
     if "physical_interface" not in request:
@@ -393,7 +393,7 @@ async def update_can_interface_mapping(
 @router.post("/config/can/interfaces/validate")
 async def validate_interface_mappings(
     mappings: dict[str, str],
-    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_interface_service)],
 ):
     """Validate a set of interface mappings."""
     return can_service.validate_mapping(mappings)
@@ -401,7 +401,7 @@ async def validate_interface_mappings(
 
 @router.get("/config/coach/interface-requirements")
 async def get_coach_interface_requirements(
-    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_interface_service)],
 ):
     """Get coach interface requirements and compatibility validation."""
     from backend.services.coach_mapping_service import CoachMappingService
@@ -417,7 +417,7 @@ async def get_coach_interface_requirements(
 
 @router.get("/config/coach/metadata")
 async def get_coach_mapping_metadata(
-    can_service: Annotated[Any, Depends(get_can_interface_service)] = None,
+    can_service: Annotated[Any, Depends(get_can_interface_service)],
 ):
     """Get complete coach mapping metadata including interface analysis."""
     from backend.services.coach_mapping_service import CoachMappingService

@@ -65,8 +65,105 @@ rvc:
   enabled: true
   core: true
   depends_on: [can_interface]
-  description: "RV-C protocol integration for recreational vehicle systems"
+  description: "RV-C protocol integration for recreational vehicle systems with Phase 1 enhancements"
   friendly_name: "RV-C Protocol"
+  enable_encoder: true
+  enable_validator: true
+  enable_security: true
+  enable_performance: true
+  max_queue_size: 10000
+
+j1939:
+  enabled: false
+  core: false
+  depends_on: [can_interface]
+  description: "J1939 protocol integration for engine, transmission, and chassis systems with Cummins/Allison support"
+  friendly_name: "J1939 Protocol"
+  enable_cummins_extensions: true
+  enable_allison_extensions: true
+  enable_chassis_extensions: true
+  enable_validator: true
+  enable_security: true
+  enable_performance: true
+  enable_rvc_bridge: true
+  max_queue_size: 10000
+
+multi_network_can:
+  enabled: false
+  core: false
+  depends_on: [can_interface]
+  description: "Multi-network CAN management with network isolation, fault tolerance, and cross-protocol routing"
+  friendly_name: "Multi-Network CAN Manager"
+  enable_health_monitoring: true
+  enable_fault_isolation: true
+  enable_cross_network_routing: false
+  enable_network_security: true
+  max_networks: 8
+
+firefly:
+  enabled: false
+  core: false
+  depends_on: [rvc]
+  description: "Firefly RV systems integration with proprietary DGN support, multiplexing, and safety interlocks"
+  friendly_name: "Firefly RV Systems"
+  enable_multiplexing: true
+  enable_custom_dgns: true
+  enable_state_interlocks: true
+  enable_can_detective_integration: false
+  enable_message_validation: true
+  enable_sequence_validation: true
+  multiplex_buffer_size: 100
+  multiplex_timeout_ms: 1000
+  supported_components: ["lighting", "climate", "slides", "awnings", "tanks", "inverters", "generators", "transfer_switches", "pumps"]
+  safety_interlock_components: ["slides", "awnings", "leveling_jacks"]
+
+spartan_k2:
+  enabled: false
+  core: false
+  depends_on: [j1939]
+  description: "Spartan K2 chassis integration with advanced diagnostics, safety interlocks, and real-time monitoring"
+  friendly_name: "Spartan K2 Chassis"
+  enable_safety_interlocks: true
+  enable_advanced_diagnostics: true
+  enable_brake_monitoring: true
+  enable_suspension_control: true
+  enable_steering_monitoring: true
+  enable_predictive_maintenance: false
+  enable_message_validation: true
+  enable_source_validation: true
+  message_buffer_size: 100
+  diagnostic_cache_size: 500
+  brake_pressure_threshold: 80.0
+  level_differential_threshold: 15.0
+  steering_pressure_threshold: 1000.0
+  max_steering_angle: 720.0
+  safety_check_frequency: 5
+  system_health_check_interval: 60
+  supported_systems: ["brakes", "suspension", "steering", "electrical", "diagnostics", "safety", "leveling"]
+  safety_critical_components: ["brakes", "steering", "suspension"]
+
+advanced_diagnostics:
+  enabled: false
+  core: false
+  depends_on: [rvc, can_interface]
+  description: "Advanced diagnostics with fault correlation, predictive maintenance, and cross-protocol DTC analysis"
+  friendly_name: "Advanced Diagnostics"
+  enable_dtc_processing: true
+  enable_fault_correlation: true
+  enable_predictive_maintenance: true
+  enable_cross_protocol_analysis: true
+  enable_manufacturer_specific_analysis: true
+  enable_real_time_alerts: true
+  correlation_time_window_seconds: 60.0
+  dtc_retention_days: 90
+  health_assessment_interval_seconds: 300.0
+  prediction_confidence_threshold: 0.7
+  performance_history_days: 30
+  trend_analysis_minimum_samples: 10
+  high_priority_systems: ["engine", "brakes", "steering", "safety"]
+  max_concurrent_analyses: 5
+  analysis_batch_size: 100
+  memory_limit_mb: 50
 
 # API Documentation
 api_docs:
@@ -140,3 +237,58 @@ activity_tracking:
   depends_on: [entity_manager, websocket]
   description: "Activity feed tracking and recent events monitoring"
   friendly_name: "Activity Tracking"
+
+performance_analytics:
+  enabled: false
+  core: false
+  depends_on: [can_interface]
+  description: "Comprehensive performance analytics with telemetry collection, benchmarking, trend analysis, and optimization recommendations"
+  friendly_name: "Performance Analytics"
+  enable_telemetry_collection: true
+  enable_protocol_telemetry: true
+  enable_resource_monitoring: true
+  enable_can_interface_monitoring: true
+  enable_benchmarking: true
+  enable_trend_analysis: true
+  enable_optimization_recommendations: true
+  enable_real_time_processing: true
+  enable_websocket_updates: true
+  enable_diagnostics_integration: true
+  telemetry_collection_interval_seconds: 5.0
+  resource_monitoring_interval_seconds: 10.0
+  metric_retention_hours: 24
+  baseline_establishment_hours: 1
+  baseline_update_interval_hours: 24
+  deviation_warning_threshold_percent: 20.0
+  deviation_critical_threshold_percent: 50.0
+  cpu_warning_threshold_percent: 80.0
+  cpu_critical_threshold_percent: 90.0
+  memory_warning_threshold_percent: 80.0
+  memory_critical_threshold_percent: 90.0
+  can_bus_load_warning_threshold_percent: 70.0
+  can_bus_load_critical_threshold_percent: 85.0
+  trend_analysis_window_hours: 4
+  minimum_trend_samples: 10
+  trend_significance_threshold: 0.7
+  recommendation_confidence_threshold: 0.8
+  max_recommendations_per_category: 5
+  target_rvc_message_rate: 1000.0
+  target_j1939_message_rate: 800.0
+  target_api_response_time_ms: 50.0
+  target_websocket_latency_ms: 10.0
+  processing_batch_size: 100
+  max_concurrent_analyses: 3
+  memory_limit_mb: 100
+  enable_performance_alerts: true
+  alert_cooldown_seconds: 300.0
+  websocket_update_interval_seconds: 5.0
+  protocol_monitoring_enabled:
+    rvc: true
+    j1939: true
+    firefly: true
+    spartan_k2: true
+  protocol_priority_weights:
+    rvc: 1.0
+    j1939: 1.2
+    firefly: 1.0
+    spartan_k2: 1.2

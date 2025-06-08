@@ -319,13 +319,13 @@ export function useOptimisticBulkControl() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (request: { entity_ids: string[]; command: string; parameters: Record<string, unknown> }) => {
+    mutationFn: async (request: { entity_ids: string[]; command: string; parameters: Record<string, unknown>; ignore_errors?: boolean }) => {
       const { bulkControlEntities } = await import('@/api/endpoints')
       return await bulkControlEntities({
         entity_ids: request.entity_ids,
         command: request.command,
         parameters: request.parameters,
-        ignore_errors: true
+        ignore_errors: request.ignore_errors ?? true
       })
     },
 

@@ -54,9 +54,9 @@ def _check_rvc_feature_enabled(request: Request) -> None:
 )
 async def list_entities(
     request: Request,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
     device_type: str | None = Query(None, description="Filter by entity device_type"),
     area: str | None = Query(None, description="Filter by entity suggested_area"),
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
 ) -> dict[str, dict[str, Any]]:
     """
     Return all entities, optionally filtered by device_type and/or area.
@@ -89,7 +89,7 @@ async def list_entities(
 )
 async def list_entity_ids(
     request: Request,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> list[str]:
     """Return all known entity IDs."""
     logger.debug("GET /entities/ids - Listing entity IDs")
@@ -110,7 +110,7 @@ async def list_entity_ids(
 async def get_entity(
     request: Request,
     entity_id: str,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> dict[str, Any]:
     """
     Return the latest value for one entity.
@@ -153,9 +153,9 @@ async def get_entity(
 async def get_entity_history(
     request: Request,
     entity_id: str,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
     limit: int | None = Query(None, description="Maximum number of history entries to return"),
     since: float | None = Query(None, description="Unix timestamp to filter history from"),
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
 ) -> list[dict[str, Any]]:
     """
     Return the history of state changes for a specific entity.
@@ -210,7 +210,7 @@ async def control_entity(
     request: Request,
     entity_id: str,
     command: ControlCommand,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> ControlEntityResponse:
     """
     Send a control command to an entity.
@@ -263,7 +263,7 @@ async def control_entity(
 async def create_entity_mapping(
     request: Request,
     mapping_request: CreateEntityMappingRequest,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> CreateEntityMappingResponse:
     """
     Create a new entity mapping from an unmapped entry.
@@ -314,7 +314,7 @@ async def create_entity_mapping(
 )
 async def get_unmapped_entries(
     request: Request,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> dict:
     """
     Return DGN/instance pairs observed on the CAN bus but not mapped to entities.
@@ -376,7 +376,7 @@ async def get_unmapped_entries(
 )
 async def get_unknown_pgns(
     request: Request,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> dict:
     """
     Return PGN entries that were observed but not recognized.
@@ -430,7 +430,7 @@ async def get_unknown_pgns(
 )
 async def get_metadata(
     request: Request,
-    entity_service: Annotated[Any, Depends(get_entity_service)] = None,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
 ) -> dict:
     """
     Return metadata about available entity types, areas, and capabilities.
