@@ -1108,7 +1108,7 @@ EOF
               COACHIQ_CAN__BUSTYPE = lib.mkIf (config.coachiq.settings.canbus.bustype != "virtual") config.coachiq.settings.canbus.bustype;
               COACHIQ_CAN__INTERFACES = lib.mkIf
                 (config.coachiq.settings.canbus.channels != ["virtual0"])
-                (builtins.toJSON config.coachiq.settings.canbus.channels);
+                (lib.concatStringsSep "," config.coachiq.settings.canbus.channels);
 
               # Persistence - only if enabled
               COACHIQ_PERSISTENCE__ENABLED = lib.mkIf config.coachiq.settings.persistence.enabled "true";
