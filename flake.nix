@@ -6,6 +6,9 @@
 # This flake provides:
 #
 # ▸ A Python-based CANbus FastAPI web service built with Poetry
+# ▸ Multi-protocol support: RV-C, J1939, Firefly, Spartan K2
+# ▸ Advanced diagnostics with predictive maintenance and fault correlation
+# ▸ Performance analytics with telemetry collection and optimization
 # ▸ Unified versioning via the root-level `VERSION` file
 # ▸ Reproducible developer environments with `devShells.default` and `devShells.ci`
 # ▸ CLI apps (run with `nix run .#<name>`) for:
@@ -98,11 +101,24 @@
             pythonPackages.aiosqlite
             pythonPackages.asyncpg
             pythonPackages.alembic
+            # Advanced analytics and diagnostics dependencies
+            pythonPackages.numpy
+            pythonPackages.scipy
+            pythonPackages.scikit-learn
+            pythonPackages.pandas
+            # Security and protocol dependencies
+            pythonPackages.cryptography
+            # CAN protocol handling
+            pythonPackages.cantools
+            # Network analysis for fault isolation
+            pythonPackages.networkx
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
           ] ++ [
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             pythonPackages.pyroute2
+            # CAN system utilities for debugging and management
+            pkgs.can-utils
           ];
 
           doCheck    = true;
@@ -116,7 +132,7 @@
           '';
 
           meta = with pkgs.lib; {
-            description = "CAN‑bus web service exposing RV‑C network data via HTTP & WebSocket";
+            description = "Multi-protocol CAN‑bus web service with RV‑C, J1939, advanced diagnostics, and performance analytics";
             homepage    = "https://github.com/carpenike/rvc2api";
             license     = licenses.asl20;
             maintainers = [{
@@ -157,6 +173,18 @@
             pythonPackages.pymupdf  # PyMuPDF, imported as fitz
             pythonPackages."faiss"
 
+            # --- Advanced analytics and diagnostics dependencies ---
+            pythonPackages.numpy
+            pythonPackages.scipy
+            pythonPackages.scikit-learn
+            pythonPackages.pandas
+            # Security and protocol dependencies
+            pythonPackages.cryptography
+            # CAN protocol handling
+            pythonPackages.cantools
+            # Network analysis for fault isolation
+            pythonPackages.networkx
+
             # --- Frontend dependencies ---
             # Only include Node.js runtime, npm will manage package dependencies
             pkgs.nodejs_20
@@ -170,6 +198,8 @@
             pkgs.iproute2
             pkgs.stdenv.cc.cc.lib
             pkgs.zlib
+            # CAN system utilities for debugging and management
+            pkgs.can-utils
           ];
           shellHook = ''
             export PYTHONPATH=$PWD:$PYTHONPATH
@@ -203,6 +233,8 @@ EOF
             export NODE_PATH=$PWD/frontend/node_modules
 
             echo "🐚 Entered rvc2api devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
+            echo "🚗 Multi-protocol CAN support: RV-C, J1939, Firefly, Spartan K2"
+            echo "🔧 Advanced diagnostics with predictive maintenance and performance analytics"
             echo "💡 Backend commands:"
             echo "  • poetry install              # Install Python dependencies (now always uses correct LD_LIBRARY_PATH)"
             echo "  • poetry run python run_server.py  # Run API server"
@@ -249,6 +281,14 @@ EOF
             pythonPackages."langchain-openai"
             pythonPackages.pymupdf  # PyMuPDF, imported as fitz
             pythonPackages."faiss"
+            # --- Advanced analytics and diagnostics dependencies ---
+            pythonPackages.numpy
+            pythonPackages.scipy
+            pythonPackages.scikit-learn
+            pythonPackages.pandas
+            pythonPackages.cryptography
+            pythonPackages.cantools
+            pythonPackages.networkx
             pkgs.nodejs_20
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop
@@ -851,6 +891,43 @@ EOF
                 default = true;
                 description = "Enable Prometheus metrics";
               };
+
+              # Multi-protocol features
+              enableJ1939 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable J1939 protocol integration for engine, transmission, and chassis systems";
+              };
+
+              enableFirefly = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Firefly RV systems integration with proprietary DGN support";
+              };
+
+              enableSpartanK2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Spartan K2 chassis integration with advanced diagnostics";
+              };
+
+              enableMultiNetworkCAN = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable multi-network CAN management with fault isolation";
+              };
+
+              enableAdvancedDiagnostics = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable advanced diagnostics with fault correlation and predictive maintenance";
+              };
+
+              enablePerformanceAnalytics = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable performance analytics with telemetry collection and optimization";
+              };
             };
 
             # Maintenance settings
@@ -871,6 +948,339 @@ EOF
                 type = lib.types.nullOr lib.types.str;
                 default = null;
                 description = "Maintenance database path";
+              };
+            };
+
+            # RV-C protocol configuration
+            rvc = {
+              enableEncoder = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable RV-C command encoding for bidirectional communication";
+              };
+
+              enableValidator = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable enhanced message validation with multi-layer checking";
+              };
+
+              enableSecurity = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable security features with anomaly detection and rate limiting";
+              };
+
+              enablePerformance = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable performance optimization with priority-based processing";
+              };
+
+              maxQueueSize = lib.mkOption {
+                type = lib.types.int;
+                default = 10000;
+                description = "Maximum message queue size for performance optimization";
+              };
+            };
+
+            # J1939 protocol configuration
+            j1939 = {
+              enableCumminsExtensions = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Cummins engine-specific PGN extensions";
+              };
+
+              enableAllisonExtensions = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Allison transmission-specific PGN extensions";
+              };
+
+              enableChassisExtensions = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable chassis system PGN extensions";
+              };
+
+              enableRvcBridge = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable bidirectional J1939 ↔ RV-C protocol bridge";
+              };
+
+              enableValidator = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable J1939 message validation";
+              };
+
+              enableSecurity = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable J1939 security features";
+              };
+
+              maxQueueSize = lib.mkOption {
+                type = lib.types.int;
+                default = 10000;
+                description = "Maximum J1939 message queue size";
+              };
+            };
+
+            # Firefly RV systems configuration
+            firefly = {
+              enableMultiplexing = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Firefly message multiplexing support";
+              };
+
+              enableCustomDgns = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Firefly proprietary DGN support";
+              };
+
+              enableStateInterlocks = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Firefly safety interlock system";
+              };
+
+              enableCanDetectiveIntegration = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable integration with Firefly's CAN Detective tool";
+              };
+
+              multiplexTimeoutMs = lib.mkOption {
+                type = lib.types.int;
+                default = 1000;
+                description = "Timeout for multiplex message assembly in milliseconds";
+              };
+
+              multiplexBufferSize = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Buffer size for multiplex message assembly";
+              };
+            };
+
+            # Spartan K2 chassis configuration
+            spartanK2 = {
+              enableSafetyInterlocks = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Spartan K2 chassis safety interlock validation";
+              };
+
+              enableAdvancedDiagnostics = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable advanced chassis diagnostic capabilities";
+              };
+
+              enableBrakeMonitoring = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable brake system monitoring and validation";
+              };
+
+              enableSuspensionControl = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable suspension system control and monitoring";
+              };
+
+              enableSteeringMonitoring = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable steering system monitoring";
+              };
+
+              brakePressureThreshold = lib.mkOption {
+                type = lib.types.float;
+                default = 80.0;
+                description = "Brake pressure threshold in PSI for safety validation";
+              };
+
+              levelDifferentialThreshold = lib.mkOption {
+                type = lib.types.float;
+                default = 15.0;
+                description = "Suspension level differential threshold in degrees";
+              };
+
+              steeringPressureThreshold = lib.mkOption {
+                type = lib.types.float;
+                default = 1000.0;
+                description = "Steering assist pressure threshold in PSI";
+              };
+
+              safetyCheckFrequency = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Safety check frequency in seconds";
+              };
+            };
+
+            # Multi-network CAN configuration
+            multiNetworkCAN = {
+              enableHealthMonitoring = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable continuous network health monitoring";
+              };
+
+              enableFaultIsolation = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable automatic network fault isolation";
+              };
+
+              enableCrossNetworkRouting = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable cross-network message routing (security consideration)";
+              };
+
+              enableNetworkSecurity = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable network-level security filtering";
+              };
+
+              maxNetworks = lib.mkOption {
+                type = lib.types.int;
+                default = 8;
+                description = "Maximum number of supported network segments";
+              };
+
+              healthCheckInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Network health check interval in seconds";
+              };
+            };
+
+            # Advanced diagnostics configuration
+            advancedDiagnostics = {
+              enableDtcProcessing = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable diagnostic trouble code processing";
+              };
+
+              enableFaultCorrelation = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable fault correlation analysis";
+              };
+
+              enablePredictiveMaintenance = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable predictive maintenance analysis";
+              };
+
+              enableCrossProtocolAnalysis = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable cross-protocol diagnostic analysis";
+              };
+
+              correlationTimeWindowSeconds = lib.mkOption {
+                type = lib.types.float;
+                default = 60.0;
+                description = "Time window for fault correlation analysis in seconds";
+              };
+
+              dtcRetentionDays = lib.mkOption {
+                type = lib.types.int;
+                default = 90;
+                description = "Number of days to retain diagnostic trouble codes";
+              };
+
+              predictionConfidenceThreshold = lib.mkOption {
+                type = lib.types.float;
+                default = 0.7;
+                description = "Minimum confidence threshold for predictive maintenance";
+              };
+
+              performanceHistoryDays = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Number of days of performance history to analyze";
+              };
+            };
+
+            # Performance analytics configuration
+            performanceAnalytics = {
+              enableTelemetryCollection = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable performance telemetry collection";
+              };
+
+              enableResourceMonitoring = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable system resource monitoring";
+              };
+
+              enableTrendAnalysis = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable performance trend analysis";
+              };
+
+              enableOptimizationRecommendations = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable automated optimization recommendations";
+              };
+
+              telemetryCollectionIntervalSeconds = lib.mkOption {
+                type = lib.types.float;
+                default = 5.0;
+                description = "Telemetry collection interval in seconds";
+              };
+
+              resourceMonitoringIntervalSeconds = lib.mkOption {
+                type = lib.types.float;
+                default = 10.0;
+                description = "Resource monitoring interval in seconds";
+              };
+
+              metricRetentionHours = lib.mkOption {
+                type = lib.types.int;
+                default = 24;
+                description = "Number of hours to retain performance metrics";
+              };
+
+              baselineEstablishmentHours = lib.mkOption {
+                type = lib.types.int;
+                default = 1;
+                description = "Hours required to establish performance baselines";
+              };
+
+              cpuWarningThresholdPercent = lib.mkOption {
+                type = lib.types.float;
+                default = 80.0;
+                description = "CPU usage warning threshold percentage";
+              };
+
+              memoryWarningThresholdPercent = lib.mkOption {
+                type = lib.types.float;
+                default = 80.0;
+                description = "Memory usage warning threshold percentage";
+              };
+
+              canBusLoadWarningThresholdPercent = lib.mkOption {
+                type = lib.types.float;
+                default = 70.0;
+                description = "CAN bus load warning threshold percentage";
               };
             };
 
@@ -1123,6 +1533,61 @@ EOF
               COACHIQ_FEATURES__ENABLE_VECTOR_SEARCH = lib.mkIf (!config.coachiq.settings.features.enableVectorSearch) "false";
               COACHIQ_FEATURES__ENABLE_API_DOCS = lib.mkIf (!config.coachiq.settings.features.enableApiDocs) "false";
               COACHIQ_FEATURES__ENABLE_METRICS = lib.mkIf (!config.coachiq.settings.features.enableMetrics) "false";
+
+              # Multi-protocol features - only if enabled
+              COACHIQ_J1939__ENABLED = lib.mkIf config.coachiq.settings.features.enableJ1939 "true";
+              COACHIQ_FIREFLY__ENABLED = lib.mkIf config.coachiq.settings.features.enableFirefly "true";
+              COACHIQ_SPARTAN_K2__ENABLED = lib.mkIf config.coachiq.settings.features.enableSpartanK2 "true";
+              COACHIQ_MULTI_NETWORK_CAN__ENABLED = lib.mkIf config.coachiq.settings.features.enableMultiNetworkCAN "true";
+              COACHIQ_ADVANCED_DIAGNOSTICS__ENABLED = lib.mkIf config.coachiq.settings.features.enableAdvancedDiagnostics "true";
+              COACHIQ_PERFORMANCE_ANALYTICS__ENABLED = lib.mkIf config.coachiq.settings.features.enablePerformanceAnalytics "true";
+
+              # RV-C protocol settings - only if different from defaults
+              COACHIQ_RVC__ENABLE_ENCODER = lib.mkIf (!config.coachiq.settings.rvc.enableEncoder) "false";
+              COACHIQ_RVC__ENABLE_VALIDATOR = lib.mkIf (!config.coachiq.settings.rvc.enableValidator) "false";
+              COACHIQ_RVC__ENABLE_SECURITY = lib.mkIf (!config.coachiq.settings.rvc.enableSecurity) "false";
+              COACHIQ_RVC__ENABLE_PERFORMANCE = lib.mkIf (!config.coachiq.settings.rvc.enablePerformance) "false";
+              COACHIQ_RVC__MAX_QUEUE_SIZE = lib.mkIf (config.coachiq.settings.rvc.maxQueueSize != 10000) (toString config.coachiq.settings.rvc.maxQueueSize);
+
+              # J1939 protocol settings - only if enabled and different from defaults
+              COACHIQ_J1939__ENABLE_CUMMINS_EXTENSIONS = lib.mkIf (config.coachiq.settings.features.enableJ1939 && !config.coachiq.settings.j1939.enableCumminsExtensions) "false";
+              COACHIQ_J1939__ENABLE_ALLISON_EXTENSIONS = lib.mkIf (config.coachiq.settings.features.enableJ1939 && !config.coachiq.settings.j1939.enableAllisonExtensions) "false";
+              COACHIQ_J1939__ENABLE_CHASSIS_EXTENSIONS = lib.mkIf (config.coachiq.settings.features.enableJ1939 && !config.coachiq.settings.j1939.enableChassisExtensions) "false";
+              COACHIQ_J1939__ENABLE_RVC_BRIDGE = lib.mkIf (config.coachiq.settings.features.enableJ1939 && !config.coachiq.settings.j1939.enableRvcBridge) "false";
+              COACHIQ_J1939__MAX_QUEUE_SIZE = lib.mkIf (config.coachiq.settings.features.enableJ1939 && config.coachiq.settings.j1939.maxQueueSize != 10000) (toString config.coachiq.settings.j1939.maxQueueSize);
+
+              # Firefly settings - only if enabled and different from defaults
+              COACHIQ_FIREFLY__ENABLE_MULTIPLEXING = lib.mkIf (config.coachiq.settings.features.enableFirefly && !config.coachiq.settings.firefly.enableMultiplexing) "false";
+              COACHIQ_FIREFLY__ENABLE_CUSTOM_DGNS = lib.mkIf (config.coachiq.settings.features.enableFirefly && !config.coachiq.settings.firefly.enableCustomDgns) "false";
+              COACHIQ_FIREFLY__ENABLE_STATE_INTERLOCKS = lib.mkIf (config.coachiq.settings.features.enableFirefly && !config.coachiq.settings.firefly.enableStateInterlocks) "false";
+              COACHIQ_FIREFLY__ENABLE_CAN_DETECTIVE_INTEGRATION = lib.mkIf (config.coachiq.settings.features.enableFirefly && config.coachiq.settings.firefly.enableCanDetectiveIntegration) "true";
+              COACHIQ_FIREFLY__MULTIPLEX_TIMEOUT_MS = lib.mkIf (config.coachiq.settings.features.enableFirefly && config.coachiq.settings.firefly.multiplexTimeoutMs != 1000) (toString config.coachiq.settings.firefly.multiplexTimeoutMs);
+
+              # Spartan K2 settings - only if enabled and different from defaults
+              COACHIQ_SPARTAN_K2__ENABLE_SAFETY_INTERLOCKS = lib.mkIf (config.coachiq.settings.features.enableSpartanK2 && !config.coachiq.settings.spartanK2.enableSafetyInterlocks) "false";
+              COACHIQ_SPARTAN_K2__ENABLE_ADVANCED_DIAGNOSTICS = lib.mkIf (config.coachiq.settings.features.enableSpartanK2 && !config.coachiq.settings.spartanK2.enableAdvancedDiagnostics) "false";
+              COACHIQ_SPARTAN_K2__BRAKE_PRESSURE_THRESHOLD = lib.mkIf (config.coachiq.settings.features.enableSpartanK2 && config.coachiq.settings.spartanK2.brakePressureThreshold != 80.0) (toString config.coachiq.settings.spartanK2.brakePressureThreshold);
+              COACHIQ_SPARTAN_K2__LEVEL_DIFFERENTIAL_THRESHOLD = lib.mkIf (config.coachiq.settings.features.enableSpartanK2 && config.coachiq.settings.spartanK2.levelDifferentialThreshold != 15.0) (toString config.coachiq.settings.spartanK2.levelDifferentialThreshold);
+
+              # Multi-network CAN settings - only if enabled and different from defaults
+              COACHIQ_MULTI_NETWORK__ENABLE_HEALTH_MONITORING = lib.mkIf (config.coachiq.settings.features.enableMultiNetworkCAN && !config.coachiq.settings.multiNetworkCAN.enableHealthMonitoring) "false";
+              COACHIQ_MULTI_NETWORK__ENABLE_FAULT_ISOLATION = lib.mkIf (config.coachiq.settings.features.enableMultiNetworkCAN && !config.coachiq.settings.multiNetworkCAN.enableFaultIsolation) "false";
+              COACHIQ_MULTI_NETWORK__ENABLE_CROSS_NETWORK_ROUTING = lib.mkIf (config.coachiq.settings.features.enableMultiNetworkCAN && config.coachiq.settings.multiNetworkCAN.enableCrossNetworkRouting) "true";
+              COACHIQ_MULTI_NETWORK__MAX_NETWORKS = lib.mkIf (config.coachiq.settings.features.enableMultiNetworkCAN && config.coachiq.settings.multiNetworkCAN.maxNetworks != 8) (toString config.coachiq.settings.multiNetworkCAN.maxNetworks);
+
+              # Advanced diagnostics settings - only if enabled and different from defaults
+              COACHIQ_ADVANCED_DIAGNOSTICS__ENABLE_DTC_PROCESSING = lib.mkIf (config.coachiq.settings.features.enableAdvancedDiagnostics && !config.coachiq.settings.advancedDiagnostics.enableDtcProcessing) "false";
+              COACHIQ_ADVANCED_DIAGNOSTICS__ENABLE_FAULT_CORRELATION = lib.mkIf (config.coachiq.settings.features.enableAdvancedDiagnostics && !config.coachiq.settings.advancedDiagnostics.enableFaultCorrelation) "false";
+              COACHIQ_ADVANCED_DIAGNOSTICS__ENABLE_PREDICTIVE_MAINTENANCE = lib.mkIf (config.coachiq.settings.features.enableAdvancedDiagnostics && !config.coachiq.settings.advancedDiagnostics.enablePredictiveMaintenance) "false";
+              COACHIQ_ADVANCED_DIAGNOSTICS__CORRELATION_TIME_WINDOW_SECONDS = lib.mkIf (config.coachiq.settings.features.enableAdvancedDiagnostics && config.coachiq.settings.advancedDiagnostics.correlationTimeWindowSeconds != 60.0) (toString config.coachiq.settings.advancedDiagnostics.correlationTimeWindowSeconds);
+              COACHIQ_ADVANCED_DIAGNOSTICS__DTC_RETENTION_DAYS = lib.mkIf (config.coachiq.settings.features.enableAdvancedDiagnostics && config.coachiq.settings.advancedDiagnostics.dtcRetentionDays != 90) (toString config.coachiq.settings.advancedDiagnostics.dtcRetentionDays);
+
+              # Performance analytics settings - only if enabled and different from defaults
+              COACHIQ_PERFORMANCE_ANALYTICS__ENABLE_TELEMETRY_COLLECTION = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && !config.coachiq.settings.performanceAnalytics.enableTelemetryCollection) "false";
+              COACHIQ_PERFORMANCE_ANALYTICS__ENABLE_RESOURCE_MONITORING = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && !config.coachiq.settings.performanceAnalytics.enableResourceMonitoring) "false";
+              COACHIQ_PERFORMANCE_ANALYTICS__TELEMETRY_COLLECTION_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.telemetryCollectionIntervalSeconds != 5.0) (toString config.coachiq.settings.performanceAnalytics.telemetryCollectionIntervalSeconds);
+              COACHIQ_PERFORMANCE_ANALYTICS__CPU_WARNING_THRESHOLD_PERCENT = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.cpuWarningThresholdPercent != 80.0) (toString config.coachiq.settings.performanceAnalytics.cpuWarningThresholdPercent);
+              COACHIQ_PERFORMANCE_ANALYTICS__MEMORY_WARNING_THRESHOLD_PERCENT = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.memoryWarningThresholdPercent != 80.0) (toString config.coachiq.settings.performanceAnalytics.memoryWarningThresholdPercent);
 
               # Optional paths - only if provided
               COACHIQ_RVC_SPEC_PATH = lib.mkIf (config.coachiq.settings.rvcSpecPath != null) config.coachiq.settings.rvcSpecPath;

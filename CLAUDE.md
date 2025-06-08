@@ -26,6 +26,7 @@ Each file contains targeted guidance for specific development workflows and cont
 - `/vector-search-dev` - Set up and develop FAISS-based vector search functionality
 - `/deploy-docs` - Build and deploy documentation with OpenAPI schemas and PDF processing
 - `/sync-deps` - Synchronize dependencies across Poetry, Nix, and frontend package managers
+- `/sync-config` - Synchronize configuration files after adding features or dependencies
 - `/rvc-debug` - Debug RV-C protocol encoding/decoding and real-time message monitoring
 
 > **For any code generation or development tasks involving these topics, refer to the relevant instruction file in `.claude/instructions/` for detailed guidance.**
@@ -36,6 +37,89 @@ Each file contains targeted guidance for specific development workflows and cont
 - **All API calls are made via `/api/entities` endpoints**, not `/api/lights`, `/api/locks`, etc. to ensure a unified and extensible API design.
 - **All API endpoints require comprehensive documentation** with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 - **All entity control uses standardized command structure**: `{"command": "set|toggle|brightness_up|brightness_down", "state": "on|off", "brightness": 0-100}`
+
+## Configuration File Synchronization Requirements
+
+**CRITICAL**: When adding new features, dependencies, or configuration options, you MUST update ALL relevant configuration files to maintain consistency across the project:
+
+### When Adding New Python Dependencies:
+1. **`pyproject.toml`** - Add to `[tool.poetry.dependencies]` or appropriate group
+2. **`flake.nix`** - Add to `propagatedBuildInputs`, `devShell buildInputs`, and `ciShell buildInputs`
+3. **Verify** - Run `nix flake check` to ensure Nix build compatibility
+
+### When Adding New Features or Protocols:
+1. **`backend/services/feature_flags.yaml`** - Add feature definition with dependencies and configuration
+2. **`flake.nix`** - Add NixOS module options in the `settings` section
+3. **`flake.nix`** - Add environment variable mapping in the `systemd.services.coachiq.environment` section
+4. **`.env.example`** - Add example environment variables with documentation
+5. **Documentation** - Update relevant files in `docs/` if applicable
+
+### Configuration File Checklist:
+```bash
+# When adding features, verify these files are updated:
+□ backend/services/feature_flags.yaml    # Feature definition
+□ flake.nix (settings section)           # NixOS module options
+□ flake.nix (environment section)        # Environment variable mapping
+□ .env.example                           # Environment variable examples
+□ pyproject.toml                         # Python dependencies (if needed)
+□ flake.nix (buildInputs)                # Nix dependencies (if needed)
+```
+
+### Environment Variable Naming Convention:
+- **Top-level settings**: `COACHIQ_SETTING` (e.g., `COACHIQ_APP_NAME`)
+- **Nested settings**: `COACHIQ_SECTION__SETTING` (e.g., `COACHIQ_SERVER__HOST`)
+- **Feature flags**: `COACHIQ_FEATURES__ENABLE_FEATURE_NAME`
+- **Protocol settings**: `COACHIQ_PROTOCOL__SETTING` (e.g., `COACHIQ_RVC__ENABLE_ENCODER`)
+
+### Example: Adding a New Protocol
+```yaml
+# 1. backend/services/feature_flags.yaml
+new_protocol:
+  enabled: false
+  core: false
+  depends_on: [can_interface]
+  description: "New protocol integration"
+  custom_setting: true
+```
+
+```nix
+# 2. flake.nix - Add to settings section
+newProtocol = {
+  customSetting = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "Enable custom setting for new protocol";
+  };
+};
+
+# 3. flake.nix - Add to environment section
+COACHIQ_NEW_PROTOCOL__ENABLED = lib.mkIf config.coachiq.settings.features.enableNewProtocol "true";
+COACHIQ_NEW_PROTOCOL__CUSTOM_SETTING = lib.mkIf (!config.coachiq.settings.newProtocol.customSetting) "false";
+```
+
+```bash
+# 4. .env.example - Add documentation
+# =============================================================================
+# NEW PROTOCOL CONFIGURATION
+# =============================================================================
+COACHIQ_NEW_PROTOCOL__ENABLED=false
+COACHIQ_NEW_PROTOCOL__CUSTOM_SETTING=true
+```
+
+**Failure to update configuration files will result in deployment issues and inconsistent behavior across development/production environments.**
+
+### Critical Configuration Files (Always Check These):
+
+| File | Purpose | Update When |
+|------|---------|-------------|
+| `backend/services/feature_flags.yaml` | Feature definitions and settings | Adding any new feature or capability |
+| `flake.nix` (settings section) | NixOS module configuration options | Adding configurable parameters |
+| `flake.nix` (environment section) | Environment variable mapping for systemd | Adding any new setting |
+| `.env.example` | Environment variable documentation | Adding any new environment variable |
+| `pyproject.toml` | Python dependencies | Adding Python packages |
+| `flake.nix` (buildInputs) | Nix dependencies | Adding system or Python dependencies |
+
+**Pro Tip**: Use the `/sync-config` command after making changes to automatically detect and update missing configuration entries.
 
 ## Project Overview
 
@@ -319,3 +403,5 @@ Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+**CONFIGURATION SYNCHRONIZATION REQUIREMENT**: When implementing new features, protocols, or dependencies, you MUST update ALL relevant configuration files (feature_flags.yaml, flake.nix settings and environment mappings, .env.example) to maintain consistency. Use `/sync-config` command when available or manually verify the configuration file checklist in the "Configuration File Synchronization Requirements" section.

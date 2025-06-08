@@ -8,30 +8,59 @@ registration patterns from other features.
 import logging
 from typing import Any
 
-from backend.core.config import Settings
 from backend.integrations.analytics.feature import PerformanceAnalyticsFeature
 from backend.services.feature_base import Feature
 
 logger = logging.getLogger(__name__)
 
 
-def register_performance_analytics_feature(settings: Settings) -> Feature:
+def register_performance_analytics_feature(
+    name: str,
+    enabled: bool,
+    core: bool,
+    config: dict[str, Any],
+    dependencies: list[str],
+    friendly_name: str | None = None,
+) -> Feature:
     """
-    Register the performance analytics feature.
+    Factory function for creating a PerformanceAnalyticsFeature instance.
+
+    This function is called by the feature manager when loading features from YAML.
+    It allows custom instantiation logic for the performance analytics feature.
 
     Args:
-        settings: Application settings
+        name: Feature name
+        enabled: Whether the feature is enabled
+        core: Whether this is a core feature
+        config: Feature configuration dictionary
+        dependencies: List of feature dependencies
+        friendly_name: Optional friendly name for the feature
 
     Returns:
         Configured PerformanceAnalyticsFeature instance
     """
     try:
-        feature = PerformanceAnalyticsFeature(settings)
-        logger.info("Performance analytics feature registered successfully")
+        # Get settings (this is required by PerformanceAnalyticsFeature)
+        from backend.core.config import get_settings
+
+        settings = get_settings()
+
+        feature = PerformanceAnalyticsFeature(
+            settings,
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Performance Analytics",
+        )
+        logger.info(
+            f"Performance analytics feature '{name}' created successfully (enabled={enabled})"
+        )
         return feature
 
     except Exception as e:
-        logger.error(f"Failed to register performance analytics feature: {e}")
+        logger.error(f"Failed to create performance analytics feature '{name}': {e}")
         raise
 
 

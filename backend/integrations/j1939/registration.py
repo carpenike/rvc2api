@@ -6,53 +6,52 @@ following the same pattern as other protocol integrations.
 """
 
 import logging
+from typing import Any
 
 from backend.integrations.j1939.feature import J1939Feature
-from backend.services.feature_manager import FeatureManager
 
 logger = logging.getLogger(__name__)
 
 
-def register_j1939_feature(feature_manager: FeatureManager) -> None:
+def register_j1939_feature(
+    name: str,
+    enabled: bool,
+    core: bool,
+    config: dict[str, Any],
+    dependencies: list[str],
+    friendly_name: str | None = None,
+) -> J1939Feature:
     """
-    Register the J1939 feature with the feature manager.
+    Factory function for creating a J1939Feature instance.
+
+    This function is called by the feature manager when loading features from YAML.
+    It allows custom instantiation logic for the J1939 feature.
 
     Args:
-        feature_manager: The FeatureManager instance to register with
+        name: Feature name
+        enabled: Whether the feature is enabled
+        core: Whether this is a core feature
+        config: Feature configuration dictionary
+        dependencies: List of feature dependencies
+        friendly_name: Optional friendly name for the feature
+
+    Returns:
+        Configured J1939Feature instance
     """
     try:
-        # Get feature configuration from the feature manager's config
-        feature_config = feature_manager.get_feature_config("j1939")
-
-        if feature_config is None:
-            logger.warning("J1939 feature configuration not found - registering with defaults")
-            feature_config = {
-                "enabled": False,
-                "enable_cummins_extensions": True,
-                "enable_allison_extensions": True,
-                "enable_chassis_extensions": True,
-                "enable_validator": True,
-                "enable_security": True,
-                "enable_performance": True,
-                "enable_rvc_bridge": True,
-                "max_queue_size": 10000,
-            }
-
-        # Create and register the J1939 feature
+        # Create and return the J1939 feature
         j1939_feature = J1939Feature(
-            name="j1939",
-            enabled=feature_config.get("enabled", False),
-            core=feature_config.get("core", False),
-            config=feature_config,
-            dependencies=feature_config.get("depends_on", ["can_interface"]),
-            friendly_name=feature_config.get("friendly_name", "J1939 Protocol"),
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "J1939 Protocol",
         )
 
-        # Register with the feature manager
-        feature_manager.register_feature(j1939_feature)
-
-        logger.info("J1939 feature registered successfully")
+        logger.info(f"J1939 feature '{name}' created successfully (enabled={enabled})")
+        return j1939_feature
 
     except Exception as e:
-        logger.error(f"Failed to register J1939 feature: {e}")
+        logger.error(f"Failed to create J1939 feature '{name}': {e}")
         raise
