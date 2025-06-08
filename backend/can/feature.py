@@ -82,7 +82,7 @@ class CANBusFeature(Feature):
         # CAN bus related attributes
         self._listeners: list[Any] = []  # Will store CAN listeners or notifiers
         # Writer task is now handled by CANService
-        self._message_queue: asyncio.Queue = asyncio.Queue()
+        # Message queue and writer are now handled by CANService
 
         # State
         self._is_running = False
@@ -277,48 +277,7 @@ class CANBusFeature(Feature):
 
         return {"status": "unhealthy", "reason": "CAN bus not running"}
 
-    async def send_message(
-        self, arbitration_id: int, data: bytes, extended_id: bool = True
-    ) -> bool:
-        """
-        Send a CAN message to the bus.
-
-        Args:
-            arbitration_id: The arbitration ID for the message
-            data: The message data as bytes
-            extended_id: Whether to use extended ID format
-
-        Returns:
-            Boolean indicating success
-        """
-        if not self._is_running:
-            logger.warning("Cannot send CAN message: feature is not running")
-            return False
-
-        # In simulation mode, just log the message
-        if self.config["simulate"]:
-            logger.info(
-                f"SIMULATION - Sending CAN message: "
-                f"id=0x{arbitration_id:x}, data={data.hex()}, extended_id={extended_id}"
-            )
-            return True
-
-        # In real mode, queue the message for sending
-        try:
-            # Create a message dict
-            message = {
-                "arbitration_id": arbitration_id,
-                "data": data,
-                "extended_id": extended_id,
-                "timestamp": time.time(),
-            }
-
-            # Queue the message
-            await self._message_queue.put(message)
-            return True
-        except Exception as e:
-            logger.error(f"Error queuing CAN message for sending: {e}")
-            return False
+    # CAN message sending is now handled by CANService
 
     async def _process_message(self, msg: dict[str, Any]) -> None:
         """

@@ -476,6 +476,22 @@ class EntityService:
         if instance is None:
             raise RuntimeError(f"Entity {entity_id} missing 'instance' for CAN message creation")
 
+        # Get entity's logical interface and resolve to physical interface
+        logical_interface = entity_config.get(
+            "interface", "house"
+        )  # Default to "house" if not specified
+        can_settings = get_can_settings()
+
+        # Resolve logical interface to physical interface using interface mappings
+        physical_interface = can_settings.interface_mappings.get(logical_interface)
+        if not physical_interface:
+            logger.warning(
+                f"No mapping found for logical interface '{logical_interface}', falling back to first available interface"
+            )
+            physical_interface = (
+                can_settings.all_interfaces[0] if can_settings.all_interfaces else "can0"
+            )
+
         # Create optimistic update payload
         ts = time.time()
         optimistic_state_str = "on" if target_brightness_ui > 0 else "off"
@@ -517,9 +533,11 @@ class EntityService:
                 brightness_can_level=optimistic_raw_val,
             )
 
-            # Get the configured CAN interface(s)
-            can_settings = get_can_settings()
-            can_interface = can_settings.all_interfaces[0]  # Use first configured interface
+            # Use the resolved physical interface for this entity
+            can_interface = physical_interface
+            logger.debug(
+                f"Sending CAN message for {entity_id} on interface {can_interface} (logical: {logical_interface})"
+            )
 
             await can_tx_queue.put((can_message, can_interface))
 
