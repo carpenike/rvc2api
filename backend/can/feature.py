@@ -104,6 +104,9 @@ class CANBusFeature(Feature):
         This method is called automatically by the FeatureManager.
         """
         logger.info("Starting CAN bus feature")
+        # Mark the feature as running before spawning listener/simulation tasks
+        # so that they don't exit immediately when checking this flag.
+        self._is_running = True
 
         # Load RVC decoder configuration
         try:
@@ -218,7 +221,6 @@ class CANBusFeature(Feature):
                 logger.error(f"Failed to start CAN bus listeners: {e}", exc_info=True)
                 return
 
-        self._is_running = True
 
     async def _setup_can_listeners(self) -> None:
         """Set up CAN message listeners for all active interfaces using python-can's asyncio support."""
