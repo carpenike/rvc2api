@@ -6,11 +6,12 @@ applyTo: "**/frontend/**"
 
 ## Technology Stack
 
-- React 18+ with TypeScript
+- React 19.1.0 with TypeScript strict mode
 - Vite for development and building
-- Tailwind CSS for styling
-- WebSocket for real-time data
-- Fetch API for HTTP requests
+- TailwindCSS with shadcn/ui component library
+- React Query (@tanstack/react-query) for server state management
+- WebSocket for real-time data synchronization
+- React Router DOM for client-side routing
 
 ## Linting & Code Quality
 

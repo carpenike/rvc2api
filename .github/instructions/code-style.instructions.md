@@ -26,7 +26,7 @@ applyTo: "**/*.py"
 - Line length: 100 characters
 - Format follows a style similar to Black
 - Required for all Python code
-- Run: `poetry run ruff format src`
+- Run: `poetry run ruff format backend`
 
 ### Pyright/Pylance
 
@@ -34,7 +34,7 @@ applyTo: "**/*.py"
 - Python version: 3.12
 - Custom type stubs in `typings/` directory
 - Special handling for FastAPI type annotations
-- Run checks in VS Code or with `pyright src`
+- Run checks in VS Code or with `poetry run pyright backend`
 
 ## Code Quality Requirements
 
@@ -43,8 +43,8 @@ applyTo: "**/*.py"
 All code must pass both linting and type checking:
 
 1. **Linting Check**: `poetry run ruff check .`
-2. **Type Check**: `npx pyright src`
-3. **Formatting**: `poetry run ruff format src`
+2. **Type Check**: `poetry run pyright backend`
+3. **Formatting**: `poetry run ruff format backend`
 
 ### Handling Import Issues
 

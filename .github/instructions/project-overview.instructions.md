@@ -4,17 +4,15 @@ applyTo: "**"
 
 # Project Overview
 
-`rvc2api`: Python API/WebSocket service for RV-C CANbus systems:
+`CoachIQ`: Intelligent RV-C network management system with advanced analytics and control:
 
-- FastAPI backend with WebSocket support
-- React frontend with TypeScript and Vite
-- Console client
-- RV-C decoder
+- FastAPI backend with WebSocket support and feature management
+- React frontend with TypeScript, Vite, and shadcn/ui
+- RV-C protocol decoder with comprehensive message processing
+- Real-time CAN bus monitoring and control
 
 ## Current Structure
 
-- `src/common/`: Shared models and utilities (Pydantic models, type definitions)
-- `src/rvc_decoder/`: DGN decoding, mappings, instance management
 - `backend/`: FastAPI app, API routes, services, and business logic
   - `backend/main.py`: FastAPI application entry point
   - `backend/core/`: Core application components (config, state, dependencies)
@@ -25,13 +23,15 @@ applyTo: "**"
   - `backend/models/`: Domain models
 - `frontend/`: React frontend with TypeScript, Vite, and Tailwind CSS
 
-## Migration Complete
+## Architecture Features
 
-The migration from `src/core_daemon/` to `backend/` has been completed. The new structure provides:
+The current backend structure provides:
 - Service-oriented architecture with clear separation of concerns
-- Improved maintainability and testability
-- Better organization for future integrations (e.g., Victron Modbus)
-- Production-ready backend structure
+- YAML-driven feature flag system with dependency resolution
+- Multi-interface CAN bus support with automatic reconnection
+- Real-time WebSocket updates for entity state changes
+- Optional SQLite persistence with repository pattern
+- Comprehensive OpenAPI documentation with type generation
 
 # API Endpoint Design Decision
 

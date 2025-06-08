@@ -1,26 +1,28 @@
 ---
-applyTo: "**/src/**"
+applyTo: "**/backend/**"
 ---
 
 # Python Backend Architecture
 
 ## Technology Stack
 
-- Python 3.12+ with FastAPI
+- Python 3.12+ with FastAPI and Poetry dependency management
 - WebSocket support for real-time communication
 - Pydantic for data validation and settings management
-- CANbus integration for RV-C protocol
+- SQLAlchemy ORM for optional persistence features
+- Multi-interface CAN bus integration for RV-C protocol
+- YAML-driven feature flag system
 - Type hints throughout the codebase
 
 ## Linting & Code Quality
 
 - **Tool**: Ruff (replacing Flake8, Black, isort)
 - **Commands**:
-  - Format: `poetry run ruff format src`
+  - Format: `poetry run ruff format backend`
   - Lint: `poetry run ruff check .`
 - **Line Length**: 100 characters
 - **Type Checking**: Pyright (basic mode)
-  - Command: `npx pyright src`
+  - Command: `poetry run pyright backend`
   - Configuration in pyrightconfig.json and pyproject.toml
 - **Import Order**: stdlib → third-party → local
 - **Line Endings**: LF (Unix style)
@@ -29,19 +31,25 @@ applyTo: "**/src/**"
 
 ## Directory Structure
 
-- `src/common/`: Shared models and utilities
-- `src/core_daemon/`: Main FastAPI application
-  - `api_routers/`: API route definitions by domain
-  - `services/`: Business logic implementations
-  - `frontend/`: Legacy frontend (being migrated to React)
-- `src/rvc_decoder/`: DGN decoding, mappings, instance management
+- `backend/`: Main FastAPI application with service-oriented architecture
+  - `backend/main.py`: FastAPI application entry point
+  - `backend/core/`: Core application components (config, state, dependencies)
+  - `backend/services/`: Business logic services (entity, CAN, RV-C, persistence)
+  - `backend/api/routers/`: API route definitions organized by domain
+  - `backend/websocket/`: WebSocket management and real-time communication
+  - `backend/integrations/`: Protocol integrations (CAN, RV-C, Bluetooth)
+  - `backend/models/`: Pydantic domain models and data validation
+  - `backend/middleware/`: HTTP middleware components
 - `typings/`: Custom type stubs for third-party libraries
+- `config/`: Configuration files (RV-C specs, coach mappings)
 
 ## Design Patterns
 
-- **FastAPI Routes**: Organized by domain in `api_routers/` using APIRouter
-- **WebSockets**: Used for real-time updates in `websocket.py`
-- **State Management**: Centralized in `app_state.py`
+- **FastAPI Routes**: Organized by domain in `backend/api/routers/` using APIRouter
+- **WebSockets**: Real-time updates in `backend/websocket/` with connection management
+- **State Management**: Centralized in `backend/core/state.py`
+- **Feature Management**: YAML-driven flags in `backend/services/feature_flags.yaml`
+- **Service Architecture**: Business logic in `backend/services/` with dependency injection
 - **Configuration**: Environment variables with Pydantic Settings
 - **Error Handling**: Structured exceptions with proper logging
 - **API Documentation**: Comprehensive docstrings and metadata for OpenAPI schema
@@ -64,9 +72,10 @@ Always use `@context7` first for any Python library or framework questions to ge
 
 - **Project-specific**:
   - Find API implementation: `@context7 entity API router implementation`
-  - Check WebSocket handling: `@context7 WebSocket message broadcast`
-  - Review state management: `@context7 app_state implementation`
-  - Find CANbus integration: `@context7 CAN message processing`
+  - Check WebSocket handling: `@context7 WebSocket connection management`
+  - Review state management: `@context7 backend core state implementation`
+  - Find CANbus integration: `@context7 CAN manager and message processing`
+  - Check feature flags: `@context7 feature management system`
 
 ### @perplexity Use Cases - FOR GENERAL CONCEPTS ONLY
 
