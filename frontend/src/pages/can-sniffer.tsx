@@ -14,7 +14,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 // Table components replaced by VirtualizedTable
-import { VirtualizedTable, useVirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
+import { VirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
+import { useVirtualizedTable } from "@/hooks/useVirtualizedTable"
 import { useCANMetrics } from "@/hooks/useSystem"
 import { useCANScanWebSocket } from "@/hooks/useWebSocket"
 import {
