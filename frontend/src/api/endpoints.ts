@@ -284,7 +284,7 @@ export async function fetchCANMetrics(): Promise<CANMetrics> {
  * @returns Promise resolving to health status
  */
 export async function fetchHealthStatus(): Promise<HealthStatus> {
-  const url = '/api/healthz';
+  const url = '/healthz';
 
   logApiRequest('GET', url);
 

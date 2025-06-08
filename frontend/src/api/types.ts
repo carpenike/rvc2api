@@ -204,7 +204,7 @@ export interface MetadataResponse {
   states: string[];
 }
 
-// Health Status Response (matches backend /api/healthz)
+// Health Status Response (matches backend /healthz)
 export interface HealthStatus {
   status: "healthy" | "degraded" | "failed";
   features: Record<string, string>;

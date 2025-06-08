@@ -15,7 +15,8 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 // Table components replaced by VirtualizedTable
 import { VirtualizedTable, useVirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
-import { useCANMessages, useCANMetrics } from "@/hooks/useSystem"
+import { useCANMetrics } from "@/hooks/useSystem"
+import { useCANScanWebSocket } from "@/hooks/useWebSocket"
 import {
     IconActivity,
     IconAlertTriangle,
@@ -380,20 +381,33 @@ function CANBusHealth() {
 export default function CANSniffer() {
   const [isPaused, setIsPaused] = useState(false)
   const [maxMessages] = useState(1000)
+  const [messages, setMessages] = useState<CANMessage[]>([])
 
-  const { data: messages, isLoading, error, refetch } = useCANMessages({
-    enabled: !isPaused,
-    maxMessages
+  // WebSocket connection for real-time CAN messages
+  const { isConnected, error: wsError } = useCANScanWebSocket({
+    autoConnect: !isPaused,
+    onMessage: (message: CANMessage) => {
+      if (!isPaused) {
+        setMessages(prev => {
+          const newMessages = [...prev, message]
+          // Keep only the last maxMessages
+          return newMessages.slice(-maxMessages)
+        })
+      }
+    }
   })
 
-  const messageArray = messages || []
+  const messageArray = messages
 
   const handleClearMessages = () => {
-    // This would normally call an API to clear the message buffer
-    refetch()
+    setMessages([])
   }
 
-  if (isLoading && !messages) {
+  // Loading state is based on WebSocket connection status
+  const isLoading = !isConnected && messages.length === 0
+  const error = wsError
+
+  if (isLoading) {
     return (
       <AppLayout>
         <div className="flex-1 space-y-6 p-4 pt-6">

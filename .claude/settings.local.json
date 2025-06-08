@@ -45,7 +45,8 @@
       "Bash(curl:*)",
       "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"async def control_entity\" -A 50 backend/services/entity_service.py)",
       "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"async def control_light\" -A 100 backend/services/entity_service.py)",
-      "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"return ControlEntityResponse\" -B 20 -A 10 backend/services/entity_service.py)"
+      "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"return ControlEntityResponse\" -B 20 -A 10 backend/services/entity_service.py)",
+      "Bash(npm run typecheck:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
