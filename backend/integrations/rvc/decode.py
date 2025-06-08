@@ -29,7 +29,11 @@ from backend.integrations.rvc.config_loader import (
 )
 from backend.integrations.rvc.decoder_core import decode_payload as _decode_payload
 from backend.integrations.rvc.decoder_core import get_bits as _get_bits
-from backend.integrations.rvc.missing_dgns import record_missing_dgn
+from backend.integrations.rvc.missing_dgns import (
+    clear_missing_dgns,
+    get_missing_dgns,
+    record_missing_dgn,
+)
 from backend.models.common import CoachInfo
 
 logger = logging.getLogger(__name__)
@@ -37,6 +41,18 @@ logger = logging.getLogger(__name__)
 # Re-export the core functions for backward compatibility
 get_bits = _get_bits
 decode_payload = _decode_payload
+
+# Re-export missing DGN functions for backward compatibility
+__all__ = [
+    "clear_config_cache",
+    "clear_missing_dgns",
+    "decode_payload",
+    "decode_payload_safe",
+    "get_bits",
+    "get_missing_dgns",
+    "load_config_data",
+    "record_missing_dgn",
+]
 
 
 def clear_config_cache() -> None:

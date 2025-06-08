@@ -32,6 +32,19 @@ class OptimizationLevel(str, Enum):
     INFORMATIONAL = "informational"  # For information only
 
 
+class OptimizationCategory(str, Enum):
+    """Categories of performance optimizations."""
+
+    MEMORY = "memory"
+    CPU = "cpu"
+    NETWORK = "network"
+    PROTOCOL = "protocol"
+    CONFIGURATION = "configuration"
+    CACHING = "caching"
+    BATCH_PROCESSING = "batch_processing"
+    QUEUE_MANAGEMENT = "queue_management"
+
+
 class AlertSeverity(str, Enum):
     """Performance alert severity levels."""
 
@@ -74,6 +87,16 @@ class TrendDirection(str, Enum):
     STABLE = "stable"
     DEGRADING = "degrading"
     VOLATILE = "volatile"
+
+
+class PerformanceStatus(str, Enum):
+    """Overall performance status levels."""
+
+    OPTIMAL = "optimal"
+    GOOD = "good"
+    WARNING = "warning"
+    CRITICAL = "critical"
+    UNKNOWN = "unknown"
 
 
 class PerformanceMetric(BaseModel):
@@ -332,6 +355,32 @@ class ResourceMetrics(BaseModel):
     can_queue_depth: int | None = Field(default=None, ge=0, description="CAN queue depth")
 
 
+class ResourceUtilization(BaseModel):
+    """Resource utilization metrics for optimization analysis."""
+
+    resource_type: ResourceType = Field(description="Type of resource")
+    current_usage: float = Field(ge=0.0, le=100.0, description="Current usage percentage")
+    average_usage: float = Field(ge=0.0, le=100.0, description="Average usage percentage")
+    peak_usage: float = Field(ge=0.0, le=100.0, description="Peak usage percentage")
+    threshold_warning: float = Field(ge=0.0, le=100.0, description="Warning threshold")
+    threshold_critical: float = Field(ge=0.0, le=100.0, description="Critical threshold")
+
+    def get_status(self) -> PerformanceStatus:
+        """Get performance status based on current usage."""
+        if self.current_usage >= self.threshold_critical:
+            return PerformanceStatus.CRITICAL
+        elif self.current_usage >= self.threshold_warning:
+            return PerformanceStatus.WARNING
+        elif self.current_usage <= 50.0:
+            return PerformanceStatus.OPTIMAL
+        else:
+            return PerformanceStatus.GOOD
+
+    def is_overutilized(self) -> bool:
+        """Check if resource is overutilized."""
+        return self.current_usage >= self.threshold_warning
+
+
 class PerformanceSnapshot(BaseModel):
     """Complete performance snapshot at a point in time."""
 
@@ -363,3 +412,75 @@ class PerformanceSnapshot(BaseModel):
         latency_score = max(0.0, 1.0 - (latency_ms / 1000.0))  # 1000ms latency = 0 health
 
         return (error_score + latency_score) / 2.0
+
+
+class PerformanceReport(BaseModel):
+    """Comprehensive performance analysis report."""
+
+    id: str = Field(description="Unique report ID")
+    generated_at: float = Field(
+        default_factory=time.time, description="Report generation timestamp"
+    )
+    time_window_hours: int = Field(description="Analysis time window in hours")
+    protocols_analyzed: list[ProtocolType] = Field(description="Protocols included in analysis")
+
+    # Overall status
+    overall_status: PerformanceStatus = Field(description="Overall system performance status")
+    health_score: float = Field(ge=0.0, le=1.0, description="Overall health score")
+
+    # Summary metrics
+    total_metrics_collected: int = Field(description="Total metrics collected")
+    total_alerts_generated: int = Field(description="Total alerts generated")
+    total_recommendations: int = Field(description="Total optimization recommendations")
+
+    # Protocol-specific summaries
+    protocol_summaries: dict[str, dict[str, Any]] = Field(
+        default={}, description="Per-protocol performance summaries"
+    )
+
+    # Trends and baselines
+    trend_analyses: list[TrendAnalysis] = Field(default=[], description="Trend analysis results")
+    baseline_deviations: dict[str, float] = Field(
+        default={}, description="Significant baseline deviations"
+    )
+
+    # Alerts and recommendations
+    critical_alerts: list[PerformanceAlert] = Field(
+        default=[], description="Critical performance alerts"
+    )
+    high_priority_recommendations: list[OptimizationRecommendation] = Field(
+        default=[], description="High priority optimization recommendations"
+    )
+
+    # Resource utilization
+    avg_resource_utilization: dict[str, float] = Field(
+        default={}, description="Average resource utilization during analysis period"
+    )
+    peak_resource_utilization: dict[str, float] = Field(
+        default={}, description="Peak resource utilization during analysis period"
+    )
+
+    # Key insights
+    key_findings: list[str] = Field(default=[], description="Key performance insights")
+    improvement_opportunities: list[str] = Field(
+        default=[], description="Identified improvement opportunities"
+    )
+
+    def get_status_summary(self) -> dict[str, Any]:
+        """Get a summary of the performance status."""
+        return {
+            "overall_status": self.overall_status.value,
+            "health_score": self.health_score,
+            "total_alerts": self.total_alerts_generated,
+            "critical_alerts": len(self.critical_alerts),
+            "recommendations": self.total_recommendations,
+            "high_priority_recommendations": len(self.high_priority_recommendations),
+        }
+
+    def has_critical_issues(self) -> bool:
+        """Check if there are any critical performance issues."""
+        return (
+            self.overall_status == PerformanceStatus.CRITICAL
+            or len(self.critical_alerts) > 0
+            or self.health_score < 0.3
+        )
