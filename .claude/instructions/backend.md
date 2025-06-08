@@ -113,6 +113,66 @@ async def control_entity(
     return result
 ```
 
+## Performance and Optimization Patterns
+
+### Configuration Caching
+When loading expensive configuration files (JSON/YAML parsing), always use `@functools.cache` to prevent redundant I/O:
+
+```python
+import functools
+from backend.integrations.rvc.decode import load_config_data
+
+# GOOD: Cached configuration loading
+@functools.cache
+def load_config_data(spec_path: str | None = None, mapping_path: str | None = None):
+    """Load RVC spec and mapping with automatic caching."""
+    # Expensive file I/O and parsing happens only once
+    pass
+
+# Cache management
+def clear_config_cache():
+    """Clear cache to force reload during development."""
+    load_config_data.cache_clear()
+```
+
+### CAN Interface Routing
+Always resolve logical interfaces to physical interfaces for CAN message sending:
+
+```python
+# REQUIRED: Proper interface resolution for CAN messages
+async def send_can_message(entity_id: str, message_data: bytes):
+    entity_config = entity_manager.get_entity(entity_id).config
+
+    # Get logical interface from entity config
+    logical_interface = entity_config.get("interface", "house")  # "house" or "chassis"
+
+    # Resolve to physical interface using mappings
+    can_settings = get_can_settings()
+    physical_interface = can_settings.interface_mappings.get(logical_interface)
+
+    if not physical_interface:
+        logger.warning(f"No mapping for '{logical_interface}', using fallback")
+        physical_interface = can_settings.all_interfaces[0]
+
+    # Send to specific interface (not all interfaces)
+    await can_tx_queue.put((can_message, physical_interface))
+```
+
+### Startup Optimization
+Avoid duplicate service initialization by ensuring clear separation between features and services:
+
+```python
+# GOOD: Features handle complex initialization, services provide business logic
+class CANFeature(Feature):
+    async def startup(self):
+        # Initialize CAN interfaces through CANService
+        can_service = CANService()
+        await can_service.startup()  # Handles interfaces + writer task
+
+# AVOID: Don't initialize the same service in multiple places
+# main.py should NOT call can_service.startup() if feature already does it
+```
+
 ## Code Quality Requirements
 
 ### Formatting and Linting
@@ -128,6 +188,24 @@ poetry run pyright backend
 - **Import Order**: stdlib → third-party → local (absolute imports only)
 - **Type Hints**: Required for all function parameters and return values
 - **Docstrings**: Required for public APIs using Google-style format
+
+### Linting Exceptions
+Some FastAPI patterns require linting exceptions:
+
+```python
+# FastAPI dependency injection (B008 exception is correct)
+@router.get("/entities")
+async def get_entities(
+    entity_service: EntityService = Depends(get_entity_service),  # noqa: B008
+):
+    """Depends() in argument defaults is the official FastAPI pattern."""
+    pass
+
+# Type annotations (UP007, UP038 should be applied automatically)
+def example(value: str | None = None) -> list[dict]:  # Use | instead of Union
+    if isinstance(value, str | int):  # Use | in isinstance calls
+        return [{"result": value}]
+```
 
 ### Type Checking
 - **Tool**: Pyright in basic mode
@@ -237,16 +315,53 @@ async def test_entity_control(mock_can_interface):
 
 ## MCP Tools for Backend Development
 
-### Always Use @context7 First
-- **FastAPI Questions**: `@context7 FastAPI dependency injection patterns`
-- **Pydantic Models**: `@context7 Pydantic model with nested validation`
-- **Python Typing**: `@context7 Python Protocol implementation`
-- **WebSocket Handling**: `@context7 FastAPI WebSocket broadcast patterns`
+**IMPORTANT**: Always default to `@context7` for any library or framework questions before falling back to other tools. This ensures you get current, correct API information rather than outdated or hallucinated answers.
 
-### Project Context
-- **Find Implementations**: `@context7 entity service implementation`
+### Priority Order for Research:
+1. **@context7**: For library/framework questions (FastAPI, React, TypeScript, Python libraries)
+2. **@perplexity**: For general concepts, protocols, best practices, and research not found in codebase
+3. **@github**: For repository exploration, issue research, and project history
+
+### When to Use @context7 (FIRST CHOICE)
+- **Framework Questions**: `@context7 FastAPI dependency injection patterns`
+- **Library APIs**: `@context7 Pydantic model with nested validation`
+- **Language Features**: `@context7 Python Protocol implementation`
+- **Implementation Patterns**: `@context7 FastAPI WebSocket broadcast patterns`
+- **Code Examples**: `@context7 SQLAlchemy async session management`
+
+### When to Use @perplexity (SECOND CHOICE)
+Use Perplexity for conceptual questions, best practices, and domain knowledge not available in library docs:
+
+- **Best Practices**: `@perplexity FastAPI dependency injection best practices for large applications`
+- **Protocol Standards**: `@perplexity CAN bus protocol message routing best practices`
+- **Architecture Decisions**: `@perplexity Python async task lifecycle management patterns`
+- **Performance Optimization**: `@perplexity Python configuration file caching strategies`
+- **Design Patterns**: `@perplexity Service-oriented architecture patterns in Python`
+- **Framework Comparisons**: `@perplexity SQLAlchemy vs raw SQL performance considerations`
+
+### When to Use @github (THIRD CHOICE)
+- **Repository Research**: `@github search repositories for FastAPI CAN bus integration`
+- **Issue Investigation**: `@github search issues related to WebSocket reconnection patterns`
+- **Project History**: `@github list commits related to entity management refactoring`
+- **Code Discovery**: `@github search code for dependency injection patterns`
+
+### Project Context Queries
+- **Find Implementations**: `@context7 entity service implementation patterns`
 - **Check Patterns**: `@context7 CAN message processing patterns`
-- **Review Configuration**: `@context7 feature flag configuration`
+- **Review Configuration**: `@context7 feature flag configuration examples`
+- **API Documentation**: `@context7 FastAPI router configuration patterns`
+
+### Example Research Workflow
+```bash
+# 1. Start with @context7 for framework-specific questions
+@context7 FastAPI background tasks with dependency injection
+
+# 2. Use @perplexity for concepts and best practices
+@perplexity background task lifecycle management best practices Python
+
+# 3. Use @github for related implementations
+@github search code for FastAPI background task patterns
+```
 
 ## Common Development Tasks
 

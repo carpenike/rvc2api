@@ -41,7 +41,8 @@
       "Bash(rm:*)",
       "Bash(nix flake check:*)",
       "mcp__github__search_code",
-      "mcp__perplexity__perplexity_ask"
+      "mcp__perplexity__perplexity_ask",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

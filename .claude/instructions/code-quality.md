@@ -55,6 +55,30 @@ force-single-line = true
 known-first-party = ["backend"]
 ```
 
+**Linting Exceptions:**
+Some framework patterns require `# noqa` exceptions:
+
+```python
+# FastAPI dependency injection (B008 is safe with Depends)
+@router.get("/endpoint")
+async def my_endpoint(
+    service: Service = Depends(get_service),  # noqa: B008
+):
+    """Depends() in defaults is the official FastAPI pattern."""
+    pass
+
+# Type annotation improvements (UP007, UP038 should be applied automatically)
+def example(value: str | None = None) -> list[dict]:  # Use | instead of Union
+    if isinstance(value, str | int):  # Use | in isinstance calls
+        return [{"result": value}]
+
+# Common linting exceptions for framework patterns:
+# - B008: Function call in argument defaults (FastAPI Depends)
+# - E501: Line too long (for very long import chains)
+# - UP007: Use X | Y for type annotations (should be auto-fixed)
+# - UP038: Use X | Y for isinstance() calls (should be auto-fixed)
+```
+
 ### Type Checking with Pyright
 ```bash
 # Run type checking (required before commits)
