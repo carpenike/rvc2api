@@ -103,7 +103,12 @@
             pythonPackages.alembic
             # Notification system dependencies
             pythonPackages.jinja2
-            # Note: Apprise not available in nixpkgs - install via Poetry in dev/CI
+            pythonPackages.apprise
+            # Authentication system dependencies
+            pythonPackages.pyjwt
+            pythonPackages.passlib
+            pythonPackages.python-multipart
+            pythonPackages.email-validator
             # Advanced analytics and diagnostics dependencies
             pythonPackages.numpy
             pythonPackages.scipy
@@ -163,6 +168,11 @@
             pythonPackages.prometheus_client
             pythonPackages.coloredlogs
             pythonPackages.jinja2
+            pythonPackages.apprise
+            pythonPackages.pyjwt
+            pythonPackages.passlib
+            pythonPackages.python-multipart
+            pythonPackages.email-validator
             pythonPackages.pytest
             pythonPackages.mypy
             pythonPackages.ruff
@@ -276,6 +286,11 @@ EOF
             pythonPackages.httptools
             pythonPackages.python-dotenv
             pythonPackages.watchfiles
+            pythonPackages.apprise
+            pythonPackages.pyjwt
+            pythonPackages.passlib
+            pythonPackages.python-multipart
+            pythonPackages.email-validator
             pythonPackages.pytest-asyncio
             pkgs.pyright
 
