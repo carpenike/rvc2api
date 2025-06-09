@@ -38,7 +38,7 @@ export const API_BASE = (() => {
  *   1. VITE_BACKEND_WS_URL (preferred, set in .env[.development])
  *   2. VITE_WS_URL (legacy, fallback)
  *   3. In dev: ws://localhost:8000 (direct to backend, not via Vite proxy)
- *   4. In prod: protocol/host of current page
+ *   4. In prod: auto-detect based on current page protocol/host for reverse proxy
  *
  * Example .env.development:
  *   VITE_BACKEND_WS_URL=ws://localhost:8000
@@ -52,16 +52,19 @@ export const WS_BASE = (() => {
   if (wsUrl && wsUrl.trim()) {
     return wsUrl;
   }
-  // If neither env var is set, throw an error to prevent accidental fallback
+
+  // Development fallback
   if (import.meta.env.DEV) {
-    throw new Error(
-      'WebSocket URL is not configured. Please set VITE_WS_URL in your .env.development or .env.local file.'
-    );
-  } else {
-    throw new Error(
-      'WebSocket URL is not configured. Please set VITE_WS_URL or VITE_BACKEND_WS_URL in your production environment.'
-    );
+    console.warn('WebSocket URL not configured in development. Using default ws://localhost:8000');
+    return 'ws://localhost:8000';
   }
+
+  // Production fallback: use relative path for reverse proxy
+  // This constructs the WebSocket URL based on the current page's protocol and host
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsBaseUrl = `${protocol}//${window.location.host}`;
+  console.info(`Using auto-detected WebSocket URL for reverse proxy: ${wsBaseUrl}`);
+  return wsBaseUrl;
 })();
 
 /** Common fetch options for all API requests */

@@ -514,6 +514,14 @@ EOF
               pkgs.libsecret
             ];
 
+            # Set production environment variables for Vite build
+            # Use relative paths for reverse proxy deployment
+            preBuild = ''
+              export VITE_API_URL=""
+              export VITE_WS_URL=""
+              export VITE_BACKEND_WS_URL=""
+            '';
+
             # Use Vite directly to avoid TypeScript path resolution issues
             buildPhase = ''
               runHook preBuild
