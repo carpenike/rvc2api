@@ -1,17 +1,29 @@
 /// <reference types="vitest" />
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import reactPlugin from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    // disable React Fast Refresh to prevent Vite HMR websocket injection
+    // @ts-expect-error fastRefresh is not in types
+    reactPlugin({ fastRefresh: false }),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // Ensure single React copy and runtime to avoid invalid hook calls
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "node_modules/react/jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.resolve(__dirname, "node_modules/react/jsx-dev-runtime.js"),
       // Add alias for tabler icons to improve tree-shaking and prevent full library processing
       "@tabler/icons-react$": path.resolve(__dirname, "node_modules/@tabler/icons-react/dist/esm/index.js"),
     },
+    // Prevent duplicate React copies
+    dedupe: ['react', 'react-dom'],
   },
   test: {
     globals: true,
@@ -21,7 +33,7 @@ export default defineConfig({
   },
   // Development server optimizations to prevent resource exhaustion
   server: {
-    // Disable HMR WebSocket since we use direct backend WebSocket connection
+    // completely disable Vite HMR
     hmr: false,
     // Limit the number of concurrent requests to prevent browser resource exhaustion
     middlewareMode: false,
