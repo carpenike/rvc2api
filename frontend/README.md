@@ -1,6 +1,6 @@
-# RV-C2API Frontend
+# CoachIQ Frontend
 
-Modern React frontend for the RV-C2API system built with Vite, TypeScript, and Shadcn/UI.
+Modern React frontend for the CoachIQ system built with Vite, TypeScript, and Shadcn/UI.
 
 ## Tech Stack
 

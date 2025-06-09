@@ -16,7 +16,7 @@ function AppFooter() {
   return (
     <footer className="border-t bg-background px-6 py-4">
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>&copy; 2025 RV-C2API. All rights reserved.</p>
+        <p>&copy; 2025 CoachIQ. All rights reserved.</p>
         <p>Version 1.0.0</p>
       </div>
     </footer>
