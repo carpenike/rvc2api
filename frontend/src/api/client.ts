@@ -52,16 +52,16 @@ export const WS_BASE = (() => {
   if (wsUrl && wsUrl.trim()) {
     return wsUrl;
   }
-  // Build WebSocket URL based on current location
-  const protocol = window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window?.location?.host;
-  // In development mode, use localhost:8000 directly to bypass Vite proxy issues
+  // If neither env var is set, throw an error to prevent accidental fallback
   if (import.meta.env.DEV) {
-    console.log('Development mode: Using direct WebSocket connection to backend');
-    return `${protocol}//localhost:8000`;
+    throw new Error(
+      'WebSocket URL is not configured. Please set VITE_WS_URL in your .env.development or .env.local file.'
+    );
+  } else {
+    throw new Error(
+      'WebSocket URL is not configured. Please set VITE_WS_URL or VITE_BACKEND_WS_URL in your production environment.'
+    );
   }
-  // In production without explicit WS URL, use same host with relative path
-  return `${protocol}//${host}`;
 })();
 
 /** Common fetch options for all API requests */
