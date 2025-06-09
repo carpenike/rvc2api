@@ -18,6 +18,7 @@ from backend.api.routers import (
     docs,
     entities,
     logs,
+    multi_network,
     performance_analytics,
 )
 from backend.websocket.routes import router as websocket_router
@@ -44,6 +45,7 @@ def configure_routers(app: FastAPI) -> None:
     app.include_router(dashboard.router)
     app.include_router(docs.router)
     app.include_router(logs.router)
+    app.include_router(multi_network.router)
     app.include_router(advanced_diagnostics.router, prefix="/api/diagnostics", tags=["diagnostics"])
     app.include_router(
         performance_analytics.router, prefix="/api/performance", tags=["performance"]
@@ -70,6 +72,7 @@ def get_router_info() -> dict[str, Any]:
             {"prefix": "/api/dashboard", "tags": ["dashboard"], "name": "dashboard"},
             {"prefix": "/api", "tags": ["docs"], "name": "docs"},
             {"prefix": "/api", "tags": ["logs"], "name": "logs"},
+            {"prefix": "/api/multi-network", "tags": ["multi-network"], "name": "multi_network"},
             {"prefix": "/api/diagnostics", "tags": ["diagnostics"], "name": "advanced_diagnostics"},
             {
                 "prefix": "/api/performance",
@@ -78,6 +81,6 @@ def get_router_info() -> dict[str, Any]:
             },
             {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 9,
+        "total_routers": 10,
         "dependency_injection": True,
     }

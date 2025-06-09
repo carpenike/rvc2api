@@ -76,6 +76,7 @@ class EntityService:
         self,
         device_type: str | None = None,
         area: str | None = None,
+        protocol: str | None = None,
     ) -> dict[str, dict[str, Any]]:
         """
         List all entities with optional filtering.
@@ -83,12 +84,15 @@ class EntityService:
         Args:
             device_type: Optional filter by entity device_type
             area: Optional filter by entity suggested_area
+            protocol: Optional filter by protocol ownership
 
         Returns:
             Dictionary of entities matching the filter criteria
         """
         # Use EntityManager for efficient filtering
-        filtered_entities = self.entity_manager.filter_entities(device_type=device_type, area=area)
+        filtered_entities = self.entity_manager.filter_entities(
+            device_type=device_type, area=area, protocol=protocol
+        )
         # Convert to API format
         return {entity_id: entity.to_dict() for entity_id, entity in filtered_entities.items()}
 
@@ -213,6 +217,15 @@ class EntityService:
             "groups": sorted(groups),
             "total_entities": len(entities),
         }
+
+    async def get_protocol_summary(self) -> dict[str, Any]:
+        """
+        Get summary of entity distribution across protocols.
+
+        Returns:
+            Dictionary with protocol ownership statistics and entity distribution
+        """
+        return self.entity_manager.get_protocol_summary()
 
     async def create_entity_mapping(
         self, request: CreateEntityMappingRequest

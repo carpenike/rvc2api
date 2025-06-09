@@ -6,46 +6,46 @@
  * modern CAN bus diagnostic UI patterns.
  */
 
-import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
-  Shield,
-  Search,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle,
-  Eye,
-  SortAsc,
-  SortDesc
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+    AlertCircle,
+    CheckCircle,
+    Eye,
+    RefreshCw,
+    Search,
+    Shield,
+    SortAsc,
+    SortDesc
 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { fetchActiveDTCs, resolveDTC } from '@/api/endpoints';
@@ -378,7 +378,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
                     className="pl-10"
                   />
                 </div>
-                <Select value={filters.severity || ""} onValueChange={(value) =>
+                <Select value={filters.severity || undefined} onValueChange={(value) =>
                   setFilters(prev => ({ ...prev, severity: value || undefined }))
                 }>
                   <SelectTrigger className="w-full sm:w-32">
@@ -392,7 +392,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
                     <SelectItem value="low">Low</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={filters.protocol || ""} onValueChange={(value) =>
+                <Select value={filters.protocol || undefined} onValueChange={(value) =>
                   setFilters(prev => ({ ...prev, protocol: value || undefined }))
                 }>
                   <SelectTrigger className="w-full sm:w-32">

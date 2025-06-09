@@ -15,8 +15,8 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 // Table components replaced by VirtualizedTable
 import { VirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
-import { useVirtualizedTable } from "@/hooks/useVirtualizedTable"
 import { useCANMetrics } from "@/hooks/useSystem"
+import { useVirtualizedTable } from "@/hooks/useVirtualizedTable"
 import { useCANScanWebSocket } from "@/hooks/useWebSocket"
 import {
     IconActivity,
@@ -129,23 +129,10 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
 /**
  * Enhanced CAN message table with virtualization
  */
-function CANMessageTable({
-  messages,
-  isPaused
-}: {
-  messages: CANMessage[]
-  isPaused: boolean
-}) {
-  const {
-    items: displayMessages,
-    clearItems,
-    isAutoScrollEnabled,
-    toggleAutoScroll,
-    itemCount,
-    hasReachedLimit
-  } = useVirtualizedTable({
+function CANMessageTable({ messages, isPaused }: { messages: CANMessage[]; isPaused: boolean }) {
+  const { visibleData, totalItems = 0 } = useVirtualizedTable({
     data: messages,
-    maxItems: 5000, // Increased buffer for CAN messages
+    maxItems: 5000,
     autoScroll: !isPaused
   })
 
@@ -252,40 +239,20 @@ function CANMessageTable({
           <IconActivity className="h-5 w-5" />
           Live CAN Messages
           {isPaused && <Badge variant="secondary">Paused</Badge>}
-          {hasReachedLimit && <Badge variant="outline">Buffer Full</Badge>}
         </CardTitle>
         <CardDescription className="flex items-center justify-between">
-          <span>Real-time CAN bus traffic monitoring ({itemCount.toLocaleString()} messages)</span>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={toggleAutoScroll}
-              size="sm"
-              variant="ghost"
-              className="text-xs"
-            >
-              Auto-scroll: {isAutoScrollEnabled ? 'ON' : 'OFF'}
-            </Button>
-            <Button
-              onClick={clearItems}
-              size="sm"
-              variant="ghost"
-              className="text-xs"
-            >
-              <IconTrash className="h-3 w-3 mr-1" />
-              Clear
-            </Button>
-          </div>
+          <span>Real-time CAN bus traffic monitoring ({totalItems.toLocaleString()} messages)</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
         <VirtualizedTable
-          data={displayMessages}
+          data={visibleData}
           columns={columns}
           height={400}
           itemHeight={40}
           emptyMessage={isPaused ? "Message capture paused" : "No messages received"}
           getRowKey={(message, index) => `${message.timestamp}-${index}`}
-          className={displayMessages.some(m => m.error) ? "has-errors" : ""}
+          className={visibleData.some(m => m.error) ? "has-errors" : ""}
         />
       </CardContent>
     </Card>
@@ -385,7 +352,7 @@ export default function CANSniffer() {
   const [messages, setMessages] = useState<CANMessage[]>([])
 
   // WebSocket connection for real-time CAN messages
-  const { isConnected, error: wsError } = useCANScanWebSocket({
+  const { isConnected, error: wsError, connect } = useCANScanWebSocket({
     autoConnect: !isPaused,
     onMessage: (message: CANMessage) => {
       if (!isPaused) {
@@ -532,7 +499,7 @@ export default function CANSniffer() {
 
               {errorDetails.showRetry && (
                 <div className="flex gap-2">
-                  <Button onClick={() => refetch()} variant="outline" size="sm">
+                  <Button onClick={connect} variant="outline" size="sm">
                     <IconRefresh className="h-4 w-4 mr-2" />
                     {errorDetails.isConnectionError ? "Retry Connection" : "Retry"}
                   </Button>
@@ -589,7 +556,7 @@ export default function CANSniffer() {
               <IconTrash className="h-4 w-4" />
               Clear
             </Button>
-            <Button onClick={() => refetch()} variant="outline" className="gap-2">
+            <Button onClick={connect} variant="outline" className="gap-2">
               <IconRefresh className="h-4 w-4" />
               Refresh
             </Button>

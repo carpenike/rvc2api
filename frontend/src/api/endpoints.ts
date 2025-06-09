@@ -6,67 +6,67 @@
  */
 
 import {
-    APIClientError,
-    API_BASE,
-    apiGet,
-    apiPost,
-    buildQueryString,
-    logApiRequest,
-    logApiResponse
+  API_BASE,
+  APIClientError,
+  apiGet,
+  apiPost,
+  buildQueryString,
+  logApiRequest,
+  logApiResponse
 } from './client';
 
 import type {
-    ActivityFeed,
-    AllCANStats,
-    BaselineDeviation,
-    BulkControlRequest,
-    BulkControlResponse,
-    CANBusSummary,
-    CANMessage,
-    CANMetrics,
-    CANSendParams,
-    CANInterfaceMapping,
-    CoachConfiguration,
-    ConfigurationSystemStatus,
-    ConfigurationUpdateRequest,
-    ConfigurationUpdateResponse,
-    ConfigurationValidation,
-    ControlCommand,
-    ControlEntityResponse,
-    CreateEntityMappingRequest,
-    CreateEntityMappingResponse,
-    DashboardSummary,
-    DiagnosticStats,
-    DiagnosticTroubleCode,
-    DTCCollection,
-    DTCFilters,
-    DTCResolutionResponse,
-    EntitiesQueryParams,
-    Entity,
-    EntityCollection,
-    EntitySummary,
-    FaultCorrelation,
-    FeatureManagementResponse,
-    FeatureStatusResponse,
-    HealthStatus,
-    HistoryEntry,
-    HistoryQueryParams,
-    MaintenancePrediction,
-    MetadataResponse,
-    OptimizationSuggestion,
-    PerformanceAnalyticsStats,
-    PerformanceMetrics,
-    PerformanceReport,
-    ProtocolBridgeStatus,
-    QueueStatus,
-    ResourceUsage,
-    SystemAnalytics,
-    SystemHealthResponse,
-    SystemMetrics,
-    SystemSettings,
-    TrendData,
-    UnknownPGNResponse,
-    UnmappedResponse
+  ActivityFeed,
+  AllCANStats,
+  BaselineDeviation,
+  BulkControlRequest,
+  BulkControlResponse,
+  CANBusSummary,
+  CANInterfaceMapping,
+  CANMessage,
+  CANMetrics,
+  CANSendParams,
+  CoachConfiguration,
+  ConfigurationSystemStatus,
+  ConfigurationUpdateRequest,
+  ConfigurationUpdateResponse,
+  ConfigurationValidation,
+  ControlCommand,
+  ControlEntityResponse,
+  CreateEntityMappingRequest,
+  CreateEntityMappingResponse,
+  DashboardSummary,
+  DiagnosticStats,
+  DiagnosticTroubleCode,
+  DTCCollection,
+  DTCFilters,
+  DTCResolutionResponse,
+  EntitiesQueryParams,
+  Entity,
+  EntityCollection,
+  EntitySummary,
+  FaultCorrelation,
+  FeatureManagementResponse,
+  FeatureStatusResponse,
+  HealthStatus,
+  HistoryEntry,
+  HistoryQueryParams,
+  MaintenancePrediction,
+  MetadataResponse,
+  OptimizationSuggestion,
+  PerformanceAnalyticsStats,
+  PerformanceMetrics,
+  PerformanceReport,
+  ProtocolBridgeStatus,
+  QueueStatus,
+  ResourceUsage,
+  SystemAnalytics,
+  SystemHealthResponse,
+  SystemMetrics,
+  SystemSettings,
+  TrendData,
+  UnknownPGNResponse,
+  UnmappedResponse
 } from './types';
 
 //
@@ -510,7 +510,7 @@ export async function acknowledgeAlert(alertId: string): Promise<{ success: bool
 }
 
 //
-// ===== ADVANCED DIAGNOSTICS API (/api/advanced-diagnostics) =====
+// ===== ADVANCED DIAGNOSTICS API (/api/diagnostics) =====
 //
 
 /**
@@ -521,7 +521,7 @@ export async function acknowledgeAlert(alertId: string): Promise<{ success: bool
  */
 export async function fetchSystemHealth(systemType?: string): Promise<SystemHealthResponse> {
   const queryString = systemType ? buildQueryString({ system_type: systemType }) : '';
-  const url = queryString ? `/api/advanced-diagnostics/health?${queryString}` : '/api/advanced-diagnostics/health';
+  const url = queryString ? `/api/diagnostics/health?${queryString}` : '/api/diagnostics/health';
 
   logApiRequest('GET', url, { systemType });
   const result = await apiGet<SystemHealthResponse>(url);
@@ -538,7 +538,7 @@ export async function fetchSystemHealth(systemType?: string): Promise<SystemHeal
  */
 export async function fetchActiveDTCs(filters?: DTCFilters): Promise<DTCCollection> {
   const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
-  const url = queryString ? `/api/advanced-diagnostics/dtcs?${queryString}` : '/api/advanced-diagnostics/dtcs';
+  const url = queryString ? `/api/diagnostics/dtcs?${queryString}` : '/api/diagnostics/dtcs';
 
   logApiRequest('GET', url, filters);
   const rawResult = await apiGet<DiagnosticTroubleCode[]>(url);
@@ -575,7 +575,7 @@ export async function resolveDTC(
   code: number,
   sourceAddress: number = 0
 ): Promise<DTCResolutionResponse> {
-  const url = '/api/advanced-diagnostics/dtc';
+  const url = '/api/diagnostics/dtc';
   const request = { protocol, code, source_address: sourceAddress };
 
   logApiRequest('DELETE', url, request);
@@ -609,7 +609,7 @@ export async function resolveDTC(
  */
 export async function fetchFaultCorrelations(timeWindowSeconds?: number): Promise<FaultCorrelation[]> {
   const queryString = timeWindowSeconds ? buildQueryString({ time_window_seconds: timeWindowSeconds }) : '';
-  const url = queryString ? `/api/advanced-diagnostics/correlations?${queryString}` : '/api/advanced-diagnostics/correlations';
+  const url = queryString ? `/api/diagnostics/correlations?${queryString}` : '/api/diagnostics/correlations';
 
   logApiRequest('GET', url, { timeWindowSeconds });
   const result = await apiGet<FaultCorrelation[]>(url);
@@ -626,7 +626,7 @@ export async function fetchFaultCorrelations(timeWindowSeconds?: number): Promis
  */
 export async function fetchMaintenancePredictions(timeHorizonDays: number = 90): Promise<MaintenancePrediction[]> {
   const queryString = buildQueryString({ time_horizon_days: timeHorizonDays });
-  const url = `/api/advanced-diagnostics/predictions?${queryString}`;
+  const url = `/api/diagnostics/predictions?${queryString}`;
 
   logApiRequest('GET', url, { timeHorizonDays });
   const result = await apiGet<MaintenancePrediction[]>(url);
@@ -641,7 +641,7 @@ export async function fetchMaintenancePredictions(timeHorizonDays: number = 90):
  * @returns Promise resolving to diagnostic statistics
  */
 export async function fetchDiagnosticStatistics(): Promise<DiagnosticStats> {
-  const url = '/api/advanced-diagnostics/statistics';
+  const url = '/api/diagnostics/statistics';
 
   logApiRequest('GET', url);
   const rawResult = await apiGet<Record<string, unknown>>(url);
@@ -671,7 +671,7 @@ export async function fetchDiagnosticStatistics(): Promise<DiagnosticStats> {
  * @returns Promise resolving to diagnostics status
  */
 export async function fetchDiagnosticsStatus(): Promise<Record<string, unknown>> {
-  const url = '/api/advanced-diagnostics/status';
+  const url = '/api/diagnostics/status';
 
   logApiRequest('GET', url);
   const result = await apiGet<Record<string, unknown>>(url);
@@ -1076,7 +1076,7 @@ export async function validateConfiguration(section?: string): Promise<Configura
 }
 
 /**
- * Fetch CAN interface mappings
+ * Fetch CAN interface mappings and convert to array format
  *
  * @returns Promise resolving to CAN interface mappings
  */
@@ -1084,10 +1084,39 @@ export async function fetchCANInterfaceMappings(): Promise<CANInterfaceMapping[]
   const url = '/api/config/can/interfaces';
 
   logApiRequest('GET', url);
-  const result = await apiGet<CANInterfaceMapping[]>(url);
+
+  interface CANInterfacesResponse {
+    mappings: Record<string, {
+      physical_interface?: string;
+      bitrate?: number;
+      is_active?: boolean;
+      last_activity?: string;
+      message_count?: number;
+      error_count?: number;
+    }>;
+    validation: Record<string, {
+      status?: string;
+      message?: string;
+    }>;
+  }
+
+  const result = await apiGet<CANInterfacesResponse>(url);
   logApiResponse(url, result);
 
-  return result;
+  // Convert the mappings object to an array format expected by the frontend
+  const mappingsArray: CANInterfaceMapping[] = Object.entries(result.mappings || {}).map(([logical_name, mapping]) => ({
+    logical_name,
+    physical_interface: mapping.physical_interface || '',
+    bitrate: mapping.bitrate || 0,
+    is_active: mapping.is_active || false,
+    last_activity: mapping.last_activity,
+    message_count: mapping.message_count || 0,
+    error_count: mapping.error_count || 0,
+    validation_status: (result.validation[logical_name]?.status as "valid" | "invalid" | "warning") || "invalid",
+    validation_message: result.validation[logical_name]?.message
+  }));
+
+  return mappingsArray;
 }
 
 /**

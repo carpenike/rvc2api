@@ -81,24 +81,73 @@ templates:
     protocol: "rvc"
     can_arbitration_id_formula: "(0x18 << 24) | (dgn << 8) | source_address"
 
-  # Light device templates
+  # Firefly-specific templates
+  firefly_device: &firefly_device
+    <<: *base_device
+    protocol: "firefly"
+    secondary_protocols: ["rvc"]  # Firefly extends RV-C
+    can_arbitration_id_formula: "(0x18 << 24) | (dgn << 8) | source_address"
+    protocol_metadata:
+      firefly_version: "2023.1"
+      supports_scenes: true
+      supports_diagnostics: true
+
+  # J1939 specific templates
+  j1939_device: &j1939_device
+    <<: *base_device
+    protocol: "j1939"
+    interface: chassis
+    can_arbitration_id_formula: "(priority << 24) | (pgn << 8) | source_address"
+
+  # Spartan K2 chassis templates
+  spartan_k2_device: &spartan_k2_device
+    <<: *j1939_device
+    protocol: "spartan_k2"
+    secondary_protocols: ["j1939"]
+    protocol_metadata:
+      chassis_type: "spartan_k2"
+      safety_critical: true
+
+  # Light device templates (now protocol-aware)
   light_base: &light_base
-    <<: *rvc_device
     device_type: light
     category: lighting
     power_type: "12V_DC"
 
-  switchable_light: &switchable_light
-    <<: *light_base
+  # RV-C basic lights (fallback/compatibility)
+  rvc_switchable_light: &rvc_switchable_light
+    <<: [*light_base, *rvc_device]
     capabilities: [on_off]
-    brightness_levels: 2 # on/off only
+    brightness_levels: 2
 
-  dimmable_light: &dimmable_light
-    <<: *light_base
+  rvc_dimmable_light: &rvc_dimmable_light
+    <<: [*light_base, *rvc_device]
     capabilities: [on_off, brightness]
     brightness_levels: 255
     brightness_range: [0, 100]
+
+  # Firefly advanced lights (primary for Entegra)
+  firefly_switchable_light: &firefly_switchable_light
+    <<: [*light_base, *firefly_device]
+    capabilities: [on_off]
+    brightness_levels: 2
+    protocol_metadata:
+      firefly_zone_id: null  # Set per device
+      firefly_component_type: "lighting"
+      firefly_diagnostic_capable: true
+
+  firefly_dimmable_light: &firefly_dimmable_light
+    <<: [*light_base, *firefly_device]
+    capabilities: [on_off, brightness, scenes, fade]
+    brightness_levels: 255
+    brightness_range: [0, 100]
     fade_support: true
+    protocol_metadata:
+      firefly_zone_id: null  # Set per device
+      firefly_component_type: "lighting"
+      firefly_scene_capable: true
+      firefly_fade_time_ms: 1000
+      firefly_diagnostic_capable: true
 
   # Lock template
   lock_device: &lock_device
@@ -175,145 +224,242 @@ areas:
     - entity_id: bedroom_ceiling_light
       friendly_name: "Bedroom Ceiling Light"
       area: interior.bedroom
-      <<: *dimmable_light
+      physical_id: "firefly_light_bedroom_ceiling_001"
+      protocol_metadata:
+        firefly_zone_id: 1
+        firefly_scene_groups: ["evening", "night"]
+        firefly_diagnostic_id: "FF_DIAG_BR_CEIL_001"
+      <<: *firefly_dimmable_light
 
   27: &bedroom_accent_status
     - entity_id: bedroom_accent_light
       friendly_name: "Bedroom Accent Light"
       area: interior.bedroom
-      <<: *dimmable_light
+      physical_id: "firefly_light_bedroom_accent_001"
+      protocol_metadata:
+        firefly_zone_id: 1
+        firefly_scene_groups: ["evening", "accent"]
+        firefly_diagnostic_id: "FF_DIAG_BR_ACC_001"
+      <<: *firefly_dimmable_light
 
   28: &bedroom_vanity_status
     - entity_id: bedroom_vanity_light
       friendly_name: "Bedroom Vanity Light"
       area: interior.bedroom
-      <<: *dimmable_light
+      physical_id: "firefly_light_bedroom_vanity_001"
+      protocol_metadata:
+        firefly_zone_id: 1
+        firefly_scene_groups: ["evening", "task"]
+        firefly_diagnostic_id: "FF_DIAG_BR_VAN_001"
+      <<: *firefly_dimmable_light
 
   29: &bedroom_reading_status
     - entity_id: bedroom_reading_light
       friendly_name: "Bedroom Reading Light"
       area: interior.bedroom
       scene_compatible: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_bedroom_reading_001"
+      protocol_metadata:
+        firefly_zone_id: 1
+        firefly_scene_groups: ["evening", "reading"]
+        firefly_diagnostic_id: "FF_DIAG_BR_READ_001"
+      <<: *firefly_dimmable_light
 
   30: &master_bath_ceiling_status
     - entity_id: master_bath_ceiling_light
       friendly_name: "Master Bath Ceiling Light"
       area: interior.bathroom_master
       moisture_rating: "IP44"
-      <<: *dimmable_light
+      physical_id: "firefly_light_master_bath_ceiling_001"
+      protocol_metadata:
+        firefly_zone_id: 2
+        firefly_scene_groups: ["bathroom", "evening"]
+        firefly_diagnostic_id: "FF_DIAG_MB_CEIL_001"
+      <<: *firefly_dimmable_light
 
   31: &master_bath_lav_status
     - entity_id: master_bath_lav_light
       friendly_name: "Master Bath Lavatory Light"
       area: interior.bathroom_master
       moisture_rating: "IP44"
-      <<: *dimmable_light
+      physical_id: "firefly_light_master_bath_lav_001"
+      protocol_metadata:
+        firefly_zone_id: 2
+        firefly_scene_groups: ["bathroom", "task"]
+        firefly_diagnostic_id: "FF_DIAG_MB_LAV_001"
+      <<: *firefly_dimmable_light
 
   32: &master_bath_accent_status
     - entity_id: master_bath_accent_light
       friendly_name: "Master Bath Accent Light"
       area: interior.bathroom_master
       moisture_rating: "IP44"
-      <<: *dimmable_light
+      physical_id: "firefly_light_master_bath_accent_001"
+      protocol_metadata:
+        firefly_zone_id: 2
+        firefly_scene_groups: ["bathroom", "accent"]
+        firefly_diagnostic_id: "FF_DIAG_MB_ACC_001"
+      <<: *firefly_dimmable_light
 
   33: &mid_bath_ceiling_status
     - entity_id: mid_bath_ceiling_light
       friendly_name: "Mid Bath Ceiling Light"
       area: interior.bathroom_mid
       moisture_rating: "IP44"
-      <<: *dimmable_light
+      physical_id: "firefly_light_mid_bath_ceiling_001"
+      protocol_metadata:
+        firefly_zone_id: 3
+        firefly_scene_groups: ["bathroom", "guest"]
+        firefly_diagnostic_id: "FF_DIAG_MID_CEIL_001"
+      <<: *firefly_dimmable_light
 
   34: &mid_bath_accent_status
     - entity_id: mid_bath_accent_light
       friendly_name: "Mid Bath Accent Light"
       area: interior.bathroom_mid
       moisture_rating: "IP44"
-      <<: *dimmable_light
+      physical_id: "firefly_light_mid_bath_accent_001"
+      protocol_metadata:
+        firefly_zone_id: 3
+        firefly_scene_groups: ["bathroom", "accent"]
+        firefly_diagnostic_id: "FF_DIAG_MID_ACC_001"
+      <<: *firefly_dimmable_light
 
   35: &entrance_ceiling_status
     - entity_id: entrance_ceiling_light
       friendly_name: "Entrance Ceiling Light"
       area: interior.entrance
       auto_on_entry: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_entrance_ceiling_001"
+      protocol_metadata:
+        firefly_zone_id: 4
+        firefly_scene_groups: ["entrance", "security"]
+        firefly_diagnostic_id: "FF_DIAG_ENT_CEIL_001"
+      <<: *firefly_dimmable_light
 
   37: &main_ceiling_status
     - entity_id: main_ceiling_light
       friendly_name: "Main Living Ceiling Light"
       area: interior.living_main
       primary_room_light: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_ceiling_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "evening", "bright"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_CEIL_001"
+      <<: *firefly_dimmable_light
 
   38: &bedroom_courtesy_status
     - entity_id: bedroom_courtesy_light
       friendly_name: "Bedroom Courtesy Light"
       area: interior.bedroom
       night_light: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_bedroom_courtesy_001"
+      protocol_metadata:
+        firefly_zone_id: 1
+        firefly_scene_groups: ["night", "courtesy"]
+        firefly_diagnostic_id: "FF_DIAG_BR_COURT_001"
+      <<: *firefly_dimmable_light
 
   39: &main_ceiling_accent_status
     - entity_id: main_ceiling_accent_light
       friendly_name: "Main Ceiling Accent Light"
       area: interior.living_main
       accent_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_accent_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "accent", "evening"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_ACC_001"
+      <<: *firefly_dimmable_light
 
   41: &main_driver_ceiling_status
     - entity_id: main_driver_side_ceiling_light
       friendly_name: "Main Driver Side Ceiling Light"
       area: interior.living_main
       zone_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_driver_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "zone_driver"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_DRV_001"
+      <<: *firefly_dimmable_light
 
   42: &main_passenger_ceiling_status
     - entity_id: main_passenger_side_ceiling_light
       friendly_name: "Main Passenger Side Ceiling Light"
       area: interior.living_main
       zone_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_passenger_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "zone_passenger"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_PASS_001"
+      <<: *firefly_dimmable_light
 
   43: &main_driver_slide_status
     - entity_id: main_driver_side_slide_light
       friendly_name: "Main Driver Side Slide Light"
       area: interior.living_main
       slide_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_slide_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "slide"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_SLIDE_001"
+      <<: *firefly_dimmable_light
 
   45: &main_dinette_status
     - entity_id: main_dinette_light
       friendly_name: "Main Dinette Light"
       area: interior.living_main
       task_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_dinette_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "task", "dining"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_DIN_001"
+      <<: *firefly_dimmable_light
 
   46: &main_sink_status
     - entity_id: main_sink_light
       friendly_name: "Main Sink Light"
       area: interior.living_main
       task_lighting: true
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_sink_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "task", "kitchen"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_SINK_001"
+      <<: *firefly_dimmable_light
 
   47: &main_midship_status
     - entity_id: main_midship_light
       friendly_name: "Main Midship Light"
       area: interior.living_main
-      <<: *dimmable_light
+      physical_id: "firefly_light_main_midship_001"
+      protocol_metadata:
+        firefly_zone_id: 5
+        firefly_scene_groups: ["living", "general"]
+        firefly_diagnostic_id: "FF_DIAG_MAIN_MID_001"
+      <<: *firefly_dimmable_light
 
-  # Exterior lighting status
+  # Exterior lighting status (kept as RV-C for compatibility)
   51: &awning_driver_status
     - entity_id: exterior_driver_side_awning_light
       friendly_name: "Driver Side Awning Light"
       area: exterior.awning_driver
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_awning_driver_001"
+      <<: *rvc_switchable_light
 
   52: &awning_passenger_status
     - entity_id: exterior_passenger_side_awning_light
       friendly_name: "Passenger Side Awning Light"
       area: exterior.awning_passenger
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_awning_passenger_001"
+      <<: *rvc_switchable_light
 
   53: &basement_cargo_status
     - entity_id: basement_cargo_light
@@ -321,7 +467,8 @@ areas:
       area: exterior.basement
       motion_activated: true
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_basement_cargo_001"
+      <<: *rvc_switchable_light
 
   54: &under_slide_status
     - entity_id: exterior_under_slide_light
@@ -329,7 +476,8 @@ areas:
       area: exterior.awning_driver
       automatic_activation: "slide_extension"
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_under_slide_001"
+      <<: *rvc_switchable_light
 
   57: &security_driver_status
     - entity_id: exterior_driver_side_security_light
@@ -338,7 +486,8 @@ areas:
       motion_sensor: true
       security_lighting: true
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_security_driver_001"
+      <<: *rvc_switchable_light
 
   58: &security_passenger_status
     - entity_id: exterior_passenger_side_security_light
@@ -347,7 +496,8 @@ areas:
       motion_sensor: true
       security_lighting: true
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_security_passenger_001"
+      <<: *rvc_switchable_light
 
   59: &motion_light_status
     - entity_id: exterior_motion_light
@@ -356,7 +506,8 @@ areas:
       motion_activated: true
       auto_timeout: 300 # 5 minutes
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_motion_001"
+      <<: *rvc_switchable_light
 
   60: &porch_light_status
     - entity_id: exterior_porch_light
@@ -364,7 +515,8 @@ areas:
       area: exterior.awning_driver
       entrance_lighting: true
       weather_rating: "IP65"
-      <<: *switchable_light
+      physical_id: "rvc_light_porch_001"
+      <<: *rvc_switchable_light
 
   # Lock status
   default: &entrance_lock_status

@@ -5,8 +5,9 @@
  * DTC management, fault correlation analysis, and predictive maintenance.
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { AppLayout } from '@/components/app-layout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,16 +15,8 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -31,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -39,25 +33,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Activity,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   Clock,
-  TrendingUp,
-  Wrench,
-  Activity,
-  Shield,
-  AlertTriangle,
+  RefreshCw,
   Search,
-  RefreshCw
+  Shield,
+  TrendingUp,
+  Wrench
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 import {
-  fetchSystemHealth,
   fetchActiveDTCs,
   fetchFaultCorrelations,
   fetchMaintenancePredictions,
+  fetchSystemHealth,
   resolveDTC
 } from '@/api/endpoints';
 import type {
@@ -189,17 +190,22 @@ const SystemHealthOverview: React.FC = () => {
           <div>
             <h4 className="text-sm font-medium mb-3">Subsystem Health</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(healthData.system_scores).map(([system, score]) => (
+              {healthData.system_scores && Object.entries(healthData.system_scores).map(([system, score]) => (
                 <div key={system} className="flex items-center justify-between p-2 rounded border">
                   <span className="text-sm capitalize">{system.replace('_', ' ')}</span>
                   <div className="flex items-center gap-2">
-                    <Progress value={score * 100} className="w-16 h-1" />
+                    <Progress value={(score as number) * 100} className="w-16 h-1" />
                     <span className="text-xs font-medium w-8">
-                      {Math.round(score * 100)}%
+                      {Math.round((score as number) * 100)}%
                     </span>
                   </div>
                 </div>
               ))}
+              {!healthData.system_scores && (
+                <div className="col-span-full text-center text-muted-foreground text-sm p-4">
+                  No subsystem health data available
+                </div>
+              )}
             </div>
           </div>
 
@@ -218,7 +224,7 @@ const SystemHealthOverview: React.FC = () => {
           )}
 
           {/* Recommendations */}
-          {healthData.recommendations.length > 0 && (
+          {healthData.recommendations && healthData.recommendations.length > 0 && (
             <>
               <Separator />
               <div>
@@ -319,13 +325,13 @@ const DTCManager: React.FC = () => {
               </div>
               <div className="text-center p-3 rounded border">
                 <div className="text-2xl font-bold text-orange-500">
-                  {dtcData.by_severity.critical || 0}
+                  {(dtcData.by_severity && dtcData.by_severity.critical) || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Critical</div>
               </div>
               <div className="text-center p-3 rounded border">
                 <div className="text-2xl font-bold text-blue-500">
-                  {Object.keys(dtcData.by_protocol).length}
+                  {(dtcData.by_protocol && Object.keys(dtcData.by_protocol).length) || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Protocols</div>
               </div>
@@ -343,28 +349,28 @@ const DTCManager: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            <Select value={filters.severity || ""} onValueChange={(value) =>
-              setFilters(prev => ({ ...prev, severity: value || undefined }))
+            <Select value={filters.severity || "all"} onValueChange={(value) =>
+              setFilters(prev => ({ ...prev, severity: value === "all" ? undefined : value }))
             }>
               <SelectTrigger className="w-full sm:w-32">
                 <SelectValue placeholder="Severity" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Severities</SelectItem>
+                <SelectItem value="all">All Severities</SelectItem>
                 <SelectItem value="critical">Critical</SelectItem>
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filters.protocol || ""} onValueChange={(value) =>
-              setFilters(prev => ({ ...prev, protocol: value || undefined }))
+            <Select value={filters.protocol || "all"} onValueChange={(value) =>
+              setFilters(prev => ({ ...prev, protocol: value === "all" ? undefined : value }))
             }>
               <SelectTrigger className="w-full sm:w-32">
                 <SelectValue placeholder="Protocol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Protocols</SelectItem>
+                <SelectItem value="all">All Protocols</SelectItem>
                 <SelectItem value="rvc">RV-C</SelectItem>
                 <SelectItem value="j1939">J1939</SelectItem>
                 <SelectItem value="firefly">Firefly</SelectItem>
@@ -638,15 +644,16 @@ const MaintenancePredictions: React.FC = () => {
 // Main Diagnostics Dashboard Component
 export default function DiagnosticsPage() {
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Diagnostics Dashboard</h1>
-          <p className="text-muted-foreground">
-            Advanced system health monitoring and diagnostic trouble code management
-          </p>
+    <AppLayout pageTitle="Diagnostics Dashboard">
+      <div className="flex-1 space-y-6 p-4 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Diagnostics Dashboard</h1>
+            <p className="text-muted-foreground">
+              Advanced system health monitoring and diagnostic trouble code management
+            </p>
+          </div>
         </div>
-      </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
@@ -675,6 +682,7 @@ export default function DiagnosticsPage() {
           <MaintenancePredictions />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

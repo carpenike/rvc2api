@@ -5,10 +5,17 @@
  * Optimized for real-time data updates like CAN messages.
  */
 
-import React, { useMemo, useRef, useEffect, useState } from 'react'
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { FixedSizeList as List } from 'react-window'
 // Table components not needed for virtualized implementation
 import { Skeleton } from '@/components/ui/skeleton'
+
+// Type definition for react-window list child component props
+interface ListChildComponentProps<T = unknown> {
+  index: number
+  style: React.CSSProperties
+  data: T
+}
 
 export interface VirtualizedTableColumn<T> {
   id: string
@@ -37,14 +44,12 @@ function VirtualizedRow<T>({
   index,
   style,
   data
-}: ListChildComponentProps & {
-  data: {
-    items: T[]
-    columns: VirtualizedTableColumn<T>[]
-    getRowKey: (item: T, index: number) => string
-    onRowClick?: (item: T, index: number) => void
-  }
-}) {
+}: ListChildComponentProps<{
+  items: T[]
+  columns: VirtualizedTableColumn<T>[]
+  getRowKey: (item: T, index: number) => string
+  onRowClick?: (item: T, index: number) => void
+}>) {
   const { items, columns, onRowClick } = data
   const item = items[index]
 
@@ -151,16 +156,10 @@ export function VirtualizedTable<T>({
   // Scroll to bottom when new data arrives (for real-time feeds)
   useEffect(() => {
     if (listRef.current && data.length > 0) {
-      // Only auto-scroll if we're near the bottom (within last 5 items)
-      const scrollOffset = listRef.current.scrollTop || 0
-      const maxScroll = (data.length - 1) * itemHeight - height
-      const nearBottom = scrollOffset >= maxScroll - (5 * itemHeight)
-
-      if (nearBottom) {
-        listRef.current.scrollToItem(data.length - 1, 'end')
-      }
+      // Auto-scroll to the bottom for new data (simplified approach)
+      listRef.current.scrollToItem(data.length - 1, 'end')
     }
-  }, [data.length, itemHeight, height])
+  }, [data.length])
 
   // Memoize list data to prevent unnecessary re-renders
   const listData = useMemo(() => ({
@@ -250,7 +249,7 @@ export function VirtualizedTable<T>({
           width={containerWidth || '100%'}
           overscanCount={5} // Render 5 extra items above/below viewport
         >
-          {VirtualizedRow}
+          {VirtualizedRow<T>}
         </List>
       </div>
     </div>

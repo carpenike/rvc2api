@@ -21,6 +21,12 @@ class EntityConfig(TypedDict, total=False):
     friendly_name: str
     capabilities: list[str]
     groups: list[str]
+    # Protocol ownership and identification
+    protocol: str  # Primary protocol (e.g., "rvc", "j1939", "firefly", "spartan_k2")
+    secondary_protocols: list[str]  # Other protocols that can access this entity
+    physical_id: str  # Unique physical device identifier across protocols
+    # Protocol-specific metadata
+    protocol_metadata: dict[str, Any]  # Protocol-specific configuration data
     # Additional configuration fields that may be present
     instance: int
     command_dgn: str
@@ -50,6 +56,13 @@ class EntityState(BaseModel):
     capabilities: list[str] = Field(default_factory=list, description="Entity capabilities")
     friendly_name: str | None = Field(None, description="Human-readable name")
     groups: list[str] = Field(default_factory=list, description="Entity groups")
+    # Protocol ownership information
+    protocol: str = Field("rvc", description="Primary owning protocol")
+    secondary_protocols: list[str] = Field(default_factory=list, description="Secondary protocols")
+    physical_id: str | None = Field(None, description="Physical device identifier")
+    protocol_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Protocol-specific data"
+    )
 
 
 class Entity:
@@ -92,6 +105,10 @@ class Entity:
             capabilities=config.get("capabilities", []),
             friendly_name=config.get("friendly_name"),
             groups=config.get("groups", []),
+            protocol=config.get("protocol", "rvc"),
+            secondary_protocols=config.get("secondary_protocols", []),
+            physical_id=config.get("physical_id"),
+            protocol_metadata=config.get("protocol_metadata", {}),
         )
 
         # Add initial state to history

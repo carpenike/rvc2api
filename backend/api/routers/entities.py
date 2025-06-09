@@ -49,7 +49,7 @@ def _check_rvc_feature_enabled(request: Request) -> None:
     "/entities",
     response_model=dict[str, dict[str, Any]],
     summary="List entities",
-    description="Return all entities, optionally filtered by device_type and/or area.",
+    description="Return all entities, optionally filtered by device_type, area, and/or protocol.",
     response_description="Dictionary of entities matching the filter criteria",
 )
 async def list_entities(
@@ -57,24 +57,31 @@ async def list_entities(
     entity_service: Annotated[Any, Depends(get_entity_service)],
     device_type: str | None = Query(None, description="Filter by entity device_type"),
     area: str | None = Query(None, description="Filter by entity suggested_area"),
+    protocol: str | None = Query(
+        None, description="Filter by protocol (rvc, j1939, firefly, spartan_k2)"
+    ),
 ) -> dict[str, dict[str, Any]]:
     """
-    Return all entities, optionally filtered by device_type and/or area.
+    Return all entities, optionally filtered by device_type, area, and/or protocol.
 
-    This endpoint provides access to all known RV-C entities in the system,
-    with optional filtering capabilities to narrow down results.
+    This endpoint provides access to all known entities in the system,
+    with optional filtering capabilities to narrow down results by protocol ownership.
     """
     filters = []
     if device_type:
         filters.append(f"device_type={device_type}")
     if area:
         filters.append(f"area={area}")
+    if protocol:
+        filters.append(f"protocol={protocol}")
     filter_str = f" with filters: {', '.join(filters)}" if filters else ""
 
     logger.info(f"GET /entities - Listing entities{filter_str}")
     _check_rvc_feature_enabled(request)
 
-    entities = await entity_service.list_entities(device_type=device_type, area=area)
+    entities = await entity_service.list_entities(
+        device_type=device_type, area=area, protocol=protocol
+    )
 
     logger.info(f"Retrieved {len(entities)} entities{filter_str}")
     return entities
@@ -451,6 +458,44 @@ async def get_metadata(
         return metadata
     except Exception as e:
         logger.error(f"Error retrieving entity metadata: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@router.get(
+    "/protocol-summary",
+    response_model=dict,
+    summary="Get protocol summary",
+    description="Return summary of entity distribution across protocols.",
+    response_description="Dictionary containing protocol ownership statistics and entity distribution",
+)
+async def get_protocol_summary(
+    request: Request,
+    entity_service: Annotated[Any, Depends(get_entity_service)],
+) -> dict:
+    """
+    Return summary of entity distribution across protocols.
+
+    This endpoint provides information about how entities are distributed
+    across different protocols (RV-C, J1939, Firefly, Spartan K2), including
+    ownership statistics and deduplication information.
+    """
+    logger.debug("GET /protocol-summary - Retrieving protocol distribution summary")
+    _check_rvc_feature_enabled(request)
+
+    try:
+        protocol_summary = await entity_service.get_protocol_summary()
+
+        # Log summary information
+        total_entities = protocol_summary.get("total_entities", 0)
+        total_physical = protocol_summary.get("total_physical_devices", 0)
+        protocols = len(protocol_summary.get("protocols", {}))
+
+        logger.info(
+            f"Retrieved protocol summary: {total_entities} entities, {total_physical} physical devices, {protocols} protocols"
+        )
+        return protocol_summary
+    except Exception as e:
+        logger.error(f"Error retrieving protocol summary: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 

@@ -1,36 +1,33 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  fetchBaselineDeviations,
+  fetchOptimizationRecommendations,
+  fetchPerformanceMetrics,
+  fetchProtocolThroughput,
+  fetchResourceUtilization,
+  generatePerformanceReport
+} from '@/api/endpoints';
+import type { OptimizationSuggestion, PerformanceMetrics, ResourceUsage } from '@/api/types';
+import { AppLayout } from '@/components/app-layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
-  TrendingUp,
-  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  Download,
   Minus,
   Network,
   RefreshCw,
-  Download,
-  AlertTriangle,
-  CheckCircle
+  TrendingDown,
+  TrendingUp
 } from 'lucide-react';
-import {
-  fetchPerformanceMetrics,
-  fetchResourceUtilization,
-  fetchOptimizationRecommendations,
-  fetchBaselineDeviations,
-  fetchProtocolThroughput,
-  generatePerformanceReport
-} from '@/api/endpoints';
-import {
-  PerformanceMetrics,
-  ResourceUsage,
-  OptimizationSuggestion
-} from '@/api/types';
+import { useState } from 'react';
 
 interface PerformanceScoreProps {
   value: number;
@@ -394,48 +391,51 @@ export default function PerformancePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-4 w-96" />
+      <AppLayout pageTitle="Performance Analytics">
+        <div className="flex-1 space-y-6 p-4 pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <Skeleton className="h-10 w-32" />
           </div>
-          <Skeleton className="h-10 w-32" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+          <Skeleton className="h-96" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-        </div>
-        <Skeleton className="h-96" />
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Activity className="h-8 w-8" />
-            Performance Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Real-time system performance monitoring, trends, and optimization recommendations
-          </p>
+    <AppLayout pageTitle="Performance Analytics">
+      <div className="flex-1 space-y-6 p-4 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Activity className="h-8 w-8" />
+              Performance Analytics
+            </h1>
+            <p className="text-muted-foreground">
+              Real-time system performance monitoring, trends, and optimization recommendations
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRefreshAll}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={handleGenerateReport} disabled={isGeneratingReport}>
+              <Download className="h-4 w-4 mr-2" />
+              {isGeneratingReport ? 'Generating...' : 'Export Report'}
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefreshAll}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={handleGenerateReport} disabled={isGeneratingReport}>
-            <Download className="h-4 w-4 mr-2" />
-            {isGeneratingReport ? 'Generating...' : 'Export Report'}
-          </Button>
-        </div>
-      </div>
 
       {/* Overview Cards */}
       {metrics && (
@@ -550,6 +550,7 @@ export default function PerformancePage() {
           <OptimizationPanel recommendations={recommendations} />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
