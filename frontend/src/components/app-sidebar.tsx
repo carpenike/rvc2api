@@ -1,4 +1,5 @@
 import {
+  IconAnalyze,
   IconBulb,
   IconChartBar,
   IconCircuitSwitchOpen,
@@ -64,6 +65,11 @@ const data = {
       title: "Performance Analytics",
       url: "/performance",
       icon: IconChartBar,
+    },
+    {
+      title: "Analytics Dashboard",
+      url: "/analytics-dashboard",
+      icon: IconAnalyze,
     },
   ],
   navDiagnostics: [

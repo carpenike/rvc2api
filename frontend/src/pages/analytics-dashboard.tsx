@@ -24,7 +24,6 @@ import {
   IconAlertTriangle,
   IconAnalyze,
   IconBrain,
-  IconChart,
   IconChartBar,
   IconChartLine,
   IconEye,
@@ -662,7 +661,7 @@ function MetricsAggregationCard() {
 
         {Object.keys(windows).length === 0 && Object.keys(kpis).length === 0 && (
           <div className="text-center py-8">
-            <IconChart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <IconChartBar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No Metrics Data</h3>
             <p className="text-muted-foreground">
               Metrics aggregation will appear here as data is collected over time.

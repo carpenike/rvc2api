@@ -369,6 +369,13 @@ performance_analytics:
     firefly: 1.0
     spartan_k2: 1.2
 
+analytics_dashboard:
+  enabled: true
+  core: false
+  depends_on: [performance_analytics, entity_manager]
+  description: "Advanced analytics dashboard with performance visualization, trend analysis, and system health monitoring"
+  friendly_name: "Analytics Dashboard"
+
 device_discovery:
   enabled: true
   core: false

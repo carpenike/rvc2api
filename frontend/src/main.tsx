@@ -4,6 +4,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { AuthProvider } from "@/contexts/auth-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { WebSocketProvider } from "@/contexts/websocket-provider";
+import AnalyticsDashboardPage from "@/pages/analytics-dashboard";
 import CanSniffer from "@/pages/can-sniffer";
 import ConfigurationPage from "@/pages/config";
 import Dashboard from "@/pages/dashboard";
@@ -72,6 +73,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/rvc-spec" element={<AuthGuard><RVCSpec /></AuthGuard>} />
               <Route path="/system-status" element={<AuthGuard><SystemStatus /></AuthGuard>} />
               <Route path="/performance" element={<AuthGuard><PerformancePage /></AuthGuard>} />
+              <Route path="/analytics-dashboard" element={<AuthGuard><AnalyticsDashboardPage /></AuthGuard>} />
               <Route path="/settings" element={<AuthGuard><SettingsPage /></AuthGuard>} />
               <Route path="/profile" element={<AuthGuard><ProfilePage /></AuthGuard>} />
               <Route path="/admin-settings" element={<AuthGuard><AdminSettingsPage /></AuthGuard>} />
