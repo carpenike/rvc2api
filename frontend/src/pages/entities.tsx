@@ -6,32 +6,31 @@
  * controls following professional diagnostic tool patterns.
  */
 
+import { fetchEntities, fetchProtocolBridgeStatus } from "@/api/endpoints"
+import type { Entity } from "@/api/types"
 import { AppLayout } from "@/components/app-layout"
+import { MultiProtocolSelector, ProtocolEntityCard, type ProtocolType } from "@/components/multi-protocol"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { MultiProtocolSelector, ProtocolEntityCard, type ProtocolType } from "@/components/multi-protocol"
-import { useEntities } from "@/hooks/useEntities"
 import { useOptimisticBulkControl } from "@/hooks/useOptimisticMutations"
-import type { Entity } from "@/api/types"
-import { fetchJ1939Entities, fetchFireflyEntities, fetchSpartanK2Entities, fetchProtocolBridgeStatus } from "@/api/endpoints"
 import {
-    IconBulb,
-    IconCpu,
-    IconDroplet,
-    IconLock,
-    IconSearch,
-    IconSettings,
-    IconTemperature,
-    IconTrendingUp,
-    IconAlertTriangle
+  IconAlertTriangle,
+  IconBulb,
+  IconCpu,
+  IconDroplet,
+  IconLock,
+  IconSearch,
+  IconSettings,
+  IconTemperature,
+  IconTrendingUp
 } from "@tabler/icons-react"
-import { useState, useMemo } from "react"
-import { Link } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+import { useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 
 
 
@@ -215,97 +214,69 @@ function BulkControlActions({
  * Hook to fetch multi-protocol entities
  */
 function useMultiProtocolEntities(selectedProtocol: ProtocolType) {
-  const { data: rvcEntities, isLoading: rvcLoading } = useEntities()
-
-  const { data: j1939Entities, isLoading: j1939Loading } = useQuery({
-    queryKey: ['entities', 'j1939'],
-    queryFn: fetchJ1939Entities,
-    enabled: selectedProtocol === 'all' || selectedProtocol === 'j1939',
-    refetchInterval: 30000 // Refresh every 30 seconds
+  // Use unified entities API with protocol filtering (backend handles deduplication)
+  const { data: unifiedEntities, isLoading: unifiedLoading } = useQuery({
+    queryKey: ['entities', selectedProtocol === 'all' ? undefined : selectedProtocol],
+    queryFn: () => fetchEntities({ protocol: selectedProtocol === 'all' ? undefined : selectedProtocol }),
+    refetchInterval: 5000
   })
 
-  const { data: fireflyEntities, isLoading: fireflyLoading } = useQuery({
-    queryKey: ['entities', 'firefly'],
-    queryFn: fetchFireflyEntities,
-    enabled: selectedProtocol === 'all' || selectedProtocol === 'firefly',
-    refetchInterval: 30000
-  })
-
-  const { data: spartanEntities, isLoading: spartanLoading } = useQuery({
-    queryKey: ['entities', 'spartan_k2'],
-    queryFn: fetchSpartanK2Entities,
-    enabled: selectedProtocol === 'all' || selectedProtocol === 'spartan_k2',
+  // Get protocol stats for each individual protocol (for selector counts)
+  const { data: allEntities } = useQuery({
+    queryKey: ['entities', 'all'],
+    queryFn: () => fetchEntities(),
     refetchInterval: 30000
   })
 
   const { data: bridgeStatus } = useQuery({
     queryKey: ['protocol-bridge-status'],
     queryFn: fetchProtocolBridgeStatus,
-    refetchInterval: 15000 // Bridge status refreshes more frequently
+    refetchInterval: 15000
   })
 
-  // Combine entities based on selected protocol
-  const combinedEntities = useMemo(() => {
-    const entities: Entity[] = []
-
-    if (selectedProtocol === 'all' || selectedProtocol === 'rvc') {
-      if (rvcEntities) {
-        entities.push(...Object.values(rvcEntities))
-      }
-    }
-
-    if (selectedProtocol === 'all' || selectedProtocol === 'j1939') {
-      if (j1939Entities) {
-        entities.push(...Object.values(j1939Entities))
-      }
-    }
-
-    if (selectedProtocol === 'all' || selectedProtocol === 'firefly') {
-      if (fireflyEntities) {
-        entities.push(...Object.values(fireflyEntities))
-      }
-    }
-
-    if (selectedProtocol === 'all' || selectedProtocol === 'spartan_k2') {
-      if (spartanEntities) {
-        entities.push(...Object.values(spartanEntities))
-      }
-    }
-
-    return entities
-  }, [selectedProtocol, rvcEntities, j1939Entities, fireflyEntities, spartanEntities])
+  // Convert EntityCollection to Entity[] array for component consumption
+  const entities = useMemo(() => {
+    return unifiedEntities ? Object.values(unifiedEntities) : []
+  }, [unifiedEntities])
 
   // Calculate protocol stats for selector
   const protocolStats = useMemo(() => {
-    const stats: Record<string, { count: number; health: number; status: string }> = {
-      all: { count: combinedEntities.length, health: 0.95, status: 'active' },
-      rvc: { count: rvcEntities ? Object.keys(rvcEntities).length : 0, health: 0.98, status: 'active' },
-      j1939: { count: j1939Entities ? Object.keys(j1939Entities).length : 0, health: 0.92, status: 'active' },
-      firefly: { count: fireflyEntities ? Object.keys(fireflyEntities).length : 0, health: 0.89, status: 'warning' },
-      spartan_k2: { count: spartanEntities ? Object.keys(spartanEntities).length : 0, health: 0.96, status: 'active' }
+    const allEntitiesArray = allEntities ? Object.values(allEntities) : [];
+
+    // Helper type guards
+    function hasProtocol(entity: unknown): entity is { protocol: string } {
+      return (
+        typeof entity === "object" &&
+        entity !== null &&
+        "protocol" in entity &&
+        typeof (entity as Record<string, unknown>).protocol === "string"
+      );
     }
+
+    const stats: Record<string, { count: number; health: number; status: string }> = {
+      all: { count: allEntitiesArray.length, health: 0.95, status: "active" },
+      rvc: { count: allEntitiesArray.filter(e => hasProtocol(e) && e.protocol === "rvc").length, health: 0.98, status: "active" },
+      j1939: { count: allEntitiesArray.filter(e => hasProtocol(e) && e.protocol === "j1939").length, health: 0.92, status: "active" },
+      firefly: { count: allEntitiesArray.filter(e => hasProtocol(e) && e.protocol === "firefly").length, health: 0.89, status: "warning" },
+      spartan_k2: { count: allEntitiesArray.filter(e => hasProtocol(e) && e.protocol === "spartan_k2").length, health: 0.96, status: "active" }
+    };
 
     // Update health scores based on bridge status if available
     if (bridgeStatus) {
-      stats.all.health = bridgeStatus.health_score
+      stats.all.health = bridgeStatus.health_score;
       if (bridgeStatus.error_rate > 0.1) {
-        stats.all.status = 'warning'
+        stats.all.status = "warning";
       }
     }
 
-    return stats
-  }, [combinedEntities.length, rvcEntities, j1939Entities, fireflyEntities, spartanEntities, bridgeStatus])
-
-  const isLoading = rvcLoading ||
-    (selectedProtocol === 'j1939' && j1939Loading) ||
-    (selectedProtocol === 'firefly' && fireflyLoading) ||
-    (selectedProtocol === 'spartan_k2' && spartanLoading)
+    return stats;
+  }, [allEntities, bridgeStatus]);
 
   return {
-    entities: combinedEntities,
+    entities,
     protocolStats,
     bridgeStatus,
-    isLoading
+    isLoading: unifiedLoading
   }
 }
 

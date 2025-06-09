@@ -79,13 +79,13 @@ function LightControlCard() {
           {lights && lights.length > 0 ? (
             lights.slice(0, 3).map((light) => (
               <Button
-                key={light.id}
+                key={light.entity_id}
                 variant={light.state === 'on' ? 'default' : 'outline'}
                 onClick={() => handleLightToggle(light)}
                 disabled={lightControl.toggle.isPending}
                 className="justify-between"
               >
-                <span>{light.name || light.id}</span>
+                <span>{light.name || light.entity_id}</span>
                 <Badge variant={light.state === 'on' ? 'default' : 'secondary'}>
                   {light.state}
                 </Badge>
@@ -227,6 +227,6 @@ function EntityOverviewCard() {
  * Main component export
  */
 export {
-    EntityCardSkeleton, EntityOverviewCard, LightControlCard,
-    SystemStatusCard
+  EntityCardSkeleton, EntityOverviewCard, LightControlCard,
+  SystemStatusCard
 };
