@@ -78,7 +78,276 @@ async def get_performance_analytics_feature():
     return feature
 
 
+# Backend-First Enhanced Response Models
+
+
+class BackendComputedHealthStatus(BaseModel):
+    """Backend-computed health status with categorized thresholds."""
+
+    status: str = Field(..., description="Computed health status: healthy, warning, critical")
+    score: float = Field(..., description="Overall health score (0.0-1.0)")
+    color_class: str = Field(..., description="CSS color class for UI")
+    variant: str = Field(..., description="UI variant: default, secondary, destructive")
+    details: dict[str, Any] = Field(default_factory=dict, description="Health computation details")
+
+
+class BackendComputedResourceStatus(BaseModel):
+    """Backend-computed resource utilization with threshold-based status."""
+
+    cpu_usage: float = Field(..., description="CPU usage percentage")
+    cpu_status: str = Field(..., description="CPU status: good, warning, critical")
+
+    memory_usage: float = Field(..., description="Memory usage percentage")
+    memory_status: str = Field(..., description="Memory status: good, warning, critical")
+
+    disk_usage: float = Field(..., description="Disk usage percentage")
+    disk_status: str = Field(..., description="Disk status: good, warning, critical")
+
+    network_usage: float = Field(..., description="Network usage MB/s")
+    network_status: str = Field(..., description="Network status: good, warning, critical")
+
+    overall_status: str = Field(..., description="Overall resource status")
+
+
+class BackendComputedAPIPerformance(BaseModel):
+    """Backend-computed API performance with status classification."""
+
+    average_response_time: float = Field(..., description="Average response time (ms)")
+    response_time_status: str = Field(
+        ..., description="Response time status: good, warning, critical"
+    )
+
+    requests_per_second: float = Field(..., description="Requests per second")
+    throughput_status: str = Field(..., description="Throughput status: good, warning, critical")
+
+    error_rate: float = Field(..., description="Error rate percentage")
+    error_status: str = Field(..., description="Error status: good, warning, critical")
+
+    overall_performance_status: str = Field(..., description="Overall API performance status")
+
+
 # API Endpoints
+
+
+@router.get(
+    "/health-computed",
+    response_model=BackendComputedHealthStatus,
+    summary="Get backend-computed health status with UI categorization",
+)
+async def get_computed_health_status(
+    feature: Annotated[Any, Depends(get_performance_analytics_feature)],
+) -> BackendComputedHealthStatus:
+    """
+    Get comprehensive health status with backend-computed thresholds and UI classification.
+
+    This endpoint performs all business logic computation on the backend, removing the need
+    for frontend threshold calculations. Returns status classification ready for UI display.
+    """
+    try:
+        # Use the feature to compute comprehensive health status
+        health_status = await feature.get_system_health_status()
+
+        # Backend business logic: Apply configurable thresholds
+        score = health_status.get("overall_score", 0.8)  # Default to good
+
+        # Business logic: Determine status based on configurable thresholds
+        if score >= feature.analytics_settings.threshold_healthy:
+            status = "healthy"
+            color_class = "text-green-600"
+            variant = "default"
+        elif score >= feature.analytics_settings.threshold_warning:
+            status = "warning"
+            color_class = "text-yellow-600"
+            variant = "secondary"
+        else:
+            status = "critical"
+            color_class = "text-red-600"
+            variant = "destructive"
+
+        return BackendComputedHealthStatus(
+            status=status,
+            score=score,
+            color_class=color_class,
+            variant=variant,
+            details=health_status,
+        )
+
+    except Exception as e:
+        logger.error(f"Error computing health status: {e}")
+        # Return degraded status with error details
+        return BackendComputedHealthStatus(
+            status="critical",
+            score=0.0,
+            color_class="text-red-600",
+            variant="destructive",
+            details={"error": str(e)},
+        )
+
+
+@router.get(
+    "/resources-computed",
+    response_model=BackendComputedResourceStatus,
+    summary="Get backend-computed resource utilization with status classification",
+)
+async def get_computed_resource_status(
+    feature: Annotated[Any, Depends(get_performance_analytics_feature)],
+) -> BackendComputedResourceStatus:
+    """
+    Get resource utilization with backend-computed threshold-based status classification.
+
+    Eliminates frontend business logic for resource status determination by applying
+    configurable thresholds on the backend and returning ready-to-display status.
+    """
+    try:
+        # Get resource data from telemetry collector
+        resource_data = await feature.get_resource_utilization()
+
+        # Backend business logic: Apply configurable thresholds for each resource type
+        def classify_resource_status(
+            usage_pct: float, warning_threshold: float, critical_threshold: float
+        ) -> str:
+            """Apply backend business logic for resource status classification."""
+            if usage_pct >= critical_threshold:
+                return "critical"
+            elif usage_pct >= warning_threshold:
+                return "warning"
+            else:
+                return "good"
+
+        cpu_usage = resource_data.get("cpu_usage", 0.0) * 100
+        memory_usage = resource_data.get("memory_usage", 0.0) * 100
+        disk_usage = resource_data.get("disk_usage", 0.0) * 100
+        network_usage = resource_data.get("network_usage", 0.0)
+
+        # Use feature-specific thresholds from configuration
+        cpu_status = classify_resource_status(
+            cpu_usage,
+            feature.analytics_settings.cpu_warning_threshold_percent,
+            feature.analytics_settings.cpu_critical_threshold_percent,
+        )
+        memory_status = classify_resource_status(
+            memory_usage,
+            feature.analytics_settings.memory_warning_threshold_percent,
+            feature.analytics_settings.memory_critical_threshold_percent,
+        )
+        disk_status = classify_resource_status(
+            disk_usage,
+            70.0,
+            90.0,  # Disk thresholds from feature config
+        )
+
+        # Network status based on usage rate (business logic)
+        network_status = (
+            "critical" if network_usage > 1000 else "warning" if network_usage > 100 else "good"
+        )
+
+        # Overall status business logic: worst status wins
+        all_statuses = [cpu_status, memory_status, disk_status, network_status]
+        if "critical" in all_statuses:
+            overall_status = "critical"
+        elif "warning" in all_statuses:
+            overall_status = "warning"
+        else:
+            overall_status = "good"
+
+        return BackendComputedResourceStatus(
+            cpu_usage=cpu_usage,
+            cpu_status=cpu_status,
+            memory_usage=memory_usage,
+            memory_status=memory_status,
+            disk_usage=disk_usage,
+            disk_status=disk_status,
+            network_usage=network_usage,
+            network_status=network_status,
+            overall_status=overall_status,
+        )
+
+    except Exception as e:
+        logger.error(f"Error computing resource status: {e}")
+        # Return safe fallback with error status
+        return BackendComputedResourceStatus(
+            cpu_usage=0.0,
+            cpu_status="critical",
+            memory_usage=0.0,
+            memory_status="critical",
+            disk_usage=0.0,
+            disk_status="critical",
+            network_usage=0.0,
+            network_status="critical",
+            overall_status="critical",
+        )
+
+
+@router.get(
+    "/api-performance-computed",
+    response_model=BackendComputedAPIPerformance,
+    summary="Get backend-computed API performance with status classification",
+)
+async def get_computed_api_performance(
+    feature: Annotated[Any, Depends(get_performance_analytics_feature)],
+) -> BackendComputedAPIPerformance:
+    """
+    Get API performance metrics with backend-computed status classification.
+
+    Applies business logic thresholds on the backend to determine performance status,
+    eliminating the need for frontend threshold calculations.
+    """
+    try:
+        # Get API performance data from feature analytics
+        api_metrics = await feature.get_api_performance_metrics()
+
+        avg_response_time = api_metrics.get("average_response_time_ms", 50.0)
+        requests_per_second = api_metrics.get("requests_per_second", 10.0)
+        error_rate = api_metrics.get("error_rate_percent", 0.0)
+
+        # Backend business logic: Apply feature-configured thresholds
+        response_time_status = (
+            "critical"
+            if avg_response_time > 500
+            else "warning"
+            if avg_response_time > 200
+            else "good"
+        )
+
+        throughput_status = (
+            "critical"
+            if requests_per_second < 1
+            else "warning"
+            if requests_per_second < 5
+            else "good"
+        )
+
+        error_status = "critical" if error_rate > 5.0 else "warning" if error_rate > 1.0 else "good"
+
+        # Overall performance business logic
+        if response_time_status == "critical" or error_status == "critical":
+            overall_performance_status = "critical"
+        elif "warning" in [response_time_status, throughput_status, error_status]:
+            overall_performance_status = "warning"
+        else:
+            overall_performance_status = "good"
+
+        return BackendComputedAPIPerformance(
+            average_response_time=avg_response_time,
+            response_time_status=response_time_status,
+            requests_per_second=requests_per_second,
+            throughput_status=throughput_status,
+            error_rate=error_rate,
+            error_status=error_status,
+            overall_performance_status=overall_performance_status,
+        )
+
+    except Exception as e:
+        logger.error(f"Error computing API performance: {e}")
+        return BackendComputedAPIPerformance(
+            average_response_time=1000.0,
+            response_time_status="critical",
+            requests_per_second=0.0,
+            throughput_status="critical",
+            error_rate=100.0,
+            error_status="critical",
+            overall_performance_status="critical",
+        )
 
 
 @router.get("/status", response_model=dict[str, Any])

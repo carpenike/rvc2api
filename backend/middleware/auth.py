@@ -34,16 +34,34 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
     # Endpoints that don't require authentication
     EXCLUDED_PATHS: ClassVar[set[str]] = {
+        # Health and documentation endpoints
         "/",
         "/health",
+        "/healthz",
+        "/readyz",
+        "/metrics",
         "/docs",
         "/redoc",
         "/openapi.json",
+        # Initial authentication endpoints (users not yet authenticated)
         "/api/auth/login",
-        "/api/auth/magic-link",
-        "/api/auth/magic",
-        "/api/auth/status",
-        "/ws",  # WebSocket endpoints handled separately
+        "/api/auth/login-step",  # First step of MFA login flow
+        "/api/auth/login-mfa",  # Complete login after MFA verification
+        "/api/auth/status",  # Authentication system status (public info)
+        "/api/auth/me",  # Current user info (returns 401 if not authenticated)
+        # Token management (refresh tokens work when access token expires)
+        "/api/auth/refresh",
+        "/api/auth/revoke",
+        "/api/auth/logout",  # Logout should work even with expired access token
+        # Magic link authentication (passwordless auth flow)
+        "/api/auth/magic-link",  # Request magic link
+        "/api/auth/magic",  # Verify magic link token
+        # User invitation flow (public access needed)
+        "/api/auth/invitation/accept",  # Accept invitation via link
+        # Admin credential retrieval (one-time display of auto-generated credentials)
+        "/api/auth/admin/credentials",  # Auto-generated admin credentials
+        # WebSocket endpoints (handled separately)
+        "/ws",
     }
 
     # Path prefixes that don't require authentication

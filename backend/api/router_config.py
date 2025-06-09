@@ -12,15 +12,19 @@ from fastapi import FastAPI
 
 from backend.api.routers import (
     advanced_diagnostics,
+    analytics_dashboard,
     auth,
+    bulk_operations,
     can,
     config,
     dashboard,
+    device_discovery,
     docs,
     entities,
     logs,
     multi_network,
     performance_analytics,
+    predictive_maintenance,
 )
 from backend.websocket.routes import router as websocket_router
 
@@ -52,6 +56,10 @@ def configure_routers(app: FastAPI) -> None:
     app.include_router(
         performance_analytics.router, prefix="/api/performance", tags=["performance"]
     )
+    app.include_router(analytics_dashboard.router)
+    app.include_router(device_discovery.router)
+    app.include_router(bulk_operations.router)
+    app.include_router(predictive_maintenance.router)
 
     # Include WebSocket routes that integrate with feature manager
     app.include_router(websocket_router)
@@ -82,8 +90,23 @@ def get_router_info() -> dict[str, Any]:
                 "tags": ["performance"],
                 "name": "performance_analytics",
             },
+            {
+                "prefix": "/api/discovery",
+                "tags": ["device_discovery"],
+                "name": "device_discovery",
+            },
+            {
+                "prefix": "/api/bulk-operations",
+                "tags": ["bulk-operations"],
+                "name": "bulk_operations",
+            },
+            {
+                "prefix": "/api/predictive-maintenance",
+                "tags": ["predictive-maintenance"],
+                "name": "predictive_maintenance",
+            },
             {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 11,
+        "total_routers": 14,
         "dependency_injection": True,
     }

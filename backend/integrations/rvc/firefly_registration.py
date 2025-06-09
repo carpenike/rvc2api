@@ -7,42 +7,58 @@ feature lifecycle management.
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from backend.integrations.rvc.firefly_feature import FireflyFeature
-from backend.services.feature_manager import FeatureManager
+if TYPE_CHECKING:
+    from backend.integrations.rvc.firefly_feature import FireflyFeature
+    from backend.services.feature_manager import FeatureManager
 
 logger = logging.getLogger(__name__)
 
 
 def register_firefly_feature(
-    feature_manager: FeatureManager, config: dict[str, Any] | None = None
-) -> None:
+    name: str,
+    enabled: bool,
+    core: bool,
+    config: dict[str, Any],
+    dependencies: list[str],
+    friendly_name: str | None = None,
+) -> "FireflyFeature":
     """
-    Register the Firefly RV systems feature with the feature manager.
+    Factory function for creating a FireflyFeature instance.
+
+    This function is called by the feature manager when loading features from YAML.
+    It allows custom instantiation logic for the Firefly feature.
 
     Args:
-        feature_manager: The feature manager instance
-        config: Optional configuration override
+        name: Feature name
+        enabled: Whether the feature is enabled
+        core: Whether this is a core feature
+        config: Feature configuration
+        dependencies: List of feature dependencies
+        friendly_name: Human-readable feature name
+
+    Returns:
+        FireflyFeature instance
     """
     try:
+        from backend.integrations.rvc.firefly_feature import FireflyFeature
+
         # Create Firefly feature instance
         firefly_feature = FireflyFeature(
-            name="firefly",
-            enabled=config.get("enabled", False) if config else False,
-            core=False,
+            name=name,
+            enabled=enabled,
+            core=core,
             config=config,
-            dependencies=["rvc"],  # Firefly depends on RVC protocol
-            friendly_name="Firefly RV Systems",
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Firefly RV Systems",
         )
 
-        # Register with feature manager
-        feature_manager.register_feature(firefly_feature)
-
-        logger.info("Firefly RV systems feature registered successfully")
+        logger.info("Firefly RV systems feature created successfully")
+        return firefly_feature
 
     except Exception as e:
-        logger.error(f"Failed to register Firefly feature: {e}")
+        logger.error(f"Failed to create Firefly feature: {e}")
         raise
 
 
@@ -136,7 +152,7 @@ def get_firefly_feature_info() -> dict[str, Any]:
     }
 
 
-def validate_firefly_dependencies(feature_manager: FeatureManager) -> tuple[bool, list[str]]:
+def validate_firefly_dependencies(feature_manager: "FeatureManager") -> tuple[bool, list[str]]:
     """
     Validate that Firefly feature dependencies are met.
 

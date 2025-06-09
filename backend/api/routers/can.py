@@ -26,6 +26,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
+from pydantic import BaseModel, Field
 
 from backend.core.dependencies import get_can_service, get_feature_manager_from_request
 
@@ -91,6 +92,212 @@ async def get_queue_status(
     except Exception as e:
         logger.error(f"Error retrieving CAN queue status: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+# Enhanced backend-first CAN statistics models
+class BackendComputedCANStatistics(BaseModel):
+    """Enhanced CAN statistics with backend business logic and PGN-level data."""
+
+    total_messages: int = Field(..., description="Total messages processed")
+    total_errors: int = Field(..., description="Total error messages")
+    message_rate: float = Field(..., description="Current message rate (messages/second)")
+    uptime: float = Field(..., description="System uptime in seconds")
+    error_rate_percent: float = Field(..., description="Error rate percentage")
+    computed_health_status: str = Field(..., description="Backend-computed health status")
+    unique_pgns: int = Field(..., description="Number of unique PGNs seen")
+    unique_instances: int = Field(..., description="Number of unique instances seen")
+    pgn_statistics: dict[str, Any] = Field(
+        default_factory=dict, description="PGN-level message statistics"
+    )
+    instance_statistics: dict[str, Any] = Field(
+        default_factory=dict, description="Instance-level message statistics"
+    )
+    top_pgns: list[tuple[str, dict[str, Any]]] = Field(
+        default_factory=list, description="Top PGNs by message count"
+    )
+    last_updated: float = Field(..., description="Timestamp of last update")
+    interface_stats: dict[str, Any] = Field(
+        default_factory=dict, description="Per-interface statistics"
+    )
+    error: str | None = Field(default=None, description="Error message if computation failed")
+
+
+# Backend-First CANMetrics Response Model
+class BackendComputedCANMetrics(BaseModel):
+    """Backend-computed CAN metrics in the exact format expected by frontend."""
+
+    message_rate: float = Field(..., description="Current message rate (messages/second)")
+    total_messages: int = Field(..., description="Total messages processed")
+    error_count: int = Field(..., description="Total error count")
+    uptime: float = Field(..., description="System uptime in seconds")
+
+
+@router.get(
+    "/statistics/enhanced",
+    response_model=BackendComputedCANStatistics,
+    summary="Get enhanced CAN statistics with PGN-level data and backend computation",
+    description="Enhanced CAN statistics with business logic computed on backend, including PGN analysis",
+)
+async def get_enhanced_can_statistics(
+    request: Request,
+    can_service: Annotated[Any, Depends(get_can_service)],
+) -> BackendComputedCANStatistics:
+    """
+    Get comprehensive CAN statistics with backend-computed business logic and PGN-level analysis.
+
+    This endpoint performs all statistical analysis and business logic on the backend,
+    including PGN-level message aggregation that was previously done in the frontend.
+    """
+    logger.debug("GET /can/statistics/enhanced - Retrieving enhanced CAN statistics")
+    _check_can_interface_feature_enabled(request)
+
+    try:
+        # Get basic statistics from CAN service
+        basic_stats = await can_service.get_bus_statistics()
+
+        # Backend business logic: Aggregate PGN-level statistics
+        pgn_aggregation = {}
+        instance_aggregation = {}
+
+        # Get recent messages for analysis (backend aggregation)
+        recent_messages = await can_service.get_recent_messages(limit=1000)
+
+        for message in recent_messages:
+            pgn = message.get("pgn", "unknown")
+            instance = message.get("instance")
+
+            # PGN aggregation business logic
+            if pgn not in pgn_aggregation:
+                pgn_aggregation[pgn] = {
+                    "count": 0,
+                    "first_seen": message.get("timestamp"),
+                    "last_seen": message.get("timestamp"),
+                    "average_size": 0,
+                    "sources": set(),
+                }
+
+            pgn_aggregation[pgn]["count"] += 1
+            pgn_aggregation[pgn]["last_seen"] = message.get("timestamp")
+            pgn_aggregation[pgn]["sources"].add(message.get("source", "unknown"))
+
+            # Instance aggregation business logic
+            if instance is not None:
+                if instance not in instance_aggregation:
+                    instance_aggregation[instance] = {"count": 0, "pgns": set()}
+                instance_aggregation[instance]["count"] += 1
+                instance_aggregation[instance]["pgns"].add(pgn)
+
+        # Convert sets to lists for JSON serialization
+        for pgn_data in pgn_aggregation.values():
+            pgn_data["sources"] = list(pgn_data["sources"])
+
+        for instance_data in instance_aggregation.values():
+            instance_data["pgns"] = list(instance_data["pgns"])
+
+        # Backend business logic: Calculate top PGNs by message count
+        top_pgns = sorted(pgn_aggregation.items(), key=lambda x: x[1]["count"], reverse=True)[:10]
+
+        # Backend business logic: Calculate error rate and health status
+        total_messages = sum(stats.total_messages for stats in basic_stats.values())
+        total_errors = sum(stats.total_errors for stats in basic_stats.values())
+        error_rate = (total_errors / max(total_messages, 1)) * 100
+
+        # Health status business logic
+        if error_rate > 10:
+            health_status = "critical"
+        elif error_rate > 5:
+            health_status = "warning"
+        else:
+            health_status = "healthy"
+
+        # Compute message rate (business logic)
+        total_uptime = max(stats.uptime for stats in basic_stats.values()) if basic_stats else 0
+        message_rate = total_messages / max(total_uptime, 1)
+
+        return BackendComputedCANStatistics(
+            total_messages=total_messages,
+            total_errors=total_errors,
+            message_rate=message_rate,
+            uptime=total_uptime,
+            error_rate_percent=error_rate,
+            computed_health_status=health_status,
+            unique_pgns=len(pgn_aggregation),
+            unique_instances=len(instance_aggregation),
+            pgn_statistics=pgn_aggregation,
+            instance_statistics=instance_aggregation,
+            top_pgns=top_pgns,
+            last_updated=__import__("time").time(),
+            interface_stats=basic_stats,
+        )
+
+    except Exception as e:
+        logger.error(f"Error retrieving enhanced CAN statistics: {e}", exc_info=True)
+        # Return safe fallback data with error status
+        return BackendComputedCANStatistics(
+            total_messages=0,
+            total_errors=0,
+            message_rate=0.0,
+            uptime=0.0,
+            error_rate_percent=100.0,
+            computed_health_status="critical",
+            unique_pgns=0,
+            unique_instances=0,
+            pgn_statistics={},
+            instance_statistics={},
+            top_pgns=[],
+            last_updated=__import__("time").time(),
+            interface_stats={},
+            error=str(e),
+        )
+
+
+@router.get(
+    "/metrics/computed",
+    response_model=BackendComputedCANMetrics,
+    summary="Get backend-computed CAN metrics in frontend-compatible format",
+    description="Backend-computed CAN metrics with exact field mapping for frontend consumption",
+)
+async def get_computed_can_metrics(
+    request: Request,
+    can_service: Annotated[Any, Depends(get_can_service)],
+) -> BackendComputedCANMetrics:
+    """
+    Get CAN metrics with backend computation and exact frontend field mapping.
+
+    This endpoint eliminates the need for frontend field mapping by providing
+    the CANMetrics format directly from the backend with proper field names.
+    """
+    logger.debug("GET /can/metrics/computed - Retrieving backend-computed CAN metrics")
+    _check_can_interface_feature_enabled(request)
+
+    try:
+        # Get basic statistics from CAN service
+        basic_stats = await can_service.get_bus_statistics()
+
+        # Backend business logic: Aggregate across all interfaces and compute metrics
+        total_messages = (
+            sum(stats.total_messages for stats in basic_stats.values()) if basic_stats else 0
+        )
+        total_errors = (
+            sum(stats.total_errors for stats in basic_stats.values()) if basic_stats else 0
+        )
+        total_uptime = max(stats.uptime for stats in basic_stats.values()) if basic_stats else 0
+
+        # Backend business logic: Calculate message rate
+        message_rate = total_messages / max(total_uptime, 1) if total_uptime > 0 else 0.0
+
+        # Return in exact frontend CANMetrics format (camelCase field names)
+        return BackendComputedCANMetrics(
+            messageRate=message_rate,
+            totalMessages=total_messages,
+            errorCount=total_errors,
+            uptime=total_uptime,
+        )
+
+    except Exception as e:
+        logger.error(f"Error retrieving computed CAN metrics: {e}", exc_info=True)
+        # Return safe fallback metrics
+        return BackendComputedCANMetrics(messageRate=0.0, totalMessages=0, errorCount=0, uptime=0.0)
 
 
 @router.get(

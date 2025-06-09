@@ -55,7 +55,9 @@
       "Bash(npx tsc:*)",
       "Bash(true)",
       "Bash(poetry add:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "mcp__gemini__think_deeper",
+      "Bash(npx shadcn@latest add:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

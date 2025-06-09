@@ -335,18 +335,58 @@ async def get_enhanced_feature_status(
     """Get current feature status and availability (enhanced version)."""
     all_features = feature_manager.get_all_features()
 
+    # Build dependency graph for dependent_features calculation
+    dependency_graph = {}
+    for name, feature in all_features.items():
+        dependencies = getattr(feature, "dependencies", [])
+        for dep in dependencies:
+            if dep not in dependency_graph:
+                dependency_graph[dep] = []
+            dependency_graph[dep].append(name)
+
+    # Extract rich feature data from configuration
+    features_data = {}
+    for name, feature in all_features.items():
+        config = getattr(feature, "config", {})
+
+        # Determine category based on core status and protocol detection
+        category = "core" if getattr(feature, "core", False) else "advanced"
+        if name in ["rvc", "j1939", "firefly", "spartan_k2", "multi_network_can"]:
+            category = "protocol"
+        elif name in [
+            "log_history",
+            "log_streaming",
+            "github_update_checker",
+            "uptimerobot",
+            "pushover",
+        ]:
+            category = "experimental"
+
+        # Determine stability based on feature maturity
+        stability = "stable"
+        if name in ["firefly", "spartan_k2", "multi_network_can", "advanced_diagnostics"]:
+            stability = "beta"
+        elif name in ["github_update_checker", "uptimerobot", "pushover"]:
+            stability = "alpha"
+
+        features_data[name] = {
+            "name": getattr(feature, "friendly_name", name),
+            "enabled": getattr(feature, "enabled", False),
+            "description": config.get("description", "No description available"),
+            "dependencies": getattr(feature, "dependencies", []),
+            "dependent_features": dependency_graph.get(name, []),
+            "category": category,
+            "stability": stability,
+            "environment_restrictions": [],  # Could be enhanced later based on config
+        }
+
     return {
-        "features": {
-            name: {
-                "enabled": getattr(feature, "enabled", False),
-                "core": getattr(feature, "core", False),
-                "dependencies": getattr(feature, "dependencies", []),
-                "description": getattr(feature, "description", ""),
-            }
-            for name, feature in all_features.items()
+        "features": features_data,
+        "dependency_graph": {
+            name: getattr(feature, "dependencies", []) for name, feature in all_features.items()
         },
-        "enabled_count": len(feature_manager.get_enabled_features()),
-        "core_count": len(feature_manager.get_core_features()),
+        "conflict_resolution": {},  # Placeholder for future conflict detection
+        "validation_errors": [],  # Placeholder for validation errors
     }
 
 

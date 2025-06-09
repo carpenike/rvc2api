@@ -27,11 +27,6 @@ import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "RV-C User",
-    email: "user@coachiq.local",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -100,6 +95,11 @@ const data = {
       title: "Configuration",
       url: "/config",
       icon: IconSettings,
+    },
+    {
+      title: "User Settings",
+      url: "/settings",
+      icon: IconShield,
     },
     {
       title: "Documentation",
@@ -177,7 +177,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

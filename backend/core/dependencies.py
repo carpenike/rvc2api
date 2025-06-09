@@ -331,3 +331,39 @@ def get_notification_manager(request: Request = None) -> Any:
         return None  # Notification manager is optional
 
     return notification_feature.get_notification_manager()
+
+
+def get_bulk_operations_service(request: Request) -> Any:
+    """
+    Get the bulk operations service from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The bulk operations service
+
+    Raises:
+        RuntimeError: If the bulk operations service is not initialized
+    """
+    if not hasattr(request.app.state, "bulk_operations_service"):
+        raise RuntimeError("Bulk operations service not initialized")
+    return request.app.state.bulk_operations_service
+
+
+def get_predictive_maintenance_service(request: Request) -> Any:
+    """
+    Get the predictive maintenance service from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The predictive maintenance service
+
+    Raises:
+        RuntimeError: If the predictive maintenance service is not initialized
+    """
+    if not hasattr(request.app.state, "predictive_maintenance_service"):
+        raise RuntimeError("Predictive maintenance service not initialized")
+    return request.app.state.predictive_maintenance_service

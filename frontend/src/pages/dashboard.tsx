@@ -6,20 +6,22 @@
  */
 
 import { AppLayout } from "@/components/app-layout"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert" // Reserved for future alert displays
+import ActivityFeedCard from "@/components/activity/ActivityFeedCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useDashboardState, useSystemAnalytics } from "@/hooks/useDashboard"
 import { useEntities } from "@/hooks/useEntities"
 import { useHealthStatus } from "@/hooks/useSystem"
-import { useDashboardState, useActivityFeed } from "@/hooks/useDashboard"
 import {
     IconActivity,
     IconAlertCircle,
+    IconAlertTriangle,
     IconBolt,
-    IconCpu,
     IconCheck,
+    IconCpu,
     IconHelp,
     IconTrendingUp,
     IconX
@@ -244,122 +246,98 @@ function QuickActionsCard() {
 }
 
 /**
- * Activity feed card component
+ * System Alerts Summary Card - Tier 1 Implementation
  */
-function ActivityFeedCard() {
-  const { data: activityFeed, isLoading, error } = useActivityFeed({ limit: 10 })
+function SystemAlertsCard() {
+  const { data: analytics, isLoading, error } = useSystemAnalytics()
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest system events and updates</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <Skeleton className="h-2 w-2 rounded-full mt-2" />
-              <div className="flex-1 space-y-1">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error || !activityFeed) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest system events and updates</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <IconAlertTriangle className="size-5" />
+            <Skeleton className="h-5 w-32" />
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Unable to load activity feed at this time.
-          </p>
+          <Skeleton className="h-16 w-full" />
         </CardContent>
       </Card>
     )
   }
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'error': return 'text-red-500'
-      case 'warning': return 'text-yellow-500'
-      case 'info': return 'text-blue-500'
-      default: return 'text-muted-foreground'
-    }
+  if (error || !analytics) {
+    return null // Don't show error state for alerts, just hide the card
   }
 
-  const formatTimeAgo = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
+  const activeAlerts = analytics.alerts || []
+  const criticalAlerts = activeAlerts.filter(alert => alert.severity === 'critical')
+  const warningAlerts = activeAlerts.filter(alert => alert.severity === 'warning')
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `${diffHours}h ago`
-
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays}d ago`
+  // Don't show the card if there are no alerts
+  if (activeAlerts.length === 0) {
+    return null
   }
 
   return (
-    <Card>
+    <Card className="border-amber-200 bg-amber-50/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconActivity className="size-5" />
-          Recent Activity
+        <CardTitle className="flex items-center gap-2 text-amber-700">
+          <IconAlertTriangle className="size-5" />
+          System Alerts
         </CardTitle>
-        <CardDescription>Latest system events and updates</CardDescription>
+        <CardDescription>Active alerts requiring attention</CardDescription>
+        <CardAction>
+          <Badge variant="destructive">
+            {activeAlerts.length} Active
+          </Badge>
+        </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {activityFeed.entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No recent activity to display
-            </p>
-          ) : (
-            activityFeed.entries.map((entry) => (
-              <div key={entry.id} className="flex items-start gap-3 pb-3 last:pb-0 border-b last:border-0">
-                <div className={`w-2 h-2 rounded-full mt-2 ${getSeverityColor(entry.severity).replace('text-', 'bg-')}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{entry.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {entry.description}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {formatTimeAgo(entry.timestamp)}
-                    </span>
-                  </div>
-                  {entry.entity_id && (
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {entry.entity_id}
-                      </Badge>
-                    </div>
-                  )}
+        <div className="space-y-3">
+          {/* Critical alerts first */}
+          {criticalAlerts.map((alert, index) => (
+            <div key={`critical-${index}`} className="flex items-start gap-3 p-3 rounded-lg border border-red-200 bg-red-50">
+              <IconAlertCircle className="size-4 text-red-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-red-900">{alert.message}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-red-700">
+                    Critical • Triggered {new Date(alert.triggered_at).toLocaleTimeString()}
+                  </span>
+                  <Badge variant="destructive" className="text-xs">
+                    Critical
+                  </Badge>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
 
-          {activityFeed.has_more && (
+          {/* Warning alerts */}
+          {warningAlerts.slice(0, 2).map((alert, index) => (
+            <div key={`warning-${index}`} className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
+              <IconAlertTriangle className="size-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-900">{alert.message}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-amber-700">
+                    Warning • Triggered {new Date(alert.triggered_at).toLocaleTimeString()}
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    Warning
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Show more link if there are additional alerts */}
+          {activeAlerts.length > 3 && (
             <Button asChild variant="ghost" size="sm" className="w-full">
-              <Link to="/logs">
-                View All Activity
-                <IconActivity className="ml-2 h-4 w-4" />
+              <Link to="/diagnostics">
+                View All {activeAlerts.length} Alerts
+                <IconAlertTriangle className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           )}
@@ -369,11 +347,13 @@ function ActivityFeedCard() {
   )
 }
 
+
 /**
  * Enhanced Dashboard Page Component
  */
 export default function Dashboard() {
-  const { summary, isLoading, error, refresh } = useDashboardState()
+  const { isLoading, error, refresh } = useDashboardState()
+  // const summary = _summary // Reserved for future dashboard summary display
 
   if (error) {
     return (
@@ -423,18 +403,8 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* System Alerts */}
-        {summary?.alerts && summary.alerts.length > 0 && (
-          <div className="grid gap-2">
-            {summary.alerts.map((alert, index) => (
-              <Alert key={index} variant="destructive">
-                <IconAlertCircle className="h-4 w-4" />
-                <AlertTitle>System Alert</AlertTitle>
-                <AlertDescription>{alert}</AlertDescription>
-              </Alert>
-            ))}
-          </div>
-        )}
+        {/* System Alerts - Enhanced Tier 1 Implementation */}
+        <SystemAlertsCard />
 
         {/* Overview Cards - Enhanced with summary data */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -446,10 +416,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions and Activity Feed */}
+        {/* Activity Feed and Quick Actions - Prioritizing Activity per Tier 1 */}
         <div className="grid gap-6 md:grid-cols-2">
-          <QuickActionsCard />
-          <ActivityFeedCard />
+          <div className="md:order-1">
+            <ActivityFeedCard />
+          </div>
+          <div className="md:order-2">
+            <QuickActionsCard />
+          </div>
         </div>
       </div>
     </AppLayout>

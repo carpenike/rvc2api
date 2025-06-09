@@ -175,15 +175,50 @@ async def resolve_dtc(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/dtcs", response_model=list[dict[str, Any]])
+# Backend-First Enhanced Response Models for DTCs
+
+
+class BackendComputedDiagnosticStats(BaseModel):
+    """Backend-computed diagnostic statistics in exact frontend format."""
+
+    total_dtcs: int = Field(..., description="Total number of DTCs")
+    active_dtcs: int = Field(..., description="Number of active DTCs")
+    resolved_dtcs: int = Field(..., description="Number of resolved DTCs")
+    processing_rate: float = Field(..., description="DTC processing rate")
+    correlation_accuracy: float = Field(..., description="Correlation accuracy percentage")
+    prediction_accuracy: float = Field(..., description="Prediction accuracy percentage")
+    system_health_trend: str = Field(
+        ..., description="System health trend: improving, stable, degrading"
+    )
+    last_updated: str = Field(..., description="ISO timestamp of last update")
+
+
+class BackendComputedDTCCollection(BaseModel):
+    """Backend-computed DTC collection with aggregated business logic."""
+
+    dtcs: list[dict[str, Any]] = Field(..., description="List of diagnostic trouble codes")
+    total_count: int = Field(..., description="Total number of DTCs")
+    active_count: int = Field(..., description="Number of active (unresolved) DTCs")
+    by_severity: dict[str, int] = Field(..., description="DTCs grouped by severity level")
+    by_protocol: dict[str, int] = Field(..., description="DTCs grouped by protocol")
+    by_system_type: dict[str, int] = Field(
+        default_factory=dict, description="DTCs grouped by system type"
+    )
+    last_updated: float = Field(..., description="Timestamp of last update")
+
+
+@router.get("/dtcs", response_model=BackendComputedDTCCollection)
 async def get_active_dtcs(
     feature: Annotated[Any, Depends(get_diagnostics_feature)],
     system_type: str | None = Query(None, description="Filter by system type"),
     severity: str | None = Query(None, description="Filter by severity level"),
     protocol: str | None = Query(None, description="Filter by protocol"),
-) -> list[dict[str, Any]]:
+) -> BackendComputedDTCCollection:
     """
-    Get active diagnostic trouble codes with optional filtering.
+    Get active diagnostic trouble codes with backend-computed aggregations and business logic.
+
+    This endpoint eliminates frontend business logic by performing all DTC aggregation
+    and categorization on the backend, returning a ready-to-consume DTCCollection format.
 
     Args:
         system_type: Filter by system type
@@ -191,7 +226,7 @@ async def get_active_dtcs(
         protocol: Filter by protocol
 
     Returns:
-        List of active DTCs
+        DTCCollection with backend-computed aggregations
     """
     try:
         # Get DTCs through the feature's handler
@@ -201,13 +236,54 @@ async def get_active_dtcs(
                 severity=feature._parse_severity(severity) if severity else None,
                 protocol=feature._parse_protocol(protocol) if protocol else None,
             )
-            return [dtc.to_dict() for dtc in dtcs]
+            dtc_dicts = [dtc.to_dict() for dtc in dtcs]
         else:
-            return []
+            dtc_dicts = []
+
+        # Backend business logic: Compute aggregations that were previously done in frontend
+        total_count = len(dtc_dicts)
+        active_count = sum(1 for dtc in dtc_dicts if not dtc.get("resolved", False))
+
+        # Backend business logic: Group by severity
+        by_severity = {}
+        for dtc in dtc_dicts:
+            severity_level = dtc.get("severity", "unknown")
+            by_severity[severity_level] = by_severity.get(severity_level, 0) + 1
+
+        # Backend business logic: Group by protocol
+        by_protocol = {}
+        for dtc in dtc_dicts:
+            protocol_name = dtc.get("protocol", "unknown")
+            by_protocol[protocol_name] = by_protocol.get(protocol_name, 0) + 1
+
+        # Backend business logic: Group by system type (additional aggregation)
+        by_system_type = {}
+        for dtc in dtc_dicts:
+            system_name = dtc.get("system_type", "unknown")
+            by_system_type[system_name] = by_system_type.get(system_name, 0) + 1
+
+        return BackendComputedDTCCollection(
+            dtcs=dtc_dicts,
+            total_count=total_count,
+            active_count=active_count,
+            by_severity=by_severity,
+            by_protocol=by_protocol,
+            by_system_type=by_system_type,
+            last_updated=__import__("time").time(),
+        )
 
     except Exception as e:
         logger.error(f"Error getting active DTCs: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        # Return safe fallback with error indication
+        return BackendComputedDTCCollection(
+            dtcs=[],
+            total_count=0,
+            active_count=0,
+            by_severity={"error": 1},
+            by_protocol={"error": 1},
+            by_system_type={"error": 1},
+            last_updated=__import__("time").time(),
+        )
 
 
 @router.post("/performance", response_model=dict[str, bool])
@@ -333,3 +409,75 @@ async def get_diagnostic_statistics(
     except Exception as e:
         logger.error(f"Error getting diagnostic statistics: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/statistics/computed", response_model=BackendComputedDiagnosticStats)
+async def get_computed_diagnostic_statistics(
+    feature: Annotated[Any, Depends(get_diagnostics_feature)],
+) -> BackendComputedDiagnosticStats:
+    """
+    Get diagnostic statistics with backend computation and exact frontend field mapping.
+
+    This endpoint eliminates the need for frontend field mapping by providing
+    the DiagnosticStats format directly from the backend with proper field names.
+    """
+    try:
+        # Get raw statistics from feature components
+        stats = {}
+
+        if hasattr(feature, "handler") and feature.handler:
+            stats["diagnostics"] = feature.handler.get_diagnostic_statistics()
+
+        if hasattr(feature, "predictive_engine") and feature.predictive_engine:
+            stats["predictive"] = feature.predictive_engine.get_prediction_statistics()
+
+        # Backend business logic: Extract and format statistics for frontend consumption
+        diagnostics = stats.get("diagnostics", {})
+        predictive = stats.get("predictive", {})
+
+        # Compute backend business logic for statistics
+        total_dtcs = diagnostics.get("total_dtcs", 0)
+        active_dtcs = diagnostics.get("active_dtcs", 0)
+        resolved_dtcs = max(0, total_dtcs - active_dtcs)  # Business logic calculation
+        processing_rate = diagnostics.get("processing_rate", 0.0)
+
+        # Predictive analytics business logic
+        correlation_accuracy = (
+            predictive.get("correlation_accuracy", 0.0) * 100
+        )  # Convert to percentage
+        prediction_accuracy = (
+            predictive.get("prediction_accuracy", 0.0) * 100
+        )  # Convert to percentage
+
+        # Backend business logic: Determine system health trend
+        if correlation_accuracy > 80 and prediction_accuracy > 80:
+            system_health_trend = "improving"
+        elif correlation_accuracy > 60 and prediction_accuracy > 60:
+            system_health_trend = "stable"
+        else:
+            system_health_trend = "degrading"
+
+        return BackendComputedDiagnosticStats(
+            total_dtcs=total_dtcs,
+            active_dtcs=active_dtcs,
+            resolved_dtcs=resolved_dtcs,
+            processing_rate=processing_rate,
+            correlation_accuracy=correlation_accuracy,
+            prediction_accuracy=prediction_accuracy,
+            system_health_trend=system_health_trend,
+            last_updated=__import__("datetime").datetime.now().isoformat(),
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting computed diagnostic statistics: {e}")
+        # Return safe fallback statistics
+        return BackendComputedDiagnosticStats(
+            total_dtcs=0,
+            active_dtcs=0,
+            resolved_dtcs=0,
+            processing_rate=0.0,
+            correlation_accuracy=0.0,
+            prediction_accuracy=0.0,
+            system_health_trend="degrading",
+            last_updated=__import__("datetime").datetime.now().isoformat(),
+        )

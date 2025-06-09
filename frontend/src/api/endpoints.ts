@@ -21,6 +21,10 @@ import type {
   BaselineDeviation,
   BulkControlRequest,
   BulkControlResponse,
+  BulkOperationPayload,
+  BulkOperationRequest,
+  BulkOperationResponse,
+  BulkOperationStatus,
   CANBusSummary,
   CANInterfaceMapping,
   CANMessage,
@@ -36,8 +40,15 @@ import type {
   CreateEntityMappingRequest,
   CreateEntityMappingResponse,
   DashboardSummary,
+  // Device Discovery Types
+  DeviceAvailability,
+  DeviceDiscoveryStatus,
+  DeviceGroup,
+  DeviceGroupRequest,
   DiagnosticStats,
   DiagnosticTroubleCode,
+  DiscoverDevicesRequest,
+  DiscoverDevicesResponse,
   DTCCollection,
   DTCFilters,
   DTCResolutionResponse,
@@ -53,13 +64,17 @@ import type {
   HistoryQueryParams,
   MaintenancePrediction,
   MetadataResponse,
+  NetworkTopology,
   OptimizationSuggestion,
   PerformanceAnalyticsStats,
   PerformanceMetrics,
   PerformanceReport,
+  PollDeviceRequest,
+  PollDeviceResponse,
   ProtocolBridgeStatus,
   QueueStatus,
   ResourceUsage,
+  SupportedProtocols,
   SystemAnalytics,
   SystemHealthResponse,
   SystemMetrics,
@@ -247,6 +262,36 @@ export async function fetchCANStatistics(): Promise<AllCANStats> {
 }
 
 /**
+ * Get enhanced CAN statistics with backend-computed business logic and PGN-level data
+ *
+ * @returns Promise resolving to enhanced CAN statistics with backend aggregation
+ */
+export async function fetchEnhancedCANStatistics(): Promise<Record<string, unknown>> {
+  const url = '/api/can/statistics/enhanced';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get backend-computed CAN metrics in exact frontend format (eliminates field mapping)
+ *
+ * @returns Promise resolving to CANMetrics format directly from backend
+ */
+export async function fetchBackendComputedCANMetrics(): Promise<CANMetrics> {
+  const url = '/api/can/metrics/computed';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<CANMetrics>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
  * Send a CAN message
  *
  * @param params - CAN message parameters
@@ -280,19 +325,29 @@ export async function fetchCANMessages(params?: { limit?: number }): Promise<CAN
 }
 
 /**
- * Get CAN bus metrics and health information
+ * Get CAN bus metrics and health information with enhanced backend-computed format
  *
- * Note: Using statistics endpoint as metrics source
- * @returns Promise resolving to CAN metrics derived from statistics
+ * Uses backend-computed metrics endpoint with graceful fallback to field mapping
+ * @returns Promise resolving to CAN metrics
  */
 export async function fetchCANMetrics(): Promise<CANMetrics> {
-  const url = '/api/can/statistics';
+  // Try backend-computed metrics first (Phase 3 enhancement)
+  try {
+    const backendMetrics = await fetchBackendComputedCANMetrics();
+    logApiResponse('/api/can/metrics/computed', backendMetrics);
+    return backendMetrics;
+  } catch {
+    // Graceful fallback to field mapping if backend-computed endpoint unavailable
+    console.debug('Backend-computed CAN metrics unavailable, falling back to field mapping');
+  }
 
+  // Fallback: Use statistics endpoint with field mapping (legacy approach)
+  const url = '/api/can/statistics';
   logApiRequest('GET', url);
   const statsResult = await apiGet<Record<string, unknown>>(url);
   logApiResponse(url, statsResult);
 
-  // Transform statistics to metrics format
+  // Transform statistics to metrics format (field name mapping)
   const summary = statsResult.summary as Record<string, unknown> || {};
   const metrics: CANMetrics = {
     messageRate: (summary.message_rate as number) || 0,
@@ -531,12 +586,84 @@ export async function fetchSystemHealth(systemType?: string): Promise<SystemHeal
 }
 
 /**
- * Get active diagnostic trouble codes with optional filtering
+ * Get backend-computed health status with UI categorization
+ *
+ * @returns Promise resolving to backend-computed health status
+ */
+export async function fetchBackendComputedHealthStatus(): Promise<Record<string, unknown>> {
+  const url = '/api/performance/health-computed';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get backend-computed resource utilization with status classification
+ *
+ * @returns Promise resolving to backend-computed resource status
+ */
+export async function fetchBackendComputedResourceStatus(): Promise<Record<string, unknown>> {
+  const url = '/api/performance/resources-computed';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get backend-computed API performance with status classification
+ *
+ * @returns Promise resolving to backend-computed API performance
+ */
+export async function fetchBackendComputedAPIPerformance(): Promise<Record<string, unknown>> {
+  const url = '/api/performance/api-performance-computed';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<Record<string, unknown>>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get backend-computed DTC collection with aggregated business logic (Phase 3 enhancement)
+ *
+ * @param filters - Optional filtering parameters (system_type, severity, protocol)
+ * @returns Promise resolving to backend-computed DTC collection
+ */
+export async function fetchBackendComputedDTCs(filters?: DTCFilters): Promise<DTCCollection> {
+  const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
+  const url = queryString ? `/api/diagnostics/dtcs?${queryString}` : '/api/diagnostics/dtcs';
+
+  logApiRequest('GET', url, filters);
+  const result = await apiGet<DTCCollection>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get active diagnostic trouble codes with enhanced backend computation and graceful fallback
  *
  * @param filters - Optional filtering parameters (system_type, severity, protocol)
  * @returns Promise resolving to DTC collection
  */
 export async function fetchActiveDTCs(filters?: DTCFilters): Promise<DTCCollection> {
+  // Try backend-computed DTCs first (Phase 3 enhancement)
+  try {
+    const backendDTCs = await fetchBackendComputedDTCs(filters);
+    return backendDTCs;
+  } catch {
+    // Graceful fallback to frontend aggregation if backend-computed endpoint unavailable
+    console.debug('Backend-computed DTCs unavailable, falling back to frontend aggregation');
+  }
+
+  // Fallback: Use basic endpoint with frontend aggregation (legacy approach)
   const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
   const url = queryString ? `/api/diagnostics/dtcs?${queryString}` : '/api/diagnostics/dtcs';
 
@@ -544,7 +671,7 @@ export async function fetchActiveDTCs(filters?: DTCFilters): Promise<DTCCollecti
   const rawResult = await apiGet<DiagnosticTroubleCode[]>(url);
   logApiResponse(url, rawResult);
 
-  // Transform the raw array response to DTCCollection format
+  // Frontend aggregation business logic (temporary fallback)
   const result: DTCCollection = {
     dtcs: rawResult,
     total_count: rawResult.length,
@@ -636,18 +763,42 @@ export async function fetchMaintenancePredictions(timeHorizonDays: number = 90):
 }
 
 /**
- * Get comprehensive diagnostic processing statistics
+ * Get backend-computed diagnostic statistics in exact frontend format (Phase 3 enhancement)
+ *
+ * @returns Promise resolving to backend-computed diagnostic statistics
+ */
+export async function fetchBackendComputedDiagnosticStatistics(): Promise<DiagnosticStats> {
+  const url = '/api/diagnostics/statistics/computed';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<DiagnosticStats>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get comprehensive diagnostic processing statistics with enhanced backend computation and graceful fallback
  *
  * @returns Promise resolving to diagnostic statistics
  */
 export async function fetchDiagnosticStatistics(): Promise<DiagnosticStats> {
-  const url = '/api/diagnostics/statistics';
+  // Try backend-computed statistics first (Phase 3 enhancement)
+  try {
+    const backendStats = await fetchBackendComputedDiagnosticStatistics();
+    return backendStats;
+  } catch {
+    // Graceful fallback to field mapping if backend-computed endpoint unavailable
+    console.debug('Backend-computed diagnostic statistics unavailable, falling back to field mapping');
+  }
 
+  // Fallback: Use basic endpoint with field mapping (legacy approach)
+  const url = '/api/diagnostics/statistics';
   logApiRequest('GET', url);
   const rawResult = await apiGet<Record<string, unknown>>(url);
   logApiResponse(url, rawResult);
 
-  // Transform the backend response to our expected DiagnosticStats format
+  // Transform the backend response to our expected DiagnosticStats format (field mapping)
   const diagnostics = rawResult.diagnostics as Record<string, unknown> || {};
   const predictive = rawResult.predictive as Record<string, unknown> || {};
 
@@ -1244,4 +1395,449 @@ export async function disableFeature(featureName: string): Promise<FeatureManage
     persist: true,
     validate_before_apply: true
   }).then(() => fetchFeatureManagement());
+}
+
+//
+// ===== DEVICE DISCOVERY API (/api/discovery) =====
+//
+
+/**
+ * Get network topology information
+ *
+ * @returns Promise resolving to network topology data
+ */
+export async function fetchNetworkTopology(): Promise<NetworkTopology> {
+  const url = '/api/discovery/topology';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<NetworkTopology>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get device availability statistics
+ *
+ * @returns Promise resolving to device availability data
+ */
+export async function fetchDeviceAvailability(): Promise<DeviceAvailability> {
+  const url = '/api/discovery/availability';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<DeviceAvailability>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Perform device discovery for a specific protocol
+ *
+ * @param protocol - Protocol to use for discovery (default: "rvc")
+ * @returns Promise resolving to discovery results
+ */
+export async function discoverDevices(protocol: string = "rvc"): Promise<DiscoverDevicesResponse> {
+  const url = '/api/discovery/discover';
+  const request: DiscoverDevicesRequest = { protocol };
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<DiscoverDevicesResponse>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Poll a specific device for status information
+ *
+ * @param request - Polling configuration
+ * @returns Promise resolving to polling result
+ */
+export async function pollDevice(request: PollDeviceRequest): Promise<PollDeviceResponse> {
+  const url = '/api/discovery/poll';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<PollDeviceResponse>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get device discovery service status
+ *
+ * @returns Promise resolving to service status
+ */
+export async function fetchDeviceDiscoveryStatus(): Promise<DeviceDiscoveryStatus> {
+  const url = '/api/discovery/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<DeviceDiscoveryStatus>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get supported protocols information
+ *
+ * @returns Promise resolving to supported protocols data
+ */
+export async function fetchSupportedProtocols(): Promise<SupportedProtocols> {
+  const url = '/api/discovery/protocols';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<SupportedProtocols>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
+// ===== AUTHENTICATION API (/api/auth) =====
+//
+
+/**
+ * Login with username and password (single-user mode)
+ *
+ * @param username - Admin username
+ * @param password - Admin password
+ * @returns Promise resolving to JWT token
+ */
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const url = '/api/auth/login';
+  const formData = new FormData();
+  formData.append('username', username);
+  formData.append('password', password);
+
+  logApiRequest('POST', url, { username });
+  const result = await fetch(`${API_BASE}${url}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!result.ok) {
+    throw new APIClientError(`HTTP ${result.status}: ${result.statusText}`, result.status);
+  }
+
+  const data = await result.json() as LoginResponse;
+  logApiResponse(url, data);
+  return data;
+}
+
+/**
+ * Refresh access token using refresh token
+ *
+ * @param refreshToken - Valid refresh token
+ * @returns Promise resolving to new token pair
+ */
+export async function refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+  const url = '/api/auth/refresh';
+  const request: RefreshTokenRequest = { refresh_token: refreshToken };
+
+  logApiRequest('POST', url, { refresh_token: '[REDACTED]' });
+  const result = await apiPost<RefreshTokenResponse>(url, request);
+  logApiResponse(url, { ...result, refresh_token: '[REDACTED]', access_token: '[REDACTED]' });
+
+  return result;
+}
+
+/**
+ * Revoke a refresh token
+ *
+ * @param refreshToken - Refresh token to revoke
+ * @returns Promise resolving when token is revoked
+ */
+export async function revokeRefreshToken(refreshToken: string): Promise<void> {
+  const url = '/api/auth/revoke';
+  const request: RefreshTokenRequest = { refresh_token: refreshToken };
+
+  logApiRequest('POST', url, { refresh_token: '[REDACTED]' });
+  await apiPost<void>(url, request);
+  logApiResponse(url, 'Token revoked');
+}
+
+/**
+ * Send magic link for passwordless authentication (multi-user mode)
+ *
+ * @param email - Email address for magic link
+ * @param redirectUrl - Optional redirect URL after authentication
+ * @returns Promise resolving to magic link response
+ */
+export async function sendMagicLink(email: string, redirectUrl?: string): Promise<{ message: string; email: string; expires_in_minutes: number }> {
+  const url = '/api/auth/magic-link';
+  const request = { email, redirect_url: redirectUrl };
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<{ message: string; email: string; expires_in_minutes: number }>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get current user profile information
+ *
+ * @returns Promise resolving to current user info
+ */
+export async function getCurrentUser(): Promise<{
+  user_id: string;
+  username: string | null;
+  email: string | null;
+  role: string;
+  mode: string;
+  authenticated: boolean;
+}> {
+  const url = '/api/auth/me';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<{
+    user_id: string;
+    username: string | null;
+    email: string | null;
+    role: string;
+    mode: string;
+    authenticated: boolean;
+  }>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get authentication system status
+ *
+ * @returns Promise resolving to auth status
+ */
+export async function getAuthStatus(): Promise<{
+  enabled: boolean;
+  mode: string;
+  jwt_available: boolean;
+  magic_links_enabled: boolean;
+  oauth_enabled: boolean;
+}> {
+  const url = '/api/auth/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<{
+    enabled: boolean;
+    mode: string;
+    jwt_available: boolean;
+    magic_links_enabled: boolean;
+    oauth_enabled: boolean;
+  }>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Logout current user
+ *
+ * @returns Promise resolving to logout confirmation
+ */
+export async function logout(): Promise<{ message: string; detail: string }> {
+  const url = '/api/auth/logout';
+
+  logApiRequest('POST', url);
+  const result = await apiPost<{ message: string; detail: string }>(url, {});
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get auto-generated admin credentials (one-time display only)
+ *
+ * @returns Promise resolving to admin credentials
+ */
+export async function getAdminCredentials(): Promise<{
+  username: string;
+  password: string;
+  created_at: string;
+  warning: string;
+}> {
+  const url = '/api/auth/admin/credentials';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<{
+    username: string;
+    password: string;
+    created_at: string;
+    warning: string;
+  }>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get lockout status for a specific user (admin only)
+ *
+ * @param username - Username to check lockout status for
+ * @returns Promise resolving to lockout status
+ */
+export async function getLockoutStatus(username: string): Promise<LockoutStatus> {
+  const url = `/api/auth/lockout/status/${username}`;
+
+  logApiRequest('GET', url, { username });
+  const result = await apiGet<LockoutStatus>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get lockout status for all tracked users (admin only)
+ *
+ * @returns Promise resolving to list of lockout status
+ */
+export async function getAllLockoutStatus(): Promise<LockoutStatus[]> {
+  const url = '/api/auth/lockout/status';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<LockoutStatus[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Manually unlock a user account (admin only)
+ *
+ * @param username - Username to unlock
+ * @returns Promise resolving to unlock confirmation
+ */
+export async function unlockAccount(username: string): Promise<{ message: string; unlocked_by: string }> {
+  const url = '/api/auth/lockout/unlock';
+  const request: UnlockAccountRequest = { username };
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<{ message: string; unlocked_by: string }>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+//
+// ===== BULK OPERATIONS API (/api/bulk-operations) =====
+//
+
+/**
+ * Create and execute a bulk operation on multiple devices
+ *
+ * @param request - Bulk operation request
+ * @returns Promise resolving to operation response
+ */
+export async function createBulkOperation(request: BulkOperationRequest): Promise<BulkOperationResponse> {
+  const url = '/api/bulk-operations';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<BulkOperationResponse>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get the status of a bulk operation
+ *
+ * @param operationId - Operation identifier
+ * @returns Promise resolving to operation status
+ */
+export async function fetchBulkOperationStatus(operationId: string): Promise<BulkOperationStatus> {
+  const url = `/api/bulk-operations/${operationId}`;
+
+  logApiRequest('GET', url);
+  const result = await apiGet<BulkOperationStatus>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Get all device groups
+ *
+ * @returns Promise resolving to list of device groups
+ */
+export async function fetchDeviceGroups(): Promise<DeviceGroup[]> {
+  const url = '/api/bulk-operations/groups';
+
+  logApiRequest('GET', url);
+  const result = await apiGet<DeviceGroup[]>(url);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Create a new device group
+ *
+ * @param request - Device group creation request
+ * @returns Promise resolving to created group
+ */
+export async function createDeviceGroup(request: DeviceGroupRequest): Promise<DeviceGroup> {
+  const url = '/api/bulk-operations/groups';
+
+  logApiRequest('POST', url, request);
+  const result = await apiPost<DeviceGroup>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Update an existing device group
+ *
+ * @param groupId - Group identifier
+ * @param request - Device group update request
+ * @returns Promise resolving to updated group
+ */
+export async function updateDeviceGroup(groupId: string, request: DeviceGroupRequest): Promise<DeviceGroup> {
+  const url = `/api/bulk-operations/groups/${groupId}`;
+
+  logApiRequest('PUT', url, request);
+  const result = await apiPost<DeviceGroup>(url, request);
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Delete a device group
+ *
+ * @param groupId - Group identifier
+ * @returns Promise resolving to deletion confirmation
+ */
+export async function deleteDeviceGroup(groupId: string): Promise<{ message: string }> {
+  const url = `/api/bulk-operations/groups/${groupId}`;
+
+  logApiRequest('DELETE', url);
+  const result = await apiGet<{ message: string }>(url, {
+    method: 'DELETE'
+  });
+  logApiResponse(url, result);
+
+  return result;
+}
+
+/**
+ * Execute a bulk operation on all devices in a group
+ *
+ * @param groupId - Group identifier
+ * @param payload - Operation payload
+ * @returns Promise resolving to operation response
+ */
+export async function executeGroupOperation(
+  groupId: string,
+  payload: BulkOperationPayload
+): Promise<BulkOperationResponse> {
+  const url = `/api/bulk-operations/groups/${groupId}/execute`;
+
+  logApiRequest('POST', url, payload);
+  const result = await apiPost<BulkOperationResponse>(url, payload);
+  logApiResponse(url, result);
+
+  return result;
 }

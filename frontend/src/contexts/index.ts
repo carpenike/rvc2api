@@ -16,3 +16,6 @@ export { WebSocketProvider } from './websocket-provider';
 
 // Query Provider
 export { QueryProvider } from './query-provider';
+
+// Authentication Context
+export { AuthProvider, useAuth, useHasRole, useAuthMode } from './auth-context';

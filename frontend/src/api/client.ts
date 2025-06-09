@@ -67,6 +67,14 @@ export const WS_BASE = (() => {
   return wsBaseUrl;
 })();
 
+/**
+ * Gets authorization header with JWT token
+ */
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem('auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
 /** Common fetch options for all API requests */
 const defaultOptions: RequestInit = {
   headers: {
@@ -146,6 +154,7 @@ export async function apiRequest<T>(
     ...options,
     headers: {
       ...defaultOptions.headers,
+      ...getAuthHeader(),
       ...options.headers,
     },
   });

@@ -14,8 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 // Table components replaced by VirtualizedTable
+import { fetchEnhancedCANStatistics } from "@/api/endpoints"
 import { VirtualizedTable, type VirtualizedTableColumn } from "@/components/virtualized-table"
-import { useCANMetrics } from "@/hooks/useSystem"
+import { useCANMetrics, useCANStatistics } from "@/hooks/useSystem"
 import { useVirtualizedTable } from "@/hooks/useVirtualizedTable"
 import { useCANScanWebSocket } from "@/hooks/useWebSocket"
 import {
@@ -27,13 +28,44 @@ import {
     IconRefresh,
     IconTrash
 } from "@tabler/icons-react"
+import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 
 /**
  * CAN message statistics component
+ * Uses backend API for aggregated statistics with frontend fallback for PGN-level data
  */
 function CANStatistics({ messages }: { messages: CANMessage[] }) {
-  const stats = useMemo(() => {
+  // Use backend API for aggregated statistics
+  const { data: backendStats } = useCANStatistics()
+
+  // Try to use enhanced backend statistics with PGN-level data (Phase 3 implementation)
+  const { data: enhancedStats, isError: enhancedStatsError } = useQuery({
+    queryKey: ['can-statistics-enhanced'],
+    queryFn: fetchEnhancedCANStatistics,
+    refetchInterval: 5000,
+    staleTime: 3000,
+    // Don't retry on 404 - enhanced API may not be available
+    retry: (failureCount, error) => {
+      if (error && 'statusCode' in error && (error as { statusCode: number }).statusCode === 404) {
+        return false; // Enhanced API not available
+      }
+      return failureCount < 2;
+    }
+  })
+
+  // Calculate PGN-level statistics from frontend messages as fallback
+  // Only used when enhanced backend API is not available
+  const pgnStats = useMemo(() => {
+    // If enhanced backend stats are available, skip frontend aggregation
+    if (enhancedStats && !enhancedStatsError) {
+      return {
+        uniquePGNs: enhancedStats.unique_pgns || 0,
+        topPGNs: enhancedStats.top_pgns || [],
+        topInstances: []
+      }
+    }
+
     const byPGN = messages.reduce((acc, msg) => {
       acc[msg.pgn] = (acc[msg.pgn] || 0) + 1
       return acc
@@ -46,28 +78,32 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
       return acc
     }, {} as Record<number, number>)
 
-    const totalMessages = messages.length
     const uniquePGNs = Object.keys(byPGN).length
-    const errorMessages = messages.filter(msg => msg.error).length
-    const lastMinute = messages.filter(msg =>
-      Date.now() - new Date(msg.timestamp).getTime() < 60000
-    ).length
+    const topPGNs = Object.entries(byPGN)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([pgn, count]) => ({ pgn, count }))
+    const topInstances = Object.entries(byInstance)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([instance, count]) => ({ instance: Number(instance), count }))
 
-    return {
-      total: totalMessages,
-      uniquePGNs,
-      errorMessages,
-      lastMinute,
-      topPGNs: Object.entries(byPGN)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([pgn, count]) => ({ pgn, count })),
-      topInstances: Object.entries(byInstance)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([instance, count]) => ({ instance: Number(instance), count }))
-    }
-  }, [messages])
+    return { uniquePGNs, topPGNs, topInstances }
+  }, [messages, enhancedStats, enhancedStatsError])
+
+  // Combine backend stats with enhanced backend data or frontend fallback
+  const stats = {
+    // Use enhanced backend data first, then basic backend data, then frontend calculation
+    total: enhancedStats?.total_messages ?? backendStats?.total_messages ?? messages.length,
+    errorMessages: enhancedStats?.total_errors ?? backendStats?.total_errors ?? messages.filter(msg => msg.error).length,
+    lastMinute: messages.filter(msg =>
+      Date.now() - new Date(msg.timestamp).getTime() < 60000
+    ).length, // Keep this frontend for now as it's time-sensitive
+    // PGN-level data from enhanced backend or frontend fallback
+    uniquePGNs: pgnStats.uniquePGNs,
+    topPGNs: pgnStats.topPGNs,
+    topInstances: pgnStats.topInstances
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -9,23 +9,55 @@ this provides seamless integration with the YAML-based feature system.
 """
 
 import logging
+from typing import TYPE_CHECKING, Any
 
-from backend.integrations.j1939.spartan_k2_feature import SpartanK2Feature
-from backend.services.feature_manager import FeatureManager
+if TYPE_CHECKING:
+    from backend.integrations.j1939.spartan_k2_feature import SpartanK2Feature
 
 logger = logging.getLogger(__name__)
 
 
-def register_spartan_k2_feature(feature_manager: FeatureManager) -> None:
+def register_spartan_k2_feature(
+    name: str,
+    enabled: bool,
+    core: bool,
+    config: dict[str, Any],
+    dependencies: list[str],
+    friendly_name: str | None = None,
+) -> "SpartanK2Feature":
     """
-    Register the Spartan K2 chassis feature with the feature manager.
+    Factory function for creating a SpartanK2Feature instance.
+
+    This function is called by the feature manager when loading features from YAML.
+    It allows custom instantiation logic for the Spartan K2 feature.
 
     Args:
-        feature_manager: The application's feature manager instance
+        name: Feature name
+        enabled: Whether the feature is enabled
+        core: Whether this is a core feature
+        config: Feature configuration
+        dependencies: List of feature dependencies
+        friendly_name: Human-readable feature name
+
+    Returns:
+        SpartanK2Feature instance
     """
     try:
-        feature_manager.register_feature("spartan_k2", SpartanK2Feature)
-        logger.info("Spartan K2 chassis feature registered successfully")
+        from backend.integrations.j1939.spartan_k2_feature import SpartanK2Feature
+
+        # Create Spartan K2 feature instance
+        spartan_k2_feature = SpartanK2Feature(
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Spartan K2 Chassis",
+        )
+
+        logger.info("Spartan K2 chassis feature created successfully")
+        return spartan_k2_feature
+
     except Exception as e:
-        logger.error(f"Failed to register Spartan K2 chassis feature: {e}")
+        logger.error(f"Failed to create Spartan K2 chassis feature: {e}")
         raise

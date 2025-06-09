@@ -143,7 +143,7 @@ spartan_k2:
   safety_critical_components: ["brakes", "steering", "suspension"]
 
 advanced_diagnostics:
-  enabled: false
+  enabled: true
   core: false
   depends_on: [rvc, can_interface]
   description: "Advanced diagnostics with fault correlation, predictive maintenance, and cross-protocol DTC analysis"
@@ -195,10 +195,39 @@ authentication:
   friendly_name: "Authentication System"
   mode: "auto"  # auto, none, single-user, multi-user
   secret_key_auto_generate: true
-  jwt_expire_minutes: 30
+  jwt_expire_minutes: 15
   magic_link_expire_minutes: 15
   enable_magic_links: true
   enable_oauth: false
+  enable_refresh_tokens: true
+  refresh_token_expire_days: 7
+  enable_account_lockout: true
+  max_failed_attempts: 5
+  lockout_duration_minutes: 30
+  lockout_escalation_factor: 2.0
+  lockout_reset_success_count: 3
+  max_lockout_duration_hours: 24
+  rate_limit_auth_attempts: 5
+  rate_limit_window_minutes: 15
+
+multi_factor_authentication:
+  enabled: false
+  core: false
+  depends_on: [authentication]
+  description: "Multi-Factor Authentication (MFA) with TOTP support, backup codes, and recovery options"
+  friendly_name: "Multi-Factor Authentication"
+  enable_totp: true
+  enable_backup_codes: true
+  enable_recovery_codes: true
+  totp_issuer: "CoachIQ"
+  totp_digits: 6
+  totp_window: 1
+  backup_codes_count: 10
+  backup_code_length: 8
+  require_mfa_for_admin: false
+  allow_mfa_bypass: true
+  mfa_setup_grace_period_hours: 24
+  backup_code_regeneration_threshold: 3
 
 # Optional features
 pushover:
@@ -266,7 +295,7 @@ activity_tracking:
   friendly_name: "Activity Tracking"
 
 performance_analytics:
-  enabled: false
+  enabled: true
   core: false
   depends_on: [can_interface]
   description: "Comprehensive performance analytics with telemetry collection, benchmarking, trend analysis, and optimization recommendations"
@@ -319,3 +348,79 @@ performance_analytics:
     j1939: 1.2
     firefly: 1.0
     spartan_k2: 1.2
+
+device_discovery:
+  enabled: true
+  core: false
+  depends_on: [can_interface, rvc]
+  description: "Active device polling and network discovery for CAN bus systems with PGN Request support and topology mapping"
+  friendly_name: "Device Discovery & Polling"
+  enable_device_polling: true
+  enable_network_topology: true
+  enable_availability_tracking: true
+  enable_response_time_monitoring: true
+  enable_protocol_bridge_discovery: true
+  enable_websocket_updates: true
+  polling_interval_seconds: 30.0
+  discovery_interval_seconds: 300.0
+  device_timeout_seconds: 120.0
+  max_response_history: 10
+  max_concurrent_polls: 20
+  poll_retry_limit: 3
+  poll_timeout_seconds: 5.0
+  supported_protocols: ["rvc", "j1939", "firefly", "spartan_k2"]
+  discovery_pgns:
+    rvc: [0x1FEF2, 0x1FEDA, 0x1FEEB, 0x1FEE1, 0x1FED9, 0x1FED8, 0x1FED6]
+    j1939: [0x1FEF2, 0x1FEE5, 0x1FEF1, 0x1FEE9, 0x1FEE8]
+  status_pgns:
+    light: 0x1FEDA
+    tank: 0x1FEEB
+    temperature: 0x1FEE1
+    lock: 0x1FED9
+    pump: 0x1FED8
+    fan: 0x1FED6
+  enable_device_identification: true
+  enable_capability_discovery: true
+  source_address: 0xE0
+  broadcast_address: 0xFF
+
+predictive_maintenance:
+  enabled: true
+  core: false
+  depends_on: [entity_manager, can_interface]
+  description: "Predictive maintenance with component health tracking, trend analysis, and proactive recommendations"
+  friendly_name: "Predictive Maintenance"
+  enable_health_scoring: true
+  enable_trend_analysis: true
+  enable_anomaly_detection: true
+  enable_maintenance_recommendations: true
+  enable_component_lifecycle_tracking: true
+  enable_maintenance_history: true
+  enable_predictive_alerts: true
+  enable_fleet_learning: false
+  health_assessment_interval_seconds: 300.0
+  anomaly_detection_sensitivity: 0.7
+  recommendation_confidence_threshold: 0.8
+  health_score_decay_rate: 0.1
+  trend_analysis_window_days: 30
+  minimum_trend_samples: 10
+  maintenance_reminder_days: [30, 7, 1]
+  component_categories: ["battery", "generator", "hvac", "pump", "slide_out", "lighting", "engine", "transmission"]
+  health_thresholds:
+    healthy: 80.0
+    watch: 60.0
+    advise: 40.0
+    alert: 20.0
+  lifecycle_tracking:
+    usage_hours_weight: 0.4
+    usage_cycles_weight: 0.3
+    anomaly_weight: 0.3
+  predictive_models:
+    battery:
+      voltage_trend_weight: 0.5
+      capacity_trend_weight: 0.3
+      charge_cycle_weight: 0.2
+    mechanical:
+      vibration_weight: 0.4
+      temperature_weight: 0.3
+      usage_hours_weight: 0.3

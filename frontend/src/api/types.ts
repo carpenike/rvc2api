@@ -1049,3 +1049,570 @@ export interface PerformanceAnalyticsStats {
   metrics_retention_days: number;
   telemetry_endpoints_active: number;
 }
+
+// Device Discovery Types
+export interface DeviceInfo {
+  source_address: number;
+  protocol: string;
+  device_type?: string;
+  status: "discovered" | "online" | "offline" | "error";
+  last_seen: number;
+  first_seen: number;
+  response_count: number;
+  capabilities: string[];
+}
+
+export interface NetworkTopology {
+  devices: Record<string, DeviceInfo[]>;
+  total_devices: number;
+  online_devices: number;
+  health_score: number;
+  last_discovery: number;
+  active_polls: number;
+  discovery_active: boolean;
+}
+
+export interface DeviceAvailability {
+  total_devices: number;
+  online_devices: number;
+  offline_devices: number;
+  recent_devices: number;
+  protocols: Record<string, number>;
+  device_types: Record<string, number>;
+}
+
+export interface DiscoverDevicesRequest {
+  protocol: string;
+}
+
+export interface DiscoverDevicesResponse {
+  protocol: string;
+  devices_found: number;
+  devices: Record<string, DeviceInfo>;
+}
+
+export interface PollDeviceRequest {
+  source_address: number;
+  pgn: number;
+  protocol?: string;
+  instance?: number;
+}
+
+export interface PollDeviceResponse {
+  success: boolean;
+  message: string;
+  request: PollDeviceRequest;
+}
+
+export interface DeviceDiscoveryStatus {
+  enabled: boolean;
+  feature_info: {
+    name: string;
+    friendly_name: string;
+    description: string;
+    enabled: boolean;
+    version: string;
+    runtime_info?: {
+      discovery_active: boolean;
+      total_devices: number;
+      supported_protocols: string[];
+      polling_interval: number;
+      discovery_interval: number;
+    };
+  };
+  health: {
+    status: "healthy" | "warning" | "error" | "disabled";
+    message: string;
+    metrics?: {
+      discovery_active: boolean;
+      total_devices: number;
+      online_devices: number;
+      active_polls: number;
+      last_discovery: number;
+    };
+  };
+  service_status: string;
+}
+
+export interface SupportedProtocols {
+  supported_protocols: string[];
+  discovery_pgns: Record<string, number[]>;
+  status_pgns: Record<string, number>;
+  configuration: {
+    polling_interval: number;
+    discovery_interval: number;
+    poll_timeout: number;
+    max_retries: number;
+  };
+}
+
+//
+// ===== AUTHENTICATION TYPES =====
+//
+
+export interface User {
+  user_id: string;
+  username: string | null;
+  email: string | null;
+  role: 'admin' | 'user' | 'readonly';
+  mode: 'none' | 'single' | 'multi';
+  authenticated: boolean;
+}
+
+export interface AuthStatus {
+  enabled: boolean;
+  mode: 'none' | 'single' | 'multi';
+  jwt_available: boolean;
+  magic_links_enabled: boolean;
+  oauth_enabled: boolean;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_expires_in: number;
+  mfa_required?: boolean;
+  user_id?: string;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface MFAStatus {
+  user_id: string;
+  mfa_enabled: boolean;
+  setup_initiated: boolean;
+  created_at?: string;
+  last_used?: string;
+  backup_codes_remaining: number;
+  backup_codes_total: number;
+  available: boolean;
+}
+
+export interface MFASetupResponse {
+  secret: string;
+  qr_code: string;
+  provisioning_uri: string;
+  backup_codes: string[];
+  issuer: string;
+}
+
+export interface MFAVerificationRequest {
+  totp_code: string;
+}
+
+export interface BackupCodesResponse {
+  backup_codes: string[];
+  warning: string;
+}
+
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_expires_in: number;
+}
+
+export interface MagicLinkRequest {
+  email: string;
+  redirect_url?: string;
+}
+
+export interface MagicLinkResponse {
+  message: string;
+  email: string;
+  expires_in_minutes: number;
+}
+
+export interface AdminCredentials {
+  username: string;
+  password: string;
+  created_at: string;
+  warning: string;
+}
+
+export interface LogoutResponse {
+  message: string;
+  detail: string;
+}
+
+export interface AccountLockoutError {
+  error: "account_locked";
+  message: string;
+  lockout_until: string;
+  failed_attempts: number;
+}
+
+export interface LockoutStatus {
+  username: string;
+  is_locked: boolean;
+  lockout_until: string | null;
+  failed_attempts: number;
+  escalation_level: number;
+  last_attempt: string | null;
+  consecutive_successful_logins: number;
+  lockout_enabled: boolean;
+  max_failed_attempts: number;
+  lockout_duration_minutes: number;
+}
+
+export interface UnlockAccountRequest {
+  username: string;
+}
+
+//
+// ===== BULK OPERATIONS TYPES =====
+//
+
+export interface BulkOperationPayload {
+  command: string;
+  state?: "on" | "off";
+  brightness?: number;
+  value?: string | number | boolean;
+  unit?: string;
+}
+
+export interface BulkOperationRequest {
+  operation_type: string;
+  targets: string[];
+  payload: BulkOperationPayload;
+  description?: string;
+}
+
+export interface BulkOperationResponse {
+  status: string;
+  operation_id: string;
+  total_tasks: number;
+  queued_at: string;
+}
+
+export interface BulkOperationStatus {
+  operation_id: string;
+  status: string;
+  operation_type: string;
+  description?: string;
+  total_tasks: number;
+  success_count: number;
+  failure_count: number;
+  progress_percentage: number;
+  failed_devices: Array<{
+    device_id: string;
+    error: string;
+    timestamp: string;
+  }>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeviceGroupRequest {
+  name: string;
+  description?: string;
+  device_ids: string[];
+  exemptions?: Record<string, string | number | boolean | string[]>;
+}
+
+export interface DeviceGroup {
+  id: string;
+  name: string;
+  description?: string;
+  device_ids: string[];
+  exemptions?: Record<string, string | number | boolean | string[]>;
+  created_at: string;
+  updated_at: string;
+}
+
+//
+// ===== PREDICTIVE MAINTENANCE TYPES =====
+//
+
+export interface ComponentHealth {
+  component_id: string;
+  component_type: string;
+  component_name: string;
+  health_score: number;
+  status: "healthy" | "watch" | "advise" | "alert";
+  remaining_useful_life_days?: number;
+  last_maintenance?: string;
+  next_maintenance_due?: string;
+  usage_hours?: number;
+  usage_cycles?: number;
+  anomaly_count: number;
+  trend_direction: "improving" | "stable" | "degrading";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RVHealthOverview {
+  overall_health_score: number;
+  status: "healthy" | "watch" | "advise" | "alert";
+  critical_alerts: number;
+  active_recommendations: number;
+  components_monitored: number;
+  last_updated: string;
+  system_health_breakdown: Record<string, number>;
+}
+
+export interface MaintenanceRecommendation {
+  recommendation_id: string;
+  component_id: string;
+  component_name: string;
+  level: "watch" | "advise" | "alert";
+  title: string;
+  message: string;
+  priority: number;
+  estimated_cost?: number;
+  estimated_time_hours?: number;
+  urgency_days?: number;
+  created_at: string;
+  acknowledged_at?: string;
+  dismissed: boolean;
+  maintenance_type: "inspection" | "service" | "replacement";
+}
+
+export interface ComponentTrendData {
+  component_id: string;
+  metric_name: string;
+  trend_points: Array<{
+    timestamp: string;
+    value: number;
+    metric: string;
+  }>;
+  normal_range: {
+    min: number;
+    max: number;
+    metric: string;
+  };
+  anomalies: Array<{
+    timestamp: string;
+    value: number;
+    severity: "medium" | "high";
+    description: string;
+  }>;
+  prediction_confidence: number;
+  trend_analysis: string;
+}
+
+export interface MaintenanceLogEntry {
+  component_id: string;
+  maintenance_type: string;
+  description: string;
+  cost?: number;
+  performed_by?: string;
+  location?: string;
+  notes?: string;
+}
+
+export interface MaintenanceHistory {
+  entry_id: string;
+  component_id: string;
+  component_name: string;
+  maintenance_type: string;
+  description: string;
+  performed_at: string;
+  cost?: number;
+  performed_by?: string;
+  location?: string;
+  notes?: string;
+}
+
+//
+// ===== ENHANCED DEVICE DISCOVERY TYPES =====
+//
+
+export interface DiscoveredDevice {
+  address: number;
+  protocol: string;
+  device_type?: string;
+  manufacturer?: string;
+  product_id?: string;
+  version?: string;
+  capabilities: string[];
+  last_seen: number;
+  first_seen: number;
+  response_count: number;
+  response_times: number[];
+  status: "discovered" | "online" | "offline" | "error";
+}
+
+export interface DeviceProfile {
+  device_address: number;
+  protocol: string;
+  basic_info: {
+    source_address: number;
+    device_type: string;
+    manufacturer: string;
+    product_id: string;
+    version: string;
+    status: string;
+    last_seen: number;
+    first_seen: number;
+    response_count: number;
+  };
+  capabilities: {
+    detected: string[];
+    inferred: string[];
+    pgns_supported: number[];
+  };
+  setup_guidance: string[];
+  configuration_options: Record<string, string | number | boolean>;
+  recommended_name: string;
+  recommended_area: string;
+  health_metrics: {
+    response_rate: number;
+    average_response_time: number;
+    reliability_score: number;
+  };
+}
+
+export interface AutoDiscoveryRequest {
+  protocols: string[];
+  scan_duration_seconds: number;
+  deep_scan: boolean;
+  save_results: boolean;
+}
+
+export interface AutoDiscoveryResults {
+  scan_id: string;
+  protocols_scanned: string[];
+  scan_duration: number;
+  deep_scan: boolean;
+  total_devices: number;
+  devices_by_protocol: Record<string, number>;
+  device_profiles: Record<string, DeviceProfile>;
+  setup_recommendations: DeviceRecommendation[];
+  network_topology: NetworkTopologyData;
+  scan_summary: {
+    status: string;
+    devices_found: number;
+    profiles_generated: number;
+    recommendations: number;
+    scan_completed_at: number;
+  };
+}
+
+export interface DeviceRecommendation {
+  device_address: number;
+  protocol: string;
+  current_status: string;
+  device_type: string;
+  recommended_name: string;
+  recommended_area: string;
+  priority: "low" | "medium" | "high";
+  setup_complexity: "simple" | "moderate" | "complex";
+  estimated_time_minutes: number;
+}
+
+export interface SetupRecommendations {
+  total_devices: number;
+  unconfigured_devices: number;
+  recommendations: DeviceRecommendation[];
+  priority_actions: PriorityAction[];
+  device_groupings: DeviceGrouping[];
+  area_suggestions: Record<string, number[]>;
+  generated_at: number;
+  message?: string;
+}
+
+export interface PriorityAction {
+  action: string;
+  device_type: string;
+  device_count: number;
+  message: string;
+  priority: "low" | "medium" | "high";
+  time_saved: string;
+}
+
+export interface DeviceGrouping {
+  group_type: string;
+  group_name: string;
+  device_addresses: number[];
+  suggested_operations: string[];
+}
+
+export interface NetworkTopologyData {
+  protocols: string[];
+  device_count_by_protocol: Record<string, number>;
+  total_devices: number;
+  network_segments: NetworkSegment[];
+  device_density: Record<string, number>;
+}
+
+export interface NetworkSegment {
+  protocol: string;
+  address_range: {
+    min: number;
+    max: number;
+  };
+  device_count: number;
+}
+
+export interface EnhancedNetworkMap {
+  total_devices: number;
+  online_devices: number;
+  offline_devices: number;
+  device_groups: Record<string, DiscoveredDevice[]>;
+  protocol_distribution: Record<string, number>;
+  device_relationships: DeviceRelationship[];
+  network_health: {
+    score: number;
+    status: "healthy" | "degraded" | "poor" | "no_devices";
+    online_percentage: number;
+    responsive_percentage: number;
+  };
+  topology_metrics: {
+    protocol_diversity: number;
+    device_type_diversity: number;
+    average_response_count: number;
+    newest_device_age: number;
+    oldest_device_age: number;
+  };
+  last_updated: number;
+}
+
+export interface DeviceRelationship {
+  relationship_type: string;
+  device_type: string;
+  devices: number[];
+  strength: "low" | "medium" | "high";
+  description: string;
+}
+
+export interface DeviceSetupRequest {
+  device_address: number;
+  device_name: string;
+  device_type: string;
+  area: string;
+  capabilities: string[];
+  configuration: Record<string, string | number | boolean>;
+}
+
+export interface DeviceSetupResult {
+  device_address: number;
+  device_name: string;
+  device_type: string;
+  area: string;
+  setup_status: "success" | "validation_failed" | "error";
+  entity_id: string;
+  capabilities_configured: string[];
+  configuration_applied: Record<string, string | number | boolean>;
+  setup_timestamp: number;
+  validation_results: {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    recommendations: string[];
+  };
+  next_steps: string[];
+  entity_config?: Record<string, string | number | boolean>;
+  errors?: string[];
+  error?: string;
+}

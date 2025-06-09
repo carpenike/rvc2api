@@ -9,6 +9,7 @@
 import { fetchEntities, fetchProtocolBridgeStatus } from "@/api/endpoints"
 import type { Entity } from "@/api/types"
 import { AppLayout } from "@/components/app-layout"
+import { SelectionModeBar } from "@/components/bulk-operations/SelectionModeBar"
 import { MultiProtocolSelector, ProtocolEntityCard, type ProtocolType } from "@/components/multi-protocol"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -16,17 +17,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useSelectionMode } from "@/hooks/useBulkOperations"
 import { useOptimisticBulkControl } from "@/hooks/useOptimisticMutations"
 import {
-  IconAlertTriangle,
-  IconBulb,
-  IconCpu,
-  IconDroplet,
-  IconLock,
-  IconSearch,
-  IconSettings,
-  IconTemperature,
-  IconTrendingUp
+    IconAlertTriangle,
+    IconBulb,
+    IconCpu,
+    IconDroplet,
+    IconEdit,
+    IconLock,
+    IconSearch,
+    IconSettings,
+    IconTemperature,
+    IconTrendingUp,
+    IconX
 } from "@tabler/icons-react"
 import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
@@ -291,6 +295,9 @@ export default function EntitiesPage() {
   const [selectedEntities, setSelectedEntities] = useState<string[]>([])
   const [showBulkActions, setShowBulkActions] = useState(false)
 
+  // Selection mode state
+  const selectionMode = useSelectionMode()
+
   const { entities, protocolStats, bridgeStatus, isLoading } = useMultiProtocolEntities(selectedProtocol)
 
   // Get unique device types and areas for filters
@@ -315,8 +322,15 @@ export default function EntitiesPage() {
     })
   }, [entities, searchTerm, deviceTypeFilter, areaFilter])
 
-  // Selection handlers
+  // Selection handlers - integrate with new selection mode
   const handleEntitySelect = (entityId: string, selected: boolean) => {
+    if (selected) {
+      selectionMode.toggleSelection(entityId)
+    } else {
+      selectionMode.toggleSelection(entityId)
+    }
+
+    // Legacy support for existing bulk actions
     setSelectedEntities(prev =>
       selected
         ? [...prev, entityId]
@@ -326,17 +340,35 @@ export default function EntitiesPage() {
 
   const handleSelectAll = () => {
     const allFilteredIds = filteredEntities.map(entity => entity.entity_id)
+    selectionMode.selectAll(allFilteredIds)
     setSelectedEntities(allFilteredIds)
   }
 
   const handleClearSelection = () => {
+    selectionMode.clearSelection()
     setSelectedEntities([])
   }
 
   const toggleBulkMode = () => {
-    setShowBulkActions(!showBulkActions)
-    if (showBulkActions) {
+    if (selectionMode.mode === "idle") {
+      selectionMode.enterSelectionMode()
+    } else {
+      selectionMode.exitSelectionMode()
+    }
+
+    // Legacy support
+    setShowBulkActions(selectionMode.mode === "selecting")
+    if (selectionMode.mode === "idle") {
       setSelectedEntities([])
+    }
+  }
+
+  // Long press handler for mobile selection mode initiation
+  const handleLongPress = (entityId: string) => {
+    if (selectionMode.mode === "idle") {
+      selectionMode.enterSelectionMode()
+      selectionMode.toggleSelection(entityId)
+      setShowBulkActions(true)
     }
   }
 
@@ -390,11 +422,20 @@ export default function EntitiesPage() {
           <div className="flex items-center gap-2">
             <Button
               onClick={toggleBulkMode}
-              variant={showBulkActions ? "default" : "outline"}
+              variant={selectionMode.mode === "selecting" ? "default" : "outline"}
               className="gap-2"
             >
-              <IconSettings className="h-4 w-4" />
-              {showBulkActions ? "Exit Bulk Mode" : "Bulk Actions"}
+              {selectionMode.mode === "selecting" ? (
+                <>
+                  <IconX className="h-4 w-4" />
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <IconEdit className="h-4 w-4" />
+                  Select
+                </>
+              )}
             </Button>
             {showBulkActions && filteredEntities.length > 0 && (
               <Button
@@ -493,8 +534,9 @@ export default function EntitiesPage() {
               <ProtocolEntityCard
                 key={entity.entity_id}
                 entity={entity}
-                isSelected={selectedEntities.includes(entity.entity_id)}
-                onSelectChange={showBulkActions ? (selected) => handleEntitySelect(entity.entity_id, selected) : undefined}
+                isSelected={selectionMode.selectedIds.has(entity.entity_id)}
+                onSelectChange={selectionMode.mode === "selecting" ? (selected) => handleEntitySelect(entity.entity_id, selected) : undefined}
+                onLongPress={() => handleLongPress(entity.entity_id)}
                 showProtocolInfo={selectedProtocol === "all"}
               />
             ))}
@@ -524,6 +566,13 @@ export default function EntitiesPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Selection Mode Bar */}
+        <SelectionModeBar
+          selectedDevices={selectionMode.selectedDevices}
+          onClearSelection={selectionMode.clearSelection}
+          onExitSelection={selectionMode.exitSelectionMode}
+        />
       </div>
     </AppLayout>
   )

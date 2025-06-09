@@ -132,6 +132,14 @@ export const queryKeys = {
     features: () => [...queryKeys.system.all, 'features'] as const,
     queueStatus: () => [...queryKeys.system.all, 'queue-status'] as const,
   },
+
+  // Authentication queries
+  auth: {
+    all: ['auth'] as const,
+    user: () => [...queryKeys.auth.all, 'user'] as const,
+    status: () => [...queryKeys.auth.all, 'status'] as const,
+    credentials: () => [...queryKeys.auth.all, 'credentials'] as const,
+  },
 } as const;
 
 /**

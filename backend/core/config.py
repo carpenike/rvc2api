@@ -723,7 +723,20 @@ class AuthenticationSettings(BaseSettings):
     enabled: bool = Field(default=False, description="Enable authentication system")
     secret_key: str = Field(default="", description="Secret key for JWT tokens")
     jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
-    jwt_expire_minutes: int = Field(default=30, description="JWT token expiration in minutes")
+    jwt_expire_minutes: int = Field(
+        default=15, description="JWT access token expiration in minutes"
+    )
+
+    # Refresh token settings
+    refresh_token_expire_days: int = Field(
+        default=7, description="Refresh token expiration in days"
+    )
+    refresh_token_secret: str = Field(
+        default="", description="Separate secret key for refresh tokens"
+    )
+    enable_refresh_tokens: bool = Field(
+        default=True, description="Enable refresh token functionality"
+    )
 
     # Base URL for magic links
     base_url: str = Field(default="", description="Base URL for magic link generation")
@@ -764,6 +777,57 @@ class AuthenticationSettings(BaseSettings):
         default=5, description="Rate limit for authentication attempts"
     )
     rate_limit_window_minutes: int = Field(default=15, description="Rate limit window in minutes")
+
+    # Account lockout settings
+    enable_account_lockout: bool = Field(
+        default=True, description="Enable account lockout after failed attempts"
+    )
+    max_failed_attempts: int = Field(
+        default=5, description="Maximum failed login attempts before lockout"
+    )
+    lockout_duration_minutes: int = Field(
+        default=30, description="Initial lockout duration in minutes"
+    )
+    lockout_escalation_factor: float = Field(
+        default=2.0, description="Escalation factor for subsequent lockouts"
+    )
+    max_lockout_duration_hours: int = Field(
+        default=24, description="Maximum lockout duration in hours"
+    )
+    lockout_reset_success_count: int = Field(
+        default=3, description="Successful logins needed to reset lockout escalation"
+    )
+
+    # Multi-Factor Authentication (MFA) settings
+    enable_mfa: bool = Field(default=False, description="Enable multi-factor authentication")
+    mfa_totp_issuer: str = Field(default="CoachIQ", description="TOTP issuer name")
+    mfa_totp_digits: int = Field(default=6, description="Number of TOTP digits", ge=6, le=8)
+    mfa_totp_window: int = Field(default=1, description="TOTP validation window", ge=0, le=5)
+    mfa_backup_codes_count: int = Field(
+        default=10, description="Number of backup codes to generate", ge=5, le=20
+    )
+    mfa_backup_code_length: int = Field(
+        default=8, description="Length of backup codes", ge=6, le=16
+    )
+    require_mfa_for_admin: bool = Field(default=False, description="Require MFA for admin users")
+    allow_mfa_bypass: bool = Field(default=True, description="Allow MFA bypass during grace period")
+    mfa_setup_grace_period_hours: int = Field(
+        default=24, description="Grace period for MFA setup in hours", ge=1, le=168
+    )
+    mfa_backup_code_regeneration_threshold: int = Field(
+        default=3, description="Remaining backup codes threshold for regeneration", ge=1, le=10
+    )
+
+    @field_validator("refresh_token_secret", mode="before")
+    @classmethod
+    def generate_refresh_secret(cls, v: str, values: dict) -> str:
+        """Generate refresh token secret if not provided."""
+        if not v:
+            # Generate a different secret from the JWT secret for additional security
+            import secrets
+
+            return f"refresh-{secrets.token_urlsafe(32)}"
+        return v
 
 
 class FeaturesSettings(BaseSettings):

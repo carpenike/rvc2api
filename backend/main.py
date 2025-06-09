@@ -20,24 +20,28 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from slowapi.errors import RateLimitExceeded
 
 from backend.api.router_config import configure_routers
 from backend.core.config import get_settings
-from backend.core.dependencies import (
-    get_app_state,
-    get_feature_manager_from_request,
-)
+from backend.core.dependencies import get_app_state, get_feature_manager_from_request
 from backend.core.logging_config import configure_unified_logging, setup_early_logging
 from backend.core.metrics import initialize_backend_metrics
 from backend.integrations.registration import register_custom_features
 from backend.middleware.auth import AuthenticationMiddleware
 from backend.middleware.http import configure_cors
+from backend.middleware.rate_limiting import limiter, rate_limit_exceeded_handler
+from backend.services.analytics_dashboard_service import AnalyticsDashboardService
+from backend.services.auth_manager import AccountLockedError
+from backend.services.bulk_operations_service import BulkOperationsService
 from backend.services.can_interface_service import CANInterfaceService
 from backend.services.can_service import CANService
 from backend.services.config_service import ConfigService
+from backend.services.device_discovery_service import DeviceDiscoveryService
 from backend.services.docs_service import DocsService
 from backend.services.entity_service import EntityService
 from backend.services.feature_manager import get_feature_manager
+from backend.services.predictive_maintenance_service import PredictiveMaintenanceService
 from backend.services.rvc_service import RVCService
 from backend.services.vector_service import VectorService
 
@@ -108,6 +112,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         docs_service = DocsService()
         vector_service = VectorService() if settings.features.enable_vector_search else None
         can_interface_service = CANInterfaceService()
+        bulk_operations_service = BulkOperationsService(entity_service, websocket_manager)
+        predictive_maintenance_service = PredictiveMaintenanceService()
+        device_discovery_service = DeviceDiscoveryService(can_service)
+        analytics_dashboard_service = AnalyticsDashboardService()
         logger.info("Backend services initialized")
 
         # CAN service initialization is handled by the can_feature in the feature manager
@@ -133,6 +141,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.docs_service = docs_service
         app.state.vector_service = vector_service
         app.state.can_interface_service = can_interface_service
+        app.state.bulk_operations_service = bulk_operations_service
+        app.state.predictive_maintenance_service = predictive_maintenance_service
+        app.state.device_discovery_service = device_discovery_service
+        app.state.analytics_dashboard_service = analytics_dashboard_service
+
+        # Start analytics dashboard service
+        await analytics_dashboard_service.start()
 
         logger.info("Backend services initialized successfully")
 
@@ -144,6 +159,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         # Cleanup
         logger.info("Shutting down coachiq backend application")
+
+        # Stop analytics dashboard service
+        if hasattr(app.state, "analytics_dashboard_service"):
+            await app.state.analytics_dashboard_service.stop()
 
         # Shut down all enabled features
         if hasattr(app.state, "feature_manager"):
@@ -175,6 +194,27 @@ def create_app() -> FastAPI:
     # Configure authentication middleware
     # The middleware will obtain the auth manager from app state at runtime
     app.add_middleware(AuthenticationMiddleware)
+
+    # Add rate limiting middleware
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+    # Add custom exception handler for account lockout
+    @app.exception_handler(AccountLockedError)
+    async def account_locked_exception_handler(request: Request, exc: AccountLockedError):
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Account locked: {exc}")
+
+        return JSONResponse(
+            status_code=423,  # HTTP_423_LOCKED
+            content={
+                "error": "account_locked",
+                "message": str(exc),
+                "lockout_until": (exc.lockout_until.isoformat() if exc.lockout_until else None),
+                "failed_attempts": exc.attempts,
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Configure and include routers
     configure_routers(app)

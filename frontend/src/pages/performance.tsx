@@ -1,10 +1,11 @@
 import {
-  fetchBaselineDeviations,
-  fetchOptimizationRecommendations,
-  fetchPerformanceMetrics,
-  fetchProtocolThroughput,
-  fetchResourceUtilization,
-  generatePerformanceReport
+    fetchBaselineDeviations,
+    fetchOptimizationRecommendations,
+    fetchPerformanceMetrics,
+    fetchProtocolThroughput,
+    fetchResourceUtilization,
+    fetchSystemHealth,
+    generatePerformanceReport
 } from '@/api/endpoints';
 import type { OptimizationSuggestion, PerformanceMetrics, ResourceUsage } from '@/api/types';
 import { AppLayout } from '@/components/app-layout';
@@ -17,42 +18,51 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  Download,
-  Minus,
-  Network,
-  RefreshCw,
-  TrendingDown,
-  TrendingUp
+    Activity,
+    AlertTriangle,
+    CheckCircle,
+    Download,
+    Minus,
+    Network,
+    RefreshCw,
+    TrendingDown,
+    TrendingUp
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface PerformanceScoreProps {
   value: number;
   label: string;
+  status?: 'healthy' | 'warning' | 'critical'; // Backend-computed status
   size?: 'compact' | 'full';
 }
 
-function PerformanceScore({ value, label, size = 'compact' }: PerformanceScoreProps) {
+function PerformanceScore({ value, label, status = 'healthy', size = 'compact' }: PerformanceScoreProps) {
   const percentage = Math.round(value * 100);
-  const getScoreColor = (score: number) => {
-    if (score >= 0.8) return 'text-green-600';
-    if (score >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
+
+  // Use backend-computed status instead of frontend thresholds
+  const getScoreColor = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'text-green-600';
+      case 'warning': return 'text-yellow-600';
+      case 'critical': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
   };
 
-  const getScoreVariant = (score: number): "default" | "secondary" | "destructive" | "outline" => {
-    if (score >= 0.8) return 'default';
-    if (score >= 0.6) return 'secondary';
-    return 'destructive';
+  const getScoreVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'healthy': return 'default';
+      case 'warning': return 'secondary';
+      case 'critical': return 'destructive';
+      default: return 'outline';
+    }
   };
 
   if (size === 'compact') {
     return (
       <div className="flex items-center gap-2">
-        <Badge variant={getScoreVariant(value)} className="min-w-[60px] justify-center">
+        <Badge variant={getScoreVariant(status)} className="min-w-[60px] justify-center">
           {percentage}%
         </Badge>
         <span className="text-sm text-muted-foreground">{label}</span>
@@ -67,7 +77,7 @@ function PerformanceScore({ value, label, size = 'compact' }: PerformanceScorePr
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <div className={`text-3xl font-bold ${getScoreColor(value)}`}>
+          <div className={`text-3xl font-bold ${getScoreColor(status)}`}>
             {percentage}%
           </div>
           <Progress value={percentage} className="flex-1" />
@@ -84,9 +94,14 @@ interface MetricCardProps {
   trend?: 'up' | 'down' | 'stable';
   description?: string;
   status?: 'good' | 'warning' | 'critical';
+  severity?: 'low' | 'medium' | 'high' | 'critical'; // Backend-computed severity
 }
 
-function MetricCard({ title, value, unit, trend, description, status = 'good' }: MetricCardProps) {
+function MetricCard({ title, value, unit, trend, description, status = 'good', severity }: MetricCardProps) {
+  // Use backend-computed severity if provided, otherwise fall back to status
+  const effectiveStatus = severity ?
+    (severity === 'critical' ? 'critical' : severity === 'high' ? 'warning' : 'good') :
+    status;
   const getTrendIcon = () => {
     switch (trend) {
       case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />;
@@ -96,7 +111,7 @@ function MetricCard({ title, value, unit, trend, description, status = 'good' }:
   };
 
   const getStatusColor = () => {
-    switch (status) {
+    switch (effectiveStatus) {
       case 'good': return 'border-green-200 bg-green-50';
       case 'warning': return 'border-yellow-200 bg-yellow-50';
       case 'critical': return 'border-red-200 bg-red-50';
@@ -181,18 +196,21 @@ function ResourceMonitor({ resourceUsage }: ResourceMonitorProps) {
         title="CPU Usage"
         value={(resourceUsage.cpu_usage * 100).toFixed(1)}
         unit="%"
+        // TODO: Backend should provide resource usage status classification
         status={resourceUsage.cpu_usage > 0.8 ? 'critical' : resourceUsage.cpu_usage > 0.6 ? 'warning' : 'good'}
       />
       <MetricCard
         title="Memory Usage"
         value={(resourceUsage.memory_usage * 100).toFixed(1)}
         unit="%"
+        // TODO: Backend should provide resource usage status classification
         status={resourceUsage.memory_usage > 0.8 ? 'critical' : resourceUsage.memory_usage > 0.6 ? 'warning' : 'good'}
       />
       <MetricCard
         title="Disk Usage"
         value={(resourceUsage.disk_usage * 100).toFixed(1)}
         unit="%"
+        // TODO: Backend should provide resource usage status classification
         status={resourceUsage.disk_usage > 0.9 ? 'critical' : resourceUsage.disk_usage > 0.7 ? 'warning' : 'good'}
       />
       <MetricCard
@@ -303,6 +321,18 @@ export default function PerformancePage() {
   const [refreshInterval] = useState(30000); // 30 seconds
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
+  // System health query (backend-computed status)
+  const {
+    data: systemHealth,
+    isLoading: healthLoading,
+    refetch: refetchHealth
+  } = useQuery({
+    queryKey: ['system-health'],
+    queryFn: fetchSystemHealth,
+    refetchInterval: refreshInterval,
+    staleTime: 15000,
+  });
+
   // Performance metrics query
   const {
     data: metrics,
@@ -364,6 +394,7 @@ export default function PerformancePage() {
   });
 
   const handleRefreshAll = () => {
+    refetchHealth();
     refetchMetrics();
     refetchResources();
     refetchRecommendations();
@@ -387,7 +418,7 @@ export default function PerformancePage() {
     }
   };
 
-  const isLoading = metricsLoading || resourceLoading || recommendationsLoading || deviationsLoading || throughputLoading;
+  const isLoading = healthLoading || metricsLoading || resourceLoading || recommendationsLoading || deviationsLoading || throughputLoading;
 
   if (isLoading) {
     return (
@@ -438,28 +469,51 @@ export default function PerformancePage() {
         </div>
 
       {/* Overview Cards */}
-      {metrics && (
+      {metrics && systemHealth && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <PerformanceScore
-            value={metrics.overall_health}
+            value={metrics.overall_health || 0}
             label="Overall Performance"
+            status={systemHealth.status} // Use backend-computed status
             size="full"
           />
-          <MetricCard
-            title="API Performance"
-            value={metrics.api_performance.average_response_time.toFixed(1)}
-            unit="ms"
-            description={`${metrics.api_performance.requests_per_second.toFixed(1)} req/sec`}
-            status={metrics.api_performance.average_response_time > 500 ? 'critical' :
-                    metrics.api_performance.average_response_time > 200 ? 'warning' : 'good'}
-          />
-          <MetricCard
-            title="WebSocket Latency"
-            value={metrics.websocket_performance.latency_ms.toFixed(1)}
-            unit="ms"
-            description={`${metrics.websocket_performance.active_connections} connections`}
-            status={metrics.websocket_performance.latency_ms > 100 ? 'warning' : 'good'}
-          />
+          {metrics.api_performance ? (
+            <MetricCard
+              title="API Performance"
+              value={metrics.api_performance.average_response_time?.toFixed(1) ?? '0'}
+              unit="ms"
+              description={`${metrics.api_performance.requests_per_second?.toFixed(1) ?? '0'} req/sec`}
+              // TODO: Backend should provide API performance status classification
+              status={metrics.api_performance.average_response_time > 500 ? 'critical' :
+                      metrics.api_performance.average_response_time > 200 ? 'warning' : 'good'}
+            />
+          ) : (
+            <MetricCard
+              title="API Performance"
+              value="N/A"
+              unit=""
+              description="API performance data unavailable"
+              status="good"
+            />
+          )}
+          {metrics.websocket_performance ? (
+            <MetricCard
+              title="WebSocket Latency"
+              value={metrics.websocket_performance.latency_ms?.toFixed(1) ?? '0'}
+              unit="ms"
+              description={`${metrics.websocket_performance.active_connections ?? 0} connections`}
+              // TODO: Backend should provide WebSocket performance status classification
+              status={metrics.websocket_performance.latency_ms > 100 ? 'warning' : 'good'}
+            />
+          ) : (
+            <MetricCard
+              title="WebSocket Latency"
+              value="N/A"
+              unit=""
+              description="WebSocket performance data unavailable"
+              status="good"
+            />
+          )}
         </div>
       )}
 
