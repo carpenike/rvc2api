@@ -379,7 +379,7 @@ export default function Documentation() {
                 <CardHeader>
                   <CardTitle>Quick Start Guide</CardTitle>
                   <CardDescription>
-                    Get up and running with RVC2API
+                    Get up and running with CoachIQ
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

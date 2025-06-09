@@ -56,7 +56,11 @@ def sample_openapi_schema():
     """Create a sample OpenAPI schema for testing."""
     return {
         "openapi": "3.0.2",
-        "info": {"title": "RVC2API", "version": "1.0.0", "description": "RV-C API Server"},
+        "info": {
+            "title": "CoachIQ",
+            "version": "1.0.0",
+            "description": "RV-C API Server",
+        },
         "paths": {
             "/api/entities": {
                 "get": {
@@ -83,7 +87,10 @@ def sample_openapi_schema():
             "schemas": {
                 "Entity": {
                     "type": "object",
-                    "properties": {"id": {"type": "string"}, "name": {"type": "string"}},
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                    },
                 }
             }
         },
@@ -231,7 +238,7 @@ class TestSchemaProcessing:
 
         result = await docs_service.get_api_info()
 
-        assert result["title"] == "RVC2API"
+        assert result["title"] == "CoachIQ"
         assert result["description"] == "RV-C API Server"
 
     async def test_get_schema_components_basic(self, docs_service):
@@ -363,7 +370,7 @@ class TestErrorHandling:
         # Service should handle this gracefully, not raise
         result = await docs_service.get_api_info()
         assert "title" in result
-        assert result["title"] == "RVC2API"  # Default value
+        assert result["title"] == "CoachIQ"  # Default value
 
 
 # ================================
@@ -420,8 +427,8 @@ class TestServiceIntegration:
         validation = await docs_service.validate_schema()
 
         # All should succeed
-        assert schema["info"]["title"] == "RVC2API"
-        assert api_info["title"] == "RVC2API"
+        assert schema["info"]["title"] == "CoachIQ"
+        assert api_info["title"] == "CoachIQ"
         assert len(endpoints) == 2
         assert components["summary"]["total_schemas"] == 1
         assert validation["valid"] is True

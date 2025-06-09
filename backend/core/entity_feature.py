@@ -1,5 +1,5 @@
 """
-EntityManager Feature for rvc2api.
+EntityManager Feature for CoachIQ.
 
 This module implements the EntityManager as a proper Feature that can be registered
 with the FeatureManager, providing an independent entity management system that

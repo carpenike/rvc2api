@@ -1,5 +1,5 @@
 {
-  "name": "RVC2API Nix Development",
+  "name": "CoachIQ Nix Development",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "."
@@ -42,7 +42,7 @@
   "waitFor": "postCreateCommand",
 
   "mounts": [
-    "source=rvc2api-nix-store,target=/nix,type=volume",
+    "source=coachiq-nix-store,target=/nix,type=volume",
     "source=${localWorkspaceFolder}/.devcontainer/home-cache,target=/home/vscode/.cache,type=bind,consistency=cached"
   ],
 

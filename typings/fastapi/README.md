@@ -1,6 +1,6 @@
 # FastAPI Type Stubs
 
-This directory contains type stubs for FastAPI to improve type checking and IDE support in the rvc2api project.
+This directory contains type stubs for FastAPI to improve type checking and IDE support in the CoachIQ project.
 
 ## Organization
 

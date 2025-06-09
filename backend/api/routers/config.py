@@ -117,7 +117,7 @@ async def get_server_status() -> dict[str, Any]:
         "version": version,
         "server_start_time_unix": SERVER_START_TIME,
         "uptime_seconds": uptime_seconds,
-        "message": "rvc2api server is running.",
+        "message": "coachiq server is running.",
     }
 
     logger.info(f"Server status retrieved - uptime: {uptime_seconds:.1f}s, version: {version}")
@@ -364,7 +364,12 @@ async def get_enhanced_feature_status(
 
         # Determine stability based on feature maturity
         stability = "stable"
-        if name in ["firefly", "spartan_k2", "multi_network_can", "advanced_diagnostics"]:
+        if name in [
+            "firefly",
+            "spartan_k2",
+            "multi_network_can",
+            "advanced_diagnostics",
+        ]:
             stability = "beta"
         elif name in ["github_update_checker", "uptimerobot", "pushover"]:
             stability = "alpha"

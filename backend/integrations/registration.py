@@ -1,5 +1,5 @@
 """
-Integration registrations for rvc2api.
+Integration registrations for CoachIQ.
 
 This module registers custom feature implementations with the feature manager.
 """
@@ -8,19 +8,36 @@ import logging
 
 from backend.can.feature import CANBusFeature
 from backend.core.state import AppState
-from backend.integrations.analytics.registration import register_performance_analytics_feature
+from backend.integrations.analytics.registration import (
+    register_performance_analytics_feature,
+)
 from backend.integrations.auth.registration import register_authentication_feature
-from backend.integrations.can.multi_network_registration import register_multi_network_feature
-from backend.integrations.device_discovery.registration import register_device_discovery_feature
-from backend.integrations.diagnostics.registration import register_advanced_diagnostics_feature
+from backend.integrations.can.multi_network_registration import (
+    register_multi_network_feature,
+)
+from backend.integrations.device_discovery.registration import (
+    register_device_discovery_feature,
+)
+from backend.integrations.diagnostics.registration import (
+    register_advanced_diagnostics_feature,
+)
 from backend.integrations.j1939.registration import register_j1939_feature
-from backend.integrations.j1939.spartan_k2_registration import register_spartan_k2_feature
-from backend.integrations.notifications.registration import register_notification_feature
+from backend.integrations.j1939.spartan_k2_registration import (
+    register_spartan_k2_feature,
+)
+from backend.integrations.notifications.registration import (
+    register_notification_feature,
+)
 from backend.integrations.rvc.firefly_registration import register_firefly_feature
 from backend.integrations.rvc.registration import register_rvc_feature
 from backend.services.feature_manager import FeatureManager
-from backend.services.github_update_checker import register_github_update_checker_feature
-from backend.services.persistence_feature import PersistenceFeature, set_persistence_feature
+from backend.services.github_update_checker import (
+    register_github_update_checker_feature,
+)
+from backend.services.persistence_feature import (
+    PersistenceFeature,
+    set_persistence_feature,
+)
 from backend.websocket.handlers import WebSocketManager
 
 logger = logging.getLogger(__name__)

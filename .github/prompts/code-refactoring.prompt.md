@@ -1,23 +1,25 @@
 ---
-mode: 'agent'
-description: 'Plan and execute a code refactoring task'
-tools: ['context7']
+mode: "agent"
+description: "Plan and execute a code refactoring task"
+tools: ["context7"]
 ---
 
 # Code Refactoring Guide
 
-This guide helps plan and execute refactoring tasks in the rvc2api codebase. Use this to organize structural changes, improve architecture, or implement best practices while maintaining functionality. When completed, the refactoring plan will be saved to `/docs/specs/refactor-<topic>.md` for review and implementation.
+This guide helps plan and execute refactoring tasks in the CoachIQ codebase. Use this to organize structural changes, improve architecture, or implement best practices while maintaining functionality. When completed, the refactoring plan will be saved to `/docs/specs/refactor-<topic>.md` for review and implementation.
 
 ---
 
 ## 1. Refactoring Objective
 
 ### 1.1. Purpose
+
 - What is the goal of this refactoring?
 - What problems will it solve?
 - What benefits will it provide?
 
 ### 1.2. Scope
+
 - Which components are affected?
 - What remains unchanged?
 - What are the boundaries of this refactoring?
@@ -28,17 +30,20 @@ This guide helps plan and execute refactoring tasks in the rvc2api codebase. Use
 ## 2. Current State Analysis
 
 ### 2.1. Code Structure
+
 - What is the current architecture?
 - What are the key components and their relationships?
 - What are the pain points or issues?
 - Use `@context7` to analyze current patterns and implementation details
 
 ### 2.2. Code Quality Concerns
+
 - What technical debt exists?
 - What patterns need improvement?
 - What inconsistencies should be addressed?
 
 ### 2.3. Test Coverage
+
 - What is the current test coverage?
 - Are there areas with insufficient testing?
 - How will existing tests be affected?
@@ -48,21 +53,25 @@ This guide helps plan and execute refactoring tasks in the rvc2api codebase. Use
 ## 3. Refactoring Plan
 
 ### 3.1. Architectural Changes
+
 - What architectural patterns will be applied?
 - How will components be reorganized?
 - How will dependencies change?
 
 ### 3.2. Code Structure Changes
+
 - What files will be created, modified, or deleted?
 - How will modules be reorganized?
 - What naming conventions will change?
 
 ### 3.3. Interface Changes
+
 - Will public APIs change?
 - How will backward compatibility be maintained?
 - What deprecation strategy will be used?
 
 ### 3.4. Testing Strategy
+
 - How will existing tests be updated?
 - What new tests will be needed?
 - How will refactoring success be verified?
@@ -72,17 +81,20 @@ This guide helps plan and execute refactoring tasks in the rvc2api codebase. Use
 ## 4. Implementation Strategy
 
 ### 4.1. Phased Approach
+
 - What are the logical phases for this refactoring?
 - What are the dependencies between phases?
 - What is the recommended sequence?
 - Validate approach by using `@context7` to check similar patterns or precedents
 
 ### 4.2. Risk Mitigation
+
 - What are the potential risks?
 - How will they be mitigated?
 - What fallback plans exist?
 
 ### 4.3. Validation Checkpoints
+
 - How will we verify each phase?
 - What metrics will indicate success?
 - What testing will occur at each checkpoint?
@@ -92,6 +104,7 @@ This guide helps plan and execute refactoring tasks in the rvc2api codebase. Use
 ## 5. Code Migration Guide
 
 ### 5.1. Old vs. New Patterns
+
 - Compare old patterns with new patterns
 - Provide examples of before and after code
 - Explain the rationale for changes
@@ -123,6 +136,7 @@ async def get_device(
 ```
 
 ### 5.2. Deprecation Path
+
 - How will deprecated code be marked?
 - What timeline will be used for removal?
 - How will users be guided to new patterns?
@@ -132,11 +146,13 @@ async def get_device(
 ## 6. Documentation Updates
 
 ### 6.1. Code Documentation
+
 - What docstrings need to be updated?
 - What examples need to be revised?
 - What architectural documentation needs to be created?
 
 ### 6.2. User Documentation
+
 - What user-facing documentation needs to be updated?
 - How will API changes be communicated?
 - What migration guides should be provided?
@@ -146,12 +162,14 @@ async def get_device(
 ## 7. Execution Checklist
 
 ### 7.1. Preparation
+
 - [ ] Analyze current code structure
 - [ ] Create test cases for critical functionality
 - [ ] Document current behavior
 - [ ] Create backup branch
 
 ### 7.2. Implementation
+
 - [ ] Create new structure
 - [ ] Implement core changes
 - [ ] Update tests
@@ -159,12 +177,14 @@ async def get_device(
 - [ ] Create deprecation notices
 
 ### 7.3. Validation
+
 - [ ] Run all tests
 - [ ] Verify performance
 - [ ] Validate backward compatibility
 - [ ] Review code quality
 
 ### 7.4. Deployment
+
 - [ ] Create release plan
 - [ ] Update changelog
 - [ ] Communicate changes to users
@@ -175,11 +195,13 @@ async def get_device(
 ## 8. References
 
 ### 8.1. Design Patterns
+
 - List relevant design patterns
 - Provide resources for further reading
 - Reference similar refactorings
 
 ### 8.2. Best Practices
+
 - List Python best practices being applied
 - Reference style guides or coding standards
 - Link to community resources

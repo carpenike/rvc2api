@@ -46,9 +46,11 @@ applyTo: "**/backend/**"
 ## Design Patterns
 
 ### Management Service Patterns (MANDATORY)
+
 **ALL backend code MUST follow these service patterns:**
 
 #### Core Management Services Access
+
 ```python
 # ALWAYS use dependency injection for management services
 from backend.core.dependencies import (
@@ -70,6 +72,7 @@ async def get_system_status(
 ```
 
 #### Feature Registration Pattern
+
 ```python
 # ALL new features must extend Feature base class
 from backend.services.feature_base import Feature
@@ -91,6 +94,7 @@ feature_manager.register_feature("my_new_feature", MyNewFeature())
 ```
 
 ### Standard Design Patterns
+
 - **FastAPI Routes**: Organized by domain in `backend/api/routers/` using APIRouter
 - **Management Services**: ALWAYS access via dependency injection (FeatureManager, EntityManager, etc.)
 - **Domain Services**: Business logic services accessed via dependency injection
@@ -150,16 +154,20 @@ Only use `@perplexity` for general concepts not related to specific library APIs
 ## Environment Configuration
 
 ### Configuration Pattern
+
 All environment variables use the `COACHIQ_` prefix:
+
 - **Top-level settings**: `COACHIQ_APP_NAME`, `COACHIQ_ENVIRONMENT`
 - **Nested settings**: `COACHIQ_SERVER__HOST`, `COACHIQ_CAN__INTERFACES`
 
 ### Configuration Files
+
 - **`.env.example`**: Complete documentation of all available settings
 - **`.env`**: Active configuration (gitignored)
 - **`backend/core/config.py`**: Pydantic Settings with type validation
 
 ### Management Service Access for Configuration
+
 ```python
 # ALWAYS use ConfigService for configuration access
 from backend.core.dependencies import get_config_service
@@ -173,6 +181,7 @@ async def get_config_summary(
 ```
 
 ### Key Configuration Sections
+
 - **Server**: `COACHIQ_SERVER__*` (host, port, workers, SSL)
 - **CAN Bus**: `COACHIQ_CAN__*` (interfaces, bustype, mappings)
 - **Features**: `COACHIQ_FEATURES__*` (enable/disable features)
@@ -182,6 +191,7 @@ async def get_config_summary(
 ## Nix Development Environment (Optional)
 
 ### Nix CLI Apps (if using Nix)
+
 ```bash
 # Nix provides these CLI apps
 nix run .#test      # Run tests
@@ -191,6 +201,7 @@ nix run .#ci        # Full CI suite
 ```
 
 ### Nix Flake Benefits (if used)
+
 - **Reproducible environment**: Same setup across all developers
 - **Python 3.12**: Consistent Python version
 - **Automatic library paths**: Poetry works without manual LD_LIBRARY_PATH
@@ -200,9 +211,10 @@ nix run .#ci        # Full CI suite
 **Note**: Nix is optional. All standard Poetry commands work without Nix.
 
 ### NixOS Production Deployment
+
 ```nix
 # In your system flake:
-inputs.rvc2api.url = "github:carpenike/rvc2api";
+inputs.coachiq.url = "github:carpenike/coachiq";
 
 # Enable the service:
 coachiq.enable = true;
@@ -219,17 +231,20 @@ coachiq.settings = {
 The Python backend can be deployed in multiple ways:
 
 ### Development Deployment
+
 - Use `.env` file for configuration
 - Run with `poetry run python run_server.py`
 - Virtual CAN interfaces for testing
 
 ### Production Deployment (NixOS)
+
 - Use NixOS module from flake
 - Systemd service with automatic restart
 - Environment variables set via Nix configuration
 - Persistent data in `/var/lib/coachiq`
 
 ### Production Deployment (Traditional)
+
 - Use systemd service file
 - Set environment variables in service configuration
 - Enable persistence with system directories

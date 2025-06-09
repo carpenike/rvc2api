@@ -101,7 +101,7 @@ def override_settings_from_args(settings, args):
 
 def show_configuration(settings):
     """Display current configuration."""
-    print("Current RVC2API Configuration:")
+    print("Current CoachIQ Configuration:")
     print("=" * 50)
     print(f"App Name: {settings.app_name}")
     print(f"App Version: {settings.app_version}")
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         log_config, root_logger = configure_unified_logging(settings.logging)
 
         logger = logging.getLogger(__name__)
-        logger.info("Starting rvc2api backend server")
+        logger.info("Starting CoachIQ backend server")
         logger.info("Unified logging with consistent formatting enabled for all loggers")
 
         if settings.is_development:

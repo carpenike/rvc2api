@@ -1,7 +1,7 @@
 """
 backend.models.common
 
-Shared Pydantic models for use across rvc2api modules.
+Shared Pydantic models for use across CoachIQ modules.
 
 This module contains base models that are used across different components of the application.
 """

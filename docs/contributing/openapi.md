@@ -17,7 +17,7 @@ FastAPI automatically generates an OpenAPI schema based on your route definition
 
 ### Interactive Documentation
 
-When the rvc2api server is running, you can access the interactive API documentation at:
+When the CoachIQ server is running, you can access the interactive API documentation at:
 
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)

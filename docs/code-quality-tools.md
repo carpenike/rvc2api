@@ -1,6 +1,6 @@
 # Code Quality Tools
 
-This document outlines the code quality tools used in the `rvc2api` project.
+This document outlines the code quality tools used in the `CoachIQ` project.
 
 ## Python Code Quality Tools
 

@@ -1,5 +1,5 @@
 """
-Manages CAN bus communication for the rvc2api daemon.
+Manages CAN bus communication for the CoachIQ daemon.
 
 This module is responsible for:
 - Initializing and managing CAN bus listener threads for specified interfaces.

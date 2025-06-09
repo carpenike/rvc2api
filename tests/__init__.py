@@ -1,10 +1,10 @@
 """
 tests
 
-Test suite for the rvc2api project.
+Test suite for the CoachIQ project.
 
 This package contains unit, integration, and end-to-end tests for all
-components of the rvc2api project, including the core daemon, console client,
+components of the CoachIQ project, including the core daemon, console client,
 and RV-C decoder.
 
 Subpackages:

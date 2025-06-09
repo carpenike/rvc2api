@@ -1,5 +1,5 @@
 """
-WebSocket setup module for rvc2api.
+WebSocket setup module for CoachIQ.
 
 This module provides functions to set up and integrate WebSocket functionality with the FastAPI
 application, including WebSocket routes, handlers, and the WebSocketManager feature.

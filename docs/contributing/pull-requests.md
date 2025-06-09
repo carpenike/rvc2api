@@ -1,6 +1,6 @@
 # Pull Request Guidelines
 
-This document provides guidelines for creating and submitting pull requests to the rvc2api project.
+This document provides guidelines for creating and submitting pull requests to the CoachIQ project.
 
 ## Pull Request Workflow
 

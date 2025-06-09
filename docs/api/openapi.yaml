@@ -1,40 +1,41 @@
 openapi: 3.1.0
 info:
-  title: RVC2API Backend
+  title: CoachIQ Backend
   description: Modernized backend API for RV-C CANbus monitoring and control
   version: 2.0.0
 paths:
   /api/entities:
     get:
       tags:
-      - entities
+        - entities
       summary: List entities
-      description: Return all entities, optionally filtered by device_type and/or
+      description:
+        Return all entities, optionally filtered by device_type and/or
         area.
       operationId: list_entities_api_entities_get
       parameters:
-      - name: device_type
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+        - name: device_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            description: Filter by entity device_type
+            title: Device Type
           description: Filter by entity device_type
-          title: Device Type
-        description: Filter by entity device_type
-      - name: area
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+        - name: area
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            description: Filter by entity suggested_area
+            title: Area
           description: Filter by entity suggested_area
-          title: Area
-        description: Filter by entity suggested_area
       responses:
-        '200':
+        "200":
           description: Dictionary of entities matching the filter criteria
           content:
             application/json:
@@ -44,21 +45,21 @@ paths:
                   type: object
                   additionalProperties: true
                 title: Response List Entities Api Entities Get
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/entities/ids:
     get:
       tags:
-      - entities
+        - entities
       summary: List entity IDs
       description: Return all known entity IDs.
       operationId: list_entity_ids_api_entities_ids_get
       responses:
-        '200':
+        "200":
           description: List of all entity IDs in the system
           content:
             application/json:
@@ -70,19 +71,19 @@ paths:
   /api/entities/{entity_id}:
     get:
       tags:
-      - entities
+        - entities
       summary: Get entity details
       description: Return the latest value for one entity.
       operationId: get_entity_api_entities__entity_id__get
       parameters:
-      - name: entity_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Entity Id
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Entity Id
       responses:
-        '200':
+        "200":
           description: The entity object with current state
           content:
             application/json:
@@ -90,48 +91,48 @@ paths:
                 type: object
                 additionalProperties: true
                 title: Response Get Entity Api Entities  Entity Id  Get
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/entities/{entity_id}/history:
     get:
       tags:
-      - entities
+        - entities
       summary: Get entity history
       description: Return the history of state changes for a specific entity.
       operationId: get_entity_history_api_entities__entity_id__history_get
       parameters:
-      - name: entity_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Entity Id
-      - name: limit
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Entity Id
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: "null"
+            description: Maximum number of history entries to return
+            title: Limit
           description: Maximum number of history entries to return
-          title: Limit
-        description: Maximum number of history entries to return
-      - name: since
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: number
-          - type: 'null'
+        - name: since
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: number
+              - type: "null"
+            description: Unix timestamp to filter history from
+            title: Since
           description: Unix timestamp to filter history from
-          title: Since
-        description: Unix timestamp to filter history from
       responses:
-        '200':
+        "200":
           description: List of historical state entries
           content:
             application/json:
@@ -140,51 +141,52 @@ paths:
                 items:
                   type: object
                   additionalProperties: true
-                title: Response Get Entity History Api Entities  Entity Id  History
+                title:
+                  Response Get Entity History Api Entities  Entity Id  History
                   Get
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/entities/{entity_id}/control:
     post:
       tags:
-      - entities
+        - entities
       summary: Control entity
       description: Send a control command to an entity.
       operationId: control_entity_api_entities__entity_id__control_post
       parameters:
-      - name: entity_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Entity Id
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Entity Id
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ControlCommand'
+              $ref: "#/components/schemas/ControlCommand"
       responses:
-        '200':
+        "200":
           description: Control command response with execution details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ControlEntityResponse'
-        '422':
+                $ref: "#/components/schemas/ControlEntityResponse"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/entities/mappings:
     post:
       tags:
-      - entities
+        - entities
       summary: Create entity mapping
       description: Create a new entity mapping from an unmapped entry.
       operationId: create_entity_mapping_api_entities_mappings_post
@@ -192,31 +194,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEntityMappingRequest'
+              $ref: "#/components/schemas/CreateEntityMappingRequest"
         required: true
       responses:
-        '200':
+        "200":
           description: Response with status and entity mapping details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEntityMappingResponse'
-        '422':
+                $ref: "#/components/schemas/CreateEntityMappingResponse"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/unmapped:
     get:
       tags:
-      - entities
+        - entities
       summary: List unmapped entries
-      description: Return DGN/instance pairs observed on the CAN bus but not mapped
+      description:
+        Return DGN/instance pairs observed on the CAN bus but not mapped
         to entities.
       operationId: get_unmapped_entries_api_unmapped_get
       responses:
-        '200':
+        "200":
           description: Dictionary of unmapped DGN/instance pairs
           content:
             application/json:
@@ -227,12 +230,12 @@ paths:
   /api/unknown-pgns:
     get:
       tags:
-      - entities
+        - entities
       summary: List unknown PGNs
       description: Return PGN entries that were observed but not recognized.
       operationId: get_unknown_pgns_api_unknown_pgns_get
       responses:
-        '200':
+        "200":
           description: Dictionary of unknown PGN entries
           content:
             application/json:
@@ -243,12 +246,12 @@ paths:
   /api/metadata:
     get:
       tags:
-      - entities
+        - entities
       summary: Get entity metadata
       description: Return metadata about available entity types, areas, and capabilities.
       operationId: get_metadata_api_metadata_get
       responses:
-        '200':
+        "200":
           description: Dictionary containing metadata about the entity system
           content:
             application/json:
@@ -259,13 +262,14 @@ paths:
   /api/missing-dgns:
     get:
       tags:
-      - entities
+        - entities
       summary: List missing DGNs
-      description: Return DGNs that were encountered during decoding but not found
+      description:
+        Return DGNs that were encountered during decoding but not found
         in the specification.
       operationId: get_missing_dgns_endpoint_api_missing_dgns_get
       responses:
-        '200':
+        "200":
           description: Dictionary of missing DGN entries with encounter metadata
           content:
             application/json:
@@ -278,12 +282,12 @@ paths:
   /api/can/queue/status:
     get:
       tags:
-      - can
+        - can
       summary: Get CAN queue status
       description: Return the current status of the CAN transmission queue.
       operationId: get_queue_status_api_can_queue_status_get
       responses:
-        '200':
+        "200":
           description: Queue status including length and capacity information
           content:
             application/json:
@@ -294,12 +298,12 @@ paths:
   /api/can/interfaces:
     get:
       tags:
-      - can
+        - can
       summary: Get CAN interfaces
       description: Return a list of active CAN interfaces.
       operationId: get_interfaces_api_can_interfaces_get
       responses:
-        '200':
+        "200":
           description: List of interface names
           content:
             application/json:
@@ -311,12 +315,12 @@ paths:
   /api/can/interfaces/details:
     get:
       tags:
-      - can
+        - can
       summary: Get detailed interface information
       description: Return detailed information about all CAN interfaces.
       operationId: get_interface_details_api_can_interfaces_details_get
       responses:
-        '200':
+        "200":
           description: Dictionary mapping interface names to their details
           content:
             application/json:
@@ -329,31 +333,31 @@ paths:
   /api/can/send:
     post:
       tags:
-      - can
+        - can
       summary: Send raw CAN message
       description: Send a raw CAN message to the specified interface.
       operationId: send_raw_message_api_can_send_post
       parameters:
-      - name: arbitration_id
-        in: query
-        required: true
-        schema:
-          type: integer
-          title: Arbitration Id
-      - name: data
-        in: query
-        required: true
-        schema:
-          type: string
-          title: Data
-      - name: interface
-        in: query
-        required: true
-        schema:
-          type: string
-          title: Interface
+        - name: arbitration_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            title: Arbitration Id
+        - name: data
+          in: query
+          required: true
+          schema:
+            type: string
+            title: Data
+        - name: interface
+          in: query
+          required: true
+          schema:
+            type: string
+            title: Interface
       responses:
-        '200':
+        "200":
           description: Send operation result
           content:
             application/json:
@@ -361,29 +365,29 @@ paths:
                 type: object
                 additionalProperties: true
                 title: Response Send Raw Message Api Can Send Post
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/can/recent:
     get:
       tags:
-      - can
+        - can
       summary: Get recent CAN messages
       description: Return recent CAN messages captured on the bus.
       operationId: get_recent_can_messages_api_can_recent_get
       parameters:
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 100
-          title: Limit
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            title: Limit
       responses:
-        '200':
+        "200":
           description: List of recent CAN messages with metadata
           content:
             application/json:
@@ -393,21 +397,21 @@ paths:
                   type: object
                   additionalProperties: true
                 title: Response Get Recent Can Messages Api Can Recent Get
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/can/statistics:
     get:
       tags:
-      - can
+        - can
       summary: Get CAN bus statistics
       description: Return statistics for all CAN bus interfaces.
       operationId: get_bus_statistics_api_can_statistics_get
       responses:
-        '200':
+        "200":
           description: Dictionary containing bus statistics and metrics
           content:
             application/json:
@@ -418,32 +422,33 @@ paths:
   /api/can/status:
     get:
       tags:
-      - can
+        - can
       summary: Get Can Status
-      description: 'Retrieves detailed status for all CAN interfaces the service is
+      description:
+        "Retrieves detailed status for all CAN interfaces the service is
         listening on.
 
         Combines pyroute2 stats (if available) with the actual set of active interfaces.
 
-        On non-Linux platforms, returns a platform-specific message.'
+        On non-Linux platforms, returns a platform-specific message."
       operationId: get_can_status_api_can_status_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AllCANStats'
+                $ref: "#/components/schemas/AllCANStats"
   /api/config/device_mapping:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get device mapping configuration
       description: Returns the current device mapping configuration file content.
       operationId: get_device_mapping_config_api_config_device_mapping_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             text/plain:
@@ -452,13 +457,13 @@ paths:
   /api/config/spec:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get RV-C specification configuration
       description: Returns the current RV-C specification file content.
       operationId: get_spec_config_api_config_spec_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             text/plain:
@@ -467,14 +472,15 @@ paths:
   /api/healthz:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Liveness probe
-      description: Returns health status with feature health aggregation. Returns
+      description:
+        Returns health status with feature health aggregation. Returns
         503 if any features are unhealthy.
       operationId: healthz_api_healthz_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -482,13 +488,13 @@ paths:
   /api/readyz:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Readiness probe
       description: Returns 200 once at least one frame is decoded, else 503.
       operationId: readyz_api_readyz_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -496,13 +502,13 @@ paths:
   /api/metrics:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Prometheus metrics
       description: Returns Prometheus-format metrics for monitoring.
       operationId: metrics_api_metrics_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -510,13 +516,13 @@ paths:
   /api/status/server:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get server status
       description: Returns basic server status information including uptime and version.
       operationId: get_server_status_api_status_server_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -527,14 +533,15 @@ paths:
   /api/status/application:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get application status
-      description: Returns application-specific status information including configuration
+      description:
+        Returns application-specific status information including configuration
         and entity counts.
       operationId: get_application_status_api_status_application_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -545,43 +552,43 @@ paths:
   /api/status/latest_release:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get latest GitHub release
       description: Returns the latest GitHub release version and metadata.
       operationId: get_latest_github_release_api_status_latest_release_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GitHubUpdateStatus'
+                $ref: "#/components/schemas/GitHubUpdateStatus"
   /api/status/force_update_check:
     post:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Force GitHub update check
       description: Forces an immediate GitHub update check and returns the new status.
       operationId: force_github_update_check_api_status_force_update_check_post
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GitHubUpdateStatus'
+                $ref: "#/components/schemas/GitHubUpdateStatus"
   /api/status/features:
     get:
       tags:
-      - config
-      - status
+        - config
+        - status
       summary: Get feature status
       description: Returns the current status of all features in the system.
       operationId: get_feature_status_api_status_features_get
       responses:
-        '200':
+        "200":
           description: Dictionary containing feature states and metadata
           content:
             application/json:
@@ -592,12 +599,12 @@ paths:
   /api/docs/status:
     get:
       tags:
-      - documentation
+        - documentation
       summary: Get documentation search status
       description: Returns the status of the vector search service and its configuration.
       operationId: get_search_status_api_docs_status_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -608,32 +615,32 @@ paths:
   /api/docs/search:
     get:
       tags:
-      - documentation
+        - documentation
       summary: Search RV-C documentation
       description: Search the RV-C documentation using vector-based semantic search.
       operationId: search_documentation_api_docs_search_get
       parameters:
-      - name: query
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Search query string
+            title: Query
           description: Search query string
-          title: Query
-        description: Search query string
-      - name: k
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 10
-          minimum: 1
+        - name: k
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 10
+            minimum: 1
+            description: Number of results to return
+            default: 3
+            title: K
           description: Number of results to return
-          default: 3
-          title: K
-        description: Number of results to return
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -643,21 +650,21 @@ paths:
                   type: object
                   additionalProperties: true
                 title: Response Search Documentation Api Docs Search Get
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
   /api/docs/openapi:
     get:
       tags:
-      - documentation
+        - documentation
       summary: Get OpenAPI schema
       description: Returns the complete OpenAPI schema for the API.
       operationId: get_openapi_schema_api_docs_openapi_get
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
@@ -668,97 +675,98 @@ paths:
   /logs/history:
     get:
       tags:
-      - logs
+        - logs
       summary: Get historical logs
-      description: "Query historical logs from journald. Supports filtering by time,\
+      description:
+        "Query historical logs from journald. Supports filtering by time,\
         \ level, module, and pagination via cursor.\n\n    **Feature-gated:** This\
         \ endpoint is only available if the `log_history` feature flag is enabled.\n\
         \n    Only available on systems with systemd/journald."
       operationId: get_log_history_logs_history_get
       parameters:
-      - name: since
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Since
-      - name: until
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Until
-      - name: level
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Level
-      - name: module
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Module
-      - name: cursor
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cursor
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 500
-          minimum: 1
+        - name: since
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: "null"
+            title: Since
+        - name: until
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: "null"
+            title: Until
+        - name: level
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Level
+        - name: module
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Module
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Cursor
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 500
+            minimum: 1
+            description: Max number of log entries to return
+            default: 100
+            title: Limit
           description: Max number of log entries to return
-          default: 100
-          title: Limit
-        description: Max number of log entries to return
-      - name: settings
-        in: query
-        required: false
-        schema:
-          title: Settings
+        - name: settings
+          in: query
+          required: false
+          schema:
+            title: Settings
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogHistoryResponse'
-        '422':
+                $ref: "#/components/schemas/LogHistoryResponse"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
 components:
   schemas:
     AllCANStats:
       properties:
         interfaces:
           additionalProperties:
-            $ref: '#/components/schemas/CANInterfaceStats'
+            $ref: "#/components/schemas/CANInterfaceStats"
           type: object
           title: Interfaces
       type: object
       required:
-      - interfaces
+        - interfaces
       title: AllCANStats
       description: Statistics for all CAN interfaces.
     CANInterfaceStats:
@@ -768,162 +776,162 @@ components:
           title: Name
         state:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: State
         restart_ms:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Restart Ms
         bitrate:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Bitrate
         sample_point:
           anyOf:
-          - type: number
-          - type: 'null'
+            - type: number
+            - type: "null"
           title: Sample Point
         tq:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Tq
         prop_seg:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Prop Seg
         phase_seg1:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Phase Seg1
         phase_seg2:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Phase Seg2
         sjw:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Sjw
         brp:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Brp
         clock:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Clock
         notes:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Notes
         tx_packets:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Tx Packets
         rx_packets:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Rx Packets
         tx_bytes:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Tx Bytes
         rx_bytes:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Rx Bytes
         tx_errors:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Tx Errors
         rx_errors:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Rx Errors
         bus_errors:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Bus Errors
         restarts:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Restarts
         link/can:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Link/Can
         promiscuity:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Promiscuity
         allmulti:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Allmulti
         minmtu:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Minmtu
         maxmtu:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Maxmtu
         parentbus:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Parentbus
         parentdev:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Parentdev
         error_warning:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Error Warning
         error_passive:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Error Passive
         bus_off:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Bus Off
         raw_details:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Raw Details
       type: object
       required:
-      - name
+        - name
       title: CANInterfaceStats
       description: Statistics for a CAN interface.
     ControlCommand:
@@ -933,25 +941,27 @@ components:
           title: Command
         state:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: State
-          description: 'Target state: ''on'' or ''off''. Required only for ''set''
-            command.'
+          description: "Target state: 'on' or 'off'. Required only for 'set'
+            command."
         brightness:
           anyOf:
-          - type: integer
-            maximum: 100.0
-            minimum: 0.0
-          - type: 'null'
+            - type: integer
+              maximum: 100.0
+              minimum: 0.0
+            - type: "null"
           title: Brightness
-          description: Brightness percent (0-100). Only used when command is 'set'
+          description:
+            Brightness percent (0-100). Only used when command is 'set'
             and state is 'on'.
       type: object
       required:
-      - command
+        - command
       title: ControlCommand
-      description: Defines the structure for sending control commands to an entity,
+      description:
+        Defines the structure for sending control commands to an entity,
         typically a light.
     ControlEntityResponse:
       properties:
@@ -975,14 +985,15 @@ components:
           title: Action
       type: object
       required:
-      - status
-      - entity_id
-      - command
-      - state
-      - brightness
-      - action
+        - status
+        - entity_id
+        - command
+        - state
+        - brightness
+        - action
       title: ControlEntityResponse
-      description: Response model for individual entity control commands, confirming
+      description:
+        Response model for individual entity control commands, confirming
         the action taken.
     CreateEntityMappingRequest:
       properties:
@@ -1008,33 +1019,34 @@ components:
           description: Device type (e.g., 'light', 'lock', 'tank')
         suggested_area:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Suggested Area
           description: Suggested area/location for the entity
         capabilities:
           anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
+            - items:
+                type: string
+              type: array
+            - type: "null"
           title: Capabilities
           description: Entity capabilities
         notes:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Notes
           description: Optional notes about the entity mapping
       type: object
       required:
-      - pgn_hex
-      - instance
-      - entity_id
-      - friendly_name
-      - device_type
+        - pgn_hex
+        - instance
+        - entity_id
+        - friendly_name
+        - device_type
       title: CreateEntityMappingRequest
-      description: Request model for creating a new entity mapping from an unmapped
+      description:
+        Request model for creating a new entity mapping from an unmapped
         entry.
     CreateEntityMappingResponse:
       properties:
@@ -1049,15 +1061,15 @@ components:
           title: Message
         entity_data:
           anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+            - additionalProperties: true
+              type: object
+            - type: "null"
           title: Entity Data
       type: object
       required:
-      - status
-      - entity_id
-      - message
+        - status
+        - entity_id
+        - message
       title: CreateEntityMappingResponse
       description: Response model for entity mapping creation.
     GitHubReleaseAsset:
@@ -1070,89 +1082,89 @@ components:
           title: Browser Download Url
         size:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Size
         download_count:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Download Count
       type: object
       required:
-      - name
-      - browser_download_url
+        - name
+        - browser_download_url
       title: GitHubReleaseAsset
       description: Represents a downloadable asset attached to a GitHub release.
     GitHubReleaseInfo:
       properties:
         tag_name:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Tag Name
         name:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Name
         body:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Body
         html_url:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Html Url
         published_at:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Published At
         created_at:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Created At
         assets:
           anyOf:
-          - items:
-              $ref: '#/components/schemas/GitHubReleaseAsset'
-            type: array
-          - type: 'null'
+            - items:
+                $ref: "#/components/schemas/GitHubReleaseAsset"
+              type: array
+            - type: "null"
           title: Assets
         tarball_url:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Tarball Url
         zipball_url:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Zipball Url
         prerelease:
           anyOf:
-          - type: boolean
-          - type: 'null'
+            - type: boolean
+            - type: "null"
           title: Prerelease
         draft:
           anyOf:
-          - type: boolean
-          - type: 'null'
+            - type: boolean
+            - type: "null"
           title: Draft
         author:
           anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+            - additionalProperties: true
+              type: object
+            - type: "null"
           title: Author
         discussion_url:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Discussion Url
       type: object
       title: GitHubReleaseInfo
@@ -1161,47 +1173,48 @@ components:
       properties:
         latest_version:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Latest Version
         last_checked:
           anyOf:
-          - type: number
-          - type: 'null'
+            - type: number
+            - type: "null"
           title: Last Checked
         last_success:
           anyOf:
-          - type: number
-          - type: 'null'
+            - type: number
+            - type: "null"
           title: Last Success
         error:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Error
         latest_release_info:
           anyOf:
-          - $ref: '#/components/schemas/GitHubReleaseInfo'
-          - type: 'null'
+            - $ref: "#/components/schemas/GitHubReleaseInfo"
+            - type: "null"
         repo:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Repo
         api_url:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Api Url
       type: object
       title: GitHubUpdateStatus
-      description: Represents the status and metadata of the latest GitHub release
+      description:
+        Represents the status and metadata of the latest GitHub release
         as cached by the server.
     HTTPValidationError:
       properties:
         detail:
           items:
-            $ref: '#/components/schemas/ValidationError'
+            $ref: "#/components/schemas/ValidationError"
           type: array
           title: Detail
       type: object
@@ -1214,8 +1227,8 @@ components:
           description: UTC ISO8601 timestamp of the log entry
         level:
           anyOf:
-          - type: integer
-          - type: 'null'
+            - type: integer
+            - type: "null"
           title: Level
           description: Syslog priority (numeric)
         message:
@@ -1224,8 +1237,8 @@ components:
           description: Log message
         module:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Module
           description: Logger/module name
         cursor:
@@ -1234,21 +1247,21 @@ components:
           description: Journald cursor for pagination
       type: object
       required:
-      - timestamp
-      - message
-      - cursor
+        - timestamp
+        - message
+        - cursor
       title: LogEntry
     LogHistoryResponse:
       properties:
         entries:
           items:
-            $ref: '#/components/schemas/LogEntry'
+            $ref: "#/components/schemas/LogEntry"
           type: array
           title: Entries
         next_cursor:
           anyOf:
-          - type: string
-          - type: 'null'
+            - type: string
+            - type: "null"
           title: Next Cursor
           description: Cursor for next page of results
         has_more:
@@ -1257,16 +1270,16 @@ components:
           description: True if more results are available
       type: object
       required:
-      - entries
-      - has_more
+        - entries
+        - has_more
       title: LogHistoryResponse
     ValidationError:
       properties:
         loc:
           items:
             anyOf:
-            - type: string
-            - type: integer
+              - type: string
+              - type: integer
           type: array
           title: Location
         msg:
@@ -1277,7 +1290,7 @@ components:
           title: Error Type
       type: object
       required:
-      - loc
-      - msg
-      - type
+        - loc
+        - msg
+        - type
       title: ValidationError

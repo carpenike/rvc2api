@@ -3,13 +3,16 @@
 ## 📋 **Current Status Summary (Updated January 2025)**
 
 ### ✅ **COMPLETED PHASES**
+
 - **Phase 1-4**: Core infrastructure, state management, performance optimization, and testing foundation ✅ **FULLY COMPLETE**
 - **Phase 5**: shadcn/UI component variant mapping ✅ **JUST COMPLETED**
 
 ### 🎯 **NEXT MAJOR INITIATIVE**
+
 - **Phase 6**: Full shadcn/UI migration with theme system replacement (8-week timeline)
 
 ### 📊 **Progress Metrics**
+
 - **Test Coverage**: 34/34 tests passing with comprehensive component and hook coverage
 - **Code Quality**: TypeScript compilation clean, ESLint passing, no critical errors
 - **Performance**: Lazy loading implemented, React Query optimizations complete
@@ -20,6 +23,7 @@
 ## 1. Engineering Objective
 
 ### 1.1. Purpose
+
 - Modernize the React frontend to align with 2024-2025 best practices for React+Vite+FastAPI+Tailwind stack
 - Implement comprehensive state management, error handling, and performance optimizations
 - Establish robust testing infrastructure and development patterns
@@ -27,6 +31,7 @@
 - Create a foundation for scalable frontend development and maintenance
 
 ### 1.2. Scope
+
 - Affected: `frontend/` directory - React frontend components, hooks, API integration, and tooling
 - Enhanced: State management patterns, error handling, performance optimization, testing infrastructure
 - Unchanged: Backend API endpoints, WebSocket implementation, core business logic
@@ -35,6 +40,7 @@
 ## 2. Current State Analysis
 
 ### 2.1. Code Structure ✅ COMPLETED
+
 - React 18 with TypeScript and Vite build system (modernized)
 - Tailwind CSS for styling, React Query fully integrated across the application
 - API integration layer in `/src/api/` with proper endpoint structure
@@ -63,6 +69,7 @@
 ## 3. Engineering Plan
 
 ### 3.1. Architectural Changes
+
 - **Global React Query Setup**: Configure QueryClient provider with optimized defaults
 - **Error Boundary Implementation**: Add component-level and application-level error handling
 - **Performance Optimization**: Implement code splitting, memoization, and WebSocket throttling
@@ -70,6 +77,7 @@
 - **State Management Enhancement**: Replace manual state management with React Query patterns
 
 ### 3.2. Code Structure Changes ✅ IMPLEMENTED
+
 ```
 frontend/src/
 ├── components/
@@ -96,6 +104,7 @@ frontend/src/
 ```
 
 ### 3.3. Interface Changes ✅ IMPLEMENTED
+
 - **API Integration**: ✅ Enhanced with React Query for caching and background updates
 - **Error Handling**: ✅ Structured error types with user-friendly toast messages
 - **Loading States**: ✅ Consistent loading indicators (LoadingSpinner, SkeletonLoader) across all components
@@ -104,6 +113,7 @@ frontend/src/
 - **Environment Abstraction**: ✅ Cross-context compatibility for Vite/Jest environments
 
 ### 3.4. Testing Strategy ✅ IMPLEMENTED
+
 - **Unit Tests**: ✅ React Testing Library for component testing (34 tests passing)
 - **Integration Tests**: ✅ API integration with mock handlers (MSW infrastructure ready)
 - **Custom Hook Tests**: ✅ Testing custom hooks in isolation with QueryClient
@@ -115,6 +125,7 @@ frontend/src/
 ### 4.1. Phased Approach
 
 #### Phase 1: Core Infrastructure ✅ COMPLETED (High Priority)
+
 - ✅ Set up global React Query configuration with QueryClient provider
 - ✅ Implement error boundaries and loading components (ErrorBoundary, LoadingSpinner, SkeletonLoader)
 - ✅ Add toast notification system (react-hot-toast) with proper mocking
@@ -124,6 +135,7 @@ frontend/src/
 - ✅ Performance optimizations with React.memo and lazy loading
 
 #### Phase 2: State Management Enhancement ✅ COMPLETED (High Priority)
+
 - ✅ Convert entity fetching to React Query hooks (useEntities, useEntity, useLights)
 - ✅ Implement optimistic updates for entity control (useEntityControl, useLightControl)
 - ✅ Add caching strategies for real-time data with React Query
@@ -132,6 +144,7 @@ frontend/src/
 - ✅ Specialized hooks for light control with convenience methods (turnOn, turnOff, toggle, setBrightness)
 
 #### Phase 3: Performance Optimization ✅ PARTIALLY COMPLETED (Medium Priority)
+
 - ✅ Implement code splitting for page components with React.lazy
 - ✅ Add memoization for expensive operations (React.memo on components)
 - ✅ Add Suspense wrapper with LoadingSpinner fallback
@@ -139,6 +152,7 @@ frontend/src/
 - 🔄 **NEXT**: Add virtual scrolling if needed for large entity lists
 
 #### Phase 4: Testing and Quality ✅ FOUNDATION COMPLETE (Medium Priority)
+
 - ✅ Set up React Testing Library test patterns with Jest + TypeScript
 - ✅ Add component and hook unit tests (34 tests passing)
 - ✅ MSW infrastructure ready for integration tests
@@ -150,6 +164,7 @@ frontend/src/
 **Migration Strategy**: Ensure compatibility between legacy component variants and new shadcn/UI variants during the modernization transition.
 
 ##### ✅ **COMPLETED: Variant Compatibility Layer**
+
 - ✅ **Button Component**: Added `"primary"` and `"accent"` variant mappings to shadcn/UI `"default"`
 - ✅ **Alert Component**: Added `"error"` and `"info"` variant mappings with proper icons
   - `"error"` → `"destructive"` variant with AlertCircle icon
@@ -159,15 +174,24 @@ frontend/src/
 - ✅ **ESLint Compliance**: Fixed import syntax and suppressed non-blocking shadcn/UI warnings
 - ✅ **TypeScript Compilation**: All variant mismatches resolved, clean compilation
 
-##### ✅ **Technical Implementation Details**:
+##### ✅ **Technical Implementation Details**
+
 ```typescript
 // Button.tsx - Legacy variant mapping
-const mappedVariant = variant === "primary" ? "default" :
-                     variant === "accent" ? "default" : variant;
+const mappedVariant =
+  variant === "primary"
+    ? "default"
+    : variant === "accent"
+    ? "default"
+    : variant;
 
 // Alert.tsx - Legacy variant mapping with icons
-const shadcnVariant = variant === "destructive" ? "destructive" :
-                      variant === "error" ? "destructive" : "default";
+const shadcnVariant =
+  variant === "destructive"
+    ? "destructive"
+    : variant === "error"
+    ? "destructive"
+    : "default";
 const icons = {
   default: Info,
   destructive: AlertTriangle,
@@ -181,7 +205,8 @@ const icons = {
 const mappedVariant = variant === "primary" ? "default" : variant;
 ```
 
-##### ✅ **Verification Results**:
+##### ✅ **Verification Results**
+
 - ✅ TypeScript compilation: No errors (`npm run typecheck`)
 - ✅ ESLint validation: No critical errors (`npm run lint`)
 - ✅ Component functionality: All legacy variants work seamlessly
@@ -194,26 +219,33 @@ const mappedVariant = variant === "primary" ? "default" : variant;
 **Migration Strategy**: Complete replacement of custom theme system with native shadcn/UI themes, followed by systematic component migration over 8 weeks.
 
 ##### Week 1-2: Foundation Setup
+
 - 🔄 **Initial Setup**:
+
   ```bash
   npx shadcn-ui@latest init
   ```
+
 - 🔄 **Tailwind Integration**: Configure `tailwind.config.js` with shadcn/UI CSS variables
 - 🔄 **Theme System Replacement**:
   - Remove existing `--rv-*` CSS variables from `themes.css`
   - Adopt native shadcn/UI theme tokens (`--background`, `--foreground`, `--primary`, etc.)
   - Configure light/dark mode using shadcn/UI's native theme switching
 - 🔄 **Core Dependencies**: Install and configure React Hook Form + Zod validation
+
   ```bash
   npm install react-hook-form @hookform/resolvers zod
   ```
 
 ##### Week 3-4: Core Component Migration
+
 - 🔄 **Install Core Components**:
+
   ```bash
   npx shadcn-ui@latest add button card input alert badge
   npx shadcn-ui@latest add label textarea select checkbox
   ```
+
 - 🔄 **Component Replacement Strategy**:
   - Replace `src/components/Button.tsx` with shadcn/UI Button (preserve existing API)
   - Migrate `src/components/Card.tsx` to use shadcn/UI Card primitives
@@ -222,11 +254,14 @@ const mappedVariant = variant === "primary" ? "default" : variant;
   - Update `src/components/Badge.tsx` with shadcn/UI Badge variants
 
 ##### Week 5-6: Layout and Navigation
+
 - 🔄 **Install Layout Components**:
+
   ```bash
   npx shadcn-ui@latest add navigation-menu tabs sheet dialog
   npx shadcn-ui@latest add dropdown-menu popover separator
   ```
+
 - 🔄 **Layout Component Migration**:
   - Enhance `src/components/SideNav.tsx` with shadcn/UI NavigationMenu
   - Update `src/components/Navbar.tsx` with shadcn/UI responsive patterns
@@ -234,11 +269,14 @@ const mappedVariant = variant === "primary" ? "default" : variant;
   - Replace `src/components/Toggle.tsx` with shadcn/UI Switch component
 
 ##### Week 7: Forms and Data Display
+
 - 🔄 **Install Data Components**:
+
   ```bash
   npx shadcn-ui@latest add table progress skeleton loading-spinner
   npx shadcn-ui@latest add form command calendar date-picker
   ```
+
 - 🔄 **Form Integration**:
   - Implement shadcn/UI Form components with React Hook Form
   - Create reusable form patterns for entity control
@@ -246,6 +284,7 @@ const mappedVariant = variant === "primary" ? "default" : variant;
   - Update existing forms to use new form components
 
 ##### Week 8: Polish and Cleanup
+
 - 🔄 **Theme Customization**:
   - Customize shadcn/UI themes to match RV-C aesthetic requirements
   - Implement custom color palettes using shadcn/UI theme system
@@ -269,18 +308,21 @@ const mappedVariant = variant === "primary" ? "default" : variant;
   - Document new theme customization approach
 
 #### Phase 7: Advanced Features (Lower Priority)
+
 - 🔄 Progressive Web App capabilities
 - 🔄 Advanced caching strategies
 - 🔄 Analytics and monitoring integration
 - 🔄 Performance monitoring and optimization
 
 ### 4.2. Risk Mitigation
+
 - **State Management Migration**: Gradual conversion to React Query to avoid breaking changes
 - **Error Handling**: Fallback mechanisms to prevent application crashes
 - **Performance**: Incremental optimization to avoid over-engineering
 - **Testing**: Start with critical paths, expand coverage iteratively
 
 ### 4.3. Validation Checkpoints ✅ ALL PASSED
+
 - ✅ **TypeScript compilation**: Clean compilation with no errors
 - ✅ **ESLint passing**: All linting rules passing, proper CommonJS configuration
 - ✅ **Functionality preserved**: All features working with enhanced error handling
@@ -300,7 +342,9 @@ const mappedVariant = variant === "primary" ? "default" : variant;
 ## 4.4. shadcn/UI Migration Strategy 🎯 **NEXT MAJOR INITIATIVE**
 
 ### 4.4.1. Overview
+
 Based on consultation with best practices research, migrating to shadcn/UI will provide:
+
 - **Production-ready components** with built-in accessibility (Radix UI primitives)
 - **Consistent design system** with excellent TypeScript support
 - **Tailwind v4 compatibility** for modern CSS architecture
@@ -310,7 +354,9 @@ Based on consultation with best practices research, migrating to shadcn/UI will 
 ### 4.4.2. Migration Timeline (4-6 weeks)
 
 #### Week 1: Foundation Setup
+
 **Day 1-2: Installation and Configuration**
+
 ```bash
 # Install shadcn/UI with Vite support
 pnpm dlx shadcn@latest init
@@ -326,13 +372,16 @@ pnpm dlx shadcn@latest init
 ```
 
 **Day 3-5: Theme System Integration**
+
 - Map existing `--rv-*` CSS variables to shadcn/UI theme structure
 - Update `tailwind.config.js` to bridge existing and new color systems
 - Create CSS variable mapping layer for seamless transition
 - Validate theme switching works with new components
 
 #### Week 2: Core Component Migration
+
 **Priority 1: Foundation Components**
+
 ```bash
 # Install core shadcn/UI components
 pnpm dlx shadcn@latest add button
@@ -343,13 +392,16 @@ pnpm dlx shadcn@latest add badge
 ```
 
 **Migration Strategy:**
+
 1. Create wrapper components that maintain existing APIs
 2. Implement side-by-side with existing components
 3. Update imports gradually across the application
 4. Remove old components after validation
 
 #### Week 3: Layout and Navigation
+
 **Priority 2: Complex Components**
+
 ```bash
 # Install navigation and layout components
 pnpm dlx shadcn@latest add navigation-menu
@@ -359,13 +411,16 @@ pnpm dlx shadcn@latest add breadcrumb
 ```
 
 **Key Migrations:**
+
 - `SideNav` → shadcn/UI Sidebar with Sheet for mobile
 - `Navbar` → shadcn/UI NavigationMenu
 - `Card` → shadcn/UI Card (enhanced accessibility)
 - `Button` → shadcn/UI Button (variant support)
 
 #### Week 4: Forms and Interactions
+
 **Priority 3: Interactive Components**
+
 ```bash
 # Install form and interaction components
 pnpm dlx shadcn@latest add form
@@ -377,6 +432,7 @@ pnpm dlx shadcn@latest add toast
 ```
 
 **Enhancements:**
+
 - Replace `react-hot-toast` with shadcn/UI Sonner/Toast
 - Add form validation with React Hook Form integration
 - Enhance entity control modals with Dialog components
@@ -384,13 +440,14 @@ pnpm dlx shadcn@latest add toast
 ### 4.4.3. Technical Implementation Details
 
 #### CSS Variable Mapping Strategy
+
 ```css
 /* Current CSS variables */
 :root {
-  --rv-primary: #3B82F6;
-  --rv-secondary: #10B981;
+  --rv-primary: #3b82f6;
+  --rv-secondary: #10b981;
   --rv-surface: #334155;
-  --rv-background: #1E293B;
+  --rv-background: #1e293b;
   /* ... other variables */
 }
 
@@ -422,17 +479,24 @@ pnpm dlx shadcn@latest add toast
 ```
 
 #### Component Wrapper Pattern
+
 ```typescript
 // Example: Button wrapper to maintain existing API
-import { Button as ShadcnButton } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Button as ShadcnButton } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ComponentProps<typeof ShadcnButton> {
   // Preserve existing prop structure if needed
-  loading?: boolean
+  loading?: boolean;
 }
 
-export function Button({ loading, className, children, disabled, ...props }: ButtonProps) {
+export function Button({
+  loading,
+  className,
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
   return (
     <ShadcnButton
       className={cn(className)}
@@ -442,35 +506,47 @@ export function Button({ loading, className, children, disabled, ...props }: But
       {loading ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null}
       {children}
     </ShadcnButton>
-  )
+  );
 }
 
 // Maintain existing export pattern
-export { Button }
+export { Button };
 ```
 
 #### Integration with Existing Hooks
+
 ```typescript
 // Entity control with shadcn/UI Dialog and Form
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
-import { useEntityControl } from "@/hooks/useEntityControl"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { useEntityControl } from "@/hooks/useEntityControl";
 
 const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
-  const { mutate: controlEntity } = useEntityControl()
+  const { mutate: controlEntity } = useEntityControl();
 
   const form = useForm({
     resolver: zodResolver(entityControlSchema),
-    defaultValues: { command: "set", state: "on" }
-  })
+    defaultValues: { command: "set", state: "on" },
+  });
 
   const onSubmit = (values: EntityControlCommand) => {
-    controlEntity({ entityId, command: values })
-    onOpenChange(false)
-  }
+    controlEntity({ entityId, command: values });
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -487,7 +563,10 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
                 <FormItem>
                   <FormLabel>Command</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       {/* Select options */}
                     </Select>
                   </FormControl>
@@ -499,19 +578,21 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
         </Form>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 ```
 
 ### 4.4.4. Migration Checkpoints and Validation
 
 #### Week 1 Validation
+
 - ✅ shadcn/UI CLI installed and configured successfully
 - ✅ CSS variable mapping preserves existing theme behavior
 - ✅ Tailwind configuration supports both old and new systems
 - ✅ Basic shadcn/UI component renders correctly
 
 #### Week 2 Validation
+
 - ✅ Core components (Button, Card, Input, Alert) migrated
 - ✅ Existing functionality preserved in wrapper components
 - ✅ Theme switching works with new components
@@ -519,12 +600,14 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
 - ✅ Bundle size impact assessed and acceptable
 
 #### Week 3 Validation
+
 - ✅ SideNav migrated to shadcn/UI Sidebar + Sheet pattern
 - ✅ Mobile navigation maintains UX with improved accessibility
 - ✅ Navbar enhanced with NavigationMenu component
 - ✅ All existing navigation features preserved
 
 #### Week 4 Validation
+
 - ✅ Forms enhanced with React Hook Form + shadcn/UI
 - ✅ Entity control dialogs upgraded to Dialog component
 - ✅ Toast notifications migrated to shadcn/UI system
@@ -534,21 +617,25 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
 ### 4.4.5. Risk Mitigation
 
 #### Component API Compatibility
+
 - **Risk**: Breaking changes to component APIs
 - **Mitigation**: Create wrapper components maintaining existing interfaces
 - **Timeline**: Gradual migration with parallel implementation
 
 #### Styling Conflicts
+
 - **Risk**: CSS conflicts between custom Tailwind classes and shadcn/UI
 - **Mitigation**: CSS variable mapping layer, careful class precedence
 - **Timeline**: Thorough testing in Week 1 setup phase
 
 #### Bundle Size Impact
+
 - **Risk**: Increased bundle size from additional dependencies
 - **Mitigation**: Tree shaking validation, lazy loading optimization
 - **Timeline**: Weekly bundle analysis and optimization
 
 #### Accessibility Regression
+
 - **Risk**: Loss of existing accessibility features during migration
 - **Mitigation**: Accessibility audit checklist, automated testing
 - **Timeline**: Per-component validation with accessibility testing tools
@@ -556,18 +643,21 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
 ### 4.4.6. Expected Benefits
 
 #### Developer Experience
+
 - **Reduced Component Maintenance**: Leverage battle-tested components
 - **Improved TypeScript Support**: Better type definitions and IntelliSense
 - **Enhanced Documentation**: Access to shadcn/UI documentation and examples
 - **Faster Feature Development**: Pre-built components accelerate development
 
 #### User Experience
+
 - **Enhanced Accessibility**: Radix UI primitives provide robust accessibility
 - **Consistent Design**: Unified design system across all components
 - **Better Performance**: Optimized component implementations
 - **Modern Interactions**: Improved animations and micro-interactions
 
 #### Technical Benefits
+
 - **Tailwind v4 Ready**: Future-proof CSS architecture
 - **Community Support**: Active maintenance and security updates
 - **Customization Flexibility**: Easy theming and component customization
@@ -576,16 +666,19 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
 ### 4.4.7. Post-Migration Optimization
 
 #### Component Optimization
+
 - Remove old component implementations after successful migration
 - Optimize bundle size with unused import elimination
 - Enhance components with shadcn/UI advanced features
 
 #### Documentation Updates
+
 - Update component documentation with new patterns
 - Create migration guide for future component additions
 - Document custom theme integration patterns
 
 #### Performance Monitoring
+
 - Establish performance baselines with new components
 - Monitor bundle size impact and optimize as needed
 - Track user experience metrics post-migration
@@ -595,30 +688,36 @@ const EntityControlDialog = ({ entityId, open, onOpenChange }: Props) => {
 ### 5.1. State Management Patterns
 
 #### BEFORE: Manual State Management
+
 ```typescript
-const [entities, setEntities] = useState<Entity[]>([])
-const [loading, setLoading] = useState(false)
-const [error, setError] = useState<string | null>(null)
+const [entities, setEntities] = useState<Entity[]>([]);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
 
 useEffect(() => {
   const fetchEntities = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const data = await getEntities()
-      setEntities(data)
+      const data = await getEntities();
+      setEntities(data);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-  fetchEntities()
-}, [])
+  };
+  fetchEntities();
+}, []);
 ```
 
 #### AFTER: React Query Integration ✅ IMPLEMENTED
+
 ```typescript
-const { data: entities, isLoading, error } = useEntities({ device_type: deviceType })
+const {
+  data: entities,
+  isLoading,
+  error,
+} = useEntities({ device_type: deviceType });
 
 // Hook implementation with full optimization
 export function useEntities(params?: { device_type?: string; area?: string }) {
@@ -626,67 +725,74 @@ export function useEntities(params?: { device_type?: string; area?: string }) {
     queryKey: ["entities", params?.device_type, params?.area],
     queryFn: () => fetchEntities(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,   // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: true,
     refetchInterval: 30 * 1000, // 30 seconds
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  })
+  });
 }
 
 // Specialized light control hooks
-const { turnOn, turnOff, toggle, setBrightness } = useLightControl()
+const { turnOn, turnOff, toggle, setBrightness } = useLightControl();
 ```
 
 ### 5.2. Error Handling Enhancement
 
 #### BEFORE: Basic Error Handling
+
 ```typescript
 try {
-  await controlEntity(id, command)
+  await controlEntity(id, command);
 } catch (error) {
-  console.error('Failed to control entity:', error)
+  console.error("Failed to control entity:", error);
 }
 ```
 
 #### AFTER: User-Facing Error Handling ✅ IMPLEMENTED
+
 ```typescript
-const { mutate: controlEntity } = useEntityControl()
+const { mutate: controlEntity } = useEntityControl();
 
 const handleControl = (entityId: string, command: EntityControlCommand) => {
-  controlEntity({ entityId, command }, {
-    onError: (error) => {
-      toast.error(`Failed to control entity: ${error.message}`)
-    },
-    onSuccess: (data) => {
-      toast.success(data.action || "Entity control successful")
-    },
-    onSettled: (_data, _error, { entityId }) => {
-      // Always refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ["entities"] })
-      queryClient.invalidateQueries({ queryKey: ["entity", entityId] })
+  controlEntity(
+    { entityId, command },
+    {
+      onError: (error) => {
+        toast.error(`Failed to control entity: ${error.message}`);
+      },
+      onSuccess: (data) => {
+        toast.success(data.action || "Entity control successful");
+      },
+      onSettled: (_data, _error, { entityId }) => {
+        // Always refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["entities"] });
+        queryClient.invalidateQueries({ queryKey: ["entity", entityId] });
+      },
     }
-  })
-}
+  );
+};
 
 // Specialized light control with convenience methods
-const { turnOn, turnOff, toggle, setBrightness } = useLightControl()
+const { turnOn, turnOff, toggle, setBrightness } = useLightControl();
 
 // Simple usage with optimistic updates
-turnOn(lightId, 75) // Turn on light with 75% brightness
-toggle(lightId)     // Toggle light state
-setBrightness(lightId, 50) // Set brightness to 50%
+turnOn(lightId, 75); // Turn on light with 75% brightness
+toggle(lightId); // Toggle light state
+setBrightness(lightId, 50); // Set brightness to 50%
 ```
 
 ### 5.3. Performance Optimization
 
 #### BEFORE: Direct Component Imports
+
 ```typescript
-import LightsPage from './pages/Lights'
-import LocksPage from './pages/Locks'
+import LightsPage from "./pages/Lights";
+import LocksPage from "./pages/Locks";
 ```
 
 #### AFTER: Lazy Loading ✅ IMPLEMENTED
+
 ```typescript
 // All page components converted to default exports for lazy loading
 const Dashboard = lazy(() => import("./pages/Dashboard"))
@@ -709,6 +815,7 @@ const NetworkMap = lazy(() => import("./pages/NetworkMap"))
 ```
 
 ### 5.4. Deprecation Path
+
 - Gradual migration of components to new patterns
 - Maintain backward compatibility during transition
 - Timeline: Complete core improvements within 2-3 iterations
@@ -716,6 +823,7 @@ const NetworkMap = lazy(() => import("./pages/NetworkMap"))
 ### 5.5. shadcn/UI Component Migration Patterns
 
 #### BEFORE: Custom Card Component
+
 ```typescript
 // Current implementation
 interface CardProps {
@@ -739,9 +847,7 @@ export function Card(props: CardProps) {
       data-testid="card"
     >
       {title && (
-        <h2 className="text-lg font-semibold mb-4 text-rv-heading">
-          {title}
-        </h2>
+        <h2 className="text-lg font-semibold mb-4 text-rv-heading">{title}</h2>
       )}
       <div>{children}</div>
     </section>
@@ -750,10 +856,16 @@ export function Card(props: CardProps) {
 ```
 
 #### AFTER: shadcn/UI Card Integration
+
 ```typescript
 // Enhanced implementation with shadcn/UI
-import { Card as ShadcnCard, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import {
+  Card as ShadcnCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface CardProps {
   title?: ReactNode;
@@ -780,7 +892,7 @@ export function Card({ title, children, className, ariaLabel }: CardProps) {
 }
 
 // Direct shadcn/UI usage for new components
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function EntityCard({ entity }: { entity: Entity }) {
   return (
@@ -792,16 +904,15 @@ export function EntityCard({ entity }: { entity: Entity }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
-          Status: {entity.state}
-        </p>
+        <p className="text-sm text-muted-foreground">Status: {entity.state}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
 ```
 
 #### BEFORE: Custom Button with Loading
+
 ```typescript
 // Current implementation
 interface ButtonProps {
@@ -830,17 +941,24 @@ export function Button({ onClick, loading, className, children }: ButtonProps) {
 ```
 
 #### AFTER: shadcn/UI Button with Enhanced Features
+
 ```typescript
 // Enhanced implementation with shadcn/UI variants
-import { Button as ShadcnButton } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button as ShadcnButton } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ComponentProps<typeof ShadcnButton> {
   loading?: boolean;
 }
 
-export function Button({ loading, className, children, disabled, ...props }: ButtonProps) {
+export function Button({
+  loading,
+  className,
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
   return (
     <ShadcnButton
       className={cn(className)}
@@ -850,11 +968,11 @@ export function Button({ loading, className, children, disabled, ...props }: But
       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {children}
     </ShadcnButton>
-  )
+  );
 }
 
 // Direct shadcn/UI usage with variants
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 export function EntityControls({ onTurnOn, onTurnOff }: Props) {
   return (
@@ -869,11 +987,12 @@ export function EntityControls({ onTurnOn, onTurnOff }: Props) {
         Settings
       </Button>
     </div>
-  )
+  );
 }
 ```
 
 #### BEFORE: Custom SideNav Component
+
 ```typescript
 // Current complex navigation implementation
 export function SideNav({ currentView, wsStatus }: SideNavProps) {
@@ -889,10 +1008,12 @@ export function SideNav({ currentView, wsStatus }: SideNavProps) {
       </div>
 
       {/* Sidebar navigation */}
-      <div className={clsx(
-        "fixed lg:sticky transition-all duration-300",
-        isMobileMenuOpen ? "left-0" : "-left-64 lg:left-0"
-      )}>
+      <div
+        className={clsx(
+          "fixed lg:sticky transition-all duration-300",
+          isMobileMenuOpen ? "left-0" : "-left-64 lg:left-0"
+        )}
+      >
         {/* Navigation items */}
         <div className="flex flex-col space-y-1.5">
           {navItems.map((item) => (
@@ -909,21 +1030,22 @@ export function SideNav({ currentView, wsStatus }: SideNavProps) {
 ```
 
 #### AFTER: shadcn/UI Sidebar + Sheet Pattern
+
 ```typescript
 // Enhanced implementation with shadcn/UI components
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Menu } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Menu } from "lucide-react";
 
 export function SideNav({ currentView, wsStatus }: SideNavProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   const NavigationContent = () => (
     <div className="flex h-full flex-col">
       <div className="p-6">
-        <h2 className="text-lg font-semibold">RVC2API</h2>
+        <h2 className="text-lg font-semibold">CoachIQ</h2>
         {wsStatus && (
           <Badge variant={wsStatus === "open" ? "default" : "destructive"}>
             {wsStatus}
@@ -949,7 +1071,7 @@ export function SideNav({ currentView, wsStatus }: SideNavProps) {
         </nav>
       </ScrollArea>
     </div>
-  )
+  );
 
   return (
     <>
@@ -971,11 +1093,12 @@ export function SideNav({ currentView, wsStatus }: SideNavProps) {
         <NavigationContent />
       </div>
     </>
-  )
+  );
 }
 ```
 
 #### BEFORE: Manual Form Handling
+
 ```typescript
 // Current form implementation
 export function EntityControlForm({ entityId }: Props) {
@@ -1018,24 +1141,38 @@ export function EntityControlForm({ entityId }: Props) {
 ```
 
 #### AFTER: shadcn/UI Form with React Hook Form
+
 ```typescript
 // Enhanced form with shadcn/UI + React Hook Form
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { useEntityControl } from "@/hooks/useEntityControl"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useEntityControl } from "@/hooks/useEntityControl";
 
 const entityControlSchema = z.object({
   command: z.enum(["set", "toggle", "brightness_up", "brightness_down"]),
   state: z.enum(["on", "off"]).optional(),
   brightness: z.number().min(0).max(100).optional(),
-})
+});
 
 export function EntityControlForm({ entityId }: Props) {
-  const { mutate: controlEntity, isPending } = useEntityControl()
+  const { mutate: controlEntity, isPending } = useEntityControl();
 
   const form = useForm<z.infer<typeof entityControlSchema>>({
     resolver: zodResolver(entityControlSchema),
@@ -1043,11 +1180,11 @@ export function EntityControlForm({ entityId }: Props) {
       command: "set",
       state: "on",
     },
-  })
+  });
 
   const onSubmit = (values: z.infer<typeof entityControlSchema>) => {
-    controlEntity({ entityId, command: values })
-  }
+    controlEntity({ entityId, command: values });
+  };
 
   return (
     <Form {...form}>
@@ -1068,7 +1205,9 @@ export function EntityControlForm({ entityId }: Props) {
                   <SelectItem value="set">Set State</SelectItem>
                   <SelectItem value="toggle">Toggle</SelectItem>
                   <SelectItem value="brightness_up">Brightness Up</SelectItem>
-                  <SelectItem value="brightness_down">Brightness Down</SelectItem>
+                  <SelectItem value="brightness_down">
+                    Brightness Down
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -1103,18 +1242,25 @@ export function EntityControlForm({ entityId }: Props) {
         </Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
 ### 5.6. Progressive Migration Strategy
 
 #### Week 1: Foundation and Simple Components
+
 ```typescript
 // Install and configure core components
 const coreComponents = [
-  "button", "card", "input", "label", "alert", "badge", "separator"
-]
+  "button",
+  "card",
+  "input",
+  "label",
+  "alert",
+  "badge",
+  "separator",
+];
 
 // Create wrapper components for API compatibility
 // Update imports gradually using search-and-replace
@@ -1122,11 +1268,16 @@ const coreComponents = [
 ```
 
 #### Week 2: Layout and Navigation
+
 ```typescript
 // Install navigation components
 const navigationComponents = [
-  "sheet", "sidebar", "navigation-menu", "breadcrumb", "scroll-area"
-]
+  "sheet",
+  "sidebar",
+  "navigation-menu",
+  "breadcrumb",
+  "scroll-area",
+];
 
 // Migrate complex components with enhanced UX
 // Improve mobile navigation with Sheet component
@@ -1134,11 +1285,18 @@ const navigationComponents = [
 ```
 
 #### Week 3: Forms and Interactions
+
 ```typescript
 // Install form and dialog components
 const interactionComponents = [
-  "form", "dialog", "popover", "toggle", "switch", "toast", "sonner"
-]
+  "form",
+  "dialog",
+  "popover",
+  "toggle",
+  "switch",
+  "toast",
+  "sonner",
+];
 
 // Enhance forms with React Hook Form integration
 // Replace modals with Dialog component
@@ -1146,11 +1304,17 @@ const interactionComponents = [
 ```
 
 #### Week 4: Data Display and Advanced Components
+
 ```typescript
 // Install data display components
 const dataComponents = [
-  "table", "tabs", "progress", "skeleton", "command", "dropdown-menu"
-]
+  "table",
+  "tabs",
+  "progress",
+  "skeleton",
+  "command",
+  "dropdown-menu",
+];
 
 // Enhance entity lists with Table component
 // Add advanced interactions with Command palette

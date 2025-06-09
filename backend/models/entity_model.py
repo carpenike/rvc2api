@@ -1,5 +1,5 @@
 """
-Entity data models for the rvc2api backend.
+Entity data models for the CoachIQ backend.
 
 This module defines the core entity models that combine configuration and runtime state
 for all entities in the system. It provides a unified approach to entity management

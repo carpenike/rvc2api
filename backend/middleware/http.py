@@ -1,5 +1,5 @@
 """
-Contains custom FastAPI middleware for the rvc2api application.
+Contains custom FastAPI middleware for the CoachIQ application.
 
 Middleware functions in this module are used to intercept HTTP requests
 for purposes such as logging, metrics collection, or request modification.

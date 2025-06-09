@@ -1,10 +1,11 @@
 # Resources Directory
 
-This directory contains non-code assets used by the rvc2api project, including:
+This directory contains non-code assets used by the CoachIQ project, including:
 
 ## RV-C Specification
 
 The RV-C specification PDF should be placed here as:
+
 - `rv-c-spec.pdf`
 
 This file is used by the `dev_tools/generate_embeddings.py` script to create text chunks and FAISS embeddings for semantic searching.

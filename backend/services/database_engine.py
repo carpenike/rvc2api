@@ -56,9 +56,9 @@ class DatabaseSettings(BaseSettings):
     # PostgreSQL settings
     postgres_host: str = Field(default="localhost", description="PostgreSQL host")
     postgres_port: int = Field(default=5432, description="PostgreSQL port")
-    postgres_user: str = Field(default="rvc2api", description="PostgreSQL username")
+    postgres_user: str = Field(default="coachiq", description="PostgreSQL username")
     postgres_password: str = Field(default="", description="PostgreSQL password")
-    postgres_database: str = Field(default="rvc2api", description="PostgreSQL database name")
+    postgres_database: str = Field(default="coachiq", description="PostgreSQL database name")
     postgres_schema: str = Field(default="public", description="PostgreSQL schema name")
 
     # Connection pool settings

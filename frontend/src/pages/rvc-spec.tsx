@@ -291,7 +291,7 @@ export default function RVCSpec() {
                 <CardHeader>
                   <CardTitle>Implementation Status</CardTitle>
                   <CardDescription>
-                    Current support in RVC2API
+                    Current support in CoachIQ
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

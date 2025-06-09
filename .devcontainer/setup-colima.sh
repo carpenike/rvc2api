@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # setup-colima.sh
-# Improved Colima setup script for rvc2api devcontainer (with Colima SSH config + SCP)
+# Improved Colima setup script for CoachIQ devcontainer (with Colima SSH config + SCP)
 
 # --- OS CHECK ---
 if [[ "$(uname)" != "Darwin" ]]; then

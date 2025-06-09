@@ -1,23 +1,25 @@
 ---
-mode: 'agent'
-description: 'Design and prototype React UI components for rvc2api'
-tools: ['context7']
+mode: "agent"
+description: "Design and prototype React UI components for CoachIQ"
+tools: ["context7"]
 ---
 
 # React UI Prototyping Guide
 
-This guide helps you design and prototype React components for the rvc2api web interface. Use this to plan the migration from static HTML to a modern React-based frontend.
+This guide helps you design and prototype React components for the CoachIQ web interface. Use this to plan the migration from static HTML to a modern React-based frontend.
 
 ---
 
 ## 1. Component Overview
 
 ### 1.1. Purpose
+
 - What is the component's main responsibility?
 - What user needs does it address?
-- How does it integrate with the rvc2api data model?
+- How does it integrate with the CoachIQ data model?
 
 ### 1.2. Component Scope
+
 - What features should this component include?
 - What should be excluded or handled by other components?
 - What are the boundaries of its functionality?
@@ -27,6 +29,7 @@ This guide helps you design and prototype React components for the rvc2api web i
 ## 2. Data Requirements
 
 ### 2.1. Props Interface
+
 - What props does the component need?
 - What validation should be applied to props?
 - What default values are appropriate?
@@ -36,8 +39,8 @@ interface DeviceCardProps {
   // Core device data
   deviceId: string;
   deviceName: string;
-  deviceType: 'tank' | 'battery' | 'thermostat' | 'inverter' | string;
-  status: 'online' | 'offline' | 'error';
+  deviceType: "tank" | "battery" | "thermostat" | "inverter" | string;
+  status: "online" | "offline" | "error";
 
   // Optional configuration
   showDetailedView?: boolean;
@@ -50,6 +53,7 @@ interface DeviceCardProps {
 ```
 
 ### 2.2. State Management
+
 - What local state does the component need?
 - What shared state should it access?
 - How will updates be handled?
@@ -66,6 +70,7 @@ const { globalDevices, updateDevice } = useDeviceContext();
 ```
 
 ### 2.3. API Integration
+
 - What API endpoints will this component use?
 - What WebSocket events should it subscribe to?
 - How will it handle loading states and errors?
@@ -77,7 +82,7 @@ useEffect(() => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/devices/${deviceId}`);
-      if (!response.ok) throw new Error('Failed to fetch device data');
+      if (!response.ok) throw new Error("Failed to fetch device data");
       const data = await response.json();
       setDeviceValues(data.values);
       setError(null);
@@ -95,11 +100,11 @@ useEffect(() => {
 
 // WebSocket example
 useEffect(() => {
-  const socket = new WebSocket('ws://localhost:8000/ws');
+  const socket = new WebSocket("ws://localhost:8000/ws");
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    if (data.event === 'device_update' && data.data.id === deviceId) {
+    if (data.event === "device_update" && data.data.id === deviceId) {
       setDeviceValues(data.data.values);
     }
   };
@@ -113,18 +118,25 @@ useEffect(() => {
 ## 3. UI Design
 
 ### 3.1. Component Structure
+
 - What HTML structure will be used?
 - What sub-components should be created?
 - What component hierarchy will be established?
 
 ### 3.2. Styling Approach
+
 - What CSS approach will be used (CSS modules, Tailwind, etc.)?
 - What styling patterns should be followed?
 - What responsive design considerations are needed?
 
 ```jsx
 // Example component with Tailwind CSS
-const DeviceCard = ({ deviceId, deviceName, deviceType, status }: DeviceCardProps) => {
+const DeviceCard = ({
+  deviceId,
+  deviceName,
+  deviceType,
+  status,
+}: DeviceCardProps) => {
   // Component implementation
   return (
     <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
@@ -153,6 +165,7 @@ const DeviceCard = ({ deviceId, deviceName, deviceType, status }: DeviceCardProp
 ```
 
 ### 3.3. Accessibility
+
 - What ARIA attributes are needed?
 - How will keyboard navigation be handled?
 - What color contrast requirements should be met?
@@ -162,11 +175,13 @@ const DeviceCard = ({ deviceId, deviceName, deviceType, status }: DeviceCardProp
 ## 4. Interaction Design
 
 ### 4.1. User Interactions
+
 - What actions can the user take?
 - How will the component respond to user input?
 - What feedback will be provided?
 
 ### 4.2. State Transitions
+
 - What states can the component be in (loading, error, empty, etc.)?
 - How will transitions between states be handled?
 - What conditional rendering is needed?
@@ -178,10 +193,7 @@ return (
     {isLoading && <LoadingSpinner />}
 
     {!isLoading && error && (
-      <ErrorDisplay
-        message={error}
-        retryAction={() => fetchDeviceData()}
-      />
+      <ErrorDisplay message={error} retryAction={() => fetchDeviceData()} />
     )}
 
     {!isLoading && !error && Object.keys(deviceValues).length === 0 && (
@@ -200,6 +212,7 @@ return (
 ```
 
 ### 4.3. Error Handling
+
 - How will API errors be displayed?
 - What fallback UI will be shown when data is unavailable?
 - How can users recover from errors?
@@ -209,25 +222,26 @@ return (
 ## 5. Component Implementation
 
 ### 5.1. Component Code
+
 - Provide the full React component implementation
 - Include all necessary imports
 - Add comments explaining key logic
 
 ```tsx
-import React, { useState, useEffect } from 'react';
-import { StatusBadge } from './StatusBadge';
-import { DeviceValuesList } from './DeviceValuesList';
-import { LoadingSpinner } from '../common/LoadingSpinner';
-import { ErrorDisplay } from '../common/ErrorDisplay';
-import { EmptyState } from '../common/EmptyState';
-import { useDeviceData } from '../../hooks/useDeviceData';
-import type { DeviceValues } from '../../types';
+import React, { useState, useEffect } from "react";
+import { StatusBadge } from "./StatusBadge";
+import { DeviceValuesList } from "./DeviceValuesList";
+import { LoadingSpinner } from "../common/LoadingSpinner";
+import { ErrorDisplay } from "../common/ErrorDisplay";
+import { EmptyState } from "../common/EmptyState";
+import { useDeviceData } from "../../hooks/useDeviceData";
+import type { DeviceValues } from "../../types";
 
 export interface DeviceCardProps {
   deviceId: string;
   deviceName: string;
   deviceType: string;
-  status: 'online' | 'offline' | 'error';
+  status: "online" | "offline" | "error";
   showDetailedView?: boolean;
   refreshInterval?: number;
   onStatusChange?: (deviceId: string, newStatus: string) => void;
@@ -251,7 +265,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     data: deviceValues,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useDeviceData(deviceId, refreshInterval);
 
   // Notify parent component of status changes
@@ -287,10 +301,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         )}
 
         {!isLoading && !error && (
-          <DeviceValuesList
-            values={deviceValues}
-            isExpanded={isExpanded}
-          />
+          <DeviceValuesList values={deviceValues} isExpanded={isExpanded} />
         )}
       </div>
 
@@ -300,7 +311,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           onClick={() => setIsExpanded(!isExpanded)}
           aria-expanded={isExpanded}
         >
-          {isExpanded ? 'Show Less' : 'Show More'}
+          {isExpanded ? "Show Less" : "Show More"}
         </button>
 
         <button
@@ -316,14 +327,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 ```
 
 ### 5.2. Custom Hooks
+
 - Create any custom hooks needed by the component
 - Explain their purpose and usage
 - Include proper TypeScript typing
 
 ```tsx
 // Custom hook for fetching device data
-import { useState, useEffect, useCallback } from 'react';
-import type { DeviceValues } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import type { DeviceValues } from "../types";
 
 export function useDeviceData(
   deviceId: string,
@@ -365,24 +377,25 @@ export function useDeviceData(
 ```
 
 ### 5.3. Testing Strategy
+
 - What unit tests should be written?
 - What user interactions should be tested?
 - What mock data is needed?
 
 ```tsx
 // Example test for DeviceCard component
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { DeviceCard } from './DeviceCard';
-import { useDeviceData } from '../../hooks/useDeviceData';
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { DeviceCard } from "./DeviceCard";
+import { useDeviceData } from "../../hooks/useDeviceData";
 
 // Mock the custom hook
-jest.mock('../../hooks/useDeviceData');
+jest.mock("../../hooks/useDeviceData");
 
-describe('DeviceCard', () => {
+describe("DeviceCard", () => {
   const mockDeviceData = {
     temperature: 72.5,
     humidity: 35,
-    battery: 98
+    battery: 98,
   };
 
   beforeEach(() => {
@@ -390,11 +403,11 @@ describe('DeviceCard', () => {
       data: mockDeviceData,
       isLoading: false,
       error: null,
-      refetch: jest.fn()
+      refetch: jest.fn(),
     });
   });
 
-  it('renders device information correctly', () => {
+  it("renders device information correctly", () => {
     render(
       <DeviceCard
         deviceId="thermostat_1"
@@ -404,12 +417,12 @@ describe('DeviceCard', () => {
       />
     );
 
-    expect(screen.getByText('Main Thermostat')).toBeInTheDocument();
-    expect(screen.getByText('Thermostat')).toBeInTheDocument();
-    expect(screen.getByText('72.5')).toBeInTheDocument();
+    expect(screen.getByText("Main Thermostat")).toBeInTheDocument();
+    expect(screen.getByText("Thermostat")).toBeInTheDocument();
+    expect(screen.getByText("72.5")).toBeInTheDocument();
   });
 
-  it('expands and collapses when toggle button is clicked', () => {
+  it("expands and collapses when toggle button is clicked", () => {
     render(
       <DeviceCard
         deviceId="thermostat_1"
@@ -420,19 +433,19 @@ describe('DeviceCard', () => {
     );
 
     // Initially not all values may be visible
-    expect(screen.queryByText('humidity')).not.toBeInTheDocument();
+    expect(screen.queryByText("humidity")).not.toBeInTheDocument();
 
     // Click to expand
-    fireEvent.click(screen.getByText('Show More'));
-    expect(screen.getByText('humidity')).toBeInTheDocument();
-    expect(screen.getByText('35')).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Show More"));
+    expect(screen.getByText("humidity")).toBeInTheDocument();
+    expect(screen.getByText("35")).toBeInTheDocument();
 
     // Click to collapse
-    fireEvent.click(screen.getByText('Show Less'));
-    expect(screen.queryByText('humidity')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Show Less"));
+    expect(screen.queryByText("humidity")).not.toBeInTheDocument();
   });
 
-  it('calls onSelect when View Details button is clicked', () => {
+  it("calls onSelect when View Details button is clicked", () => {
     const handleSelect = jest.fn();
 
     render(
@@ -445,16 +458,16 @@ describe('DeviceCard', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('View Details'));
-    expect(handleSelect).toHaveBeenCalledWith('thermostat_1');
+    fireEvent.click(screen.getByText("View Details"));
+    expect(handleSelect).toHaveBeenCalledWith("thermostat_1");
   });
 
-  it('displays loading state', () => {
+  it("displays loading state", () => {
     (useDeviceData as jest.Mock).mockReturnValue({
       data: {},
       isLoading: true,
       error: null,
-      refetch: jest.fn()
+      refetch: jest.fn(),
     });
 
     render(
@@ -466,17 +479,17 @@ describe('DeviceCard', () => {
       />
     );
 
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
-  it('displays error state and allows retry', () => {
+  it("displays error state and allows retry", () => {
     const mockRefetch = jest.fn();
 
     (useDeviceData as jest.Mock).mockReturnValue({
       data: {},
       isLoading: false,
-      error: new Error('Failed to fetch data'),
-      refetch: mockRefetch
+      error: new Error("Failed to fetch data"),
+      refetch: mockRefetch,
     });
 
     render(
@@ -488,9 +501,9 @@ describe('DeviceCard', () => {
       />
     );
 
-    expect(screen.getByText('Failed to load device data')).toBeInTheDocument();
+    expect(screen.getByText("Failed to load device data")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Retry'));
+    fireEvent.click(screen.getByText("Retry"));
     expect(mockRefetch).toHaveBeenCalled();
   });
 });
@@ -501,16 +514,19 @@ describe('DeviceCard', () => {
 ## 6. Component Integration
 
 ### 6.1. Parent Components
+
 - How will this component be used in parent components?
 - What context or state management is needed at a higher level?
 - How will it interact with siblings or related components?
 
 ### 6.2. WebSocket Integration
+
 - How will the component subscribe to real-time updates?
 - How will WebSocket reconnection be handled?
 - How will message parsing and state updates be implemented?
 
 ### 6.3. API Integration
+
 - How will the component fetch initial data?
 - How will pagination or infinite scrolling be implemented if needed?
 - What caching strategy should be used?
@@ -520,11 +536,13 @@ describe('DeviceCard', () => {
 ## 7. Performance Considerations
 
 ### 7.1. Rendering Optimization
+
 - How will unnecessary re-renders be prevented?
 - What memoization techniques should be used?
 - What virtual list rendering is needed for large datasets?
 
 ### 7.2. Data Efficiency
+
 - How will data fetching be optimized?
 - What data should be cached locally?
 - How will redundant API calls be prevented?
@@ -534,6 +552,7 @@ describe('DeviceCard', () => {
 ## 8. Development Checklist
 
 ### 8.1. Implementation Tasks
+
 - [ ] Create component scaffold
 - [ ] Implement data fetching logic
 - [ ] Create UI elements
@@ -542,6 +561,7 @@ describe('DeviceCard', () => {
 - [ ] Optimize performance
 
 ### 8.2. Testing Tasks
+
 - [ ] Create unit tests
 - [ ] Test loading states
 - [ ] Test error states
@@ -550,6 +570,7 @@ describe('DeviceCard', () => {
 - [ ] Test performance
 
 ### 8.3. Documentation Tasks
+
 - [ ] Document props interface
 - [ ] Document usage examples
 - [ ] Document integration patterns
@@ -562,4 +583,4 @@ Once this component design and prototype is complete, save it to `/docs/specs/re
 
 ---
 
-This guide serves as a template for designing and implementing React components for the rvc2api web interface. Adjust sections as needed based on the specific requirements of your component.
+This guide serves as a template for designing and implementing React components for the CoachIQ web interface. Adjust sections as needed based on the specific requirements of your component.

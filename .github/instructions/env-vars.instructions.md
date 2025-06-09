@@ -28,10 +28,10 @@ applyTo: "**/*.py"
 
 ## Server Config
 
-- `RVC2API_TITLE`: Swagger UI title
-- `RVC2API_SERVER_DESCRIPTION`: Description for FastAPI docs
-- `RVC2API_ROOT_PATH`: Mount point if reverse-proxied
-- `RVC2API_USER_COACH_INFO_PATH`: Path to custom coach YAML
+- `COACHIQ_TITLE`: Swagger UI title
+- `COACHIQ_SERVER_DESCRIPTION`: Description for FastAPI docs
+- `COACHIQ_ROOT_PATH`: Mount point if reverse-proxied
+- `COACHIQ_USER_COACH_INFO_PATH`: Path to custom coach YAML
 
 ## Misc
 
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     server_description: str = "API for RV-C protocol"
 
     model_config = SettingsConfigDict(
-        env_prefix="RVC2API_",
+        env_prefix="COACHIQ_",
         env_file=".env",
         env_file_encoding="utf-8",
     )

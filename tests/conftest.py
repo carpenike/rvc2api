@@ -1,5 +1,5 @@
 """
-Global test configuration and fixtures for the rvc2api backend test suite.
+Global test configuration and fixtures for the CoachIQ backend test suite.
 
 This module provides reusable fixtures for testing FastAPI endpoints, services,
 and integrations with proper mocking and isolation.

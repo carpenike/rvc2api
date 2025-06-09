@@ -2,7 +2,7 @@
 Type stub file for Python CAN library.
 
 This file provides basic type hints for commonly used Python CAN components.
-Only includes essential functionality used in the rvc2api project.
+Only includes essential functionality used in the CoachIQ project.
 """
 
 from typing import Any

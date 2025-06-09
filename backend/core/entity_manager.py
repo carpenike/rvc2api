@@ -1,5 +1,5 @@
 """
-Entity Manager for the rvc2api backend.
+Entity Manager for the CoachIQ backend.
 
 This module provides a unified manager for entities that combines configuration
 and runtime state management. It replaces the dual-dictionary approach with a
@@ -137,7 +137,10 @@ class EntityManager:
         return list(self.entities.keys())
 
     def filter_entities(
-        self, device_type: str | None = None, area: str | None = None, protocol: str | None = None
+        self,
+        device_type: str | None = None,
+        area: str | None = None,
+        protocol: str | None = None,
     ) -> dict[str, Entity]:
         """
         Get entities filtered by device type, area, and/or protocol.

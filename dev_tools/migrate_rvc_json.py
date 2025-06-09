@@ -1,5 +1,5 @@
 """
-Migrate legacy rvc.json (messages array) to new pgns dict format for rvc2api backend.
+Migrate legacy rvc.json (messages array) to new pgns dict format for coachiq backend.
 
 Usage:
     poetry run python dev_tools/migrate_rvc_json.py [--dry-run] [--file <path>]

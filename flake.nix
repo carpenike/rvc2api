@@ -1,7 +1,7 @@
 # flake# ▸ CLI apps (run with `nix run .#<n>`) for:
 #    - `test`     → run unit tests
 #    - `lint`     → run ruff, pyright, djlint
-#    - `format`   → run ruff format and djlint in reformat mode — Nix flake definition for rvc2api
+#    - `format`   → run ruff format and djlint in reformat mode — Nix flake definition for CoachIQ
 #
 # This flake provides:
 #
@@ -39,18 +39,18 @@
 # Usage (in a system flake or NixOS configuration):
 #
 #   # In your flake inputs:
-#   inputs.rvc2api.url = "github:carpenike/rvc2api";
+#   inputs.coachiq.url = "github:carpenike/coachiq";
 #
 #   # As a package:
-#   environment.systemPackages = [ inputs.rvc2api.packages.${system}.coachiq ];
+#   environment.systemPackages = [ inputs.coachiq.packages.${system}.coachiq ];
 #
 #   # As a NixOS module:
-#   imports = [ inputs.rvc2api.nixosModules.coachiq ];
+#   imports = [ inputs.coachiq.nixosModules.coachiq ];
 #   # Then configure it:
 #   coachiq.settings = { ... };
 #
 #   # Or to reference CLI apps:
-#   nix run inputs.rvc2api#check
+#   nix run inputs.coachiq#check
 #
 # See docs/nixos-integration.md for more details
 
@@ -140,8 +140,8 @@
           '';
 
           meta = with pkgs.lib; {
-            description = "Multi-protocol CAN‑bus web service with RV‑C, J1939, advanced diagnostics, and performance analytics";
-            homepage    = "https://github.com/carpenike/rvc2api";
+            description = "Multi-protocol CAN-bus web service with RV-C, J1939, advanced diagnostics, and performance analytics";
+            homepage    = "https://github.com/carpenike/coachiq";
             license     = licenses.asl20;
             maintainers = [{
               name   = "Ryan Holt";
@@ -246,7 +246,7 @@ EOF
             # Set up Node.js environment
             export NODE_PATH=$PWD/frontend/node_modules
 
-            echo "🐚 Entered rvc2api devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
+            echo "🐚 Entered CoachIQ devShell on ${pkgs.system} with Python ${python.version} and Node.js $(node --version)"
             echo "🚗 Multi-protocol CAN support: RV-C, J1939, Firefly, Spartan K2"
             echo "🔧 Advanced diagnostics with predictive maintenance and performance analytics"
             echo "💡 Backend commands:"
@@ -565,7 +565,7 @@ EOF
             # App metadata
             appName = lib.mkOption {
               type = lib.types.str;
-              default = "rvc2api";
+              default = "CoachIQ";
               description = "Application name";
             };
 
@@ -1688,7 +1688,7 @@ EOF
               default = null;
               description = ''
                 Model selector for coach mapping file. Example: "2021_Entegra_Aspire_44R" will use
-                "${config.coachiq.package}/share/rvc2api/mappings/" + config.coachiq.settings.modelSelector + ".yml" as the mapping file if deviceMappingPath is not set.
+                "${config.coachiq.package}/share/coachiq/mappings/" + config.coachiq.settings.modelSelector + ".yml" as the mapping file if deviceMappingPath is not set.
                 If both are unset, falls back to coach_mapping.default.yml.
               '';
             };
@@ -1779,7 +1779,7 @@ EOF
               COACHIQ_ENVIRONMENT = "production";
 
               # App metadata - only if explicitly configured
-              COACHIQ_APP_NAME = lib.mkIf (config.coachiq.settings.appName != "rvc2api") config.coachiq.settings.appName;
+              COACHIQ_APP_NAME = lib.mkIf (config.coachiq.settings.appName != "CoachIQ") config.coachiq.settings.appName;
               COACHIQ_APP_VERSION = lib.mkIf (config.coachiq.settings.appVersion != "0.0.0") config.coachiq.settings.appVersion;
 
               # Server settings - only if different from defaults or necessary for production

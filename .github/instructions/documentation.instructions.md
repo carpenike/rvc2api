@@ -4,7 +4,7 @@ applyTo: "**/*.md"
 
 # Documentation Guidelines
 
-This file provides guidelines for documenting the `rvc2api` project, including API documentation, architecture documentation, and MkDocs configuration.
+This file provides guidelines for documenting the `CoachIQ` project, including API documentation, architecture documentation, and MkDocs configuration.
 
 ## API Documentation
 

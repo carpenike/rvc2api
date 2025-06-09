@@ -1,6 +1,6 @@
-# Contributing to RVC2API
+# Contributing to CoachIQ
 
-Thank you for your interest in contributing to RVC2API! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to CoachIQ! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -9,10 +9,11 @@ Please keep interactions respectful and professional. By contributing, you agree
 ## Getting Started
 
 1. **Set up your development environment**:
+
    ```bash
    # Clone the repository
-   git clone https://github.com/carpenike/rvc2api.git
-   cd rvc2api
+   git clone https://github.com/carpenike/coachiq.git
+   cd coachiq
 
    # Option 1: Using Poetry directly
    poetry install
@@ -89,7 +90,7 @@ Please keep interactions respectful and professional. By contributing, you agree
 
 ## Licensing
 
-By contributing to RVC2API, you agree that your contributions will be licensed under the same license as the project (see LICENSE file).
+By contributing to CoachIQ, you agree that your contributions will be licensed under the same license as the project (see LICENSE file).
 
 ## Questions?
 

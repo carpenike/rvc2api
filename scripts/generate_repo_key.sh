@@ -5,9 +5,9 @@
 set -e
 
 # Variables
-KEY_NAME="rvc2api Repository Key"
+KEY_NAME="CoachIQ Repository Key"
 KEY_EMAIL="repo@example.com"
-KEY_COMMENT="rvc2api Debian Repository Signing Key"
+KEY_COMMENT="CoachIQ Debian Repository Signing Key"
 OUTPUT_DIR="debian-repo"
 
 # Create output directory if it doesn't exist
@@ -15,7 +15,7 @@ mkdir -p "${OUTPUT_DIR}"
 
 # Generate key batch file
 cat > "${OUTPUT_DIR}/gpg-key-gen.batch" << EOF
-%echo Generating a basic OpenPGP key for the rvc2api repository
+%echo Generating a basic OpenPGP key for the CoachIQ repository
 Key-Type: RSA
 Key-Length: 4096
 Name-Real: ${KEY_NAME}

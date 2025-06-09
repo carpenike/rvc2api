@@ -23,7 +23,7 @@ class TestSettings:
         """Test that default settings are loaded correctly."""
         settings = Settings()
 
-        assert settings.app_name == "rvc2api"
+        assert settings.app_name == "CoachIQ"
         assert settings.app_description == "API for RV-C CANbus"
         assert settings.app_version == "0.0.0"
         assert settings.debug is False
@@ -38,10 +38,8 @@ class TestSettings:
             assert settings.debug is True
             assert settings.logging.level == "DEBUG"
             # These have specific env var names or don't support overrides
-            assert settings.app_name == "rvc2api"  # No env override defined for this
-            assert (
-                settings.app_description == "API for RV-C CANbus"
-            )  # No env override defined for this
+            assert settings.app_name == "CoachIQ"  # No env override defined for this
+            assert settings.app_description == "API for CoachIQ"  # No env override defined for this
 
     def test_can_configuration_defaults(self):
         """Test CAN bus configuration defaults."""

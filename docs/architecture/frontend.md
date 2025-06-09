@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-This page provides an overview of the rvc2api frontend architecture, focusing on how it integrates with the API.
+This page provides an overview of the CoachIQ frontend architecture, focusing on how it integrates with the API.
 
 ## Architecture Overview
 

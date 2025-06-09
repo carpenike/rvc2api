@@ -1,10 +1,10 @@
 # API Documentation
 
-Welcome to the rvc2api API documentation. This documentation provides comprehensive information about the API endpoints, request/response formats, and data models.
+Welcome to the CoachIQ API documentation. This documentation provides comprehensive information about the API endpoints, request/response formats, and data models.
 
 ## API Overview
 
-The rvc2api server provides a RESTful API for interacting with RV-C devices and systems. The API is organized into the following categories:
+The CoachIQ server provides a RESTful API for interacting with RV-C devices and systems. The API is organized into the following categories:
 
 - [Entity API](/api/entities): Endpoints for managing and controlling entities (devices like lights, temperature sensors, etc.)
 - [CAN Bus API](/api/can): Endpoints for interacting directly with the CAN bus
@@ -21,4 +21,4 @@ The API is fully documented using the OpenAPI specification. You can:
 
 ## Frontend Integration
 
-The rvc2api project includes a React frontend that consumes the API. For information about how the frontend integrates with the API, see the [Frontend API Integration](/api/frontend-integration) page.
+The CoachIQ project includes a React frontend that consumes the API. For information about how the frontend integrates with the API, see the [Frontend API Integration](/api/frontend-integration) page.

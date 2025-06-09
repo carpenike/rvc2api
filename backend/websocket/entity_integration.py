@@ -1,5 +1,5 @@
 """
-Entity-WebSocket integration for rvc2api.
+Entity-WebSocket integration for CoachIQ.
 
 This module connects entity state changes to the WebSocket system. When an entity's state is updated,
 it broadcasts the update to all connected WebSocket clients and handles event-driven integration

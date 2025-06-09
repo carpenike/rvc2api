@@ -1,29 +1,32 @@
 ---
-mode: 'agent'
-description: 'Generate comprehensive documentation for an rvc2api service'
-tools: ['context7']
+mode: "agent"
+description: "Generate comprehensive documentation for an CoachIQ service"
+tools: ["context7"]
 ---
 
-# RVC2API Service Documentation Template
+# CoachIQ Service Documentation Template
 
-This template helps create comprehensive documentation for an rvc2api service component. Use this to document a new or existing service, API, or feature with clear explanations, examples, and technical details.
+This template helps create comprehensive documentation for an CoachIQ service component. Use this to document a new or existing service, API, or feature with clear explanations, examples, and technical details.
 
 ---
 
 ## 1. Service Overview
 
 ### 1.1. Purpose & Scope
+
 - What does this service do?
 - What RV-C functions or capabilities does it expose?
 - What are the boundaries of this service's responsibilities?
 
 ### 1.2. User Benefits
+
 - How does this service benefit users of the RV monitoring system?
 - What problems does it solve for RV owners or integrators?
 - What unique capabilities does it enable?
 
 ### 1.3. Architecture Overview
-- Where does this service fit in the overall rvc2api system?
+
+- Where does this service fit in the overall CoachIQ system?
 - What are the primary components and how do they interact?
 - Include a simple diagram if appropriate
 
@@ -32,12 +35,14 @@ This template helps create comprehensive documentation for an rvc2api service co
 ## 2. Technical Details
 
 ### 2.1. Components
+
 - List and describe the key Python modules that make up this service
 - Explain the responsibility of each module
 - Describe key classes and their relationships
 - Use `@context7` to identify and document actual implementation details
 
 ### 2.2. Data Models
+
 - Document the Pydantic models used by this service
 - Explain the fields and their validation rules
 - Include example JSON representations
@@ -76,6 +81,7 @@ class DeviceState(BaseModel):
 ```
 
 ### 2.3. API Endpoints
+
 - Document the REST API endpoints provided by this service
 - Include HTTP methods, parameters, request/response formats
 - Provide example requests and responses
@@ -103,6 +109,7 @@ Errors:
 ```
 
 ### 2.4. WebSocket Events
+
 - Document the WebSocket events emitted by this service
 - Explain when events are triggered
 - Include example payloads
@@ -131,15 +138,16 @@ Payload:
 ## 3. Implementation Examples
 
 ### 3.1. Python API Usage
+
 - Provide examples of how to use this service from Python code
 - Include imports, initialization, and common operations
 - Add explanatory comments
 
 ```python
-from rvc2api.client import RVC2APIClient
+from CoachIQ.client import CoachIQClient
 
 # Initialize the client
-client = RVC2APIClient("http://localhost:8000")
+client = CoachIQClient("http://localhost:8000")
 
 # Get current state
 inverter = await client.get_device("inverter_1")
@@ -153,38 +161,43 @@ async for update in client.subscribe("service_update"):
 ```
 
 ### 3.2. JavaScript API Usage
+
 - Provide examples of how to use this service from JavaScript
 - Include WebSocket subscription examples
 - Add explanatory comments
 
 ```javascript
 // Connect to the WebSocket API
-const socket = new WebSocket('ws://localhost:8000/ws');
+const socket = new WebSocket("ws://localhost:8000/ws");
 
 // Listen for service updates
-socket.addEventListener('message', (event) => {
+socket.addEventListener("message", (event) => {
   const data = JSON.parse(event.data);
 
-  if (data.event === 'service_update' && data.data.id === 'inverter_1') {
+  if (data.event === "service_update" && data.data.id === "inverter_1") {
     console.log(`Inverter status: ${data.data.status}`);
     console.log(`Output voltage: ${data.data.values.output_voltage} V`);
 
     // Update UI elements
-    document.getElementById('voltage-display').textContent =
-      `${data.data.values.output_voltage} V`;
+    document.getElementById(
+      "voltage-display"
+    ).textContent = `${data.data.values.output_voltage} V`;
   }
 });
 
 // Request initial state
-socket.addEventListener('open', () => {
-  socket.send(JSON.stringify({
-    action: 'get_device',
-    id: 'inverter_1'
-  }));
+socket.addEventListener("open", () => {
+  socket.send(
+    JSON.stringify({
+      action: "get_device",
+      id: "inverter_1",
+    })
+  );
 });
 ```
 
 ### 3.3. Console Client Usage
+
 - Provide examples of how to use this service from the console client
 - Include common commands and output formats
 
@@ -212,6 +225,7 @@ Monitoring inverter_1 (press Ctrl+C to stop)...
 ## 4. Configuration
 
 ### 4.1. Settings
+
 - Document configuration settings and environment variables
 - Explain default values and valid options
 - Include examples
@@ -226,6 +240,7 @@ SERVICE_UPDATE_INTERVAL=1000
 ```
 
 ### 4.2. Dependencies
+
 - List required dependencies
 - Explain any version constraints
 - Document any hardware requirements
@@ -235,16 +250,19 @@ SERVICE_UPDATE_INTERVAL=1000
 ## 5. Troubleshooting
 
 ### 5.1. Common Issues
+
 - List common issues users might encounter
 - Provide diagnostic steps
 - Include solutions
 
 ### 5.2. Logging
+
 - Explain what is logged and where
 - Document log levels
 - Provide examples of log output for key scenarios
 
 ### 5.3. Debugging
+
 - Offer debugging techniques
 - Explain how to enable debug mode
 - Provide guidance on gathering information for bug reports
@@ -254,11 +272,13 @@ SERVICE_UPDATE_INTERVAL=1000
 ## 6. Development Guidelines
 
 ### 6.1. Extension Points
+
 - Document how this service can be extended
 - Explain interfaces or hooks that can be used
 - Provide examples of custom extensions
 
 ### 6.2. Testing
+
 - Explain how to test this service
 - Document any test utilities or fixtures
 - Provide example test code
@@ -268,11 +288,13 @@ SERVICE_UPDATE_INTERVAL=1000
 ## 7. References
 
 ### 7.1. Related Documentation
+
 - Link to related documentation
 - Reference RV-C specifications or standards
 - Include research or design documents
 
 ### 7.2. External Resources
+
 - Link to external resources or libraries
 - Reference community discussions or tutorials
 - Provide credit to contributors

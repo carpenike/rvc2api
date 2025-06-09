@@ -36,6 +36,7 @@ The `.pre-commit-config.yaml` file defines **what** checks to run, while `nix ru
 2. **Daily development**: Let Git hooks run automatically
 3. **Before pushing**: Run `nix run .#precommit` to match CI
 4. **Debugging CI failures**: Use `nix run .#ci` to reproduce CI locallyn dependencies in pyproject.toml)
+
 - npm (JavaScript dependencies in frontend/package.json)
 - nix (reproducible environments via flake)
 - Version-locked dependencies
@@ -81,7 +82,7 @@ npm run typecheck  # Run TypeScript type checking
 ## Setup
 
 ```bash
-git clone https://github.com/carpenike/rvc2api.git && cd rvc2api
+git clone https://github.com/carpenike/coachiq.git && cd coachiq
 nix develop  # Or: poetry install && cd frontend && npm install
 cp .env.example .env
 ```

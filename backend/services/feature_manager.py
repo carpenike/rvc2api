@@ -290,8 +290,8 @@ class FeatureManager:
         logger.info("Reloading feature states from configuration")
 
         for feature_name, feature in self._features.items():
-            # First check for new standardized environment variable pattern (RVC2API_FEATURES__*)
-            standardized_env_var = f"RVC2API_FEATURES__ENABLE_{feature_name.upper()}"
+            # First check for new standardized environment variable pattern (COACHIQ_FEATURES__*)
+            standardized_env_var = f"COACHIQ_FEATURES__ENABLE_{feature_name.upper()}"
             standardized_env_value = os.getenv(standardized_env_var)
 
             # Fall back to legacy pattern for backward compatibility
@@ -383,9 +383,7 @@ def get_feature_manager(
         Initialized FeatureManager instance
     """
     global _feature_manager
-    from backend.core.config import (
-        get_settings,
-    )
+    from backend.core.config import get_settings
 
     if settings is None:
         settings = get_settings()

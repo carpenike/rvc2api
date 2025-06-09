@@ -1,5 +1,5 @@
 """
-Services package for rvc2api.
+Services package for CoachIQ.
 
 This package contains business logic services that implement core functionality
 and features of the application.

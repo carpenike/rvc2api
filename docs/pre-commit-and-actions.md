@@ -1,6 +1,6 @@
 # Pre-commit and GitHub Actions Configuration
 
-This document describes the enhanced pre-commit and GitHub Actions configuration for the `rvc2api` project.
+This document describes the enhanced pre-commit and GitHub Actions configuration for the `CoachIQ` project.
 
 ## Pre-commit Configuration
 
@@ -67,6 +67,7 @@ nix run .#test    # Run pytest
 ```
 
 > **💡 Best Practice**:
+>
 > - Install Git hooks once: `poetry run pre-commit install`
 > - Use Nix apps for CI-matching checks: `nix run .#precommit`
 > - The `.pre-commit-config.yaml` defines **what** to check

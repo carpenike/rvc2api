@@ -1,6 +1,6 @@
-# VS Code Configuration for rvc2api
+# VS Code Configuration for CoachIQ
 
-This directory contains VS Code settings optimized for developing the rvc2api project.
+This directory contains VS Code settings optimized for developing the CoachIQ project.
 
 ## Setup Requirements
 

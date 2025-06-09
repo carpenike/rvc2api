@@ -81,13 +81,13 @@ Repository and issue information queries:
 
 ```
 # Search for issues related to WebSocket reconnection
-@github issues:rvc2api+websocket+reconnection
+@github issues:CoachIQ+websocket+reconnection
 
 # Find pull requests related to the React migration
-@github pr:rvc2api+react+frontend
+@github pr:CoachIQ+react+frontend
 
 # Get repository statistics
-@github repo:rvc2api stats
+@github repo:CoachIQ stats
 
 # Search for code examples in related repositories
 @github code:python-can+socketcan+send

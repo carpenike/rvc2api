@@ -25,7 +25,7 @@ if not git show-ref --verify --quiet refs/heads/gh-pages
     git checkout --orphan gh-pages
     git rm -rf .
     touch .nojekyll
-    echo "rvc2api Documentation" > index.html
+    echo "CoachIQ Documentation" > index.html
     git add .nojekyll index.html
     git commit -m "Initial gh-pages commit"
 

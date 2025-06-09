@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FRONTEND_DIR="$PROJECT_ROOT/frontend"
 
 # Display banner
-echo "🏗️ rvc2api Frontend Build Tool"
+echo "🏗️ CoachIQ Frontend Build Tool"
 echo "================================"
 
 # Check if we're in a Nix development shell

@@ -1,7 +1,7 @@
 """
 Type stub file for Python CAN library bus module.
 
-This file provides type hints for bus classes used in the rvc2api project.
+This file provides type hints for bus classes used in the CoachIQ project.
 """
 
 from typing import Any

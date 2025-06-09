@@ -1,5 +1,5 @@
 """
-Multi-Network CAN Feature for RVC2API
+Multi-Network CAN Feature for CoachIQ
 
 Feature integration for the multi-network CAN manager, providing:
 - Seamless integration with the feature management system

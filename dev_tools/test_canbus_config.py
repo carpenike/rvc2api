@@ -3,7 +3,7 @@
 Test script for the CAN bus interface auto-detection functionality.
 
 This script tests the CAN bus interface auto-detection functionality in
-the rvc2api project. It runs through different test scenarios to verify
+the CoachIQ project. It runs through different test scenarios to verify
 that the auto-detection works correctly.
 
 Usage:

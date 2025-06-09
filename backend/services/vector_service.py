@@ -1,5 +1,5 @@
 """
-Vector service for the rvc2api backend.
+Vector service for the CoachIQ backend.
 
 This is a simplified version that provides a consistent interface for vector search
 functionality. Currently acts as a placeholder until full vector search is implemented.

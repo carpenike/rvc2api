@@ -140,5 +140,5 @@ npm run build
 
 ## Deployment
 
-The built files from `frontend/dist/` should be deployed to `/var/lib/rvc2api-web-ui/dist/`
+The built files from `frontend/dist/` should be deployed to `/var/lib/coachiq-web-ui/dist/`
 on the target system where Caddy is configured to serve them.

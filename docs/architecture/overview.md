@@ -1,6 +1,6 @@
 # Project Overview
 
-The rvc2api project provides a modern API and WebSocket service for RV-C (Recreational Vehicle Controller Area Network) systems, allowing you to monitor and control various devices in your RV.
+The CoachIQ project provides a modern API and WebSocket service for RV-C (Recreational Vehicle Controller Area Network) systems, allowing you to monitor and control various devices in your RV.
 
 ## System Architecture
 
@@ -74,7 +74,7 @@ The frontend is built with React, TypeScript, and Vite:
 The project follows a monorepo structure:
 
 ```text
-rvc2api/
+coachiq/
 ├── backend/              # Python backend application
 │   ├── api/              # FastAPI routers and endpoints
 │   ├── core/             # Core configuration and utilities

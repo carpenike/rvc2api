@@ -1,5 +1,5 @@
 """
-Multi-Network CAN Manager for RVC2API
+Multi-Network CAN Manager for CoachIQ
 
 This module provides comprehensive multi-network CAN bus management with:
 - Network isolation and fault containment
@@ -484,7 +484,8 @@ class MultiNetworkManager:
                 # Get message from queue with timeout
                 try:
                     message_data = await asyncio.wait_for(
-                        self._message_queue.get(), timeout=self.settings.message_routing_timeout
+                        self._message_queue.get(),
+                        timeout=self.settings.message_routing_timeout,
                     )
                     await self._route_message(message_data)
                 except TimeoutError:

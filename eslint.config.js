@@ -1,4 +1,4 @@
-// Root ESLint Flat Config for rvc2api monorepo
+// Root ESLint Flat Config for CoachIQ monorepo
 // This file provides ignore patterns for the entire repository
 // Frontend-specific linting is handled in frontend/eslint.config.js
 
@@ -74,7 +74,7 @@ export default [
       "**/yarn-error.log",
       "**/pnpm-debug.log",
       "**/pip-log.txt",
-      "**/pip-delete-this-directory.txt"
-    ]
-  }
+      "**/pip-delete-this-directory.txt",
+    ],
+  },
 ];

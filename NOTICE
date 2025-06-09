@@ -1,6 +1,6 @@
 NOTICE
 
-This product includes software developed by Ryan Holt and contributors as part of the rvc2api project.
+This product includes software developed by Ryan Holt and contributors as part of the CoachIQ project.
 
 Copyright (c) 2025 Ryan Holt
 
@@ -20,6 +20,6 @@ This product may include dependencies and code from third-party open source proj
 each of which is subject to its own license terms. See the LICENSE file and
 the documentation for details.
 
-Project homepage: https://github.com/carpenike/rvc2api
+Project homepage: <https://github.com/carpenike/coachiq>
 
 Contributors: See the GitHub repository for a full list of contributors.

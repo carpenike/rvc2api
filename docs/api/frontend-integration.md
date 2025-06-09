@@ -1,6 +1,6 @@
 # Frontend API Integration
 
-This page describes how the React frontend integrates with the rvc2api backend API.
+This page describes how the React frontend integrates with the CoachIQ backend API.
 
 ## Integration Architecture
 

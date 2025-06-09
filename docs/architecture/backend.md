@@ -1,6 +1,6 @@
 # Backend Architecture
 
-This page provides an overview of the rvc2api backend architecture, focusing on how the API components are structured.
+This page provides an overview of the CoachIQ backend architecture, focusing on how the API components are structured.
 
 ## Core Components
 

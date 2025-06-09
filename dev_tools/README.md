@@ -1,12 +1,12 @@
-# Developer Tools for RVC2API
+# Developer Tools for CoachIQ
 
-This directory contains various developer tools and utility scripts for the RVC2API project. These tools are primarily designed for development, testing, and data processing tasks.
+This directory contains various developer tools and utility scripts for the CoachIQ project. These tools are primarily designed for development, testing, and data processing tasks.
 
 ## CAN Interface Testing Tools
 
 ### `test_canbus_config.py`
 
-A test script for verifying the CAN bus interface auto-detection functionality in the rvc2api project. This script is useful for manually testing and demonstrating the automatic detection of CAN interfaces in different environments.
+A test script for verifying the CAN bus interface auto-detection functionality in the CoachIQ project. This script is useful for manually testing and demonstrating the automatic detection of CAN interfaces in different environments.
 
 **Key Features:**
 

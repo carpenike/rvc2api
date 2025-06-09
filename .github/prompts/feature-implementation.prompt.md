@@ -1,7 +1,7 @@
 ---
-mode: 'agent'
-description: 'Implement a new feature for the rvc2api project'
-tools: ['context7']
+mode: "agent"
+description: "Implement a new feature for the CoachIQ project"
+tools: ["context7"]
 ---
 
 # Feature Implementation Guide
@@ -21,6 +21,7 @@ tools: ['context7']
 ## Feature Implementation Process
 
 ### 1. Review Service Specification
+
 - [ ] Review the service specification document from `/docs/specs/`
 - [ ] Clarify any ambiguities or missing details
 - [ ] Understand how this feature integrates with the existing codebase
@@ -29,6 +30,7 @@ tools: ['context7']
 ### 2. Core Implementation
 
 #### 2.1. Data Models
+
 - [ ] Define needed Pydantic models in appropriate location
   - For shared models: `src/common/models.py`
   - For service-specific models: `src/core_daemon/models.py` or new module
@@ -36,6 +38,7 @@ tools: ['context7']
 - [ ] Add appropriate docstrings to each model
 
 #### 2.2. Backend Service Logic
+
 - [ ] Implement core business logic
   - For RV-C specific logic: Add to `src/rvc_decoder/`
   - For API-related logic: Create or update modules in `src/core_daemon/`
@@ -46,12 +49,14 @@ tools: ['context7']
 - [ ] Add appropriate logging
 
 #### 2.3. API Integration
+
 - [ ] Add API endpoints to appropriate router in `src/core_daemon/api_routers/`
 - [ ] Define route parameters, response models, and error handling
 - [ ] Update OpenAPI documentation with detailed descriptions
 - [ ] For real-time updates, integrate with WebSocket in `src/core_daemon/websocket.py`
 
 #### 2.4. Web UI Components (Current HTML/JS)
+
 - [ ] Add HTML templates to `src/core_daemon/frontend/templates/`
 - [ ] Add static assets to `src/core_daemon/frontend/static/`
 - [ ] Add JavaScript for client-side logic
@@ -60,12 +65,14 @@ tools: ['context7']
 ### 3. Testing
 
 #### 3.1. Unit Tests
+
 - [ ] Write unit tests for new core functions
 - [ ] Test both success and error cases
 - [ ] Mock external dependencies (CAN bus, filesystem, etc.)
 - [ ] Place tests in corresponding path in `tests/` directory
 
 #### 3.2. Integration Tests
+
 - [ ] Add integration tests that validate full workflow
 - [ ] Test API endpoints directly
 - [ ] Test WebSocket communication if applicable
@@ -73,15 +80,18 @@ tools: ['context7']
 ### 4. Documentation
 
 #### 4.1. Code Documentation
+
 - [ ] Add module-level docstrings
 - [ ] Document all public functions, classes, and methods
 - [ ] Include examples in docstrings when helpful
 
 #### 4.2. User-Facing Documentation
+
 - [ ] Update README.md if needed
 - [ ] Add any configuration or setup instructions
 
 ### 5. Final Review
+
 - [ ] Review for coding style (black, ruff/flake8)
 - [ ] Check for type hint completeness
 - [ ] Verify error handling coverage
@@ -89,9 +99,10 @@ tools: ['context7']
 
 ---
 
-## Best Practices for rvc2api
+## Best Practices for CoachIQ
 
 ### Python Coding Standards
+
 - Follow PEP 8 and use black for formatting (line length: 100)
 - Use full type hints and Pydantic for data validation
 - Group imports: standard library → third-party → local
@@ -99,16 +110,19 @@ tools: ['context7']
 - Use Google-style or PEP 257 docstrings for functions and classes
 
 ### Error Handling
+
 - Catch and log expected exceptions with appropriate context
 - Use custom error classes where appropriate
 - Avoid bare `except:` without re-raising or limiting scope
 
 ### Testing
+
 - Test both success and error paths
 - Mock external dependencies (CAN bus, file system)
 - Use descriptive test names that explain what's being tested
 
 ### Performance Considerations
+
 - Be mindful of real-time requirements for CAN bus communication
 - Consider the impact of long-running operations on WebSocket connections
 - Use asynchronous patterns appropriately

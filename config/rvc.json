@@ -1,5 +1,5 @@
 {
-  "$schema": "https://carpenike.github.io/rvc2api/schemas/rvc-schema.json",
+  "$schema": "https://carpenike.github.io/coachiq/schemas/rvc-schema.json",
   "version": "2023-05-23",
   "pgns": {
     "419351199": {

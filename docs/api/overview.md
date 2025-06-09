@@ -1,6 +1,6 @@
 # API Overview
 
-The rvc2api server provides a RESTful API for interacting with RV-C devices and systems. This page provides an overview of the API structure and common patterns.
+The CoachIQ server provides a RESTful API for interacting with RV-C devices and systems. This page provides an overview of the API structure and common patterns.
 
 ## API Base URL
 

@@ -1,10 +1,10 @@
 # RV-C Documentation Search
 
-This guide explains how to set up and use the RV-C documentation search functionality in the rvc2api project.
+This guide explains how to set up and use the RV-C documentation search functionality in the CoachIQ project.
 
 ## Overview
 
-The rvc2api project includes a semantic search feature that allows users to query RV-C specification and other technical documentation using natural language. This feature is powered by:
+The CoachIQ project includes a semantic search feature that allows users to query RV-C specification and other technical documentation using natural language. This feature is powered by:
 
 1. FAISS vector database for efficient similarity search
 2. OpenAI embeddings for converting text to vectors
@@ -247,7 +247,7 @@ If you encounter issues with the documentation search:
 
    ```bash
    # On most systems
-   journalctl -u rvc2api.service -f
+   journalctl -u coachiq.service -f
 
    # When running manually, check the terminal output
    ```

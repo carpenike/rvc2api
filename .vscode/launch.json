@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: RVC2API Backend",
+      "name": "Python: CoachIQ Backend",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/run_server.py",

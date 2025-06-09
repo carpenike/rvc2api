@@ -1,5 +1,5 @@
 """
-WebSocket manager feature for rvc2api.
+WebSocket manager feature for CoachIQ.
 
 This module implements a Feature-based WebSocket manager that handles:
 - WebSocket client connection management
@@ -648,7 +648,7 @@ class WebSocketLogHandler(logging.Handler):
                 "module": record.module,
                 "function": record.funcName,
                 "line": record.lineno,
-                "service": "rvc2api",
+                "service": "coachiq",
                 "thread": record.thread,
                 "thread_name": record.threadName,
             }

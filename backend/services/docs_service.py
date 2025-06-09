@@ -56,7 +56,7 @@ class DocsService:
 
             # Add custom metadata if needed
             if "info" in schema:
-                schema["info"]["x-generated-by"] = "rvc2api-backend"
+                schema["info"]["x-generated-by"] = "coachiq-backend"
                 schema["info"]["x-schema-version"] = "1.0"
 
             return schema
@@ -88,7 +88,7 @@ class DocsService:
                         total_endpoints += 1
 
             return {
-                "title": info.get("title", "RVC2API"),
+                "title": info.get("title", "coachiq"),
                 "description": info.get("description", ""),
                 "version": info.get("version", "unknown"),
                 "openapi_version": schema.get("openapi", "unknown"),
@@ -103,7 +103,7 @@ class DocsService:
         except Exception as e:
             logger.error(f"Failed to get API info: {e}")
             return {
-                "title": "RVC2API",
+                "title": "coachiq",
                 "description": "API information unavailable",
                 "version": "unknown",
                 "error": str(e),
@@ -228,7 +228,12 @@ class DocsService:
         try:
             schema = await self.get_openapi_schema()
 
-            validation_results = {"valid": True, "errors": [], "warnings": [], "info": {}}
+            validation_results = {
+                "valid": True,
+                "errors": [],
+                "warnings": [],
+                "info": {},
+            }
 
             # Check required OpenAPI fields
             required_fields = ["openapi", "info", "paths"]

@@ -1,6 +1,6 @@
 # Version Management
 
-This document explains how version management works in the rvc2api project.
+This document explains how version management works in the CoachIQ project.
 
 ## Single Source of Truth
 
@@ -15,6 +15,7 @@ This approach simplifies version management by centralizing the version informat
 The project uses [release-please](https://github.com/googleapis/release-please) to manage version updates:
 
 1. **Automated Updates**: When PRs are merged with conventional commits, release-please automatically:
+
    - Determines the appropriate version bump (major, minor, patch)
    - Updates the version in pyproject.toml
    - Creates a release PR with a changelog
@@ -23,7 +24,7 @@ The project uses [release-please](https://github.com/googleapis/release-please) 
    - `flake.nix` gets the version directly from the VERSION file for building packages
    - The `pyproject.toml` file is updated to match the VERSION file during builds
    - Documentation versioning scripts read the version from the VERSION file
-   - The Python code uses `importlib.metadata.version("rvc2api")` to access the version at runtime
+   - The Python code uses `importlib.metadata.version("CoachIQ")` to access the version at runtime
 
 ## Version Propagation
 

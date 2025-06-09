@@ -1,11 +1,11 @@
-# GitHub Copilot Instructions for rvc2api
+# GitHub Copilot Instructions for CoachIQ
 
-- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, *.tsbuildinfo, .cache, *.log) are excluded from linting and type checking in both root and frontend ESLint configs.
+- All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, _.tsbuildinfo, .cache, _.log) are excluded from linting and type checking in both root and frontend ESLint configs.
 - All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 - **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
 
-This document provides key information for GitHub Copilot to understand the `rvc2api` project architecture and coding patterns.
+This document provides key information for GitHub Copilot to understand the `CoachIQ` project architecture and coding patterns.
 
 ## Modular Copilot Instructions
 
@@ -27,10 +27,9 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 
 > **For any code generation or chat involving these topics, refer to the relevant `.instructions.md` file in `.github/instructions/` for detailed guidance.**
 
-
 ## Project Summary
 
-`rvc2api` is a Python-based API and WebSocket service for RV-C (Recreational Vehicle Controller Area Network) systems:
+`CoachIQ` is a Python-based API and WebSocket service for RV-C (Recreational Vehicle Controller Area Network) systems:
 
 - **FastAPI backend** with WebSocket support (migrated to `backend/` structure)
 - **React frontend** with TypeScript and Vite
@@ -78,9 +77,11 @@ See `.github/instructions/eslint-typescript-config.instructions.md` for detailed
 ## Core Architecture
 
 ### Management Services (REQUIRED FOR ALL BACKEND CODE)
+
 All backend development MUST use these management services via dependency injection:
 
 #### Core Management Services
+
 - **FeatureManager** (`backend/services/feature_manager.py`): Feature registration, lifecycle management
 - **EntityManager** (`backend/core/entity_manager.py`): Entity operations, state management, device lookups
 - **AppState** (`backend/core/state.py`): Application state management, entity tracking
@@ -89,6 +90,7 @@ All backend development MUST use these management services via dependency inject
 - **ConfigService** (`backend/services/config_service.py`): Configuration management, environment variables
 
 #### Domain Services (Use via dependency injection)
+
 - **EntityService**: RV-C entity operations, light control, state management
 - **CANService**: CAN bus operations, interface monitoring, message sending
 - **RVCService**: RV-C protocol operations, message translation
@@ -96,6 +98,7 @@ All backend development MUST use these management services via dependency inject
 - **WebSocketManager**: Client connections, real-time broadcasting
 
 #### Multi-Protocol Services (NEW - Use via dependency injection)
+
 - **J1939Service**: J1939 protocol operations, engine/transmission integration
 - **FireflyService**: Firefly RV systems integration with multiplexing support
 - **SpartanK2Service**: Spartan K2 chassis system integration with safety interlocks
@@ -104,6 +107,7 @@ All backend development MUST use these management services via dependency inject
 - **PerformanceAnalyticsFeature**: Performance monitoring and optimization recommendations
 
 ### Project Structure
+
 - `backend/core/`: Core management services (EntityManager, AppState, dependencies)
 - `backend/services/`: Business logic services and FeatureManager
 - `backend/api/routers/`: FastAPI routes organized by domain
@@ -118,6 +122,7 @@ All backend development MUST use these management services via dependency inject
 ## Code Patterns
 
 ### Backend Service Access (MANDATORY)
+
 ```python
 # ALWAYS use dependency injection for services
 from backend.core.dependencies import (
@@ -159,6 +164,7 @@ from backend.core.dependencies import get_entity_manager  # This function doesn'
 ```
 
 ### Development Patterns
+
 - **FastAPI routes**: Organized by domain in `backend/api/routers/` using APIRouter
 - **Management Services**: ALWAYS access via dependency injection from `backend.core.dependencies`
 - **Feature Registration**: ALL features must extend Feature base class and register with FeatureManager
@@ -182,16 +188,20 @@ from backend.core.dependencies import get_entity_manager  # This function doesn'
 ## Environment Configuration
 
 ### Environment Variable Pattern
+
 All configuration uses the `COACHIQ_` prefix with hierarchical naming:
+
 - **Top-level**: `COACHIQ_SETTING` (e.g., `COACHIQ_APP_NAME`)
 - **Nested**: `COACHIQ_SECTION__SETTING` (e.g., `COACHIQ_SERVER__HOST`)
 
 ### Key Configuration Files
+
 - **`.env.example`**: Comprehensive documentation of all environment variables
 - **`.env`**: Active configuration (not committed to git)
 - **`backend/core/config.py`**: Pydantic Settings classes with validation
 
 ### Configuration Access
+
 ```python
 # ALWAYS use ConfigService for configuration
 from backend.core.dependencies import get_config_service
@@ -201,6 +211,7 @@ settings = await config_service.get_config_summary()
 ```
 
 ### Persistence Modes
+
 1. **Memory-only**: `COACHIQ_PERSISTENCE__ENABLED=false` (default)
 2. **Development**: Local file storage in `backend/data/`
 3. **Production**: System directory (e.g., `/var/lib/coachiq`)
@@ -208,13 +219,16 @@ settings = await config_service.get_config_summary()
 ## Nix Development Environment (Optional)
 
 ### Nix Flake
+
 The project includes an optional Nix flake providing:
+
 - **Reproducible environment** with all dependencies
 - **CLI apps**: `nix run .#test`, `nix run .#lint`, `nix run .#format`
 - **NixOS module** for production deployment
 - **Automatic Poetry configuration** with correct library paths
 
 ### Nix Benefits (if used)
+
 - **Cross-platform consistency**: Same environment on macOS and Linux
 - **No Python version conflicts**: Uses Python 3.12
 - **Automatic library path configuration**: Poetry works seamlessly
@@ -241,9 +255,11 @@ The project includes an optional Nix flake providing:
 - **MCP Best Practice**: Always default to `@context7` for library and framework questions before using general LLM knowledge
 
 ## Research-Driven Development (NEW PATTERN)
+
 Based on proven success in multi-protocol implementation (35-70x development acceleration):
 
 ### Research Workflow Priority
+
 1. **@context7 FIRST**: For framework and library questions (FastAPI, React, TypeScript, Python libraries)
 2. **@perplexity for OEM research**: When implementing new manufacturer integrations
    - Example: `@perplexity Firefly RV systems protocol specifications and safety requirements`
@@ -251,6 +267,7 @@ Based on proven success in multi-protocol implementation (35-70x development acc
 3. **@github for implementation patterns**: Repository exploration and issue research
 
 ### Manufacturer Integration Research Pattern
+
 ```bash
 # 1. Research manufacturer specifications
 @perplexity [Manufacturer] RV systems CAN protocol specifications safety requirements
@@ -263,6 +280,7 @@ Based on proven success in multi-protocol implementation (35-70x development acc
 ```
 
 ### Validated Benefits
+
 - **Development Speed**: Research-first approach eliminates weeks of reverse engineering
 - **Implementation Accuracy**: First-time success with comprehensive feature coverage
 - **Safety Compliance**: Research-validated safety interlock patterns

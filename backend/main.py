@@ -311,7 +311,7 @@ async def healthz(request: Request, details: bool = False) -> Response:
         "status": overall_status,
         "version": "1",  # Health check format version
         "releaseId": version,
-        "serviceId": "rvc2api",
+        "serviceId": "coachiq",
         "description": _get_status_description(overall_status, failed_features, degraded_features),
         "timestamp": datetime.now(UTC).isoformat(),
         "checks": {name: {"status": status} for name, status in health_report.items()},
@@ -322,7 +322,7 @@ async def healthz(request: Request, details: bool = False) -> Response:
 
     # Add service metadata
     response_data["service"] = {
-        "name": "rvc2api",
+        "name": "coachiq",
         "version": version,
         "environment": os.getenv("ENVIRONMENT", "development"),
         "hostname": platform.node(),

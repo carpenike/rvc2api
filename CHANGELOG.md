@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial release of rvc2api.
+
+- Initial release of CoachIQ.
 - FastAPI backend for API and WebSocket server.
 - RV-C message decoding capabilities.
 - Entity management for RV-C devices.

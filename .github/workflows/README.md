@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains GitHub Actions workflows for building, testing, and deploying the rvc2api project.
+This directory contains GitHub Actions workflows for building, testing, and deploying the CoachIQ project.
 
 ## Workflows
 

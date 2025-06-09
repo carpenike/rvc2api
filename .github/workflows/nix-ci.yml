@@ -27,7 +27,7 @@ jobs:
       - name: "Setup Nix cache"
         uses: cachix/cachix-action@v16
         with:
-          name: rvc2api
+          name: coachiq
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           skipPush: ${{ github.ref != 'refs/heads/main' }}
 
@@ -37,8 +37,8 @@ jobs:
       # - name: "Run tests separately for better caching"
       #   run: nix run .#test
 
-      - name: "Build rvc2api package (for Cachix caching)"
-        run: nix build .#rvc2api
+      - name: "Build CoachIQ package (for Cachix caching)"
+        run: nix build .#coachiq
 
   flake-build:
     name: Nix flake checks & build
@@ -58,12 +58,12 @@ jobs:
       - name: "Setup Nix cache"
         uses: cachix/cachix-action@v16
         with:
-          name: rvc2api
+          name: coachiq
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           skipPush: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Run all flake checks (includes lock‑check from checks)
         run: nix flake check
 
-      - name: Build rvc2api package (for Cachix caching)
-        run: nix build .#rvc2api
+      - name: Build CoachIQ package (for Cachix caching)
+        run: nix build .#coachiq

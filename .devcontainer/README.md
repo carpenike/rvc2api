@@ -1,6 +1,6 @@
 # DevContainer Environment
 
-This directory contains the configuration for the VS Code DevContainer development environment for the rvc2api project.
+This directory contains the configuration for the VS Code DevContainer development environment for the CoachIQ project.
 
 ## Important Update: Nix Installation Fix
 

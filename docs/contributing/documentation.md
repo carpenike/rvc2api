@@ -1,6 +1,6 @@
 # Contributing to Documentation
 
-This guide explains how to contribute to the rvc2api documentation.
+This guide explains how to contribute to the CoachIQ documentation.
 
 ## Documentation Structure
 
@@ -30,7 +30,7 @@ cd docs
 mkdocs serve
 ```
 
-This will start a local web server at http://localhost:8000/ that automatically updates when you save changes to the markdown files.
+This will start a local web server at <http://localhost:8000/> that automatically updates when you save changes to the markdown files.
 
 You can also use the VS Code task "Server: Serve Documentation" to launch the docs server.
 

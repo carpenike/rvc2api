@@ -1,6 +1,6 @@
 # React Deployment with Caddy
 
-This document describes the deployment setup for the rvc2api React frontend after the refactoring from a FastAPI-served template-based UI to a standalone React application.
+This document describes the deployment setup for the CoachIQ React frontend after the refactoring from a FastAPI-served template-based UI to a standalone React application.
 
 For information on developing the frontend, see [Frontend Development Guide](frontend-development.md).
 
@@ -31,7 +31,7 @@ The architecture consists of:
 
 The Caddy configuration is defined in the NixOS module at `modules/caddy.nix`. Key features:
 
-- Serves the React frontend from `/var/lib/rvc2api-web-ui/dist`
+- Serves the React frontend from `/var/lib/coachiq-web-ui/dist`
 - Proxies all `/api/*` requests to the FastAPI backend
 - Proxies all `/ws/*` WebSocket connections to the backend
 - Uses Cloudflare DNS verification for HTTPS certificates
@@ -40,6 +40,7 @@ The Caddy configuration is defined in the NixOS module at `modules/caddy.nix`. K
 ## Deployment Process
 
 1. Build the React frontend:
+
    ```
    cd frontend
    npm install
@@ -47,8 +48,9 @@ The Caddy configuration is defined in the NixOS module at `modules/caddy.nix`. K
    ```
 
 2. Copy the built files to the server:
+
    ```
-   rsync -avz dist/ nixpi:/var/lib/rvc2api-web-ui/dist/
+   rsync -avz dist/ nixpi:/var/lib/coachiq-web-ui/dist/
    ```
 
 ## Static Files for API Documentation
@@ -74,7 +76,8 @@ When deploying updates:
 4. Created a dedicated `static` directory in `src/core_daemon/` separate from web UI
 5. Removed frontend router imports from the FastAPI application
 
-3. Ensure the Caddy service is running:
+6. Ensure the Caddy service is running:
+
    ```
    systemctl status caddy
    ```
@@ -84,11 +87,13 @@ When deploying updates:
 During development:
 
 1. Run the FastAPI backend:
+
    ```
    poetry run python run_server.py
    ```
 
 2. Run the React dev server:
+
    ```
    cd frontend
    npm run dev

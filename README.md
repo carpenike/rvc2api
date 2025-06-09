@@ -24,12 +24,12 @@ This project uses the [VERSION](./VERSION) file as the single source of truth fo
 - **RV-C Decoder (`src/rvc_decoder/`):**
   - `decode.py`: Contains the logic for decoding RV-C messages based on PGNs and SPNs, using configuration files from `config/`.
   - `config/`: Contains `rvc.json` (RV-C specification details) and `coach_mapping.default.yml` (custom device name mappings).
-- **React Frontend (`frontend/`):
+- \*\*React Frontend (`frontend/`):
   - Modern React SPA built with Vite and Tailwind CSS
   - Communicates with the backend via REST API and WebSockets
   - See [Frontend Development Guide](docs/frontend-development.md) for details
 - **Console Client:**
-  - Command-line tool for interacting with the `rvc2api` daemon (planned)
+  - Command-line tool for interacting with the `CoachIQ` daemon (planned)
 
 ## Documentation
 
@@ -86,50 +86,51 @@ For detailed instructions on setting up development environments, see:
 
 For quick start:
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
 
-    ```bash
-    git clone https://github.com/carpenike/coachiq
-    cd coachiq
-    ```
+   ```bash
+   git clone https://github.com/carpenike/coachiq
+   cd coachiq
+   ```
 
-2.  **Install dependencies:**
+2. **Install dependencies:**
 
-    ```bash
-    # Backend
-    poetry install
+   ```bash
+   # Backend
+   poetry install
 
-    # Frontend
-    cd frontend && npm install
-    ```
+   # Frontend
+   cd frontend && npm install
+   ```
 
-3.  **Running the application:**
+3. **Running the application:**
 
-    - **Core Daemon:**
+   - **Core Daemon:**
 
-      ```bash
-      # Using the convenience script (recommended):
-      poetry run python run_server.py
+     ```bash
+     # Using the convenience script (recommended):
+     poetry run python run_server.py
 
-      # Direct module execution (for development):
-      poetry run python run_server.py
-      ```
+     # Direct module execution (for development):
+     poetry run python run_server.py
+     ```
 
-      The API server will typically start on `http://localhost:8000` (or as configured).
+     The API server will typically start on `http://localhost:8000` (or as configured).
 
-    - **Frontend Development Server:**
+   - **Frontend Development Server:**
 
-      ```bash
-      cd frontend && npm run dev
-      ```
+     ```bash
+     cd frontend && npm run dev
+     ```
 
-      The frontend dev server will be accessible at `http://localhost:5173/`.
+     The frontend dev server will be accessible at `http://localhost:5173/`.
 
-    - **Console Client:**
-      ```bash
-      # Console client not yet implemented - use the web frontend instead
-      # Future: poetry run coachiq-console --help
-      ```
+   - **Console Client:**
+
+     ```bash
+     # Console client not yet implemented - use the web frontend instead
+     # Future: poetry run coachiq-console --help
+     ```
 
 ## RV-C Documentation Search
 
@@ -174,6 +175,7 @@ poetry run python dev_tools/enhanced_document_processor.py \
 - Always use `poetry run python ...` to ensure the correct environment is used.
 
 **Notes:**
+
 - Embeddings are only created and added to the index when `--add-to-index <path>` is specified. Chunking alone does not generate embeddings.
 - The argument is `--chunking`, not `--chunking-method`.
 - The argument is `--add-to-index <path>`, not just a flag or `true/false`.
@@ -183,14 +185,19 @@ For more details, see [docs/pdf-processing-guide.md](docs/pdf-processing-guide.m
 ## Development
 
 - **Activate the virtual environment:**
+
   ```bash
   poetry shell
   ```
+
 - **Running tests:**
+
   ```bash
   poetry run pytest
   ```
+
 - **Linting/Formatting:** (See [Code Quality Tools](docs/code-quality-tools.md) for details)
+
   ```bash
   poetry run black .  # Formatting
   poetry run ruff check .  # Linting (replaces Flake8)

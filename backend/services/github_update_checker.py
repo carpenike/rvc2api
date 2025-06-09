@@ -20,7 +20,7 @@ from backend.services.feature_base import Feature
 logger = logging.getLogger(__name__)
 
 DEFAULT_GITHUB_OWNER = "carpenike"
-DEFAULT_GITHUB_REPO = "rvc2api"
+DEFAULT_GITHUB_REPO = "coachiq"
 CHECK_INTERVAL = 3600  # seconds (1 hour)
 
 

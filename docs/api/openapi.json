@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "RVC2API Backend",
+    "title": "CoachIQ Backend",
     "description": "Modernized backend API for RV-C CANbus monitoring and control",
     "version": "2.0.0"
   },

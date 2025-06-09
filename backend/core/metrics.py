@@ -36,7 +36,11 @@ HTTP_LATENCY: Histogram | None = None
 
 
 def _safe_create_metric(
-    metric_type: type[MetricType], name: str, description: str, labelnames=None, registry=REGISTRY
+    metric_type: type[MetricType],
+    name: str,
+    description: str,
+    labelnames=None,
+    registry=REGISTRY,
 ) -> MetricType | None:
     """
     Safely create a Prometheus metric, checking for existing registration.
@@ -98,32 +102,32 @@ def initialize_backend_metrics():
 
         CAN_TX_QUEUE_LENGTH = _safe_create_metric(
             Gauge,
-            "rvc2api_can_tx_queue_length",
+            "coachiq_can_tx_queue_length",
             "Number of pending messages in the CAN transmit queue",
         )
 
         CAN_TX_ENQUEUE_TOTAL = _safe_create_metric(
             Counter,
-            "rvc2api_can_tx_enqueue_total",
+            "coachiq_can_tx_enqueue_total",
             "Total number of messages enqueued to the CAN transmit queue",
         )
 
         CAN_TX_ENQUEUE_LATENCY = _safe_create_metric(
             Histogram,
-            "rvc2api_can_tx_enqueue_latency_seconds",
+            "coachiq_can_tx_enqueue_latency_seconds",
             "Latency for enqueueing CAN control messages",
         )
 
         HTTP_REQUESTS = _safe_create_metric(
             Counter,
-            "rvc2api_http_requests_total",
+            "coachiq_http_requests_total",
             "Total HTTP requests processed",
             labelnames=["method", "endpoint", "status_code"],
         )
 
         HTTP_LATENCY = _safe_create_metric(
             Histogram,
-            "rvc2api_http_request_duration_seconds",
+            "coachiq_http_request_duration_seconds",
             "HTTP request latency in seconds",
             labelnames=["method", "endpoint"],
         )

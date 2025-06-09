@@ -48,7 +48,11 @@ TREND_ANALYSIS_R_SQUARED: Gauge | None = None
 
 
 def _safe_create_metric(
-    metric_type: type[MetricType], name: str, description: str, labelnames=None, registry=REGISTRY
+    metric_type: type[MetricType],
+    name: str,
+    description: str,
+    labelnames=None,
+    registry=REGISTRY,
 ) -> MetricType | None:
     """
     Safely create a Prometheus metric, checking for existing registration.
@@ -121,44 +125,50 @@ def initialize_performance_metrics():
         # Protocol-specific message metrics
         PROTOCOL_MESSAGE_RATE = _safe_create_metric(
             Counter,
-            "rvc2api_protocol_messages_total",
+            "coachiq_protocol_messages_total",
             "Total messages processed per protocol",
             labelnames=["protocol", "direction", "status"],
         )
 
         PROTOCOL_MESSAGE_LATENCY = _safe_create_metric(
             Histogram,
-            "rvc2api_protocol_message_latency_seconds",
+            "coachiq_protocol_message_latency_seconds",
             "Message processing latency per protocol",
             labelnames=["protocol", "operation"],
         )
 
         PROTOCOL_MESSAGE_ERRORS = _safe_create_metric(
             Counter,
-            "rvc2api_protocol_errors_total",
+            "coachiq_protocol_errors_total",
             "Total errors per protocol",
             labelnames=["protocol", "error_type"],
         )
 
         # System resource utilization metrics
         RESOURCE_CPU_USAGE = _safe_create_metric(
-            Gauge, "rvc2api_cpu_usage_percent", "CPU usage percentage", labelnames=["core"]
+            Gauge,
+            "coachiq_cpu_usage_percent",
+            "CPU usage percentage",
+            labelnames=["core"],
         )
 
         RESOURCE_MEMORY_USAGE = _safe_create_metric(
-            Gauge, "rvc2api_memory_usage_bytes", "Memory usage in bytes", labelnames=["type"]
+            Gauge,
+            "coachiq_memory_usage_bytes",
+            "Memory usage in bytes",
+            labelnames=["type"],
         )
 
         RESOURCE_DISK_USAGE = _safe_create_metric(
             Gauge,
-            "rvc2api_disk_usage_bytes",
+            "coachiq_disk_usage_bytes",
             "Disk usage in bytes",
             labelnames=["mount_point", "type"],
         )
 
         RESOURCE_NETWORK_USAGE = _safe_create_metric(
             Gauge,
-            "rvc2api_network_usage_bytes_total",
+            "coachiq_network_usage_bytes_total",
             "Network usage in bytes",
             labelnames=["interface", "direction"],
         )
@@ -166,21 +176,21 @@ def initialize_performance_metrics():
         # CAN interface specific metrics
         CAN_INTERFACE_UTILIZATION = _safe_create_metric(
             Gauge,
-            "rvc2api_can_interface_utilization_percent",
+            "coachiq_can_interface_utilization_percent",
             "CAN interface utilization percentage",
             labelnames=["interface", "protocol"],
         )
 
         CAN_INTERFACE_ERROR_RATE = _safe_create_metric(
             Counter,
-            "rvc2api_can_interface_errors_total",
+            "coachiq_can_interface_errors_total",
             "CAN interface errors",
             labelnames=["interface", "error_type"],
         )
 
         CAN_INTERFACE_QUEUE_DEPTH = _safe_create_metric(
             Gauge,
-            "rvc2api_can_interface_queue_depth",
+            "coachiq_can_interface_queue_depth",
             "CAN interface queue depth",
             labelnames=["interface", "direction"],
         )
@@ -188,21 +198,21 @@ def initialize_performance_metrics():
         # Performance analytics metrics
         PERFORMANCE_BASELINE_DEVIATION = _safe_create_metric(
             Gauge,
-            "rvc2api_performance_baseline_deviation",
+            "coachiq_performance_baseline_deviation",
             "Deviation from performance baseline",
             labelnames=["metric_type", "protocol", "severity"],
         )
 
         PERFORMANCE_ANOMALY_DETECTED = _safe_create_metric(
             Counter,
-            "rvc2api_performance_anomalies_total",
+            "coachiq_performance_anomalies_total",
             "Performance anomalies detected",
             labelnames=["anomaly_type", "protocol", "severity"],
         )
 
         PERFORMANCE_OPTIMIZATION_APPLIED = _safe_create_metric(
             Counter,
-            "rvc2api_performance_optimizations_total",
+            "coachiq_performance_optimizations_total",
             "Performance optimizations applied",
             labelnames=["optimization_type", "protocol"],
         )
@@ -210,14 +220,14 @@ def initialize_performance_metrics():
         # Trend analysis metrics
         TREND_ANALYSIS_SLOPE = _safe_create_metric(
             Gauge,
-            "rvc2api_trend_analysis_slope",
+            "coachiq_trend_analysis_slope",
             "Trend analysis slope coefficient",
             labelnames=["metric_type", "protocol", "time_window"],
         )
 
         TREND_ANALYSIS_R_SQUARED = _safe_create_metric(
             Gauge,
-            "rvc2api_trend_analysis_r_squared",
+            "coachiq_trend_analysis_r_squared",
             "Trend analysis R-squared value",
             labelnames=["metric_type", "protocol", "time_window"],
         )

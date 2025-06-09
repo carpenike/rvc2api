@@ -668,7 +668,7 @@ async def get_can_status(
                 interfaces_data[iface] = CANInterfaceStats(
                     name=iface,
                     state="Listening",
-                    notes="Interface in use by rvc2api, not found by pyroute2",
+                    notes="Interface in use by coachiq, not found by pyroute2",
                 )
 
         # Optionally, also report pyroute2 CAN interfaces not in buses (for diagnostics)
@@ -677,7 +677,7 @@ async def get_can_status(
                 interfaces_data[iface] = pyroute2_stats[iface]
                 interfaces_data[iface].notes = (
                     interfaces_data[iface].notes or ""
-                ) + " (not in use by rvc2api)"
+                ) + " (not in use by coachiq)"
 
         if not interfaces_data and can_links:
             logger.warning(

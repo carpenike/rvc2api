@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to export the OpenAPI schema from the rvc2api FastAPI application.
+Script to export the OpenAPI schema from the CoachIQ FastAPI application.
 
 This script initializes the FastAPI app and exports its OpenAPI schema to a file
 in both JSON and YAML formats. The exported schema can be:

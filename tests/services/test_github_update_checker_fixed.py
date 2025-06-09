@@ -70,7 +70,7 @@ class TestUtilityFunctions:
         """Test getting GitHub repo with default values."""
         owner, repo = get_github_repo()
         assert owner == "carpenike"
-        assert repo == "rvc2api"
+        assert repo == "coachiq"
 
     def test_build_github_api_url(self):
         """Test building GitHub API URL."""

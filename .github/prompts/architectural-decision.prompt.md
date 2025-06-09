@@ -1,12 +1,12 @@
 ---
-mode: 'agent'
-description: 'Template for documenting and guiding architectural decisions'
-tools: ['context7']
+mode: "agent"
+description: "Template for documenting and guiding architectural decisions"
+tools: ["context7"]
 ---
 
 # Architectural Decision Record (ADR) Template
 
-This template guides you in making and documenting a single architectural decision for the rvc2api project. Each ADR should be clear, focused, and traceable, providing enough context and rationale for future reference and team alignment. Save the completed ADR to `/docs/specs/adr-<decision-topic>.md` (e.g., `adr-event-driven-messaging.md`).
+This template guides you in making and documenting a single architectural decision for the CoachIQ project. Each ADR should be clear, focused, and traceable, providing enough context and rationale for future reference and team alignment. Save the completed ADR to `/docs/specs/adr-<decision-topic>.md` (e.g., `adr-event-driven-messaging.md`).
 
 ---
 

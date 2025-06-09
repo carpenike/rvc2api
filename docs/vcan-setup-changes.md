@@ -1,6 +1,6 @@
 # vCAN Setup for DevContainer Changes
 
-This document summarizes the changes made to improve vCAN setup in the rvc2api DevContainer environment.
+This document summarizes the changes made to improve vCAN setup in the CoachIQ DevContainer environment.
 
 ## Changes Made
 

@@ -1,12 +1,12 @@
-# VS Code Extensions for rvc2api Development
+# VS Code Extensions for CoachIQ Development
 
-This document provides details about the recommended VS Code extensions for developing the rvc2api project. These extensions are tailored to support the project's technology stack and improve the development experience.
+This document provides details about the recommended VS Code extensions for developing the CoachIQ project. These extensions are tailored to support the project's technology stack and improve the development experience.
 
 ## Installing the Extensions
 
 To install the recommended extensions:
 
-1. Open VS Code with the rvc2api project
+1. Open VS Code with the CoachIQ project
 2. Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
 3. Type and select "Extensions: Show Recommended Extensions"
 4. Install the extensions from the recommendations list

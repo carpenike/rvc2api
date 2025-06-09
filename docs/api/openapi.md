@@ -1,6 +1,6 @@
 # OpenAPI Specification
 
-The rvc2api service provides a comprehensive OpenAPI specification that documents all available API endpoints, request parameters, response formats, and data models.
+The CoachIQ service provides a comprehensive OpenAPI specification that documents all available API endpoints, request parameters, response formats, and data models.
 
 ## What is OpenAPI?
 
@@ -70,7 +70,7 @@ This allows you to explore and test the API without writing any code.
 The OpenAPI schema is automatically generated from the API code. To manually update the exported files, run:
 
 ```bash
-cd /Users/ryan/src/rvc2api
+cd ~/src/coachiq
 poetry run python scripts/export_openapi.py
 ```
 

@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-This directory contains modular GitHub Copilot instructions for the `rvc2api` project. Each file includes YAML frontmatter with an `applyTo` pattern indicating which files the instructions apply to.
+This directory contains modular GitHub Copilot instructions for the `CoachIQ` project. Each file includes YAML frontmatter with an `applyTo` pattern indicating which files the instructions apply to.
 
 ## Available Instructions
 
