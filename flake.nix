@@ -108,6 +108,10 @@
             pythonPackages.passlib
             pythonPackages.python-multipart
             pythonPackages.email-validator
+            # MFA and rate limiting dependencies
+            pythonPackages.pyotp
+            pythonPackages.qrcode
+            pythonPackages.slowapi
             # Advanced analytics and diagnostics dependencies
             pythonPackages.numpy
             pythonPackages.scipy
@@ -172,6 +176,10 @@
             pythonPackages.passlib
             pythonPackages.python-multipart
             pythonPackages.email-validator
+            # MFA and rate limiting dependencies
+            pythonPackages.pyotp
+            pythonPackages.qrcode
+            pythonPackages.slowapi
             pythonPackages.pytest
             pythonPackages.mypy
             pythonPackages.ruff
@@ -958,6 +966,12 @@ EOF
                 default = false;
                 description = "Enable performance analytics with telemetry collection and optimization";
               };
+
+              enableDeviceDiscovery = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable device discovery and active polling";
+              };
             };
 
             # Maintenance settings
@@ -1606,6 +1620,87 @@ EOF
               };
             };
 
+            # Multi-Factor Authentication system settings
+            multiFactorAuthentication = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Multi-Factor Authentication system";
+              };
+
+              enableTotp = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable TOTP (Time-based One-Time Password) authentication";
+              };
+
+              enableBackupCodes = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable backup codes for account recovery";
+              };
+
+              enableRecoveryCodes = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable recovery codes for account recovery";
+              };
+
+              totpIssuer = lib.mkOption {
+                type = lib.types.str;
+                default = "CoachIQ";
+                description = "TOTP issuer name displayed in authenticator apps";
+              };
+
+              totpDigits = lib.mkOption {
+                type = lib.types.int;
+                default = 6;
+                description = "Number of digits in TOTP codes";
+              };
+
+              totpWindow = lib.mkOption {
+                type = lib.types.int;
+                default = 1;
+                description = "TOTP time window tolerance";
+              };
+
+              backupCodesCount = lib.mkOption {
+                type = lib.types.int;
+                default = 10;
+                description = "Number of backup codes to generate";
+              };
+
+              backupCodeLength = lib.mkOption {
+                type = lib.types.int;
+                default = 8;
+                description = "Length of each backup code";
+              };
+
+              requireMfaForAdmin = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Require MFA for administrator accounts";
+              };
+
+              allowMfaBypass = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Allow MFA bypass during emergency situations";
+              };
+
+              mfaSetupGracePeriodHours = lib.mkOption {
+                type = lib.types.int;
+                default = 24;
+                description = "Grace period in hours for MFA setup";
+              };
+
+              backupCodeRegenerationThreshold = lib.mkOption {
+                type = lib.types.int;
+                default = 3;
+                description = "Minimum backup codes remaining before regeneration warning";
+              };
+            };
+
             # Legacy compatibility options (for existing deployments)
             pushover = {
               enable = lib.mkOption {
@@ -1828,6 +1923,7 @@ EOF
               COACHIQ_MULTI_NETWORK_CAN__ENABLED = lib.mkIf config.coachiq.settings.features.enableMultiNetworkCAN "true";
               COACHIQ_ADVANCED_DIAGNOSTICS__ENABLED = lib.mkIf config.coachiq.settings.features.enableAdvancedDiagnostics "true";
               COACHIQ_PERFORMANCE_ANALYTICS__ENABLED = lib.mkIf config.coachiq.settings.features.enablePerformanceAnalytics "true";
+              COACHIQ_DEVICE_DISCOVERY__ENABLED = lib.mkIf config.coachiq.settings.features.enableDeviceDiscovery "true";
 
               # RV-C protocol settings - only if different from defaults
               COACHIQ_RVC__ENABLE_ENCODER = lib.mkIf (!config.coachiq.settings.rvc.enableEncoder) "false";
@@ -1933,6 +2029,21 @@ EOF
               COACHIQ_AUTH__REQUIRE_SECURE_COOKIES = lib.mkIf (config.coachiq.settings.authentication.enabled && !config.coachiq.settings.authentication.requireSecureCookies) "false";
               COACHIQ_AUTH__RATE_LIMIT_AUTH_ATTEMPTS = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.rateLimitAuthAttempts != 5) (toString config.coachiq.settings.authentication.rateLimitAuthAttempts);
               COACHIQ_AUTH__RATE_LIMIT_WINDOW_MINUTES = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.rateLimitWindowMinutes != 15) (toString config.coachiq.settings.authentication.rateLimitWindowMinutes);
+
+              # Multi-Factor Authentication settings - only if enabled
+              COACHIQ_MFA__ENABLED = lib.mkIf config.coachiq.settings.multiFactorAuthentication.enabled "true";
+              COACHIQ_MFA__ENABLE_TOTP = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && !config.coachiq.settings.multiFactorAuthentication.enableTotp) "false";
+              COACHIQ_MFA__ENABLE_BACKUP_CODES = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && !config.coachiq.settings.multiFactorAuthentication.enableBackupCodes) "false";
+              COACHIQ_MFA__ENABLE_RECOVERY_CODES = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && !config.coachiq.settings.multiFactorAuthentication.enableRecoveryCodes) "false";
+              COACHIQ_MFA__TOTP_ISSUER = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.totpIssuer != "CoachIQ") config.coachiq.settings.multiFactorAuthentication.totpIssuer;
+              COACHIQ_MFA__TOTP_DIGITS = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.totpDigits != 6) (toString config.coachiq.settings.multiFactorAuthentication.totpDigits);
+              COACHIQ_MFA__TOTP_WINDOW = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.totpWindow != 1) (toString config.coachiq.settings.multiFactorAuthentication.totpWindow);
+              COACHIQ_MFA__BACKUP_CODES_COUNT = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.backupCodesCount != 10) (toString config.coachiq.settings.multiFactorAuthentication.backupCodesCount);
+              COACHIQ_MFA__BACKUP_CODE_LENGTH = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.backupCodeLength != 8) (toString config.coachiq.settings.multiFactorAuthentication.backupCodeLength);
+              COACHIQ_MFA__REQUIRE_MFA_FOR_ADMIN = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.requireMfaForAdmin) "true";
+              COACHIQ_MFA__ALLOW_MFA_BYPASS = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && !config.coachiq.settings.multiFactorAuthentication.allowMfaBypass) "false";
+              COACHIQ_MFA__MFA_SETUP_GRACE_PERIOD_HOURS = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.mfaSetupGracePeriodHours != 24) (toString config.coachiq.settings.multiFactorAuthentication.mfaSetupGracePeriodHours);
+              COACHIQ_MFA__BACKUP_CODE_REGENERATION_THRESHOLD = lib.mkIf (config.coachiq.settings.multiFactorAuthentication.enabled && config.coachiq.settings.multiFactorAuthentication.backupCodeRegenerationThreshold != 3) (toString config.coachiq.settings.multiFactorAuthentication.backupCodeRegenerationThreshold);
 
               # Optional paths - only if provided
               COACHIQ_RVC_SPEC_PATH = lib.mkIf (config.coachiq.settings.rvcSpecPath != null) config.coachiq.settings.rvcSpecPath;

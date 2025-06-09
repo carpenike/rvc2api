@@ -27,11 +27,7 @@ export default function ProfilePage() {
     <AppLayout pageTitle="Profile">
       <div className="flex-1 space-y-6 p-4 pt-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-            <p className="text-muted-foreground">Manage your account settings and preferences</p>
-          </div>
+        <div className="flex items-center justify-end">
           <Button
             variant="outline"
             onClick={() => setIsEditing(!isEditing)}
