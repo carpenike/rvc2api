@@ -57,7 +57,7 @@ can_interface_mapping:
 can_feature:
   enabled: true
   core: true
-  depends_on: [can_interface]
+  depends_on: [can_interface, app_state]
   description: "CANBus feature for device communication"
   friendly_name: "CAN Bus Communication"
 

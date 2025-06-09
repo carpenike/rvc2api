@@ -45,7 +45,7 @@ class CANBusFeature(Feature):
             dependencies: Feature dependencies (default: ["app_state"])
             friendly_name: Human-readable display name for the feature
         """
-        # Ensure we depend on app_state
+        # Ensure we depend on app_state (required for CAN service initialization)
         deps = dependencies or []
         if "app_state" not in deps:
             deps.append("app_state")
@@ -194,8 +194,17 @@ class CANBusFeature(Feature):
                     f"bustype={bustype}, bitrate={bitrate}"
                 )
 
-                # Initialize CAN service with full startup (interfaces + writer)
-                can_service = CANService()
+                # Get the app_state dependency from the feature manager
+                from backend.services.feature_manager import get_feature_manager
+
+                feature_manager = get_feature_manager()
+                app_state = feature_manager.get_feature("app_state")
+
+                if not app_state:
+                    raise RuntimeError("AppState feature is required but not found")
+
+                # Initialize CAN service with app_state and full startup (interfaces + writer)
+                can_service = CANService(app_state)
                 startup_result = await can_service.startup()
 
                 logger.info(

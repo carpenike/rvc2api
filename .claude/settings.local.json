@@ -54,7 +54,8 @@
       "mcp__context7__get-library-docs",
       "Bash(npx tsc:*)",
       "Bash(true)",
-      "Bash(poetry add:*)"
+      "Bash(poetry add:*)",
+      "Bash(pkill:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

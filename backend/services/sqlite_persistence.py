@@ -33,9 +33,9 @@ class SQLitePersistenceService(PersistenceServiceInterface):
         """
         self.database_path = database_path
         self.engine: DatabaseEngine | None = None
-        self.config_repo: SQLiteConfigRepository | None = None
-        self.dashboard_repo: SQLiteDashboardRepository | None = None
-        self.unmapped_repo: SQLiteUnmappedRepository | None = None
+        self._config_repo: SQLiteConfigRepository | None = None
+        self._dashboard_repo: SQLiteDashboardRepository | None = None
+        self._unmapped_repo: SQLiteUnmappedRepository | None = None
 
     async def initialize(self) -> None:
         """Initialize the persistence service."""
@@ -49,9 +49,9 @@ class SQLitePersistenceService(PersistenceServiceInterface):
             await self.engine.initialize()
 
             # Initialize repositories
-            self.config_repo = SQLiteConfigRepository(self.engine)
-            self.dashboard_repo = SQLiteDashboardRepository(self.engine)
-            self.unmapped_repo = SQLiteUnmappedRepository(self.engine)
+            self._config_repo = SQLiteConfigRepository(self.engine)
+            self._dashboard_repo = SQLiteDashboardRepository(self.engine)
+            self._unmapped_repo = SQLiteUnmappedRepository(self.engine)
 
             logger.info(
                 f"SQLite persistence service initialized with database: {self.database_path}"
@@ -73,6 +73,32 @@ class SQLitePersistenceService(PersistenceServiceInterface):
             await self.engine.close()
             self.engine = None
         logger.info("SQLite persistence service closed")
+
+    async def shutdown(self) -> None:
+        """Shutdown the persistence service."""
+        await self.close()
+        logger.info("SQLite persistence service shutdown")
+
+    @property
+    def config_repo(self) -> ConfigRepositoryInterface:
+        """Get the configuration repository."""
+        if self._config_repo is None:
+            raise RuntimeError("Persistence service not initialized")
+        return self._config_repo
+
+    @property
+    def dashboard_repo(self) -> DashboardRepositoryInterface:
+        """Get the dashboard repository."""
+        if self._dashboard_repo is None:
+            raise RuntimeError("Persistence service not initialized")
+        return self._dashboard_repo
+
+    @property
+    def unmapped_repo(self) -> UnmappedRepositoryInterface:
+        """Get the unmapped repository."""
+        if self._unmapped_repo is None:
+            raise RuntimeError("Persistence service not initialized")
+        return self._unmapped_repo
 
 
 class SQLiteConfigRepository(ConfigRepositoryInterface):

@@ -24,9 +24,9 @@ class InMemoryPersistenceService(PersistenceServiceInterface):
 
     def __init__(self):
         """Initialize the in-memory persistence service."""
-        self.config_repo = InMemoryConfigRepository()
-        self.dashboard_repo = InMemoryDashboardRepository()
-        self.unmapped_repo = InMemoryUnmappedRepository()
+        self._config_repo = InMemoryConfigRepository()
+        self._dashboard_repo = InMemoryDashboardRepository()
+        self._unmapped_repo = InMemoryUnmappedRepository()
 
     async def initialize(self) -> None:
         """Initialize the persistence service."""
@@ -39,6 +39,26 @@ class InMemoryPersistenceService(PersistenceServiceInterface):
     async def close(self) -> None:
         """Close the persistence service."""
         logger.info("In-memory persistence service closed")
+
+    async def shutdown(self) -> None:
+        """Shutdown the persistence service."""
+        await self.close()
+        logger.info("In-memory persistence service shutdown")
+
+    @property
+    def config_repo(self) -> ConfigRepositoryInterface:
+        """Get the configuration repository."""
+        return self._config_repo
+
+    @property
+    def dashboard_repo(self) -> DashboardRepositoryInterface:
+        """Get the dashboard repository."""
+        return self._dashboard_repo
+
+    @property
+    def unmapped_repo(self) -> UnmappedRepositoryInterface:
+        """Get the unmapped repository."""
+        return self._unmapped_repo
 
 
 class InMemoryConfigRepository(ConfigRepositoryInterface):
@@ -100,7 +120,7 @@ class InMemoryUnmappedRepository(UnmappedRepositoryInterface):
 
     def __init__(self):
         """Initialize the in-memory unmapped repository."""
-        self._unmapped_pgns: dict[int, UnmappedEntryModel] = {}
+        self._unmapped_pgns: dict[str, UnmappedEntryModel] = {}
 
     async def get_unmapped_pgns(self) -> list[UnmappedEntryModel]:
         """Get all unmapped PGNs."""
@@ -108,11 +128,12 @@ class InMemoryUnmappedRepository(UnmappedRepositoryInterface):
 
     async def save_unmapped_pgn(self, pgn: UnmappedEntryModel) -> None:
         """Save an unmapped PGN."""
-        self._unmapped_pgns[pgn.pgn] = pgn
+        self._unmapped_pgns[pgn.pgn_hex] = pgn
 
     async def delete_unmapped_pgn(self, pgn: int) -> bool:
         """Delete an unmapped PGN."""
-        if pgn in self._unmapped_pgns:
-            del self._unmapped_pgns[pgn]
+        pgn_hex = hex(pgn)
+        if pgn_hex in self._unmapped_pgns:
+            del self._unmapped_pgns[pgn_hex]
             return True
         return False
