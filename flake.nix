@@ -103,7 +103,6 @@
             pythonPackages.alembic
             # Notification system dependencies
             pythonPackages.jinja2
-            pythonPackages.apprise
             # Authentication system dependencies
             pythonPackages.pyjwt
             pythonPackages.passlib
@@ -116,15 +115,16 @@
             pythonPackages.pandas
             # Security and protocol dependencies
             pythonPackages.cryptography
-            # CAN protocol handling
-            pythonPackages.cantools
             # Network analysis for fault isolation
             pythonPackages.networkx
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
             pythonPackages.uvloop   # Uvicorn standard extra (conditional)
-          ] ++ [
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             pythonPackages.pyroute2
+            # Notification system dependencies (Linux only due to platform constraints)
+            pythonPackages.apprise
+            # CAN protocol handling (Linux only due to platform constraints)
+            pythonPackages.cantools
             # CAN system utilities for debugging and management
             pkgs.can-utils
           ];
@@ -168,7 +168,6 @@
             pythonPackages.prometheus_client
             pythonPackages.coloredlogs
             pythonPackages.jinja2
-            pythonPackages.apprise
             pythonPackages.pyjwt
             pythonPackages.passlib
             pythonPackages.python-multipart
@@ -193,8 +192,6 @@
             pythonPackages.pandas
             # Security and protocol dependencies
             pythonPackages.cryptography
-            # CAN protocol handling
-            pythonPackages.cantools
             # Network analysis for fault isolation
             pythonPackages.networkx
 
@@ -211,6 +208,10 @@
             pkgs.iproute2
             pkgs.stdenv.cc.cc.lib
             pkgs.zlib
+            # Notification system dependencies (Linux only due to platform constraints)
+            pythonPackages.apprise
+            # CAN protocol handling (Linux only due to platform constraints)
+            pythonPackages.cantools
             # CAN system utilities for debugging and management
             pkgs.can-utils
           ];
@@ -286,7 +287,6 @@ EOF
             pythonPackages.httptools
             pythonPackages.python-dotenv
             pythonPackages.watchfiles
-            pythonPackages.apprise
             pythonPackages.pyjwt
             pythonPackages.passlib
             pythonPackages.python-multipart
@@ -314,6 +314,10 @@ EOF
             pkgs.can-utils
             pythonPackages.pyroute2
             pkgs.iproute2
+            # Notification system dependencies (Linux only due to platform constraints)
+            pythonPackages.apprise
+            # CAN protocol handling (Linux only due to platform constraints)
+            pythonPackages.cantools
           ];
           shellHook = ''
             export PYTHONPATH=$PWD:$PYTHONPATH
