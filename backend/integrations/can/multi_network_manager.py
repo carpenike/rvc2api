@@ -445,8 +445,7 @@ class MultiNetworkManager:
             network.health.error_count > 100 and network.health.status == NetworkStatus.HEALTHY
         ):  # Threshold for degraded status
             logger.warning(
-                f"Network '{network.network_id}' has high error count: "
-                f"{network.health.error_count}"
+                f"Network '{network.network_id}' has high error count: {network.health.error_count}"
             )
             network.health.status = NetworkStatus.DEGRADED
 

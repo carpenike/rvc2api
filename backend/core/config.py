@@ -600,6 +600,172 @@ class PersistenceSettings(BaseSettings):
         return created
 
 
+class SMTPChannelConfig(BaseSettings):
+    """SMTP channel configuration for notification system."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_NOTIFICATIONS__SMTP__", case_sensitive=False
+    )
+
+    enabled: bool = Field(default=False, description="Enable SMTP notifications")
+    host: str = Field(default="localhost", description="SMTP server hostname")
+    port: int = Field(default=587, description="SMTP server port", ge=1, le=65535)
+    username: str = Field(default="", description="SMTP authentication username")
+    password: SecretStr = Field(
+        default_factory=lambda: SecretStr(""), description="SMTP authentication password"
+    )
+    from_email: str = Field(default="", description="From email address")
+    from_name: str = Field(default="CoachIQ", description="From display name")
+    use_tls: bool = Field(default=True, description="Use TLS/STARTTLS encryption")
+    use_ssl: bool = Field(default=False, description="Use SSL encryption")
+    timeout: int = Field(default=30, description="Connection timeout in seconds", ge=1, le=300)
+
+    def to_apprise_url(self, to_email: str) -> str:
+        """Generate Apprise SMTP URL for specific recipient."""
+        protocol = "mailtos" if self.use_tls else "mailtos" if self.use_ssl else "mailto"
+        auth_part = f"{self.username}:{self.password.get_secret_value()}" if self.username else ""
+        host_part = f"{self.host}:{self.port}"
+
+        # Build query parameters
+        params = []
+        if self.from_email:
+            params.append(f"from={self.from_email}")
+        if self.from_name != "CoachIQ":
+            params.append(f"name={self.from_name}")
+        params.append(f"to={to_email}")
+
+        query_string = "&".join(params)
+
+        if auth_part:
+            return f"{protocol}://{auth_part}@{host_part}?{query_string}"
+        else:
+            return f"{protocol}://{host_part}?{query_string}"
+
+
+class SlackChannelConfig(BaseSettings):
+    """Slack channel configuration for notification system."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_NOTIFICATIONS__SLACK__", case_sensitive=False
+    )
+
+    enabled: bool = Field(default=False, description="Enable Slack notifications")
+    webhook_url: str = Field(default="", description="Slack webhook URL")
+
+    def to_apprise_url(self) -> str:
+        """Generate Apprise Slack URL."""
+        if not self.webhook_url.startswith("https://hooks.slack.com/services/"):
+            return self.webhook_url
+        return self.webhook_url.replace("https://hooks.slack.com/services/", "slack://")
+
+
+class DiscordChannelConfig(BaseSettings):
+    """Discord channel configuration for notification system."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_NOTIFICATIONS__DISCORD__", case_sensitive=False
+    )
+
+    enabled: bool = Field(default=False, description="Enable Discord notifications")
+    webhook_url: str = Field(default="", description="Discord webhook URL")
+
+    def to_apprise_url(self) -> str:
+        """Generate Apprise Discord URL."""
+        if not self.webhook_url.startswith("https://discord.com/api/webhooks/"):
+            return self.webhook_url
+        return self.webhook_url.replace("https://discord.com/api/webhooks/", "discord://")
+
+
+class NotificationSettings(BaseSettings):
+    """Unified notification system configuration using Apprise."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_NOTIFICATIONS__", case_sensitive=False)
+
+    enabled: bool = Field(default=False, description="Enable notification system")
+    default_title: str = Field(
+        default="CoachIQ Notification", description="Default notification title"
+    )
+    template_path: str = Field(
+        default="templates/notifications/", description="Path to notification templates"
+    )
+    log_notifications: bool = Field(
+        default=True, description="Log notification attempts and results"
+    )
+
+    # Channel configurations
+    smtp: SMTPChannelConfig = Field(default_factory=SMTPChannelConfig)
+    slack: SlackChannelConfig = Field(default_factory=SlackChannelConfig)
+    discord: DiscordChannelConfig = Field(default_factory=DiscordChannelConfig)
+
+    def get_enabled_channels(self) -> list[tuple[str, str]]:
+        """Get list of enabled notification channels with their Apprise URLs."""
+        channels = []
+
+        if self.smtp.enabled and self.smtp.host and self.smtp.from_email:
+            # SMTP requires dynamic URL generation per recipient
+            channels.append(("smtp", "dynamic"))
+
+        if self.slack.enabled and self.slack.webhook_url:
+            channels.append(("slack", self.slack.to_apprise_url()))
+
+        if self.discord.enabled and self.discord.webhook_url:
+            channels.append(("discord", self.discord.to_apprise_url()))
+
+        return channels
+
+
+class AuthenticationSettings(BaseSettings):
+    """Authentication system configuration."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_AUTH__", case_sensitive=False)
+
+    # Core authentication settings
+    enabled: bool = Field(default=False, description="Enable authentication system")
+    secret_key: str = Field(default="", description="Secret key for JWT tokens")
+    jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
+    jwt_expire_minutes: int = Field(default=30, description="JWT token expiration in minutes")
+
+    # Base URL for magic links
+    base_url: str = Field(default="", description="Base URL for magic link generation")
+
+    # Single-user mode settings
+    admin_username: str = Field(default="", description="Admin username for single-user mode")
+    admin_password: str = Field(default="", description="Admin password for single-user mode")
+
+    # Multi-user mode settings
+    admin_email: str = Field(default="", description="Admin email for multi-user mode")
+    enable_magic_links: bool = Field(default=True, description="Enable magic link authentication")
+    enable_oauth: bool = Field(default=False, description="Enable OAuth authentication")
+
+    # OAuth provider settings
+    oauth_github_client_id: str = Field(default="", description="GitHub OAuth client ID")
+    oauth_github_client_secret: str = Field(default="", description="GitHub OAuth client secret")
+    oauth_google_client_id: str = Field(default="", description="Google OAuth client ID")
+    oauth_google_client_secret: str = Field(default="", description="Google OAuth client secret")
+    oauth_microsoft_client_id: str = Field(default="", description="Microsoft OAuth client ID")
+    oauth_microsoft_client_secret: str = Field(
+        default="", description="Microsoft OAuth client secret"
+    )
+
+    # Magic link settings
+    magic_link_expire_minutes: int = Field(
+        default=15, description="Magic link expiration in minutes"
+    )
+
+    # Session settings
+    session_expire_hours: int = Field(default=24, description="Session expiration in hours")
+    max_sessions_per_user: int = Field(default=5, description="Maximum sessions per user")
+
+    # Security settings
+    require_secure_cookies: bool = Field(
+        default=True, description="Require secure cookies in production"
+    )
+    rate_limit_auth_attempts: int = Field(
+        default=5, description="Rate limit for authentication attempts"
+    )
+    rate_limit_window_minutes: int = Field(default=15, description="Rate limit window in minutes")
+
+
 class FeaturesSettings(BaseSettings):
     """Feature flags configuration."""
 
@@ -1200,6 +1366,8 @@ class Settings(BaseSettings):
     multi_network: MultiNetworkSettings = Field(default_factory=MultiNetworkSettings)
     persistence: PersistenceSettings = Field(default_factory=PersistenceSettings)
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
+    notifications: NotificationSettings = Field(default_factory=NotificationSettings)
+    auth: AuthenticationSettings = Field(default_factory=AuthenticationSettings)
 
     def __init__(self, **data):
         # Import here to avoid circular dependency and initialize advanced_diagnostics field
@@ -1401,6 +1569,11 @@ def get_multi_network_settings() -> MultiNetworkSettings:
 def get_firefly_settings() -> FireflySettings:
     """Get Firefly settings."""
     return get_settings().firefly
+
+
+def get_notification_settings() -> NotificationSettings:
+    """Get notification settings."""
+    return get_settings().notifications
 
 
 # Note: Use get_settings() function instead of a global instance

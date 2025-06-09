@@ -53,7 +53,8 @@
       "Bash(git add:*)",
       "mcp__context7__get-library-docs",
       "Bash(npx tsc:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(poetry add:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -434,9 +434,11 @@ class TestPhase1Integration:
 
     def test_components_integration(self, mock_settings):
         """Test that all Phase 1 components work together."""
-        with patch("backend.integrations.rvc.encoder.load_config_data"), patch(
-            "backend.integrations.rvc.validator.load_config_data"
-        ), patch("backend.integrations.rvc.decode.load_config_data"):
+        with (
+            patch("backend.integrations.rvc.encoder.load_config_data"),
+            patch("backend.integrations.rvc.validator.load_config_data"),
+            patch("backend.integrations.rvc.decode.load_config_data"),
+        ):
             # Initialize all components
             encoder = RVCEncoder(mock_settings)
             validator = MessageValidator(mock_settings)
@@ -498,10 +500,11 @@ async def test_rvc_feature_with_phase1():
         )
 
         # Mock the Phase 1 component initialization
-        with patch("backend.integrations.rvc.encoder.RVCEncoder"), patch(
-            "backend.integrations.rvc.validator.MessageValidator"
-        ), patch("backend.integrations.rvc.security.SecurityManager"), patch(
-            "backend.integrations.rvc.performance.PriorityMessageHandler"
+        with (
+            patch("backend.integrations.rvc.encoder.RVCEncoder"),
+            patch("backend.integrations.rvc.validator.MessageValidator"),
+            patch("backend.integrations.rvc.security.SecurityManager"),
+            patch("backend.integrations.rvc.performance.PriorityMessageHandler"),
         ):
             await feature.startup()
 

@@ -173,6 +173,33 @@ api_docs:
   description: "API documentation endpoints including Swagger UI and search functionality"
   friendly_name: "API Documentation"
 
+# Notification system
+notifications:
+  enabled: true
+  core: false
+  depends_on: []
+  description: "Unified notification system using Apprise for multi-channel delivery (SMTP, Slack, Discord)"
+  friendly_name: "Notification System"
+  smtp_enabled: false
+  multi_channel_enabled: true
+  template_engine: "jinja2"
+  log_notifications: true
+  default_title: "CoachIQ Notification"
+
+# Authentication system
+authentication:
+  enabled: true
+  core: false
+  depends_on: [notifications]
+  description: "Authentication system with JWT tokens, magic links, and admin user management"
+  friendly_name: "Authentication System"
+  mode: "auto"  # auto, none, single-user, multi-user
+  secret_key_auto_generate: true
+  jwt_expire_minutes: 30
+  magic_link_expire_minutes: 15
+  enable_magic_links: true
+  enable_oauth: false
+
 # Optional features
 pushover:
   enabled: false

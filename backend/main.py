@@ -30,6 +30,7 @@ from backend.core.dependencies import (
 from backend.core.logging_config import configure_unified_logging, setup_early_logging
 from backend.core.metrics import initialize_backend_metrics
 from backend.integrations.registration import register_custom_features
+from backend.middleware.auth import AuthenticationMiddleware
 from backend.middleware.http import configure_cors
 from backend.services.can_interface_service import CANInterfaceService
 from backend.services.can_service import CANService
@@ -115,6 +116,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         register_custom_features()
         logger.info("Custom features registered")
 
+        # Authentication middleware will be configured dynamically via the middleware itself
+
         # Store services in app state for dependency injection
         app.state.app_state = app_state
         # --- Ensure global app_state is the same instance ---
@@ -168,6 +171,10 @@ def create_app() -> FastAPI:
 
     # Configure CORS middleware using settings
     configure_cors(app)
+
+    # Configure authentication middleware
+    # The middleware will obtain the auth manager from app state at runtime
+    app.add_middleware(AuthenticationMiddleware)
 
     # Configure and include routers
     configure_routers(app)

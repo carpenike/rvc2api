@@ -3,6 +3,7 @@
 check_nixpkgs_versions.py: CI script to ensure Poetry dependencies are available in Nixpkgs.
 Usage: python check_nixpkgs_versions.py pyproject.base.toml pyproject.toml
 """
+
 import subprocess
 import sys
 

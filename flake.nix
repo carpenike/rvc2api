@@ -101,6 +101,9 @@
             pythonPackages.aiosqlite
             pythonPackages.asyncpg
             pythonPackages.alembic
+            # Notification system dependencies
+            pythonPackages.jinja2
+            # Note: Apprise not available in nixpkgs - install via Poetry in dev/CI
             # Advanced analytics and diagnostics dependencies
             pythonPackages.numpy
             pythonPackages.scipy
@@ -1284,31 +1287,148 @@ EOF
               };
             };
 
-            # Notification settings
+            # Unified notification system settings
             notifications = {
-              # Pushover settings
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable unified notification system using Apprise";
+              };
+
+              defaultTitle = lib.mkOption {
+                type = lib.types.str;
+                default = "CoachIQ Notification";
+                description = "Default notification title";
+              };
+
+              templatePath = lib.mkOption {
+                type = lib.types.str;
+                default = "templates/notifications/";
+                description = "Path to notification templates";
+              };
+
+              logNotifications = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Log notification attempts and results";
+              };
+
+              # SMTP configuration
+              smtp = {
+                enabled = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = "Enable SMTP email notifications";
+                };
+
+                host = lib.mkOption {
+                  type = lib.types.str;
+                  default = "localhost";
+                  description = "SMTP server hostname";
+                };
+
+                port = lib.mkOption {
+                  type = lib.types.int;
+                  default = 587;
+                  description = "SMTP server port";
+                };
+
+                username = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  description = "SMTP authentication username";
+                };
+
+                password = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  description = "SMTP authentication password";
+                };
+
+                fromEmail = lib.mkOption {
+                  type = lib.types.str;
+                  default = "noreply@coachiq.com";
+                  description = "From email address";
+                };
+
+                fromName = lib.mkOption {
+                  type = lib.types.str;
+                  default = "CoachIQ";
+                  description = "From display name";
+                };
+
+                useTls = lib.mkOption {
+                  type = lib.types.bool;
+                  default = true;
+                  description = "Use TLS encryption";
+                };
+
+                useSsl = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = "Use SSL encryption";
+                };
+
+                timeout = lib.mkOption {
+                  type = lib.types.int;
+                  default = 30;
+                  description = "Connection timeout in seconds";
+                };
+              };
+
+              # Slack configuration
+              slack = {
+                enabled = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = "Enable Slack notifications";
+                };
+
+                webhookUrl = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  description = "Slack webhook URL";
+                };
+              };
+
+              # Discord configuration
+              discord = {
+                enabled = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = "Enable Discord notifications";
+                };
+
+                webhookUrl = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  description = "Discord webhook URL";
+                };
+              };
+
+              # Legacy Pushover settings (deprecated)
               pushoverUserKey = lib.mkOption {
                 type = lib.types.nullOr lib.types.str;
                 default = null;
-                description = "Pushover user key";
+                description = "DEPRECATED: Pushover user key - migrate to unified notification system";
               };
 
               pushoverApiToken = lib.mkOption {
                 type = lib.types.nullOr lib.types.str;
                 default = null;
-                description = "Pushover API token";
+                description = "DEPRECATED: Pushover API token - migrate to unified notification system";
               };
 
               pushoverDevice = lib.mkOption {
                 type = lib.types.nullOr lib.types.str;
                 default = null;
-                description = "Pushover device name";
+                description = "DEPRECATED: Pushover device name - migrate to unified notification system";
               };
 
               pushoverPriority = lib.mkOption {
                 type = lib.types.nullOr lib.types.int;
                 default = null;
-                description = "Pushover message priority (-2 to 2)";
+                description = "DEPRECATED: Pushover message priority (-2 to 2) - migrate to unified notification system";
               };
 
               # UptimeRobot settings
@@ -1316,6 +1436,146 @@ EOF
                 type = lib.types.nullOr lib.types.str;
                 default = null;
                 description = "UptimeRobot API key";
+              };
+            };
+
+            # Authentication system settings
+            authentication = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable authentication system";
+              };
+
+              secretKey = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Secret key for JWT tokens";
+              };
+
+              jwtAlgorithm = lib.mkOption {
+                type = lib.types.str;
+                default = "HS256";
+                description = "JWT signing algorithm";
+              };
+
+              jwtExpireMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "JWT token expiration in minutes";
+              };
+
+              baseUrl = lib.mkOption {
+                type = lib.types.str;
+                default = "http://localhost:8000";
+                description = "Base URL for magic link generation";
+              };
+
+              # Single-user mode settings
+              adminUsername = lib.mkOption {
+                type = lib.types.str;
+                default = "admin";
+                description = "Admin username for single-user mode";
+              };
+
+              adminPassword = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Admin password for single-user mode (leave empty to auto-generate)";
+              };
+
+              # Multi-user mode settings
+              adminEmail = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Admin email for multi-user mode";
+              };
+
+              enableMagicLinks = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable magic link authentication";
+              };
+
+              magicLinkExpireMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 15;
+                description = "Magic link expiration in minutes";
+              };
+
+              # OAuth settings
+              enableOauth = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable OAuth authentication";
+              };
+
+              oauthGithubClientId = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "GitHub OAuth client ID";
+              };
+
+              oauthGithubClientSecret = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "GitHub OAuth client secret";
+              };
+
+              oauthGoogleClientId = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Google OAuth client ID";
+              };
+
+              oauthGoogleClientSecret = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Google OAuth client secret";
+              };
+
+              oauthMicrosoftClientId = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Microsoft OAuth client ID";
+              };
+
+              oauthMicrosoftClientSecret = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Microsoft OAuth client secret";
+              };
+
+              # Session management
+              sessionExpireHours = lib.mkOption {
+                type = lib.types.int;
+                default = 24;
+                description = "Session expiration in hours";
+              };
+
+              maxSessionsPerUser = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Maximum sessions per user";
+              };
+
+              # Security settings
+              requireSecureCookies = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Require secure cookies in production";
+              };
+
+              rateLimitAuthAttempts = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Rate limit for authentication attempts";
+              };
+
+              rateLimitWindowMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 15;
+                description = "Rate limit window in minutes";
               };
             };
 
@@ -1588,6 +1848,64 @@ EOF
               COACHIQ_PERFORMANCE_ANALYTICS__TELEMETRY_COLLECTION_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.telemetryCollectionIntervalSeconds != 5.0) (toString config.coachiq.settings.performanceAnalytics.telemetryCollectionIntervalSeconds);
               COACHIQ_PERFORMANCE_ANALYTICS__CPU_WARNING_THRESHOLD_PERCENT = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.cpuWarningThresholdPercent != 80.0) (toString config.coachiq.settings.performanceAnalytics.cpuWarningThresholdPercent);
               COACHIQ_PERFORMANCE_ANALYTICS__MEMORY_WARNING_THRESHOLD_PERCENT = lib.mkIf (config.coachiq.settings.features.enablePerformanceAnalytics && config.coachiq.settings.performanceAnalytics.memoryWarningThresholdPercent != 80.0) (toString config.coachiq.settings.performanceAnalytics.memoryWarningThresholdPercent);
+
+              # Notification system settings - only if enabled and different from defaults
+              COACHIQ_NOTIFICATIONS__ENABLED = lib.mkIf config.coachiq.settings.notifications.enabled "true";
+              COACHIQ_NOTIFICATIONS__DEFAULT_TITLE = lib.mkIf (config.coachiq.settings.notifications.enabled && config.coachiq.settings.notifications.defaultTitle != "CoachIQ Notification") config.coachiq.settings.notifications.defaultTitle;
+              COACHIQ_NOTIFICATIONS__TEMPLATE_PATH = lib.mkIf (config.coachiq.settings.notifications.enabled && config.coachiq.settings.notifications.templatePath != "templates/notifications/") config.coachiq.settings.notifications.templatePath;
+              COACHIQ_NOTIFICATIONS__LOG_NOTIFICATIONS = lib.mkIf (config.coachiq.settings.notifications.enabled && !config.coachiq.settings.notifications.logNotifications) "false";
+
+              # SMTP configuration - only if enabled
+              COACHIQ_NOTIFICATIONS__SMTP__ENABLED = lib.mkIf config.coachiq.settings.notifications.smtp.enabled "true";
+              COACHIQ_NOTIFICATIONS__SMTP__HOST = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.host != "localhost") config.coachiq.settings.notifications.smtp.host;
+              COACHIQ_NOTIFICATIONS__SMTP__PORT = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.port != 587) (toString config.coachiq.settings.notifications.smtp.port);
+              COACHIQ_NOTIFICATIONS__SMTP__USERNAME = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.username != "") config.coachiq.settings.notifications.smtp.username;
+              COACHIQ_NOTIFICATIONS__SMTP__PASSWORD = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.password != "") config.coachiq.settings.notifications.smtp.password;
+              COACHIQ_NOTIFICATIONS__SMTP__FROM_EMAIL = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.fromEmail != "noreply@coachiq.com") config.coachiq.settings.notifications.smtp.fromEmail;
+              COACHIQ_NOTIFICATIONS__SMTP__FROM_NAME = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.fromName != "CoachIQ") config.coachiq.settings.notifications.smtp.fromName;
+              COACHIQ_NOTIFICATIONS__SMTP__USE_TLS = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && !config.coachiq.settings.notifications.smtp.useTls) "false";
+              COACHIQ_NOTIFICATIONS__SMTP__USE_SSL = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.useSsl) "true";
+              COACHIQ_NOTIFICATIONS__SMTP__TIMEOUT = lib.mkIf (config.coachiq.settings.notifications.smtp.enabled && config.coachiq.settings.notifications.smtp.timeout != 30) (toString config.coachiq.settings.notifications.smtp.timeout);
+
+              # Slack configuration - only if enabled
+              COACHIQ_NOTIFICATIONS__SLACK__ENABLED = lib.mkIf config.coachiq.settings.notifications.slack.enabled "true";
+              COACHIQ_NOTIFICATIONS__SLACK__WEBHOOK_URL = lib.mkIf (config.coachiq.settings.notifications.slack.enabled && config.coachiq.settings.notifications.slack.webhookUrl != "") config.coachiq.settings.notifications.slack.webhookUrl;
+
+              # Discord configuration - only if enabled
+              COACHIQ_NOTIFICATIONS__DISCORD__ENABLED = lib.mkIf config.coachiq.settings.notifications.discord.enabled "true";
+              COACHIQ_NOTIFICATIONS__DISCORD__WEBHOOK_URL = lib.mkIf (config.coachiq.settings.notifications.discord.enabled && config.coachiq.settings.notifications.discord.webhookUrl != "") config.coachiq.settings.notifications.discord.webhookUrl;
+
+              # Authentication settings - only if enabled
+              COACHIQ_AUTH__ENABLED = lib.mkIf config.coachiq.settings.authentication.enabled "true";
+              COACHIQ_AUTH__SECRET_KEY = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.secretKey != "") config.coachiq.settings.authentication.secretKey;
+              COACHIQ_AUTH__JWT_ALGORITHM = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.jwtAlgorithm != "HS256") config.coachiq.settings.authentication.jwtAlgorithm;
+              COACHIQ_AUTH__JWT_EXPIRE_MINUTES = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.jwtExpireMinutes != 30) (toString config.coachiq.settings.authentication.jwtExpireMinutes);
+              COACHIQ_AUTH__BASE_URL = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.baseUrl != "http://localhost:8000") config.coachiq.settings.authentication.baseUrl;
+
+              # Single-user mode settings
+              COACHIQ_AUTH__ADMIN_USERNAME = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.adminUsername != "admin") config.coachiq.settings.authentication.adminUsername;
+              COACHIQ_AUTH__ADMIN_PASSWORD = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.adminPassword != "") config.coachiq.settings.authentication.adminPassword;
+
+              # Multi-user mode settings
+              COACHIQ_AUTH__ADMIN_EMAIL = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.adminEmail != "") config.coachiq.settings.authentication.adminEmail;
+              COACHIQ_AUTH__ENABLE_MAGIC_LINKS = lib.mkIf (config.coachiq.settings.authentication.enabled && !config.coachiq.settings.authentication.enableMagicLinks) "false";
+              COACHIQ_AUTH__MAGIC_LINK_EXPIRE_MINUTES = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.magicLinkExpireMinutes != 15) (toString config.coachiq.settings.authentication.magicLinkExpireMinutes);
+
+              # OAuth settings
+              COACHIQ_AUTH__ENABLE_OAUTH = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.enableOauth) "true";
+              COACHIQ_AUTH__OAUTH_GITHUB_CLIENT_ID = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthGithubClientId != "") config.coachiq.settings.authentication.oauthGithubClientId;
+              COACHIQ_AUTH__OAUTH_GITHUB_CLIENT_SECRET = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthGithubClientSecret != "") config.coachiq.settings.authentication.oauthGithubClientSecret;
+              COACHIQ_AUTH__OAUTH_GOOGLE_CLIENT_ID = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthGoogleClientId != "") config.coachiq.settings.authentication.oauthGoogleClientId;
+              COACHIQ_AUTH__OAUTH_GOOGLE_CLIENT_SECRET = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthGoogleClientSecret != "") config.coachiq.settings.authentication.oauthGoogleClientSecret;
+              COACHIQ_AUTH__OAUTH_MICROSOFT_CLIENT_ID = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthMicrosoftClientId != "") config.coachiq.settings.authentication.oauthMicrosoftClientId;
+              COACHIQ_AUTH__OAUTH_MICROSOFT_CLIENT_SECRET = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.oauthMicrosoftClientSecret != "") config.coachiq.settings.authentication.oauthMicrosoftClientSecret;
+
+              # Session and security settings
+              COACHIQ_AUTH__SESSION_EXPIRE_HOURS = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.sessionExpireHours != 24) (toString config.coachiq.settings.authentication.sessionExpireHours);
+              COACHIQ_AUTH__MAX_SESSIONS_PER_USER = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.maxSessionsPerUser != 5) (toString config.coachiq.settings.authentication.maxSessionsPerUser);
+              COACHIQ_AUTH__REQUIRE_SECURE_COOKIES = lib.mkIf (config.coachiq.settings.authentication.enabled && !config.coachiq.settings.authentication.requireSecureCookies) "false";
+              COACHIQ_AUTH__RATE_LIMIT_AUTH_ATTEMPTS = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.rateLimitAuthAttempts != 5) (toString config.coachiq.settings.authentication.rateLimitAuthAttempts);
+              COACHIQ_AUTH__RATE_LIMIT_WINDOW_MINUTES = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.rateLimitWindowMinutes != 15) (toString config.coachiq.settings.authentication.rateLimitWindowMinutes);
 
               # Optional paths - only if provided
               COACHIQ_RVC_SPEC_PATH = lib.mkIf (config.coachiq.settings.rvcSpecPath != null) config.coachiq.settings.rvcSpecPath;

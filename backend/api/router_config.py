@@ -12,6 +12,7 @@ from fastapi import FastAPI
 
 from backend.api.routers import (
     advanced_diagnostics,
+    auth,
     can,
     config,
     dashboard,
@@ -39,6 +40,7 @@ def configure_routers(app: FastAPI) -> None:
     logger.info("Configuring API routers with dependency injection")
 
     # Include all routers - they will use dependency injection internally
+    app.include_router(auth.router, prefix="/api")
     app.include_router(entities.router)
     app.include_router(can.router)
     app.include_router(config.router)
@@ -66,6 +68,7 @@ def get_router_info() -> dict[str, Any]:
     """
     return {
         "routers": [
+            {"prefix": "/api/auth", "tags": ["authentication"], "name": "auth"},
             {"prefix": "/api", "tags": ["entities"], "name": "entities"},
             {"prefix": "/api", "tags": ["can"], "name": "can"},
             {"prefix": "/api", "tags": ["config"], "name": "config"},
@@ -81,6 +84,6 @@ def get_router_info() -> dict[str, Any]:
             },
             {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 10,
+        "total_routers": 11,
         "dependency_injection": True,
     }

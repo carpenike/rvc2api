@@ -11,6 +11,7 @@ Options:
     --dry-run   Print changes but do not write to file
     --file      Path to rvc.json (default: backend/integrations/rvc/config/rvc.json)
 """
+
 import argparse
 import json
 import logging

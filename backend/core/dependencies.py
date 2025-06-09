@@ -271,3 +271,63 @@ def get_dashboard_repository(request: Request) -> Any:
     if not hasattr(request.app.state, "dashboard_repository"):
         raise RuntimeError("Dashboard repository not initialized")
     return request.app.state.dashboard_repository
+
+
+def get_auth_manager(request: Request = None) -> Any:
+    """
+    Get the authentication manager from the feature manager.
+
+    Args:
+        request: The FastAPI request object (optional)
+
+    Returns:
+        The authentication manager
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized or auth feature is not found
+    """
+    # Import here to avoid circular imports
+    from backend.services.feature_manager import get_feature_manager
+
+    if request:
+        feature_manager = get_feature_manager_from_request(request)
+    else:
+        feature_manager = get_feature_manager()
+
+    auth_feature = feature_manager.get_feature("authentication")
+    if not auth_feature:
+        raise RuntimeError("Authentication feature not found or not enabled")
+
+    auth_manager = auth_feature.get_auth_manager()
+    if not auth_manager:
+        raise RuntimeError("Authentication manager not initialized")
+
+    return auth_manager
+
+
+def get_notification_manager(request: Request = None) -> Any:
+    """
+    Get the notification manager from the feature manager.
+
+    Args:
+        request: The FastAPI request object (optional)
+
+    Returns:
+        The notification manager or None if not available
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized
+    """
+    # Import here to avoid circular imports
+    from backend.services.feature_manager import get_feature_manager
+
+    if request:
+        feature_manager = get_feature_manager_from_request(request)
+    else:
+        feature_manager = get_feature_manager()
+
+    notification_feature = feature_manager.get_feature("notifications")
+    if not notification_feature:
+        return None  # Notification manager is optional
+
+    return notification_feature.get_notification_manager()

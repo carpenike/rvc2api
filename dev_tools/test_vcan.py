@@ -36,7 +36,7 @@ def send_test_messages(interface="can0", count=10, interval=1.0):
 
             try:
                 bus.send(message)
-                logger.info(f"Message {i+1}/{count} sent: {message}")
+                logger.info(f"Message {i + 1}/{count} sent: {message}")
             except can.CanError as e:
                 logger.error(f"Message NOT sent: {e}")
 
