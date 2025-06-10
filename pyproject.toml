@@ -71,14 +71,55 @@ target-version = "py312"
 [tool.pyright]
 include = [ "backend", "src/common"]
 exclude = [ "**/node_modules", "**/__pycache__", ".venv", "_deprecated"]
-typeCheckingMode = "basic"
-reportMissingImports = true
+# Enhanced type checking for safety-critical system
+typeCheckingMode = "strict"
+reportMissingImports = "error"
 reportMissingTypeStubs = false
-reportUnusedImport = true
+reportUnusedImport = "error"
+reportUnusedVariable = "error"
+reportUnnecessaryTypeAssertion = "error"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryContains = "warning"
+reportConstantRedefinition = "error"
+reportDuplicateImport = "error"
+reportIncompleteStub = "warning"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportInvalidTypeVarUse = "error"
+reportCallInDefaultInitializer = "error"
+reportUninitializedInstanceVariable = "warning"
+reportSelfClsParameterName = "error"
+reportImplicitStringConcatenation = "warning"
+reportMissingParameterType = "warning"
+reportMissingTypeArgument = "warning"
+reportUntypedFunctionDecorator = "warning"
+reportUntypedClassDecorator = "warning"
+reportUntypedBaseClass = "warning"
+reportUntypedNamedTuple = "warning"
+reportPrivateUsage = "warning"
+reportTypeCommentUsage = "warning"
+reportPrivateImportUsage = "error"
+reportWildcardImportFromLibrary = "error"
+reportUnsupportedDunderAll = "error"
+reportUnusedExpression = "warning"
+reportMatchNotExhaustive = "error"
+reportImplicitOverride = "warning"
 pythonVersion = "3.12"
-reportIncompatibleMethodOverride = false
-reportArgumentType = "none"
+# Enable strict mode but allow some flexibility for CAN data processing
+reportArgumentType = "warning"  # CAN data often needs type flexibility
+reportGeneralTypeIssues = "error"
+reportOptionalSubscript = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalCall = "error"
+reportOptionalIterable = "error"
+reportOptionalContextManager = "error"
+reportOptionalOperand = "error"
 stubPath = "typings"
+# Strict analysis for safety-critical paths
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
 
 [tool.pytest.ini_options]
 pythonpath = [ "backend", "src"]
@@ -91,9 +132,60 @@ indent-style = "space"
 quote-style = "double"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "B", "C4", "SIM", "TCH", "TID", "UP", "W", "N", "C90", "RUF",]
-ignore = [ "E203", "E501", "C901",]
-unfixable = [ "F401", "F841",]
+# Safety-critical rules for RV-C CAN bus system
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear (catches subtle bugs)
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warnings
+    "N",      # pep8-naming
+    "C90",    # mccabe complexity
+    "RUF",    # ruff-specific rules
+    "PT",     # flake8-pytest-style (testing best practices)
+    "ERA",    # eradicate (remove dead code)
+    "S",      # bandit security rules
+    "PL",     # pylint rules (subset for safety)
+    "A",      # flake8-builtins (shadowing built-ins)
+    "DTZ",    # flake8-datetimez (timezone safety)
+    "EM",     # flake8-errmsg (proper error messages)
+    "G",      # flake8-logging-format
+    "INP",    # flake8-no-pep420 (explicit __init__.py)
+    "PIE",    # flake8-pie (misc improvements)
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise (proper exception raising)
+    "RET",    # flake8-return (return statement improvements)
+    "SLF",    # flake8-self (private member access)
+    "SLOT",   # flake8-slots (performance)
+    "T20",    # flake8-print (no print statements)
+    "ICN",    # flake8-import-conventions
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "FIX",    # flake8-fixme (no TODO/FIXME in production)
+    "ERA",    # eradicate (remove commented code)
+    "PD",     # pandas-vet (if using pandas)
+    "PGH",    # pygrep-hooks
+    "FLY",    # flynt (f-string conversion)
+    "PERF",   # perflint (performance anti-patterns)
+    "FURB",   # refurb (modernization)
+    "LOG",    # flake8-logging
+]
+# Force explicit per-line suppressions for safety-critical code
+ignore = []
+# Allow auto-fixing for safe rules only
+unfixable = [
+    "F401",   # unused-import (require manual review)
+    "F841",   # unused-variable (require manual review)
+    "ERA001", # commented-out-code (require manual review)
+    "T201",   # print statements (require manual review)
+    "T203",   # pprint statements (require manual review)
+    "S101",   # assert statements (may be needed for safety checks)
+]
 exclude = [ ".git", "__pycache__", ".venv", "build", "dist", "*.egg-info", "_deprecated"]
 
 [tool.ruff.lint.isort]
@@ -103,13 +195,53 @@ known-first-party = [ "common", "backend"]
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [ "E501",]
-"typings/fastapi/__init__.py" = [ "N802", "N818",]
-"typings/fastapi/__init__.pyi" = [ "N802", "N818",]
-"typings/fastapi/params.py" = [ "N802",]
-"typings/fastapi/params.pyi" = [ "N802",]
-"typings/**/*.py" = [ "TID252",]
-"typings/**/*.pyi" = [ "TID252",]
+# Test files - allow longer lines and specific testing patterns
+"tests/**/*.py" = [
+    "E501",     # line too long (acceptable in tests)
+    "S101",     # assert statements (required for testing)
+    "S106",     # hardcoded password (test fixtures)
+    "ARG001",   # unused function argument (pytest fixtures)
+    "PLR0913",  # too many arguments (test functions)
+    "PT001",    # use pytest.fixture() - legacy fixtures acceptable
+]
+"**/tests/**/*.py" = [
+    "E501",     # line too long (acceptable in tests)
+    "S101",     # assert statements (required for testing)
+    "S106",     # hardcoded password (test fixtures)
+    "ARG001",   # unused function argument (pytest fixtures)
+    "PLR0913",  # too many arguments (test functions)
+    "PT001",    # use pytest.fixture() - legacy fixtures acceptable
+]
+# Type stubs - special naming conventions allowed
+"typings/fastapi/__init__.py" = [ "N802", "N818", "A003", "A001"]
+"typings/fastapi/__init__.pyi" = [ "N802", "N818", "A003", "A001"]
+"typings/fastapi/params.py" = [ "N802", "A003"]
+"typings/fastapi/params.pyi" = [ "N802", "A003"]
+"typings/**/*.py" = [ "TID252", "A003", "A001", "N801", "N802", "N803", "N806"]
+"typings/**/*.pyi" = [ "TID252", "A003", "A001", "N801", "N802", "N803", "N806"]
+# Main entry point - allow print statements for startup messages
+"backend/main.py" = [ "T201" ]
+"run_server.py" = [ "T201" ]
+# Development tools - more lenient rules
+"dev_tools/**/*.py" = [ "T201", "T203", "S101", "PLR0913"]
+"scripts/**/*.py" = [ "T201", "T203", "S101", "PLR0913"]
+# Configuration files - allow broader imports
+"backend/core/config.py" = [ "TCH002", "TCH003" ]
+# Legacy deprecated code - minimal enforcement
+"_deprecated/**/*.py" = [ "ALL" ]
+# Development and database files - allow commented code for examples
+"backend/alembic/**/*.py" = [ "ERA001", "T201" ]
+"backend/integrations/*/tests/**/*.py" = [ "ERA001" ]
+# Configuration and logging - allow commented examples
+"backend/core/logging_config.py" = [ "ERA001" ]
+# Service files - allow silent exception handling for stability
+"backend/services/can_service.py" = [ "S110" ]
+"backend/services/database_engine.py" = [ "S110" ]
+"backend/websocket/handlers.py" = [ "S110" ]
+# Router files - allow commented code for examples
+"backend/api/routers/**/*.py" = [ "ERA001" ]
+"backend/integrations/**/*.py" = [ "ERA001", "S110" ]
+"backend/services/**/*service.py" = [ "ERA001" ]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"
@@ -139,6 +271,15 @@ pyright = "^1.1.401"
 toml = "^0.10.2"
 deptry = {version = "^0.23.0", python = ">=3.9"}
 pytest-cov = {version = "^6.1.1", python = ">=3.9"}
+bandit = {version = "^1.7.7", extras = ["toml"], python = ">=3.9"}
+pip-audit = "^2.7.3"
+
+# Bandit security linting configuration
+[tool.bandit]
+# Paths to scan
+exclude_dirs = ["tests", "_deprecated", "typings"]
+# Skip specific tests for CAN bus and real-time systems
+skips = ["B101"]  # Allow assert statements in production for safety checks
 
 [tool.poetry.group.devtools.dependencies]
 pymupdf = {version = "==1.23.26", python = ">=3.8"}
