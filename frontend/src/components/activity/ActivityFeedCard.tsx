@@ -189,7 +189,7 @@ function ActivityEntryItem({ entry }: { entry: ActivityEntry }) {
                 {formatTimeAgo(entry.timestamp)}
               </span>
               {isAlert && (
-                <Badge variant="outline" size="sm" className="text-xs gap-1">
+                <Badge variant="outline" className="text-xs gap-1">
                   <SeverityIcon className="h-3 w-3" />
                   {severity.label}
                 </Badge>

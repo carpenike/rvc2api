@@ -17,7 +17,12 @@ import type { ControlCommand, ControlEntityResponse, Entity, LightEntity } from 
 export function useOptimisticEntityControl() {
   const queryClient = useQueryClient()
 
-  return useMutation<ControlEntityResponse, Error, { entityId: string; command: ControlCommand }>({
+  return useMutation<
+    ControlEntityResponse,
+    Error,
+    { entityId: string; command: ControlCommand },
+    { previousEntities?: unknown; previousDashboard?: unknown }
+  >({
     mutationFn: async ({ entityId, command }) => {
       return await controlEntity(entityId, command)
     },
@@ -49,7 +54,7 @@ export function useOptimisticEntityControl() {
 
           // Update brightness for lights
           if (command.parameters?.brightness !== undefined && 'brightness' in entity) {
-            (entity as LightEntity).brightness = command.parameters.brightness
+            (entity as LightEntity).brightness = command.parameters.brightness as number
           }
         } else if (command.command === 'off') {
           entity.state = 'off'
@@ -68,7 +73,7 @@ export function useOptimisticEntityControl() {
       return { previousEntities, previousDashboard }
     },
 
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
@@ -78,7 +83,7 @@ export function useOptimisticEntityControl() {
       }
 
       toast.error('Control Failed', {
-        description: `Failed to control ${variables.entityId}: ${err.message}`,
+        description: `Failed to control ${variables.entityId}: ${(_err as any)?.message || 'Unknown error'}`,
       })
     },
 
@@ -91,7 +96,6 @@ export function useOptimisticEntityControl() {
           ...old,
           [variables.entityId]: {
             ...old[variables.entityId],
-            ...data.entity_data,
             timestamp: Date.now()
           }
         }
@@ -116,7 +120,12 @@ export function useOptimisticEntityControl() {
 export function useOptimisticLightControl() {
   const queryClient = useQueryClient()
 
-  const toggle = useMutation<ControlEntityResponse, Error, { entityId: string }>({
+  const toggle = useMutation<
+    ControlEntityResponse,
+    Error,
+    { entityId: string },
+    { previousEntities?: unknown }
+  >({
     mutationFn: async ({ entityId }) => {
       return await toggleLight(entityId)
     },
@@ -143,7 +152,7 @@ export function useOptimisticLightControl() {
       return { previousEntities }
     },
 
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
       }
@@ -163,7 +172,12 @@ export function useOptimisticLightControl() {
     },
   })
 
-  const setBrightness = useMutation<ControlEntityResponse, Error, { entityId: string; brightness: number }>({
+  const setBrightness = useMutation<
+    ControlEntityResponse,
+    Error,
+    { entityId: string; brightness: number },
+    { previousEntities?: unknown }
+  >({
     mutationFn: async ({ entityId, brightness }) => {
       return await setLightBrightness(entityId, brightness)
     },
@@ -191,7 +205,7 @@ export function useOptimisticLightControl() {
       return { previousEntities }
     },
 
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
       }
@@ -211,7 +225,12 @@ export function useOptimisticLightControl() {
     },
   })
 
-  const brightnessUpMutation = useMutation<ControlEntityResponse, Error, { entityId: string }>({
+  const brightnessUpMutation = useMutation<
+    ControlEntityResponse,
+    Error,
+    { entityId: string },
+    { previousEntities?: unknown }
+  >({
     mutationFn: async ({ entityId }) => {
       return await brightnessUp(entityId)
     },
@@ -240,7 +259,7 @@ export function useOptimisticLightControl() {
       return { previousEntities }
     },
 
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
       }
@@ -260,7 +279,12 @@ export function useOptimisticLightControl() {
     },
   })
 
-  const brightnessDownMutation = useMutation<ControlEntityResponse, Error, { entityId: string }>({
+  const brightnessDownMutation = useMutation<
+    ControlEntityResponse,
+    Error,
+    { entityId: string },
+    { previousEntities?: unknown }
+  >({
     mutationFn: async ({ entityId }) => {
       return await brightnessDown(entityId)
     },
@@ -289,7 +313,7 @@ export function useOptimisticLightControl() {
       return { previousEntities }
     },
 
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
       }
@@ -329,7 +353,7 @@ export function useOptimisticBulkControl() {
       })
     },
 
-    onMutate: async ({ entity_ids, command, parameters: _parameters }) => {
+    onMutate: async ({ entity_ids, command }) => {
       await queryClient.cancelQueries({ queryKey: ['entities'] })
 
       const previousEntities = queryClient.getQueryData(['entities'])
@@ -366,7 +390,7 @@ export function useOptimisticBulkControl() {
       return { previousEntities }
     },
 
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['entities'], context.previousEntities)
       }
@@ -406,7 +430,7 @@ export function useOptimisticMutation<TData, TError, TVariables>({
 }) {
   const queryClient = useQueryClient()
 
-  return useMutation<TData, TError, TVariables>({
+  return useMutation<TData, TError, TVariables, { previousStates?: Record<string, unknown>; rollback?: () => void }>({
     mutationFn,
 
     onMutate: async (variables) => {
@@ -422,7 +446,7 @@ export function useOptimisticMutation<TData, TError, TVariables>({
       }, {} as Record<string, unknown>)
 
       // Apply optimistic update
-      const rollback = onOptimisticUpdate(variables, queryClient)
+      const rollback = onOptimisticUpdate(variables, queryClient) as (() => void) | undefined
 
       return { previousStates, rollback }
     },
@@ -431,7 +455,7 @@ export function useOptimisticMutation<TData, TError, TVariables>({
       // Rollback on error
       if (context?.previousStates) {
         queryKeys.forEach(key => {
-          const previousValue = context.previousStates[key.join('.')]
+          const previousValue = context.previousStates?.[key.join('.')]
           if (previousValue !== undefined) {
             queryClient.setQueryData(key, previousValue)
           }

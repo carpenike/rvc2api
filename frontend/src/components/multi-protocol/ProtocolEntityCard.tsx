@@ -210,7 +210,7 @@ function ProtocolEntityDetails({ entity }: { entity: Entity }) {
   }
 
   if (entity.device_type === 'tank' || entity.device_type === 'tank_sensor') {
-    const tankEntity = entity as Entity & { level?: number }
+    const tankEntity = entity as Entity & { level?: number; tank_type?: string }
     return (
       <div className="text-xs text-muted-foreground">
         {tankEntity.level !== undefined && (

@@ -30,7 +30,6 @@ import {
     IconTrendingDown,
     IconTrendingUp,
     IconUsers,
-    IconWrench,
 } from "@tabler/icons-react"
 import { useState } from "react"
 
@@ -65,7 +64,7 @@ function ComponentTypeIcon({ type }: { type: string }) {
     generator: IconEngine,
     hvac: IconActivity,
     pump: IconActivity,
-    slide_out: IconWrench,
+    slide_out: IconTool,
     lighting: IconActivity,
     engine: IconEngine,
     transmission: IconEngine,
@@ -528,7 +527,7 @@ export default function PredictiveMaintenancePage() {
               Component Health
             </TabsTrigger>
             <TabsTrigger value="recommendations" className="gap-2">
-              <IconWrench className="h-4 w-4" />
+              <IconTool className="h-4 w-4" />
               Recommendations
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">

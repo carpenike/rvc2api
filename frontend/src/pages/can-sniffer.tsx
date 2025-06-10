@@ -94,13 +94,13 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
   // Combine backend stats with enhanced backend data or frontend fallback
   const stats = {
     // Use enhanced backend data first, then basic backend data, then frontend calculation
-    total: enhancedStats?.total_messages ?? backendStats?.total_messages ?? messages.length,
-    errorMessages: enhancedStats?.total_errors ?? backendStats?.total_errors ?? messages.filter(msg => msg.error).length,
+    total: (enhancedStats as any)?.total_messages ?? (backendStats as any)?.total_messages ?? messages.length,
+    errorMessages: (enhancedStats as any)?.total_errors ?? (backendStats as any)?.total_errors ?? messages.filter(msg => msg.error).length,
     lastMinute: messages.filter(msg =>
       Date.now() - new Date(msg.timestamp).getTime() < 60000
     ).length, // Keep this frontend for now as it's time-sensitive
     // PGN-level data from enhanced backend or frontend fallback
-    uniquePGNs: pgnStats.uniquePGNs,
+    uniquePGNs: Number(pgnStats.uniquePGNs) || 0,
     topPGNs: pgnStats.topPGNs,
     topInstances: pgnStats.topInstances
   }
@@ -461,7 +461,7 @@ export default function CANSniffer() {
   if (error) {
     // Extract error details for better user messaging
     const getErrorDetails = () => {
-      if (error instanceof Error) {
+      if (error && typeof error === 'object' && (error as any) instanceof Error) {
         // Check for specific API error types
         if ('statusCode' in error && typeof (error as { statusCode?: number }).statusCode === 'number') {
           const statusCode = (error as { statusCode: number }).statusCode;
@@ -494,7 +494,7 @@ export default function CANSniffer() {
             default:
               return {
                 title: "API Error",
-                message: error.message || "An unexpected error occurred while communicating with the server.",
+                message: (error as any)?.message || "An unexpected error occurred while communicating with the server.",
                 isConnectionError: false,
                 showRetry: true,
                 troubleshooting: ["Try refreshing the page", "Check your network connection"]
@@ -505,7 +505,7 @@ export default function CANSniffer() {
         // Generic error handling
         return {
           title: "Connection Error",
-          message: error.message || "An error occurred while loading CAN data.",
+          message: (error as any)?.message || "An error occurred while loading CAN data.",
           isConnectionError: true,
           showRetry: true,
           troubleshooting: ["Try refreshing the page", "Check your network connection"]

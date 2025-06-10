@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchApi } from "@/api/client"
+import { apiGet, apiPost } from "@/api/client"
 import type {
   ComponentHealth,
   MaintenanceRecommendation,
@@ -61,11 +61,7 @@ export function useHealthOverview() {
   return useQuery({
     queryKey: PREDICTIVE_MAINTENANCE_KEYS.healthOverview(),
     queryFn: async (): Promise<RVHealthOverview> => {
-      const response = await fetchApi("/api/predictive-maintenance/health/overview")
-      if (!response.ok) {
-        throw new Error(`Failed to fetch health overview: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet("/api/predictive-maintenance/health/overview")
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
@@ -84,11 +80,7 @@ export function useComponentHealth(filters?: PredictiveMaintenanceFilters) {
       if (filters?.status) params.append("status", filters.status)
 
       const url = `/api/predictive-maintenance/health/components${params.toString() ? `?${params.toString()}` : ""}`
-      const response = await fetchApi(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch component health: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet(url)
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
@@ -101,11 +93,7 @@ export function useComponentHealthDetail(componentId: string) {
   return useQuery({
     queryKey: PREDICTIVE_MAINTENANCE_KEYS.componentDetail(componentId),
     queryFn: async (): Promise<ComponentHealth> => {
-      const response = await fetchApi(`/api/predictive-maintenance/health/components/${componentId}`)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch component detail: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet(`/api/predictive-maintenance/health/components/${componentId}`)
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: !!componentId,
@@ -125,11 +113,7 @@ export function useMaintenanceRecommendations(filters?: PredictiveMaintenanceFil
       if (filters?.acknowledged !== undefined) params.append("acknowledged", filters.acknowledged.toString())
 
       const url = `/api/predictive-maintenance/recommendations${params.toString() ? `?${params.toString()}` : ""}`
-      const response = await fetchApi(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch recommendations: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet(url)
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
@@ -143,16 +127,9 @@ export function useAcknowledgeRecommendation() {
 
   return useMutation({
     mutationFn: async (recommendationId: string): Promise<{ message: string }> => {
-      const response = await fetchApi(
-        `/api/predictive-maintenance/recommendations/${recommendationId}/acknowledge`,
-        {
-          method: "POST",
-        }
+      return await apiPost(
+        `/api/predictive-maintenance/recommendations/${recommendationId}/acknowledge`
       )
-      if (!response.ok) {
-        throw new Error(`Failed to acknowledge recommendation: ${response.statusText}`)
-      }
-      return response.json()
     },
     onSuccess: () => {
       // Invalidate and refetch recommendations
@@ -179,11 +156,7 @@ export function useComponentTrends(
       params.append("days", days.toString())
 
       const url = `/api/predictive-maintenance/trends/${componentId}${params.toString() ? `?${params.toString()}` : ""}`
-      const response = await fetchApi(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch component trends: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet(url)
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!componentId,
@@ -202,11 +175,7 @@ export function useMaintenanceHistory(filters?: PredictiveMaintenanceFilters) {
       if (filters?.days) params.append("days", filters.days.toString())
 
       const url = `/api/predictive-maintenance/maintenance/history${params.toString() ? `?${params.toString()}` : ""}`
-      const response = await fetchApi(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch maintenance history: ${response.statusText}`)
-      }
-      return response.json()
+      return await apiGet(url)
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })

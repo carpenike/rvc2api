@@ -34,7 +34,7 @@ import {
     IconShield,
     IconTarget,
     IconWifi,
-    IconWizard
+    IconWand
 } from "@tabler/icons-react"
 
 /**
@@ -114,7 +114,7 @@ function AutoDiscoveryWizard({ onDiscoveryComplete }: { onDiscoveryComplete: () 
   return (
     <>
       <Button onClick={() => setIsOpen(true)} className="gap-2">
-        <IconWizard className="h-4 w-4" />
+        <IconWand className="h-4 w-4" />
         Start Auto-Discovery
       </Button>
 
@@ -122,7 +122,7 @@ function AutoDiscoveryWizard({ onDiscoveryComplete }: { onDiscoveryComplete: () 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <IconWizard className="h-5 w-5" />
+              <IconWand className="h-5 w-5" />
               Auto-Discovery Wizard
             </DialogTitle>
             <DialogDescription>
@@ -173,7 +173,7 @@ function AutoDiscoveryWizard({ onDiscoveryComplete }: { onDiscoveryComplete: () 
                 <Checkbox
                   id="deep-scan"
                   checked={deepScan}
-                  onCheckedChange={setDeepScan}
+                  onCheckedChange={(checked) => setDeepScan(checked === true)}
                 />
                 <Label htmlFor="deep-scan" className="text-sm">
                   Deep Scan (detailed capability profiling)
@@ -241,7 +241,7 @@ function DeviceProfileDialog({
             Device Profile - {device.device_type || "Unknown Device"}
           </DialogTitle>
           <DialogDescription>
-            Address: {device.source_address.toString(16).toUpperCase().padStart(2, '0')} • Protocol: {device.protocol.toUpperCase()}
+            Address: {device.address.toString(16).toUpperCase().padStart(2, '0')} • Protocol: {device.protocol.toUpperCase()}
           </DialogDescription>
         </DialogHeader>
 
@@ -325,7 +325,7 @@ function DeviceSetupDialog({
 
     try {
       await setupDevice.mutateAsync({
-        device_address: device.source_address,
+        device_address: device.address,
         device_name: deviceName,
         device_type: deviceType,
         area,
@@ -348,7 +348,7 @@ function DeviceSetupDialog({
         <DialogHeader>
           <DialogTitle>Setup Device</DialogTitle>
           <DialogDescription>
-            Configure device at address {device.source_address.toString(16).toUpperCase().padStart(2, '0')}
+            Configure device at address {device.address.toString(16).toUpperCase().padStart(2, '0')}
           </DialogDescription>
         </DialogHeader>
 
@@ -481,7 +481,7 @@ function DiscoveredDevicesList() {
     <>
       <div className="space-y-3">
         {devices.map((device) => (
-          <Card key={`${device.protocol}_${device.address}`}>
+          <Card key={`${device.protocol}_${device.source_address}`}>
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 mt-1">
@@ -493,7 +493,7 @@ function DiscoveredDevicesList() {
                       <h4 className="font-medium text-sm leading-5 mb-1">
                         {device.device_type || "Unknown Device"}
                         <span className="text-muted-foreground ml-2">
-                          ({device.address.toString(16).toUpperCase().padStart(2, '0')})
+                          ({device.source_address.toString(16).toUpperCase().padStart(2, '0')})
                         </span>
                       </h4>
                       <div className="flex items-center gap-2 mb-2">
@@ -515,7 +515,18 @@ function DiscoveredDevicesList() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          setSelectedDevice(device)
+                          const discoveredDevice: DiscoveredDevice = {
+                            address: device.source_address,
+                            protocol: device.protocol,
+                            device_type: device.device_type,
+                            capabilities: device.capabilities,
+                            last_seen: device.last_seen,
+                            first_seen: device.first_seen,
+                            response_count: device.response_count,
+                            response_times: [],
+                            status: device.status
+                          }
+                          setSelectedDevice(discoveredDevice)
                           setShowProfile(true)
                         }}
                       >
@@ -525,7 +536,18 @@ function DiscoveredDevicesList() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          setSelectedDevice(device)
+                          const discoveredDevice: DiscoveredDevice = {
+                            address: device.source_address,
+                            protocol: device.protocol,
+                            device_type: device.device_type,
+                            capabilities: device.capabilities,
+                            last_seen: device.last_seen,
+                            first_seen: device.first_seen,
+                            response_count: device.response_count,
+                            response_times: [],
+                            status: device.status
+                          }
+                          setSelectedDevice(discoveredDevice)
                           setShowSetup(true)
                         }}
                       >

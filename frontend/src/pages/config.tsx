@@ -478,7 +478,7 @@ export default function ConfigurationPage() {
                                               <GitBranch className="h-3 w-3 text-slate-400" />
                                               <span className="text-xs font-medium text-slate-300">
                                                 {feature.dependencies?.length || 0} deps • {feature.dependent_features?.length || 0} dependents
-                                                {hasRestrictions && ` • ${feature.environment_restrictions.length} restrictions`}
+                                                {hasRestrictions && ` • ${feature.environment_restrictions?.length || 0} restrictions`}
                                               </span>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -595,7 +595,7 @@ export default function ConfigurationPage() {
                                               {hasRestrictions && (
                                                 <div className="flex items-center gap-1">
                                                   <span className="text-xs text-red-400">🚫</span>
-                                                  {feature.environment_restrictions.map((restriction) => (
+                                                  {(feature.environment_restrictions || []).map((restriction) => (
                                                     <Tooltip key={restriction}>
                                                       <TooltipTrigger asChild>
                                                         <Badge className="h-5 px-1.5 text-xs bg-red-900/50 border-red-500/50 text-red-300 cursor-help">

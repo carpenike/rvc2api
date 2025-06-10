@@ -58,7 +58,7 @@ const MFAManagement: React.FC = () => {
       }
       return response.json();
     },
-    onSuccess: (data, userId) => {
+    onSuccess: (_data, userId) => {
       toast.success(`MFA disabled for user ${userId}`);
       queryClient.invalidateQueries({ queryKey: ['admin-mfa-status'] });
       setShowDisableDialog(false);

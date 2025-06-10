@@ -509,9 +509,9 @@ export default function NetworkMap() {
   // Combine all entities
   const allEntities = useMemo(() => {
     const rvcEntities = entities ? Object.values(entities) : []
-    const j1939Array = j1939Entities?.entities || []
-    const fireflyArray = fireflyEntities?.entities || []
-    const spartanK2Array = spartanK2Entities?.entities || []
+    const j1939Array = (j1939Entities as any)?.entities || []
+    const fireflyArray = (fireflyEntities as any)?.entities || []
+    const spartanK2Array = (spartanK2Entities as any)?.entities || []
 
     return [
       ...rvcEntities.map(e => ({ ...e, protocol: 'rvc' })),

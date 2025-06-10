@@ -135,7 +135,7 @@ export function useDiagnosticStatistics() {
 export function useResolveDTC() {
   const queryClient = useQueryClient()
 
-  return useMutation<DTCResolutionResponse, Error, { protocol: string; code: string; sourceAddress: number }>({
+  return useMutation<DTCResolutionResponse, Error, { protocol: string; code: number; sourceAddress: number }>({
     mutationFn: ({ protocol, code, sourceAddress }) =>
       resolveDTC(protocol, code, sourceAddress),
     onSuccess: (data) => {

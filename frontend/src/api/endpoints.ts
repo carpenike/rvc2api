@@ -10,6 +10,7 @@ import {
   APIClientError,
   apiGet,
   apiPost,
+  apiDelete,
   buildQueryString,
   logApiRequest,
   logApiResponse
@@ -62,6 +63,13 @@ import type {
   HealthStatus,
   HistoryEntry,
   HistoryQueryParams,
+  // Auth Types
+  LoginResponse,
+  LockoutStatus,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  UnlockAccountRequest,
+  User,
   MaintenancePrediction,
   MetadataResponse,
   NetworkTopology,
@@ -1581,25 +1589,11 @@ export async function sendMagicLink(email: string, redirectUrl?: string): Promis
  *
  * @returns Promise resolving to current user info
  */
-export async function getCurrentUser(): Promise<{
-  user_id: string;
-  username: string | null;
-  email: string | null;
-  role: string;
-  mode: string;
-  authenticated: boolean;
-}> {
+export async function getCurrentUser(): Promise<User> {
   const url = '/api/auth/me';
 
   logApiRequest('GET', url);
-  const result = await apiGet<{
-    user_id: string;
-    username: string | null;
-    email: string | null;
-    role: string;
-    mode: string;
-    authenticated: boolean;
-  }>(url);
+  const result = await apiGet<User>(url);
   logApiResponse(url, result);
 
   return result;
@@ -1814,9 +1808,7 @@ export async function deleteDeviceGroup(groupId: string): Promise<{ message: str
   const url = `/api/bulk-operations/groups/${groupId}`;
 
   logApiRequest('DELETE', url);
-  const result = await apiGet<{ message: string }>(url, {
-    method: 'DELETE'
-  });
+  const result = await apiDelete<{ message: string }>(url);
   logApiResponse(url, result);
 
   return result;

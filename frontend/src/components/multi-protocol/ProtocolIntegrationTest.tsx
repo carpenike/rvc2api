@@ -4,6 +4,7 @@
 
 import { MultiProtocolSelector, ProtocolEntityCard, type ProtocolType } from "./"
 import { useState } from "react"
+import type { Entity } from "@/api/types"
 
 // Mock entity data for testing
 const mockEntities = [

@@ -328,7 +328,7 @@ export default function PerformancePage() {
     refetch: refetchHealth
   } = useQuery({
     queryKey: ['system-health'],
-    queryFn: fetchSystemHealth,
+    queryFn: () => fetchSystemHealth(),
     refetchInterval: refreshInterval,
     staleTime: 15000,
   });
@@ -474,7 +474,7 @@ export default function PerformancePage() {
           <PerformanceScore
             value={metrics.overall_health || 0}
             label="Overall Performance"
-            status={systemHealth.status} // Use backend-computed status
+            status={systemHealth?.status} // Use backend-computed status
             size="full"
           />
           {metrics.api_performance ? (

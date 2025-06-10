@@ -30,7 +30,8 @@ import {
   type TokenData
 } from '@/lib/token-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, ReactNode, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
+import type { ReactNode } from 'react';
 
 interface AuthContextType {
   // Current state
@@ -165,7 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Magic link mutation
   const magicLinkMutation = useMutation({
-    mutationFn: sendMagicLink,
+    mutationFn: (request: MagicLinkRequest) => sendMagicLink(request.email, request.redirect_url),
     onSuccess: () => {
       // Magic link sent successfully - no additional action needed
       // User will receive email and click link to authenticate
@@ -217,14 +218,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const contextValue: AuthContextType = {
     // Current state
     user: user ?? null,
-    authStatus: authStatus ?? null,
+    authStatus: authStatus as AuthStatus | null,
     isLoading,
     isAuthenticated,
 
     // Authentication actions
     login: loginMutation.mutateAsync,
-    logout: logoutMutation.mutateAsync,
-    sendMagicLink: magicLinkMutation.mutateAsync,
+    logout: async () => {
+      await logoutMutation.mutateAsync();
+    },
+    sendMagicLink: async (request: MagicLinkRequest) => {
+      await magicLinkMutation.mutateAsync(request);
+    },
 
     // Admin credential retrieval
     getAdminCredentials: adminCredentialsMutation.mutateAsync,

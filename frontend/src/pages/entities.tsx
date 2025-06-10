@@ -364,13 +364,14 @@ export default function EntitiesPage() {
   }
 
   // Long press handler for mobile selection mode initiation
-  const handleLongPress = (entityId: string) => {
-    if (selectionMode.mode === "idle") {
-      selectionMode.enterSelectionMode()
-      selectionMode.toggleSelection(entityId)
-      setShowBulkActions(true)
-    }
-  }
+  // Reserved for future mobile touch interactions
+  // const handleLongPress = (entityId: string) => {
+  //   if (selectionMode.mode === "idle") {
+  //     selectionMode.enterSelectionMode()
+  //     selectionMode.toggleSelection(entityId)
+  //     setShowBulkActions(true)
+  //   }
+  // }
 
   if (isLoading) {
     return (
@@ -536,7 +537,6 @@ export default function EntitiesPage() {
                 entity={entity}
                 isSelected={selectionMode.selectedIds.has(entity.entity_id)}
                 onSelectChange={selectionMode.mode === "selecting" ? (selected) => handleEntitySelect(entity.entity_id, selected) : undefined}
-                onLongPress={() => handleLongPress(entity.entity_id)}
                 showProtocolInfo={selectedProtocol === "all"}
               />
             ))}

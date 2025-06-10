@@ -66,10 +66,11 @@ export function LoginForm({
         const error = err as { response?: { status?: number; data?: { detail?: { error?: string; lockout_until?: string; attempts_remaining?: number } } } }
         if (error?.response?.status === 423) {
           const lockoutData = error.response.data?.detail
-          if (lockoutData?.error === "account_locked") {
+          if (lockoutData?.error === "account_locked" && lockoutData.lockout_until) {
             const lockoutUntil = new Date(lockoutData.lockout_until).toLocaleString()
+            const failedAttempts = lockoutData.attempts_remaining || 0
             setError(
-              `Account locked due to ${lockoutData.failed_attempts} failed attempts. ` +
+              `Account locked due to ${failedAttempts} failed attempts. ` +
               `Try again after ${lockoutUntil}.`
             )
           } else {

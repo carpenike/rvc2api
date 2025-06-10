@@ -80,43 +80,48 @@ export function DeviceDiscoveryTable({
   const deviceEntries = useMemo((): DeviceTableEntry[] => {
     if (!topology?.devices) return []
 
-    return Object.entries(topology.devices).map(([address, device]) => {
-      const hexAddress = `0x${parseInt(address).toString(16).toUpperCase().padStart(2, '0')}`
+    const entries: DeviceTableEntry[] = []
 
-      // Determine status based on last seen time and availability data
-      let status: DeviceTableEntry["status"] = "offline"
-      const lastSeenMs = device.last_seen || 0
-      const timeSinceLastSeen = Date.now() - lastSeenMs
+    // Iterate through protocol groups and their device arrays
+    Object.entries(topology.devices).forEach(([protocol, deviceArray]) => {
+      deviceArray.forEach((device) => {
+        const hexAddress = `0x${device.source_address.toString(16).toUpperCase().padStart(2, '0')}`
 
-      if (timeSinceLastSeen < 30000) { // Less than 30 seconds
-        status = "online"
-      } else if (timeSinceLastSeen < 300000) { // Less than 5 minutes
-        status = "warning"
-      } else {
-        status = "offline"
-      }
+        // Determine status based on last seen time and availability data
+        let status: DeviceTableEntry["status"] = "offline"
+        const lastSeenMs = device.last_seen || 0
+        const timeSinceLastSeen = Date.now() - lastSeenMs
 
-      // Format response time
-      const responseTime = device.avg_response_time
-        ? `${device.avg_response_time.toFixed(0)}ms`
-        : "N/A"
+        if (timeSinceLastSeen < 30000) { // Less than 30 seconds
+          status = "online"
+        } else if (timeSinceLastSeen < 300000) { // Less than 5 minutes
+          status = "warning"
+        } else {
+          status = "offline"
+        }
 
-      // Format last seen time
-      const lastSeen = lastSeenMs > 0
-        ? `${Math.round((Date.now() - lastSeenMs) / 1000)}s ago`
-        : "Never"
+        // Format response time (DeviceInfo doesn't have avg_response_time)
+        const responseTime = "N/A"
 
-      return {
-        address: hexAddress,
-        protocol: device.protocol || "Unknown",
-        deviceType: device.device_type || "Unknown",
-        status,
-        lastSeen,
-        responseTime,
-        pgns: device.supported_pgns || [],
-        capabilities: device.capabilities || []
-      }
+        // Format last seen time
+        const lastSeen = lastSeenMs > 0
+          ? `${Math.round((Date.now() - lastSeenMs) / 1000)}s ago`
+          : "Never"
+
+        entries.push({
+          address: hexAddress,
+          protocol: device.protocol || protocol,
+          deviceType: device.device_type || "Unknown",
+          status,
+          lastSeen,
+          responseTime,
+          pgns: [], // DeviceInfo doesn't have supported_pgns
+          capabilities: device.capabilities || []
+        })
+      })
     })
+
+    return entries
   }, [topology])
 
   // Apply filters and sorting
@@ -150,8 +155,10 @@ export function DeviceDiscoveryTable({
       const aValue = a[sortField]
       const bValue = b[sortField]
 
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
+      if (aValue !== undefined && bValue !== undefined) {
+        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
+        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
+      }
       return 0
     })
 

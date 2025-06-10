@@ -4,9 +4,10 @@
  * React hooks for enhanced device discovery, profiling, and setup
  */
 
-import { fetchApi } from "@/api/client"
+import { API_BASE } from "@/api/client"
 import type {
     DeviceProfile,
+    EnhancedNetworkMap,
     NetworkTopology,
     SetupRecommendations
 } from "@/api/types"
@@ -46,7 +47,7 @@ export function useDiscoveryStatus() {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.status(),
     queryFn: async () => {
-      const response = await fetchApi("/api/discovery/status")
+      const response = await fetch("/api/discovery/status")
       if (!response.ok) {
         throw new Error(`Failed to fetch discovery status: ${response.statusText}`)
       }
@@ -63,7 +64,7 @@ export function useNetworkTopology() {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.topology(),
     queryFn: async (): Promise<NetworkTopology> => {
-      const response = await fetchApi("/api/discovery/topology")
+      const response = await fetch("/api/discovery/topology")
       if (!response.ok) {
         throw new Error(`Failed to fetch network topology: ${response.statusText}`)
       }
@@ -81,7 +82,7 @@ export function useDeviceAvailability() {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.availability(),
     queryFn: async () => {
-      const response = await fetchApi("/api/discovery/availability")
+      const response = await fetch("/api/discovery/availability")
       if (!response.ok) {
         throw new Error(`Failed to fetch device availability: ${response.statusText}`)
       }
@@ -105,11 +106,11 @@ export function useEnhancedNetworkMap(
       params.append("include_offline", includeOffline.toString())
       params.append("group_by_protocol", groupByProtocol.toString())
 
-      const response = await fetchApi(`/api/discovery/network-map?${params.toString()}`)
+      const response = await fetch(`${API_BASE}/api/discovery/network-map?${params.toString()}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch network map: ${response.statusText}`)
       }
-      return response.json()
+      return response.json() as Promise<EnhancedNetworkMap>
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
@@ -122,7 +123,7 @@ export function useSupportedProtocols() {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.protocols(),
     queryFn: async () => {
-      const response = await fetchApi("/api/discovery/protocols")
+      const response = await fetch("/api/discovery/protocols")
       if (!response.ok) {
         throw new Error(`Failed to fetch protocols: ${response.statusText}`)
       }
@@ -142,7 +143,7 @@ export function useDeviceProfile(deviceAddress: number, protocol: string = "rvc"
       const params = new URLSearchParams()
       params.append("protocol", protocol)
 
-      const response = await fetchApi(`/api/discovery/wizard/device-profile/${deviceAddress}?${params.toString()}`)
+      const response = await fetch(`${API_BASE}/api/discovery/wizard/device-profile/${deviceAddress}?${params.toString()}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch device profile: ${response.statusText}`)
       }
@@ -163,7 +164,7 @@ export function useSetupRecommendations(includeConfigured: boolean = false) {
       const params = new URLSearchParams()
       params.append("include_configured", includeConfigured.toString())
 
-      const response = await fetchApi(`/api/discovery/wizard/setup-recommendations?${params.toString()}`)
+      const response = await fetch(`${API_BASE}/api/discovery/wizard/setup-recommendations?${params.toString()}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch setup recommendations: ${response.statusText}`)
       }
@@ -181,7 +182,7 @@ export function useDiscoverDevices() {
 
   return useMutation({
     mutationFn: async (protocol: string = "rvc") => {
-      const response = await fetchApi("/api/discovery/discover", {
+      const response = await fetch("/api/discovery/discover", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +216,7 @@ export function usePollDevice() {
       protocol?: string
       instance?: number
     }) => {
-      const response = await fetchApi("/api/discovery/poll", {
+      const response = await fetch("/api/discovery/poll", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +258,7 @@ export function useStartAutoDiscovery() {
       deep_scan: boolean
       save_results: boolean
     }) => {
-      const response = await fetchApi("/api/discovery/wizard/auto-discover", {
+      const response = await fetch("/api/discovery/wizard/auto-discover", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -293,7 +294,7 @@ export function useSetupDevice() {
       capabilities: string[]
       configuration: Record<string, string | number | boolean>
     }) => {
-      const response = await fetchApi("/api/discovery/wizard/setup-device", {
+      const response = await fetch("/api/discovery/wizard/setup-device", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -418,5 +419,5 @@ export function useDeviceByAddress(address: number, protocol: string = "rvc") {
 
   // Find device in the topology
   const protocolDevices = topology.devices[protocol] || []
-  return protocolDevices.find(device => device.address === address) || null
+  return protocolDevices.find(device => device.source_address === address) || null
 }

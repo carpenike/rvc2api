@@ -64,9 +64,9 @@ function PerformanceTrendsCard() {
     )
   }
 
-  const summary = trends?.summary || {}
-  const metrics = trends?.metrics || {}
-  const alerts = trends?.alerts || []
+  const summary = (trends as any)?.summary || {}
+  const metrics = (trends as any)?.metrics || {}
+  const alerts = (trends as any)?.alerts || []
 
   return (
     <Card>
@@ -145,7 +145,7 @@ function PerformanceTrendsCard() {
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2">Performance Alerts</h4>
             <div className="space-y-2">
-              {alerts.map((alert, index) => (
+              {alerts.map((alert: any, index: number) => (
                 <Alert key={index} variant={alert.severity === "high" ? "destructive" : "default"}>
                   <IconAlertTriangle className="h-4 w-4" />
                   <AlertTitle>{alert.type.replace(/_/g, " ").toUpperCase()}</AlertTitle>
@@ -166,7 +166,7 @@ function PerformanceTrendsCard() {
         {/* Metrics List */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Metric Details</h4>
-          {Object.entries(metrics).map(([metricName, metricData]: [string, { current_value: number; previous_value: number; trend_direction: "up" | "down" | "stable"; change_percentage: number }]) => (
+          {Object.entries(metrics).map(([metricName, metricData]: [string, any]) => (
             <div key={metricName} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h5 className="font-medium">{metricName.replace(/_/g, " ").toUpperCase()}</h5>
@@ -188,7 +188,7 @@ function PerformanceTrendsCard() {
               <div className="text-sm text-muted-foreground">
                 Data points: {metricData.data_points?.length || 0} |
                 Anomalies: {metricData.anomaly_count || 0} |
-                Quality: {metricData.data_quality || "unknown"}
+                Quality: {(metricData as any)?.data_quality || "unknown"}
               </div>
               {metricData.anomaly_count > 0 && (
                 <Progress
@@ -205,7 +205,7 @@ function PerformanceTrendsCard() {
           <div className="mt-6">
             <h4 className="text-sm font-medium mb-2">Key Insights</h4>
             <div className="space-y-2">
-              {summary.key_insights.map((insight, index) => (
+              {summary.key_insights.map((insight: any, index: number) => (
                 <div key={index} className="flex items-start gap-2 p-3 bg-background/50 rounded-lg">
                   <IconEye className="h-4 w-4 mt-0.5 text-blue-500" />
                   <span className="text-sm">{insight}</span>
@@ -247,9 +247,9 @@ function SystemInsightsCard() {
     )
   }
 
-  const insightsList = insights?.insights || []
-  const summary = insights?.summary || {}
-  const severityDistribution = insights?.severity_distribution || {}
+  const insightsList = (insights as any)?.insights || []
+  const summary = (insights as any)?.summary || {}
+  const severityDistribution = (insights as any)?.severity_distribution || {}
 
   return (
     <Card>
@@ -309,7 +309,7 @@ function SystemInsightsCard() {
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-2">Severity Distribution</h4>
           <div className="grid grid-cols-4 gap-2">
-            {Object.entries(severityDistribution).map(([severity, count]) => (
+            {Object.entries(severityDistribution).map(([severity, count]: [string, any]) => (
               <div key={severity} className="text-center p-2 bg-background/30 rounded">
                 <div className="font-medium">{count}</div>
                 <div className="text-xs text-muted-foreground capitalize">{severity}</div>
@@ -322,7 +322,7 @@ function SystemInsightsCard() {
         {insightsList.length > 0 ? (
           <div className="space-y-4">
             <h4 className="text-sm font-medium">Recent Insights</h4>
-            {insightsList.slice(0, 10).map((insight, index) => (
+            {insightsList.slice(0, 10).map((insight: any, index: number) => (
               <div key={insight.insight_id || index} className="border rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -349,7 +349,7 @@ function SystemInsightsCard() {
                   <div className="mt-3">
                     <h6 className="text-xs font-medium text-muted-foreground mb-1">RECOMMENDATIONS</h6>
                     <ul className="text-sm space-y-1">
-                      {insight.recommendations.map((rec, recIndex) => (
+                      {insight.recommendations.map((rec: any, recIndex: number) => (
                         <li key={recIndex} className="flex items-start gap-2">
                           <span className="text-muted-foreground">•</span>
                           <span>{rec}</span>
@@ -408,11 +408,11 @@ function HistoricalAnalysisCard() {
     )
   }
 
-  const patterns = historical?.patterns || []
-  const anomalies = historical?.anomalies || []
-  const correlations = historical?.correlations || []
-  const predictions = historical?.predictions || []
-  const summary = historical?.summary || {}
+  const patterns = (historical as any)?.patterns || []
+  const anomalies = (historical as any)?.anomalies || []
+  const correlations = (historical as any)?.correlations || []
+  const predictions = (historical as any)?.predictions || []
+  const summary = (historical as any)?.summary || {}
 
   return (
     <Card>
@@ -495,7 +495,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="patterns" className="space-y-4">
             {patterns.length > 0 ? (
-              patterns.map((pattern, index) => (
+              patterns.map((pattern: any, index: number) => (
                 <div key={pattern.pattern_id || index} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-medium">{pattern.description}</h5>
@@ -519,7 +519,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="anomalies" className="space-y-4">
             {anomalies.length > 0 ? (
-              anomalies.map((anomaly, index) => (
+              anomalies.map((_anomaly: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Anomaly data would be displayed here</div>
                 </div>
@@ -533,7 +533,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="correlations" className="space-y-4">
             {correlations.length > 0 ? (
-              correlations.map((correlation, index) => (
+              correlations.map((_correlation: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Correlation data would be displayed here</div>
                 </div>
@@ -547,7 +547,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="predictions" className="space-y-4">
             {predictions.length > 0 ? (
-              predictions.map((prediction, index) => (
+              predictions.map((_prediction: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Prediction data would be displayed here</div>
                 </div>
@@ -586,9 +586,9 @@ function MetricsAggregationCard() {
     )
   }
 
-  const windows = aggregation?.windows || {}
-  const kpis = aggregation?.kpis || {}
-  const recommendations = aggregation?.recommendations || []
+  const windows = (aggregation as any)?.windows || {}
+  const kpis = (aggregation as any)?.kpis || {}
+  const recommendations = (aggregation as any)?.recommendations || []
 
   return (
     <Card>
@@ -613,7 +613,7 @@ function MetricsAggregationCard() {
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-4">Key Performance Indicators</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(kpis).slice(0, 8).map(([kpi, value]) => (
+            {Object.entries(kpis).slice(0, 8).map(([kpi, value]: [string, any]) => (
               <div key={kpi} className="text-center p-3 bg-background/50 rounded-lg">
                 <div className="text-xl font-semibold">
                   {typeof value === "number" ? Math.round(value * 100) / 100 : value}
@@ -631,7 +631,7 @@ function MetricsAggregationCard() {
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-4">Aggregation Windows</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(windows).map(([window, _data]) => (
+              {Object.entries(windows).map(([window, _data]: [string, any]) => (
                 <div key={window} className="border rounded-lg p-4">
                   <h5 className="font-medium mb-2">{window.toUpperCase()}</h5>
                   <div className="text-sm text-muted-foreground">
@@ -648,7 +648,7 @@ function MetricsAggregationCard() {
           <div>
             <h4 className="text-sm font-medium mb-4">Optimization Recommendations</h4>
             <div className="space-y-3">
-              {recommendations.slice(0, 5).map((rec, index) => (
+              {recommendations.slice(0, 5).map((_rec: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">
                     Recommendation {index + 1} would be displayed here
@@ -703,15 +703,15 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {/* Service Status */}
-        {status && (
+        {Boolean(status) && (
           <Alert>
             <IconActivity className="h-4 w-4" />
             <AlertTitle>Analytics Service Status</AlertTitle>
             <AlertDescription>
-              Service: {status.service_status} |
-              Metrics Tracked: {status.metrics_tracked} |
-              Insights: {status.insights_cached} |
-              Patterns: {status.patterns_detected}
+              Service: {(status as any)?.service_status || 'Unknown'} |
+              Metrics Tracked: {(status as any)?.metrics_tracked || 0} |
+              Insights: {(status as any)?.insights_cached || 0} |
+              Patterns: {(status as any)?.patterns_detected || 0}
             </AlertDescription>
           </Alert>
         )}

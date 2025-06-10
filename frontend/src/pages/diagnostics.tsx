@@ -248,7 +248,7 @@ function ActiveDTCsList({ filters }: { filters?: DTCFilters }) {
   const handleResolveDTC = (dtc: DiagnosticTroubleCode) => {
     resolveDTC.mutate({
       protocol: dtc.protocol,
-      code: dtc.code,
+      code: typeof dtc.code === 'string' ? parseInt(dtc.code, 16) : dtc.code,
       sourceAddress: dtc.source_address,
     })
   }

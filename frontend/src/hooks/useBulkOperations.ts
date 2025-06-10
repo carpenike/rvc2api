@@ -105,7 +105,7 @@ export function useBulkOperationStatus(operationId: string | null) {
     enabled: !!operationId,
     refetchInterval: (data) => {
       // Stop polling when operation is complete
-      const status = data?.status
+      const status = (data as any)?.status
       return status === "PROCESSING" || status === "QUEUED" ? 2000 : false
     },
   })

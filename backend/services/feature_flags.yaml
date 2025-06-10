@@ -375,6 +375,16 @@ analytics_dashboard:
   depends_on: [performance_analytics, entity_manager]
   description: "Advanced analytics dashboard with performance visualization, trend analysis, and system health monitoring"
   friendly_name: "Analytics Dashboard"
+  # Core settings (always available)
+  memory_retention_hours: 2
+  insight_generation_interval_seconds: 900
+  pattern_analysis_interval_seconds: 1800
+  max_memory_insights: 100
+  max_memory_patterns: 50
+  # Persistence settings (only used if persistence feature enabled)
+  persistence_retention_days: 30
+  enable_background_persistence: true
+  sqlite_batch_size: 100
 
 device_discovery:
   enabled: true
