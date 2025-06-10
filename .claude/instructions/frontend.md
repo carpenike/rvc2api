@@ -8,21 +8,42 @@
 - **React Query (@tanstack/react-query)** for server state management
 - **React Router DOM** for client-side routing
 - **WebSocket** for real-time data synchronization
+- **Domain API v2** for enhanced API integration
 
-## Project Structure
+## 🎯 IMPORTANT: Use Domain API v2 for New Development
 
-### Component Organization
+**Domain API v2** provides enhanced frontend integration with:
+- **Optimistic Updates**: Immediate UI feedback with automatic rollback on errors
+- **Bulk Operations**: Efficient multi-entity operations with selection management
+- **Type Safety**: Auto-generated TypeScript types from backend schemas
+- **Better Performance**: Built-in caching and intelligent data fetching
+
+### Domain API v2 Frontend Structure
+
 ```
 frontend/src/
-├── components/          # Reusable UI components
-│   ├── ui/             # shadcn/ui base components
-│   └── app-*.tsx       # Application-specific components
-├── pages/              # Route-level page components
-├── hooks/              # Custom React hooks
-├── contexts/           # React Context providers
-├── api/                # API client and types
-└── lib/                # Utility functions
+├── api/
+│   ├── domains/             # Domain-specific API clients
+│   │   ├── entities.ts     # Entity domain API client
+│   │   └── index.ts        # Domain registration and migration helpers
+│   ├── types/              # TypeScript types from backend schemas
+│   │   └── domains.ts      # Domain API types
+│   └── client.ts           # Base API client
+├── hooks/
+│   ├── domains/            # Domain-specific React hooks
+│   │   ├── useEntitiesV2.ts # Entity management hooks
+│   │   └── __tests__/      # Domain hook tests
+│   └── useEntities.ts      # Legacy hooks (maintain only)
+├── components/
+│   ├── bulk-operations/    # Enhanced bulk operation components
+│   │   ├── BulkOperationsModalV2.tsx
+│   │   ├── EntitySelectorV2.tsx
+│   │   └── index.ts
+│   └── ui/                 # shadcn/ui base components
+└── pages/                  # Route-level page components
 ```
+
+## Project Structure
 
 ### Design System
 - **Base Components**: shadcn/ui components in `components/ui/`
@@ -62,12 +83,174 @@ export interface ComponentProps {
 
 ## State Management Patterns
 
-### React Query for Server State
-```typescript
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+### ✅ Domain API v2 Patterns (PREFERRED)
 
-// Query pattern
+#### Domain API Client
+```typescript
+// frontend/src/api/domains/entities.ts
+import { apiGet, apiPost } from '../client';
+import type { EntityCollectionSchema, ControlCommandSchema } from '../types/domains';
+
+export async function fetchEntitiesV2(params?: {
+  device_type?: string;
+  area?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<EntityCollectionSchema> {
+  const queryString = params ? buildQueryString(params) : '';
+  const url = queryString ? `/api/v2/entities?${queryString}` : '/api/v2/entities';
+  return apiGet<EntityCollectionSchema>(url);
+}
+
+export async function controlEntityV2(
+  entityId: string,
+  command: ControlCommandSchema
+): Promise<OperationResultSchema> {
+  return apiPost<OperationResultSchema>(`/api/v2/entities/${entityId}/control`, command);
+}
+
+export async function bulkControlEntitiesV2(
+  request: BulkControlRequestSchema
+): Promise<BulkOperationResultSchema> {
+  return apiPost<BulkOperationResultSchema>('/api/v2/entities/bulk-control', request);
+}
+```
+
+#### Domain React Hooks with Optimistic Updates
+```typescript
+// frontend/src/hooks/domains/useEntitiesV2.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchEntitiesV2, controlEntityV2, bulkControlEntitiesV2 } from '../../api/domains/entities';
+
+export const entitiesV2QueryKeys = {
+  all: ['entities-v2'] as const,
+  collections: () => [...entitiesV2QueryKeys.all, 'collections'] as const,
+  collection: (params: any) => [...entitiesV2QueryKeys.collections(), params] as const,
+};
+
+// Enhanced entity listing with filtering
+export function useEntitiesV2(params?: EntityQueryParams) {
+  return useQuery({
+    queryKey: entitiesV2QueryKeys.collection(params || {}),
+    queryFn: () => fetchEntitiesV2(params),
+    staleTime: 30000,
+  });
+}
+
+// Entity control with optimistic updates
+export function useControlEntityV2() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ entityId, command }: { entityId: string; command: ControlCommandSchema }) =>
+      controlEntityV2(entityId, command),
+    onMutate: async ({ entityId, command }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: entitiesV2QueryKeys.all });
+
+      // Snapshot previous value
+      const previousCollections = queryClient.getQueriesData({ queryKey: entitiesV2QueryKeys.collections() });
+
+      // Optimistically update entity state
+      queryClient.setQueriesData(
+        { queryKey: entitiesV2QueryKeys.collections() },
+        (old: EntityCollectionSchema | undefined) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            entities: old.entities.map(entity =>
+              entity.entity_id === entityId
+                ? { ...entity, state: { ...entity.state, ...getOptimisticState(command) } }
+                : entity
+            ),
+          };
+        }
+      );
+
+      return { previousCollections };
+    },
+    onError: (err, variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousCollections) {
+        context.previousCollections.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: entitiesV2QueryKeys.all });
+    },
+  });
+}
+
+// Bulk operations with selection management
+export function useEntitySelection() {
+  const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+
+  const bulkControlMutation = useMutation({
+    mutationFn: bulkControlEntitiesV2,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: entitiesV2QueryKeys.all });
+      setSelectedEntityIds([]); // Clear selection after successful operation
+    },
+  });
+
+  const executeBulkOperation = async (command: ControlCommandSchema, options?: {
+    ignoreErrors?: boolean;
+    timeout?: number;
+  }) => {
+    if (selectedEntityIds.length === 0) {
+      throw new Error('No entities selected for bulk operation');
+    }
+
+    return bulkControlMutation.mutateAsync({
+      entity_ids: selectedEntityIds,
+      command,
+      ignore_errors: options?.ignoreErrors ?? true,
+      timeout_seconds: options?.timeout,
+    });
+  };
+
+  return {
+    selectedEntityIds,
+    selectedCount: selectedEntityIds.length,
+    selectEntity: (entityId: string) => {
+      setSelectedEntityIds(prev => [...prev, entityId]);
+    },
+    deselectEntity: (entityId: string) => {
+      setSelectedEntityIds(prev => prev.filter(id => id !== entityId));
+    },
+    toggleEntitySelection: (entityId: string) => {
+      setSelectedEntityIds(prev =>
+        prev.includes(entityId)
+          ? prev.filter(id => id !== entityId)
+          : [...prev, entityId]
+      );
+    },
+    selectAll: (entityIds: string[]) => {
+      setSelectedEntityIds(entityIds);
+    },
+    deselectAll: () => {
+      setSelectedEntityIds([]);
+    },
+    executeBulkOperation,
+    bulkOperationState: {
+      isLoading: bulkControlMutation.isPending,
+      error: bulkControlMutation.error,
+      data: bulkControlMutation.data,
+    },
+  };
+}
+```
+
+### ❌ Legacy API Patterns (Maintain Only)
+
+#### Legacy React Query Pattern
+```typescript
+// frontend/src/hooks/useEntities.ts (Legacy - maintain only)
 export function useEntities() {
   return useQuery({
     queryKey: ["entities"],
@@ -76,14 +259,14 @@ export function useEntities() {
   });
 }
 
-// Mutation with optimistic updates
+// Legacy mutation pattern
 export function useControlEntity() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: apiClient.controlEntity,
     onMutate: async (variables) => {
-      // Optimistic update logic
+      // Basic optimistic update logic
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["entities"] });

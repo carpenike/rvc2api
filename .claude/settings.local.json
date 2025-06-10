@@ -57,7 +57,10 @@
       "Bash(poetry add:*)",
       "Bash(pkill:*)",
       "mcp__gemini__think_deeper",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "mcp__gemini__analyze",
+      "mcp__gemini__chat",
+      "mcp__gemini__review_code"
     ]
   },
   "enableAllProjectMcpServers": true,

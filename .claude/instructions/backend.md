@@ -4,11 +4,42 @@
 
 - **Python 3.12+** with Poetry dependency management
 - **FastAPI** for REST API and WebSocket support
-- **Pydantic** for data validation and settings
+- **Pydantic** for data validation and settings with TypeScript export
 - **SQLAlchemy** for database ORM (optional persistence feature)
 - **pytest** for testing with asyncio support
+- **Domain API v2** for domain-driven architecture
 
 ## Architecture Patterns
+
+### 🎯 IMPORTANT: Use Domain API v2 for New Development
+
+**Domain API v2** (`/api/v2/{domain}`) is the preferred pattern for all new backend development:
+- **Enhanced Performance**: Built-in caching, rate limiting, and monitoring
+- **Bulk Operations**: Efficient multi-entity operations with proper error handling
+- **Type Safety**: Pydantic schemas with TypeScript export capability
+- **Better Developer Experience**: Structured error responses, comprehensive logging
+
+**Use Legacy API** (`/api/{resource}`) only for maintaining existing endpoints.
+
+### Domain API v2 Structure
+
+```
+backend/
+├── api/domains/              # Domain API v2 routers (/api/v2/{domain})
+│   ├── entities.py          # Entity domain endpoints
+│   └── {domain}.py          # Other domain endpoints
+├── schemas/                 # Pydantic schemas with TypeScript export
+│   ├── entities.py         # Domain schemas
+│   └── common.py           # Shared schemas
+├── services/domains/        # Domain business logic
+│   ├── entity_domain_service.py
+│   └── domain_base.py      # Base domain service
+├── middleware/              # Domain-specific middleware
+│   ├── domain_middleware.py # Caching, rate limiting
+│   └── domain_auth.py       # Authentication
+└── monitoring/              # Domain observability
+    └── domain_monitoring.py # Metrics and logging
+```
 
 ### Management Services (REQUIRED)
 All backend code MUST use the following management services for consistency and maintainability:
