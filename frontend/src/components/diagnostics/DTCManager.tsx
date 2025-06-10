@@ -228,7 +228,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
       resolveDTC(dtc.protocol, parseInt(dtc.code), dtc.source_address),
     onSuccess: () => {
       toast.success('DTC resolved successfully');
-      refetch();
+      void refetch();
       setShowDetailDialog(false);
     },
     onError: (error) => {
@@ -309,7 +309,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
           <div className="text-center py-8 text-red-500">
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
             <p>Failed to load DTC data</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+            <Button variant="outline" size="sm" onClick={() => void refetch()} className="mt-2">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -328,7 +328,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
               <Shield className="h-5 w-5" />
               Diagnostic Trouble Codes
             </div>
-            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+            <Button variant="ghost" size="sm" onClick={() => void refetch()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </CardTitle>

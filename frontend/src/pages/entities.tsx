@@ -175,7 +175,7 @@ function BulkControlActions({
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => handleBulkAction('on')}
+                onClick={() => void handleBulkAction('on')}
                 size="sm"
                 variant="outline"
                 disabled={optimisticBulkControl.isPending}
@@ -183,7 +183,7 @@ function BulkControlActions({
                 Turn On
               </Button>
               <Button
-                onClick={() => handleBulkAction('off')}
+                onClick={() => void handleBulkAction('off')}
                 size="sm"
                 variant="outline"
                 disabled={optimisticBulkControl.isPending}
@@ -191,7 +191,7 @@ function BulkControlActions({
                 Turn Off
               </Button>
               <Button
-                onClick={() => handleBulkAction('toggle')}
+                onClick={() => void handleBulkAction('toggle')}
                 size="sm"
                 variant="outline"
                 disabled={optimisticBulkControl.isPending}
@@ -220,7 +220,7 @@ function BulkControlActions({
 function useMultiProtocolEntities(selectedProtocol: ProtocolType) {
   // Use unified entities API with protocol filtering (backend handles deduplication)
   const { data: unifiedEntities, isLoading: unifiedLoading } = useQuery({
-    queryKey: ['entities', selectedProtocol === 'all' ? undefined : selectedProtocol],
+    queryKey: ['entities', selectedProtocol === 'all' ? undefined : selectedProtocol, selectedProtocol],
     queryFn: () => fetchEntities({ protocol: selectedProtocol === 'all' ? undefined : selectedProtocol }),
     refetchInterval: 5000
   })
@@ -266,7 +266,7 @@ function useMultiProtocolEntities(selectedProtocol: ProtocolType) {
     };
 
     // Update health scores based on bridge status if available
-    if (bridgeStatus) {
+    if (bridgeStatus && stats.all) {
       stats.all.health = bridgeStatus.health_score;
       if (bridgeStatus.error_rate > 0.1) {
         stats.all.status = "warning";

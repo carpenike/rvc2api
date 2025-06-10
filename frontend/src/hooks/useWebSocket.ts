@@ -53,17 +53,17 @@ export function useEntityWebSocket(options?: { autoConnect?: boolean }) {
         );
 
         // Invalidate entity lists to trigger re-render
-        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.entities.lists() });
+        void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.entities.lists() });
 
         // Update type-specific lists
         if (data.entity_data.entity_type === 'light') {
-          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.lights.list() });
+          void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.lights.list() });
         } else if (data.entity_data.entity_type === 'lock') {
-          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.locks.list() });
+          void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.locks.list() });
         } else if (data.entity_data.entity_type === 'tank_sensor') {
-          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
+          void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
         } else if (data.entity_data.entity_type === 'temperature_sensor') {
-          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
+          void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
         }
       },
 
@@ -157,7 +157,7 @@ export function useCANScanWebSocket(options?: {
 
         // Periodically invalidate CAN statistics
         if (messageCount % 100 === 0) {
-          queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+          void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
         }
       },
 
@@ -245,9 +245,9 @@ export function useSystemStatusWebSocket(options?: { autoConnect?: boolean }) {
       onSystemStatus: () => {
         // Update system queries - we just invalidate all relevant queries
         // since we only get the data portion, not the message type
-        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.health() });
-        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
-        queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+        void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.health() });
+        void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
+        void queryClientRef.current.invalidateQueries({ queryKey: queryKeys.can.statistics() });
       },
 
       onOpen: () => {

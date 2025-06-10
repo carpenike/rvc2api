@@ -117,18 +117,18 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
         // Update type-specific lists based on entity type
         const entityType = update.data.entity_data.entity_type;
         if (entityType === 'light') {
-          currentQueryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+          void currentQueryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
         } else if (entityType === 'lock') {
-          currentQueryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
+          void currentQueryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
         } else if (entityType === 'tank_sensor') {
-          currentQueryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
+          void currentQueryClient.invalidateQueries({ queryKey: queryKeys.tankSensors.list() });
         } else if (entityType === 'temperature_sensor') {
-          currentQueryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
+          void currentQueryClient.invalidateQueries({ queryKey: queryKeys.temperatureSensors.list() });
         }
       });
 
       // Invalidate entity lists once for all updates
-      currentQueryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
+      void currentQueryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
 
       throttleTimerRef.current = null;
     }, throttleDelayRef.current);
@@ -263,7 +263,7 @@ export function useOptimizedEntityWebSocket(options: UseOptimizedWebSocketOption
     };
 
     // Import the creation function dynamically to avoid circular dependencies
-    import('../api').then(({ createEntityWebSocket }) => {
+    void import('../api').then(({ createEntityWebSocket }) => {
       const wsClient = createEntityWebSocket(handlers, {
         autoReconnect: true,
         reconnectDelay: 3000,

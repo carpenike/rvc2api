@@ -380,7 +380,7 @@ export default function UnknownPGNs() {
             </p>
           </div>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="gap-2"
           >

@@ -190,7 +190,7 @@ export function MappingDialog({ open, onOpenChange, unmappedEntry, onSubmit }: M
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)} className="space-y-4">
             {/* Entity ID */}
             <FormField
               control={form.control}
@@ -288,7 +288,7 @@ export function MappingDialog({ open, onOpenChange, unmappedEntry, onSubmit }: M
                       Device capabilities (automatically set based on device type, but can be customized).
                     </FormDescription>
                     <div className="space-y-2">
-                      {CAPABILITIES_BY_TYPE[selectedDeviceType].map((capability) => (
+                      {(CAPABILITIES_BY_TYPE[selectedDeviceType] || []).map((capability) => (
                         <div key={capability} className="flex items-center space-x-2">
                           <input
                             type="checkbox"

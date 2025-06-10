@@ -11,8 +11,9 @@ export function InfiniteLogLoader() {
     if (mode !== "history") return;
     const observer = new window.IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          fetchMore();
+        const firstEntry = entries[0];
+        if (firstEntry?.isIntersecting && hasMore && !loading) {
+          void fetchMore();
         }
       },
       { rootMargin: "200px" }

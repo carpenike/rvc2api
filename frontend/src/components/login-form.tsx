@@ -224,7 +224,7 @@ export function LoginForm({
 
               {/* Password login form */}
               {((isPasswordMode && !isMagicLinkMode) || loginMode === "password") && (
-                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <form onSubmit={(e) => void handlePasswordLogin(e)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -260,7 +260,7 @@ export function LoginForm({
 
               {/* Magic link form */}
               {((isMagicLinkMode && !isPasswordMode) || loginMode === "magic") && (
-                <form onSubmit={handleMagicLinkRequest} className="space-y-4">
+                <form onSubmit={(e) => void handleMagicLinkRequest(e)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input

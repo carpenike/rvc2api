@@ -188,7 +188,10 @@ function LightControl({ light }: LightControlProps) {
   const isOnline = light.timestamp && (Date.now() - light.timestamp) < 300000
 
   const handleSliderChange = (value: number[]) => {
-    setBrightness.mutate({ entityId: light.entity_id, brightness: value[0] })
+    const newBrightness = value[0];
+    if (newBrightness !== undefined) {
+      setBrightness.mutate({ entityId: light.entity_id, brightness: newBrightness });
+    }
   }
 
   const handlePresetBrightness = (level: number) => {
@@ -238,7 +241,7 @@ function LightControl({ light }: LightControlProps) {
         {/* Main Controls */}
         <div className="flex gap-2">
           <Button
-            onClick={() => toggle.mutate({ entityId: light.entity_id })}
+            onClick={() => void toggle.mutate({ entityId: light.entity_id })}
             disabled={toggle.isPending || setBrightness.isPending}
             className="flex-1"
             variant={isOn ? "default" : "outline"}
@@ -263,7 +266,7 @@ function LightControl({ light }: LightControlProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => brightnessDown.mutate({ entityId: light.entity_id })}
+                onClick={() => void brightnessDown.mutate({ entityId: light.entity_id })}
                 disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending || brightness <= 0}
                 className="shrink-0"
               >
@@ -282,7 +285,7 @@ function LightControl({ light }: LightControlProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => brightnessUp.mutate({ entityId: light.entity_id })}
+                onClick={() => void brightnessUp.mutate({ entityId: light.entity_id })}
                 disabled={toggle.isPending || setBrightness.isPending || brightnessUp.isPending || brightnessDown.isPending || brightness >= 100}
                 className="shrink-0"
               >

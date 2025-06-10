@@ -509,16 +509,16 @@ export default function NetworkMap() {
   // Combine all entities
   const allEntities = useMemo(() => {
     const rvcEntities = entities ? Object.values(entities) : []
-    const j1939Array = (j1939Entities as any)?.entities || []
-    const fireflyArray = (fireflyEntities as any)?.entities || []
-    const spartanK2Array = (spartanK2Entities as any)?.entities || []
+    const j1939Array = ((j1939Entities as { entities?: unknown[] })?.entities || []) as EntityData[]
+    const fireflyArray = ((fireflyEntities as { entities?: unknown[] })?.entities || []) as EntityData[]
+    const spartanK2Array = ((spartanK2Entities as { entities?: unknown[] })?.entities || []) as EntityData[]
 
     return [
-      ...rvcEntities.map(e => ({ ...e, protocol: 'rvc' })),
+      ...rvcEntities.map(e => ({ ...e, protocol: 'rvc' })) as EntityData[],
       ...j1939Array,
       ...fireflyArray,
       ...spartanK2Array,
-    ]
+    ] as EntityData[]
   }, [entities, j1939Entities, fireflyEntities, spartanK2Entities])
 
   const entitiesArray = entities ? Object.values(entities) : []
@@ -597,10 +597,10 @@ export default function NetworkMap() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={async () => {
+              onClick={() => void (async () => {
                 await discoverDevices("rvc");
-                refetchTopology();
-              }}
+                void refetchTopology();
+              })()}
               variant="outline"
               className="gap-2"
             >
@@ -609,8 +609,8 @@ export default function NetworkMap() {
             </Button>
             <Button
               onClick={() => {
-                refetch();
-                refetchTopology();
+                void refetch();
+                void refetchTopology();
               }}
               variant="outline"
               className="gap-2"
@@ -647,8 +647,8 @@ export default function NetworkMap() {
                   availability={deviceAvailability}
                   isLoading={isLoading}
                   onRefresh={() => {
-                    refetch();
-                    refetchTopology();
+                    void refetch();
+                    void refetchTopology();
                   }}
                 />
               </div>
@@ -801,7 +801,10 @@ export default function NetworkMap() {
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-green-600">
-                          {Math.round((allEntities.filter(e => e.state === 'on' || e.state === 'online').length / Math.max(allEntities.length, 1)) * 100)}%
+                          {Math.round((allEntities.filter(e => {
+                            const entity = e as EntityData;
+                            return entity.state === 'on' || entity.state === 'online';
+                          }).length / Math.max(allEntities.length, 1)) * 100)}%
                         </div>
                         <div className="text-sm text-muted-foreground">Connectivity</div>
                       </div>

@@ -78,11 +78,11 @@ export function LogExportActions() {
   };
 
   const handleCopyAsText = () => {
-    copyToClipboard(formatLogsAsText());
+    void copyToClipboard(formatLogsAsText());
   };
 
   const handleCopyAsJSON = () => {
-    copyToClipboard(formatLogsAsJSON());
+    void copyToClipboard(formatLogsAsJSON());
   };
 
   const handleDownloadText = () => {
@@ -149,7 +149,7 @@ export function LogExportActions() {
           Download as CSV
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleShareLogs} className="gap-2">
+        <DropdownMenuItem onClick={() => void handleShareLogs()} className="gap-2">
           <Share className="h-4 w-4" />
           Share Logs
         </DropdownMenuItem>

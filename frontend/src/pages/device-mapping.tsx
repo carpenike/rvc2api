@@ -228,10 +228,11 @@ function DeviceMappingTable({ entities }: { entities: EntityData[] }) {
 function DeviceTypeBreakdown({ entities }: { entities: EntityData[] }) {
   const deviceTypeGroups = useMemo(() => {
     const groups = entities.reduce((acc, entity) => {
-      if (!acc[entity.device_type]) {
-        acc[entity.device_type] = []
+      const deviceType = entity.device_type || 'unknown';
+      if (!acc[deviceType]) {
+        acc[deviceType] = []
       }
-      acc[entity.device_type].push(entity)
+      acc[deviceType].push(entity)
       return acc
     }, {} as Record<string, EntityData[]>)
 
@@ -360,7 +361,7 @@ export default function DeviceMapping() {
             </p>
           </div>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="gap-2"
           >

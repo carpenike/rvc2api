@@ -19,6 +19,17 @@ import { useState } from "react"
 // import { Label } from "@/components/ui/label" // Reserved for future form labels
 // import { Separator } from "@/components/ui/separator" // Reserved for layout improvements
 import { useAnalyticsDashboard } from "@/hooks/useAnalyticsDashboard"
+import type {
+  PerformanceTrendsResponse,
+  SystemInsightsResponse,
+  HistoricalAnalysisResponse,
+  MetricsAggregationResponse,
+  AnalyticsServiceStatus,
+  PerformanceAlert,
+  SystemInsight,
+  HistoricalPattern,
+  AnalyticsMetricData
+} from "@/api/types/domains"
 import {
   IconActivity,
   IconAlertTriangle,
@@ -64,9 +75,16 @@ function PerformanceTrendsCard() {
     )
   }
 
-  const summary = (trends as any)?.summary || {}
-  const metrics = (trends as any)?.metrics || {}
-  const alerts = (trends as any)?.alerts || []
+  const trendsData = trends as PerformanceTrendsResponse | undefined
+  const summary = trendsData?.summary || {
+    trending_up: 0,
+    trending_down: 0,
+    stable: 0,
+    total_anomalies: 0,
+    key_insights: []
+  }
+  const metrics = trendsData?.metrics || {}
+  const alerts = trendsData?.alerts || []
 
   return (
     <Card>
@@ -105,7 +123,7 @@ function PerformanceTrendsCard() {
                 <SelectItem value="6h">6h</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={refreshTrends}>
+            <Button variant="outline" size="sm" onClick={() => void refreshTrends()}>
               <IconRefresh className="h-4 w-4" />
             </Button>
           </div>
@@ -145,7 +163,7 @@ function PerformanceTrendsCard() {
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2">Performance Alerts</h4>
             <div className="space-y-2">
-              {alerts.map((alert: any, index: number) => (
+              {alerts.map((alert: PerformanceAlert, index: number) => (
                 <Alert key={index} variant={alert.severity === "high" ? "destructive" : "default"}>
                   <IconAlertTriangle className="h-4 w-4" />
                   <AlertTitle>{alert.type.replace(/_/g, " ").toUpperCase()}</AlertTitle>
@@ -166,7 +184,7 @@ function PerformanceTrendsCard() {
         {/* Metrics List */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Metric Details</h4>
-          {Object.entries(metrics).map(([metricName, metricData]: [string, any]) => (
+          {Object.entries(metrics).map(([metricName, metricData]: [string, AnalyticsMetricData]) => (
             <div key={metricName} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h5 className="font-medium">{metricName.replace(/_/g, " ").toUpperCase()}</h5>
@@ -188,7 +206,7 @@ function PerformanceTrendsCard() {
               <div className="text-sm text-muted-foreground">
                 Data points: {metricData.data_points?.length || 0} |
                 Anomalies: {metricData.anomaly_count || 0} |
-                Quality: {(metricData as any)?.data_quality || "unknown"}
+                Quality: {metricData.data_quality || "unknown"}
               </div>
               {metricData.anomaly_count > 0 && (
                 <Progress
@@ -205,7 +223,7 @@ function PerformanceTrendsCard() {
           <div className="mt-6">
             <h4 className="text-sm font-medium mb-2">Key Insights</h4>
             <div className="space-y-2">
-              {summary.key_insights.map((insight: any, index: number) => (
+              {summary.key_insights.map((insight: string, index: number) => (
                 <div key={index} className="flex items-start gap-2 p-3 bg-background/50 rounded-lg">
                   <IconEye className="h-4 w-4 mt-0.5 text-blue-500" />
                   <span className="text-sm">{insight}</span>
@@ -247,9 +265,14 @@ function SystemInsightsCard() {
     )
   }
 
-  const insightsList = (insights as any)?.insights || []
-  const summary = (insights as any)?.summary || {}
-  const severityDistribution = (insights as any)?.severity_distribution || {}
+  const insightsData = insights as SystemInsightsResponse | undefined
+  const insightsList = insightsData?.insights || []
+  const summary = insightsData?.summary || {
+    total_count: 0,
+    avg_confidence: 0,
+    avg_impact: 0
+  }
+  const severityDistribution = insightsData?.severity_distribution || {}
 
   return (
     <Card>
@@ -276,7 +299,7 @@ function SystemInsightsCard() {
                 <SelectItem value="critical">Critical</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={refreshInsights}>
+            <Button variant="outline" size="sm" onClick={() => void refreshInsights()}>
               <IconRefresh className="h-4 w-4" />
             </Button>
           </div>
@@ -309,7 +332,7 @@ function SystemInsightsCard() {
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-2">Severity Distribution</h4>
           <div className="grid grid-cols-4 gap-2">
-            {Object.entries(severityDistribution).map(([severity, count]: [string, any]) => (
+            {Object.entries(severityDistribution).map(([severity, count]: [string, number]) => (
               <div key={severity} className="text-center p-2 bg-background/30 rounded">
                 <div className="font-medium">{count}</div>
                 <div className="text-xs text-muted-foreground capitalize">{severity}</div>
@@ -322,7 +345,7 @@ function SystemInsightsCard() {
         {insightsList.length > 0 ? (
           <div className="space-y-4">
             <h4 className="text-sm font-medium">Recent Insights</h4>
-            {insightsList.slice(0, 10).map((insight: any, index: number) => (
+            {insightsList.slice(0, 10).map((insight: SystemInsight, index: number) => (
               <div key={insight.insight_id || index} className="border rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -349,7 +372,7 @@ function SystemInsightsCard() {
                   <div className="mt-3">
                     <h6 className="text-xs font-medium text-muted-foreground mb-1">RECOMMENDATIONS</h6>
                     <ul className="text-sm space-y-1">
-                      {insight.recommendations.map((rec: any, recIndex: number) => (
+                      {insight.recommendations.map((rec: string, recIndex: number) => (
                         <li key={recIndex} className="flex items-start gap-2">
                           <span className="text-muted-foreground">•</span>
                           <span>{rec}</span>
@@ -408,11 +431,17 @@ function HistoricalAnalysisCard() {
     )
   }
 
-  const patterns = (historical as any)?.patterns || []
-  const anomalies = (historical as any)?.anomalies || []
-  const correlations = (historical as any)?.correlations || []
-  const predictions = (historical as any)?.predictions || []
-  const summary = (historical as any)?.summary || {}
+  const historicalData = historical as HistoricalAnalysisResponse | undefined
+  const patterns = historicalData?.patterns || []
+  const anomalies = historicalData?.anomalies || []
+  const correlations = historicalData?.correlations || []
+  const predictions = historicalData?.predictions || []
+  const summary = historicalData?.summary || {
+    patterns_found: 0,
+    anomalies_detected: 0,
+    correlations_found: 0,
+    predictions_generated: 0
+  }
 
   return (
     <Card>
@@ -449,7 +478,7 @@ function HistoricalAnalysisCard() {
                 <SelectItem value="720">30d</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={refreshHistorical}>
+            <Button variant="outline" size="sm" onClick={() => void refreshHistorical()}>
               <IconRefresh className="h-4 w-4" />
             </Button>
           </div>
@@ -495,7 +524,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="patterns" className="space-y-4">
             {patterns.length > 0 ? (
-              patterns.map((pattern: any, index: number) => (
+              patterns.map((pattern: HistoricalPattern, index: number) => (
                 <div key={pattern.pattern_id || index} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-medium">{pattern.description}</h5>
@@ -519,7 +548,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="anomalies" className="space-y-4">
             {anomalies.length > 0 ? (
-              anomalies.map((_anomaly: any, index: number) => (
+              anomalies.map((_anomaly: unknown, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Anomaly data would be displayed here</div>
                 </div>
@@ -533,7 +562,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="correlations" className="space-y-4">
             {correlations.length > 0 ? (
-              correlations.map((_correlation: any, index: number) => (
+              correlations.map((_correlation: unknown, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Correlation data would be displayed here</div>
                 </div>
@@ -547,7 +576,7 @@ function HistoricalAnalysisCard() {
 
           <TabsContent value="predictions" className="space-y-4">
             {predictions.length > 0 ? (
-              predictions.map((_prediction: any, index: number) => (
+              predictions.map((_prediction: unknown, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">Prediction data would be displayed here</div>
                 </div>
@@ -586,9 +615,10 @@ function MetricsAggregationCard() {
     )
   }
 
-  const windows = (aggregation as any)?.windows || {}
-  const kpis = (aggregation as any)?.kpis || {}
-  const recommendations = (aggregation as any)?.recommendations || []
+  const aggregationData = aggregation as MetricsAggregationResponse | undefined
+  const windows = aggregationData?.windows || {}
+  const kpis = aggregationData?.kpis || {}
+  const recommendations = aggregationData?.recommendations || []
 
   return (
     <Card>
@@ -603,7 +633,7 @@ function MetricsAggregationCard() {
               Comprehensive metrics reporting and KPIs
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={refreshAggregation}>
+          <Button variant="outline" size="sm" onClick={() => void refreshAggregation()}>
             <IconRefresh className="h-4 w-4" />
           </Button>
         </div>
@@ -613,7 +643,7 @@ function MetricsAggregationCard() {
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-4">Key Performance Indicators</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(kpis).slice(0, 8).map(([kpi, value]: [string, any]) => (
+            {Object.entries(kpis).slice(0, 8).map(([kpi, value]: [string, number | string]) => (
               <div key={kpi} className="text-center p-3 bg-background/50 rounded-lg">
                 <div className="text-xl font-semibold">
                   {typeof value === "number" ? Math.round(value * 100) / 100 : value}
@@ -631,7 +661,7 @@ function MetricsAggregationCard() {
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-4">Aggregation Windows</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(windows).map(([window, _data]: [string, any]) => (
+              {Object.entries(windows).map(([window, _data]: [string, unknown]) => (
                 <div key={window} className="border rounded-lg p-4">
                   <h5 className="font-medium mb-2">{window.toUpperCase()}</h5>
                   <div className="text-sm text-muted-foreground">
@@ -648,7 +678,7 @@ function MetricsAggregationCard() {
           <div>
             <h4 className="text-sm font-medium mb-4">Optimization Recommendations</h4>
             <div className="space-y-3">
-              {recommendations.slice(0, 5).map((_rec: any, index: number) => (
+              {recommendations.slice(0, 5).map((_rec: unknown, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="text-sm">
                     Recommendation {index + 1} would be displayed here
@@ -691,7 +721,7 @@ export default function AnalyticsDashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={refreshAll} variant="outline" className="gap-2">
+            <Button onClick={() => void refreshAll()} variant="outline" className="gap-2">
               <IconRefresh className="h-4 w-4" />
               Refresh All
             </Button>
@@ -708,10 +738,17 @@ export default function AnalyticsDashboardPage() {
             <IconActivity className="h-4 w-4" />
             <AlertTitle>Analytics Service Status</AlertTitle>
             <AlertDescription>
-              Service: {(status as any)?.service_status || 'Unknown'} |
-              Metrics Tracked: {(status as any)?.metrics_tracked || 0} |
-              Insights: {(status as any)?.insights_cached || 0} |
-              Patterns: {(status as any)?.patterns_detected || 0}
+              {(() => {
+                const statusData = status as AnalyticsServiceStatus | undefined
+                return (
+                  <>
+                    Service: {statusData?.service_status || 'Unknown'} |
+                    Metrics Tracked: {statusData?.metrics_tracked || 0} |
+                    Insights: {statusData?.insights_cached || 0} |
+                    Patterns: {statusData?.patterns_detected || 0}
+                  </>
+                )
+              })()}
             </AlertDescription>
           </Alert>
         )}

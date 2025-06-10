@@ -36,7 +36,7 @@ export interface LogViewerContextType {
   pauseStream: () => void;
   resumeStream: () => void;
   isPaused: boolean;
-  fetchMore: () => void;
+  fetchMore: () => Promise<void>;
   hasMore: boolean;
   mode: "live" | "history";
   setMode: (mode: "live" | "history") => void;
@@ -190,7 +190,7 @@ export function LogViewerProvider({
       connectWs();
     } else {
       disconnectWs();
-      fetchInitialLogs();
+      void fetchInitialLogs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, connectWs, disconnectWs]);
@@ -221,12 +221,12 @@ export function LogViewerProvider({
       };
       let allowedLevels: string[] = [];
       if (filters.level in levelMap) {
-        allowedLevels = levelMap[filters.level];
+        allowedLevels = levelMap[filters.level] ?? [];
       } else {
         const normalizedFilter = filters.level.toLowerCase();
         const numericEquivalent = textToNumericMap[normalizedFilter];
         if (numericEquivalent) {
-          allowedLevels = levelMap[numericEquivalent];
+          allowedLevels = levelMap[numericEquivalent] ?? [];
         } else {
           allowedLevels = [filters.level];
         }

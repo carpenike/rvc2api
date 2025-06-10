@@ -14,6 +14,7 @@ Each file contains targeted guidance for specific development workflows and cont
 - [`testing.md`](.claude/instructions/testing.md): Testing patterns and requirements for both backend and frontend
 - [`code-quality.md`](.claude/instructions/code-quality.md): Linting, formatting, and type checking standards
 - [`api-patterns.md`](.claude/instructions/api-patterns.md): Entity control, WebSocket, and REST API patterns
+- [`domain-api.md`](.claude/instructions/domain-api.md): Domain API v2 development patterns, bulk operations, and migration strategies
 
 **Available commands:**
 
@@ -28,15 +29,129 @@ Each file contains targeted guidance for specific development workflows and cont
 - `/sync-deps` - Synchronize dependencies across Poetry, Nix, and frontend package managers
 - `/sync-config` - Synchronize configuration files after adding features or dependencies
 - `/rvc-debug` - Debug RV-C protocol encoding/decoding and real-time message monitoring
+- `/domain-api-dev` - Develop Domain API v2 endpoints with bulk operations, caching, and monitoring
+- `/api-migration` - Migrate legacy API endpoints to Domain API v2 with progressive rollout
 
 > **For any code generation or development tasks involving these topics, refer to the relevant instruction file in `.claude/instructions/` for detailed guidance.**
 
 ## Critical Development Requirements
 
 - **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
-- **All API calls are made via `/api/entities` endpoints**, not `/api/lights`, `/api/locks`, etc. to ensure a unified and extensible API design.
+- **MANDATORY CODE QUALITY GATES**: ALL code changes must pass linting, type checking, and build verification BEFORE proceeding to the next task. Run quality checks incrementally throughout development, not just at the end.
+- **Use Domain API v2 for new development**: All new API integrations should use `/api/v2/{domain}` endpoints (e.g., `/api/v2/entities`) with domain-driven architecture patterns.
+- **Legacy API compatibility**: Legacy `/api/entities` endpoints remain available but prefer Domain API v2 for enhanced features, bulk operations, and better performance.
 - **All API endpoints require comprehensive documentation** with examples, descriptions, and response schemas to maintain the OpenAPI specification.
-- **All entity control uses standardized command structure**: `{"command": "set|toggle|brightness_up|brightness_down", "state": "on|off", "brightness": 0-100}`
+- **Domain API command structure**: Use structured command objects: `{"command": "set|toggle|brightness_up|brightness_down", "state": true/false, "brightness": 0-100, "parameters": {}}`
+
+### Code Quality Requirements (MANDATORY)
+
+**CRITICAL**: After ANY code change, you MUST run quality checks before proceeding:
+
+**Frontend Quality Gates:**
+```bash
+cd frontend
+npm run typecheck    # TypeScript compilation MUST pass
+npm run lint         # ESLint MUST pass with zero warnings
+npm run build        # Production build MUST succeed
+```
+
+**Backend Quality Gates:**
+```bash
+cd backend
+poetry run pyright backend    # Type checking MUST pass
+poetry run ruff check .        # Linting MUST pass
+poetry run ruff format backend # Code formatting MUST be applied
+```
+
+**When to Run Quality Checks:**
+- After every significant code change (>10 lines)
+- Before moving to the next development task
+- Before any git commit
+- After implementing any new feature or component
+- During refactoring operations
+
+**Development Workflow Pattern:**
+1. Make code changes
+2. Run appropriate quality checks immediately
+3. Fix any issues before proceeding
+4. Only then move to the next task
+
+**Use Available Quality Commands:**
+- `/fix-type-errors` - Automated type error resolution
+- `/code-quality-check` - Comprehensive quality validation
+- `/build-and-test` - Full build and test verification
+
+## Domain API v2 Architecture Patterns
+
+**IMPORTANT**: All new development should follow Domain API v2 patterns. The project now uses domain-driven architecture for better scalability, performance, and maintainability.
+
+### Backend Domain API Patterns
+
+**Domain Structure**:
+```
+backend/api/domains/          # Domain-specific API routers
+backend/services/domains/     # Domain business logic
+backend/schemas/             # Pydantic schemas with Zod export
+backend/middleware/          # Domain-specific middleware
+backend/monitoring/          # Domain observability
+```
+
+**Key Patterns**:
+1. **Domain Routers**: Use `/api/v2/{domain}` endpoints (e.g. `/api/v2/entities`)
+2. **Bulk Operations**: Implement efficient bulk operations with partial success handling
+3. **Type Safety**: Use Pydantic schemas with TypeScript export capability
+4. **Caching & Rate Limiting**: Domain-specific performance optimizations
+5. **Monitoring**: Built-in metrics, logging, and health checks
+
+### Frontend Domain API Patterns
+
+**Frontend Structure**:
+```
+frontend/src/api/domains/     # Domain-specific API clients
+frontend/src/api/types/       # TypeScript types from backend schemas
+frontend/src/hooks/domains/   # Domain-specific React hooks
+frontend/src/components/      # Enhanced UI components for bulk ops
+```
+
+**Key Patterns**:
+1. **Domain API Clients**: Use `fetchEntitiesV2()`, `controlEntityV2()` functions
+2. **React Hooks**: Use `useEntitiesV2()`, `useControlEntityV2()` with optimistic updates
+3. **Bulk Operations**: Use `useBulkControlEntitiesV2()` and selection management hooks
+4. **Progressive Migration**: Use `withDomainAPIFallback()` for gradual migration from legacy APIs
+5. **Type Safety**: Import types from `@/api/types/domains` for full type safety
+
+### Migration Strategy
+
+**For New Features**: Always use Domain API v2 patterns
+**For Existing Code**: Use progressive migration with fallback support
+**Authentication**: Support JWT, API Key, and Legacy session authentication
+**Error Handling**: Use structured error responses with proper HTTP status codes
+
+### Example Usage Patterns
+
+**Backend Domain Router**:
+```python
+from backend.api.domains.entities import create_entities_router
+router = create_entities_router()  # Auto-includes bulk ops, caching, monitoring
+```
+
+**Frontend Hook Usage**:
+```typescript
+import { useEntitiesV2, useControlEntityV2 } from '@/hooks/domains/useEntitiesV2';
+
+// Enhanced entity management with optimistic updates
+const { data: entities } = useEntitiesV2({ device_type: 'light' });
+const controlEntity = useControlEntityV2();
+```
+
+**Bulk Operations**:
+```typescript
+import { useBulkControlEntitiesV2, useEntitySelection } from '@/hooks/domains/useEntitiesV2';
+
+// Advanced bulk operations with selection management
+const { executeBulkOperation } = useEntitySelection();
+const result = await executeBulkOperation({ command: { command: 'set', state: false } });
+```
 
 ## Configuration File Synchronization Requirements
 
@@ -385,7 +500,10 @@ This applies to **ALL** Python scripts, development tools, tests, and any other 
 - `@github search repository issues related to WebSocket reconnection`
 
 ### Project Context Queries:
+- `@context7 Domain API v2 development patterns` (reference: `docs/development/domain-api-development.md`)
+- `@context7 bulk operations implementation` (reference: `docs/api/domain-api-v2.md`)
 - `@context7 entity service implementation patterns`
+- `@context7 API migration strategies` (reference: `docs/migration/legacy-to-domain-api-migration.md`)
 - `@context7 existing component architecture`
 - `@context7 API endpoint documentation examples`
 - `@context7 WebSocket message handling patterns`
@@ -403,5 +521,7 @@ Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+**MANDATORY CODE QUALITY ENFORCEMENT**: ALWAYS run quality checks (lint, typecheck, build) after ANY code change before proceeding to the next task. This is NON-NEGOTIABLE. Use incremental quality validation throughout development, not just at completion.
 
 **CONFIGURATION SYNCHRONIZATION REQUIREMENT**: When implementing new features, protocols, or dependencies, you MUST update ALL relevant configuration files (feature_flags.yaml, flake.nix settings and environment mappings, .env.example) to maintain consistency. Use `/sync-config` command when available or manually verify the configuration file checklist in the "Configuration File Synchronization Requirements" section.

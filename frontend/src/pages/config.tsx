@@ -80,7 +80,7 @@ export default function ConfigurationPage() {
     mutationFn: ({ featureName, enabled }: { featureName: string; enabled: boolean }) =>
       enabled ? enableFeature(featureName) : disableFeature(featureName),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['featureManagement'] });
+      void queryClient.invalidateQueries({ queryKey: ['featureManagement'] });
     },
   });
 
@@ -178,7 +178,7 @@ export default function ConfigurationPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => queryClient.invalidateQueries()}
+            onClick={() => void queryClient.invalidateQueries()}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh

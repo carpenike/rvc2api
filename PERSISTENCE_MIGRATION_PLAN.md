@@ -398,8 +398,13 @@ class EntityState(Base):
 
 **1.4 Grand Unification Alembic Migration**
 ```bash
-# Generate comprehensive migration
-alembic revision --autogenerate -m "unify_schemas_and_add_entity_state"
+# Generate comprehensive migration with quality checks
+poetry run alembic revision --autogenerate -m "unify_schemas_and_add_entity_state"
+
+# Verify migration quality
+poetry run pyright backend/models/       # Type check models
+poetry run ruff check backend/models/    # Lint models
+poetry run pytest tests/models/          # Test models
 ```
 
 The generated migration will include:
@@ -407,6 +412,12 @@ The generated migration will include:
 - New `entity_states` table
 - Any missing analytics tables
 - Proper indexes and constraints
+
+**Quality Requirements for Phase 1:**
+- All new SQLAlchemy models must pass type checking
+- Migration scripts must be tested in isolated test database
+- Configuration loader must have 100% test coverage
+- All file I/O operations must have proper error handling
 
 #### Phase 2: Core Logic Refactoring (Weeks 2-3)
 
@@ -488,6 +499,22 @@ async def startup_application():
     # 5. Start web server
     return engine
 ```
+
+**Quality Requirements for Phase 2:**
+```bash
+# Required checks after each core logic change
+poetry run pyright backend/core/              # Type check core modules
+poetry run pyright backend/services/          # Type check services
+poetry run pytest tests/core/ -v              # Test core functionality
+poetry run pytest tests/services/ -v          # Test service integrations
+poetry run pytest --cov=backend/core --cov=backend/services --cov-report=term-missing
+```
+
+**Integration Testing Requirements:**
+- All new async methods must have comprehensive test coverage
+- Entity manager persistence must be tested with real SQLite files
+- Startup sequence must be tested with various configuration scenarios
+- Database connection failures must be handled gracefully with proper logging
 
 **2.2 Entity State Persistence Integration**
 ```python
@@ -585,6 +612,25 @@ class AuthManager:
             return user
 ```
 
+**Quality Requirements for Phase 3:**
+```bash
+# Required checks for service integration
+poetry run pyright backend/services/          # Type check all services
+poetry run pytest tests/services/ -v --cov=backend/services --cov-report=term-missing
+poetry run pytest tests/integrations/ -v     # Integration tests
+
+# API endpoint validation
+cd frontend && npm run typecheck              # Frontend type validation
+cd frontend && npm run test                   # Frontend unit tests
+cd frontend && npm run build                  # Verify frontend builds
+```
+
+**Service Integration Testing Requirements:**
+- All service constructors must validate required dependencies
+- Database session handling must be tested for connection failures
+- Service shutdown must be tested for proper resource cleanup
+- API response schemas must be validated with both backend and frontend
+
 **3.2 Analytics Manager Integration**
 ```python
 # In backend/services/analytics_storage_service.py
@@ -604,11 +650,63 @@ class AnalyticsStorageService:
 
 #### Phase 4: Code Cleanup & Testing (Week 4)
 
-**4.1 Remove Optional Persistence Code**
+**4.1 Code Quality Requirements**
+
+All phases must maintain strict code quality standards:
+
+**Backend Quality Checks (Required for each commit):**
+```bash
+# Type checking with Pyright
+poetry run pyright backend
+
+# Linting with Ruff
+poetry run ruff check backend
+poetry run ruff format backend
+
+# Testing with pytest
+poetry run pytest --cov=backend --cov-report=term-missing
+
+# Pre-commit hooks
+poetry run pre-commit run --all-files
+```
+
+**Frontend Quality Checks (Required for each commit):**
+```bash
+cd frontend
+
+# Type checking with TypeScript
+npm run typecheck
+
+# Linting with ESLint
+npm run lint
+
+# Testing with Vitest
+npm run test
+
+# Build verification
+npm run build
+```
+
+**Mandatory Quality Gates:**
+1. **Zero type errors** - All TypeScript and Python type checking must pass
+2. **Zero lint violations** - All ESLint and Ruff checks must pass
+3. **Minimum 80% test coverage** - Both backend and frontend
+4. **Successful builds** - Frontend build must complete without errors
+5. **Pre-commit hooks pass** - All formatting and basic checks
+
+**4.2 Remove Optional Persistence Code**
 - Delete `backend/services/in_memory_persistence.py`
 - Remove all `settings.persistence.enabled` conditional blocks
 - Simplify `PersistenceFeature` startup logic
 - Update all services to assume persistence is available
+
+**Code Quality During Cleanup:**
+```bash
+# After each file modification, run quality checks
+poetry run pyright backend                    # Type check
+poetry run ruff check backend                 # Lint check
+poetry run pytest tests/affected_test.py      # Test affected areas
+```
 
 **4.2 Testing Strategy with Tiered Configuration**
 
@@ -1210,18 +1308,109 @@ in {
 ### Migration Deployment
 
 #### Pre-Deployment Checklist
+
+**Code Quality Verification:**
+- [ ] All backend type checks pass: `poetry run pyright backend`
+- [ ] All frontend type checks pass: `cd frontend && npm run typecheck`
+- [ ] All linting passes: `poetry run ruff check backend` and `cd frontend && npm run lint`
+- [ ] All tests pass with 80%+ coverage: `poetry run pytest --cov=backend --cov-report=term-missing`
+- [ ] Frontend tests pass: `cd frontend && npm run test`
+- [ ] Frontend builds successfully: `cd frontend && npm run build`
+- [ ] Pre-commit hooks pass: `poetry run pre-commit run --all-files`
+
+**Deployment Verification:**
 - [ ] Database backup created
 - [ ] Alembic migration tested in staging
 - [ ] Performance benchmarks verified
 - [ ] Rollback plan documented
 
+#### Automated Quality Pipeline
+
+**GitHub Actions Integration:**
+```yaml
+# .github/workflows/quality-check.yml
+name: Code Quality Check
+on: [push, pull_request]
+
+jobs:
+  backend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install
+      - name: Type check with Pyright
+        run: poetry run pyright backend
+      - name: Lint with Ruff
+        run: poetry run ruff check backend
+      - name: Format check with Ruff
+        run: poetry run ruff format --check backend
+      - name: Test with pytest
+        run: poetry run pytest --cov=backend --cov-report=xml
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: cd frontend && npm ci
+      - name: Type check with TypeScript
+        run: cd frontend && npm run typecheck
+      - name: Lint with ESLint
+        run: cd frontend && npm run lint
+      - name: Test with Vitest
+        run: cd frontend && npm run test
+      - name: Build frontend
+        run: cd frontend && npm run build
+```
+
+**Local Development Quality Script:**
+```bash
+#!/bin/bash
+# scripts/quality-check.sh - Run all quality checks locally
+
+set -e
+
+echo "🔍 Running Backend Quality Checks..."
+poetry run pyright backend
+poetry run ruff check backend
+poetry run ruff format backend
+poetry run pytest --cov=backend --cov-report=term-missing
+
+echo "🔍 Running Frontend Quality Checks..."
+cd frontend
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+cd ..
+
+echo "✅ All quality checks passed!"
+```
+
 #### Deployment Steps
-1. **Stop Application**: Graceful shutdown to ensure data consistency
-2. **Backup Database**: Create manual backup of existing SQLite file
-3. **Deploy Code**: Update application with new persistence logic
-4. **Start Application**: Automatic Alembic migration on startup
-5. **Verify Migration**: Check all tables created and data intact
-6. **Monitor Performance**: Watch for I/O bottlenecks
+1. **Quality Gate**: Run full quality pipeline: `./scripts/quality-check.sh`
+2. **Stop Application**: Graceful shutdown to ensure data consistency
+3. **Backup Database**: Create manual backup of existing SQLite file
+4. **Deploy Code**: Update application with new persistence logic
+5. **Start Application**: Automatic Alembic migration on startup
+6. **Verify Migration**: Check all tables created and data intact
+7. **Post-Deploy Quality Check**: Verify all services respond correctly
+8. **Monitor Performance**: Watch for I/O bottlenecks
 
 #### Rollback Plan
 ```bash
@@ -1747,3 +1936,39 @@ UPDATE system_settings SET value = NULL WHERE key LIKE 'user.%';
 - **Development**: Temporary `/tmp/coachiq-dev` without affecting system
 
 This unified approach maintains clear separation between Nix-deployed system configuration and user-managed data while simplifying the overall architecture and backup strategy.
+
+## Code Quality Assurance Summary
+
+**Mandatory Quality Standards Throughout Migration:**
+
+✅ **Zero Tolerance Policy:**
+- **Type Errors**: All TypeScript and Python code must pass type checking
+- **Lint Violations**: All ESLint and Ruff checks must pass
+- **Test Failures**: Minimum 80% coverage with all tests passing
+- **Build Failures**: Frontend must build successfully at all times
+
+✅ **Required Tools Integration:**
+- **Pyright** for Python type checking
+- **Ruff** for Python linting and formatting
+- **ESLint** for TypeScript/React linting
+- **pytest** with coverage reporting
+- **Vitest** for frontend testing
+- **Pre-commit hooks** for automated quality gates
+
+✅ **Development Workflow:**
+```bash
+# Before any commit
+./scripts/quality-check.sh
+
+# Before any pull request
+poetry run pre-commit run --all-files
+cd frontend && npm run build
+```
+
+✅ **CI/CD Integration:**
+- GitHub Actions quality pipeline prevents merging of poor-quality code
+- Automated testing on multiple environments
+- Coverage reporting and trend analysis
+- Integration with code review process
+
+This ensures the persistence migration delivers not just functional improvements, but maintains the highest code quality standards throughout the transformation.

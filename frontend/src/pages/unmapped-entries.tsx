@@ -451,7 +451,7 @@ export default function UnmappedEntries() {
 
         setIsMappingDialogOpen(false)
         setSelectedEntry(null)
-        refetch() // Refresh the data
+        void refetch() // Refresh the data
       } else {
         throw new Error(result.message)
       }
@@ -538,7 +538,7 @@ export default function UnmappedEntries() {
             </p>
           </div>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="gap-2"
           >

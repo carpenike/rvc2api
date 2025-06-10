@@ -138,12 +138,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         refresh_expires_in: data.refresh_expires_in,
       });
       // Invalidate auth queries to refetch user data
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
     },
     onError: (error) => {
       console.error('Login failed:', error);
       // Clear any existing tokens on login failure
-      tokenStorage.clearTokens();
+      void tokenStorage.clearTokens();
     },
   });
 
@@ -152,15 +152,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     mutationFn: apiLogout,
     onSuccess: () => {
       // Clear all tokens securely
-      tokenStorage.clearTokens();
+      void tokenStorage.clearTokens();
       // Clear all cached data
-      queryClient.clear();
+      void queryClient.clear();
     },
     onError: (error) => {
       console.error('Logout failed:', error);
       // Even if logout fails, clear local state
-      tokenStorage.clearTokens();
-      queryClient.clear();
+      void tokenStorage.clearTokens();
+      void queryClient.clear();
     },
   });
 
@@ -187,7 +187,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setRefreshCallbacks({
       onRefreshSuccess: (_tokens: TokenData) => {
         // Token refreshed successfully - invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
       },
       onRefreshFailure: (error: Error) => {
         console.error('Token refresh failed:', error);
@@ -195,8 +195,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       },
       onTokenExpired: () => {
         // Tokens expired, clearing auth state
-        queryClient.clear();
-        tokenStorage.clearTokens();
+        void queryClient.clear();
+        void tokenStorage.clearTokens();
       },
     });
 
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const tokenData = tokenStorage.getTokenData();
     if (tokenData && tokenStorage.isAccessTokenValid()) {
       // Token exists and is valid, validate by fetching user data
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
     }
 
     // Cleanup on unmount

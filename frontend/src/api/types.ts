@@ -68,7 +68,7 @@ export interface ControlCommand {
   command: string;
   command_type?: string;
   parameters?: Record<string, unknown>;
-  state?: string | null;
+  state?: boolean | null;
   brightness?: number;
   level?: number;
   temperature?: number;

@@ -1,12 +1,12 @@
 import { Badge, type badgeVariants } from "@/components/ui/badge";
 import { type VariantProps } from "class-variance-authority";
 import {
-  AlertCircle,
-  AlertTriangle,
-  Bell,
-  Bug,
-  Info,
-  Zap
+    AlertCircle,
+    AlertTriangle,
+    Bell,
+    Bug,
+    Info,
+    Zap
 } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { FixedSizeList as List } from "react-window";
@@ -107,6 +107,16 @@ interface LogRowProps {
 
 const LogRow = forwardRef<HTMLDivElement, LogRowProps>(({ index, style, logs }, ref) => {
   const log = logs[index];
+
+  // Early return if log is undefined (safety check for array bounds)
+  if (!log) {
+    return (
+      <div ref={ref} style={style} className="flex items-center p-2 text-muted-foreground">
+        <span>Loading...</span>
+      </div>
+    );
+  }
+
   const IconComponent = getLogIcon(log.level);
   const variant = getLogVariant(log.level);
   const isCritical = log.level === "critical" || log.level === "2";

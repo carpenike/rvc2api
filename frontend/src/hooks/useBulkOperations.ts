@@ -89,7 +89,7 @@ export function useBulkOperations() {
     mutationFn: createBulkOperation,
     onSuccess: () => {
       // Invalidate entity queries to refresh state after bulk operation
-      queryClient.invalidateQueries({ queryKey: ["entities"] })
+      void queryClient.invalidateQueries({ queryKey: ["entities"] })
     },
   })
 
@@ -105,7 +105,7 @@ export function useBulkOperationStatus(operationId: string | null) {
     enabled: !!operationId,
     refetchInterval: (data) => {
       // Stop polling when operation is complete
-      const status = (data as any)?.status
+      const status = (data as { status?: string })?.status
       return status === "PROCESSING" || status === "QUEUED" ? 2000 : false
     },
   })
@@ -122,7 +122,7 @@ export function useDeviceGroups() {
   const createGroup = useMutation({
     mutationFn: createDeviceGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["device-groups"] })
+      void queryClient.invalidateQueries({ queryKey: ["device-groups"] })
     },
   })
 
@@ -130,14 +130,14 @@ export function useDeviceGroups() {
     mutationFn: ({ groupId, request }: { groupId: string; request: DeviceGroupRequest }) =>
       updateDeviceGroup(groupId, request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["device-groups"] })
+      void queryClient.invalidateQueries({ queryKey: ["device-groups"] })
     },
   })
 
   const deleteGroup = useMutation({
     mutationFn: deleteDeviceGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["device-groups"] })
+      void queryClient.invalidateQueries({ queryKey: ["device-groups"] })
     },
   })
 
@@ -145,7 +145,7 @@ export function useDeviceGroups() {
     mutationFn: ({ groupId, payload }: { groupId: string; payload: BulkOperationPayload }) =>
       executeGroupOperation(groupId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entities"] })
+      void queryClient.invalidateQueries({ queryKey: ["entities"] })
     },
   })
 
@@ -258,48 +258,49 @@ export function useBulkOperationProgress() {
 // Quick action helpers
 export function useQuickActions() {
   const { createOperation } = useBulkOperations()
+  const { mutateAsync: createOperationAsync, isPending } = createOperation
 
   const allOff = useCallback((deviceIds: string[], exemptDeviceIds: string[] = []) => {
     const targets = deviceIds.filter(id => !exemptDeviceIds.includes(id))
 
     if (targets.length === 0) return Promise.resolve()
 
-    return createOperation.mutateAsync({
+    return createOperationAsync({
       operation_type: "state_change",
       targets,
       payload: { command: "set", state: "off" },
       description: "All Off - Master power down",
     })
-  }, [createOperation])
+  }, [createOperationAsync])
 
   const systemCheck = useCallback((deviceIds: string[]) => {
     if (deviceIds.length === 0) return Promise.resolve()
 
-    return createOperation.mutateAsync({
+    return createOperationAsync({
       operation_type: "status_check",
       targets: deviceIds,
       payload: { command: "status" },
       description: "System Check - Request status from all devices",
     })
-  }, [createOperation])
+  }, [createOperationAsync])
 
   const setBrightness = useCallback((deviceIds: string[], brightness: number) => {
     const lightIds = deviceIds // Filter for lights in real implementation
 
     if (lightIds.length === 0) return Promise.resolve()
 
-    return createOperation.mutateAsync({
+    return createOperationAsync({
       operation_type: "state_change",
       targets: lightIds,
       payload: { command: "set", brightness },
       description: `Set brightness to ${brightness}% for selected lights`,
     })
-  }, [createOperation])
+  }, [createOperationAsync])
 
   return {
     allOff,
     systemCheck,
     setBrightness,
-    isLoading: createOperation.isPending,
+    isLoading: isPending,
   }
 }

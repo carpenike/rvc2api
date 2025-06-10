@@ -143,7 +143,7 @@ export function useSendCANMessage() {
 
     onSuccess: () => {
       // Invalidate CAN statistics after sending a message
-      queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
     },
   });
 }
@@ -155,19 +155,19 @@ export function useRefreshCANData() {
   const queryClient = useQueryClient();
 
   const refreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.can.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.can.all });
   };
 
   const refreshStatistics = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.can.statistics() });
   };
 
   const refreshUnknownPGNs = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.can.unknownPgns() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.can.unknownPgns() });
   };
 
   const refreshUnmappedEntries = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.can.unmappedEntries() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.can.unmappedEntries() });
   };
 
   return {
@@ -185,19 +185,19 @@ export function useRefreshSystemData() {
   const queryClient = useQueryClient();
 
   const refreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.system.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.system.all });
   };
 
   const refreshHealth = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.system.health() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.system.health() });
   };
 
   const refreshFeatures = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.system.features() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.system.features() });
   };
 
   const refreshQueue = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.system.queueStatus() });
   };
 
   return {
@@ -215,15 +215,15 @@ export function useDataRefresh() {
   const queryClient = useQueryClient();
 
   const refreshEntities = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.entities.all });
   };
 
   const refreshEntity = (entityId: string) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(entityId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(entityId) });
   };
 
   const refreshAll = () => {
-    queryClient.invalidateQueries();
+    void queryClient.invalidateQueries();
   };
 
   return {

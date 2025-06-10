@@ -8,14 +8,13 @@
  * without requiring full vector search infrastructure.
  */
 
-import { useState } from "react"
+import type { DiagnosticTroubleCode } from "@/api/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import type { DiagnosticTroubleCode } from "@/api/types"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   IconBook,
   IconBulb,
@@ -24,6 +23,7 @@ import {
   IconTool,
   IconX
 } from "@tabler/icons-react"
+import { useState } from "react"
 
 interface TroubleshootingGuide {
   title: string
@@ -191,27 +191,27 @@ function getTroubleshootingGuide(dtc: DiagnosticTroubleCode): TroubleshootingGui
   // Match based on system and common patterns
   if (system.includes('engine')) {
     if (description.includes('temperature') || code.includes('temp')) {
-      return TROUBLESHOOTING_GUIDES.engine_temperature
+      return TROUBLESHOOTING_GUIDES.engine_temperature ?? null
     }
     if (description.includes('oil') || description.includes('pressure')) {
-      return TROUBLESHOOTING_GUIDES.engine_oil
+      return TROUBLESHOOTING_GUIDES.engine_oil ?? null
     }
   }
 
   if (system.includes('power') || system.includes('electrical')) {
-    return TROUBLESHOOTING_GUIDES.power_voltage
+    return TROUBLESHOOTING_GUIDES.power_voltage ?? null
   }
 
   if (system.includes('climate') || system.includes('hvac')) {
-    return TROUBLESHOOTING_GUIDES.climate_hvac
+    return TROUBLESHOOTING_GUIDES.climate_hvac ?? null
   }
 
   if (system.includes('lighting')) {
-    return TROUBLESHOOTING_GUIDES.lighting
+    return TROUBLESHOOTING_GUIDES.lighting ?? null
   }
 
   if (system.includes('water') || system.includes('tank')) {
-    return TROUBLESHOOTING_GUIDES.water_tank
+    return TROUBLESHOOTING_GUIDES.water_tank ?? null
   }
 
   return null

@@ -140,10 +140,10 @@ export function useResolveDTC() {
       resolveDTC(protocol, code, sourceAddress),
     onSuccess: (data) => {
       // Invalidate related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.dtcs })
-      queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.health })
-      queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.computedStats })
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Also invalidate dashboard
+      void void queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.dtcs })
+      void void queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.health })
+      void void queryClient.invalidateQueries({ queryKey: DIAGNOSTICS_KEYS.computedStats })
+      void void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Also invalidate dashboard
 
       toast.success('DTC Resolved', {
         description: `DTC ${data.dtc_id} has been marked as resolved`,
@@ -169,7 +169,7 @@ export function useRefreshDiagnostics() {
   return () => {
     // Invalidate all diagnostics queries
     Object.values(DIAGNOSTICS_KEYS).forEach(key => {
-      queryClient.invalidateQueries({ queryKey: key })
+      void void queryClient.invalidateQueries({ queryKey: key })
     })
 
     toast.info('Diagnostics Refreshed', {
@@ -206,10 +206,10 @@ export function useDiagnosticsState(filters?: DTCFilters) {
 
     // Actions
     refresh: () => {
-      status.refetch()
-      dtcs.refetch()
-      stats.refetch()
-      correlations.refetch()
+      void status.refetch()
+      void dtcs.refetch()
+      void stats.refetch()
+      void correlations.refetch()
     },
 
     // Status helpers

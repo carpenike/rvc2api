@@ -113,7 +113,7 @@ export default function RVCSpec() {
 
   // Load spec content on component mount
   useEffect(() => {
-    loadSpecContent();
+    void loadSpecContent();
   }, []);
 
   return (
@@ -443,7 +443,7 @@ export default function RVCSpec() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={loadSpecContent}
+                    onClick={() => void loadSpecContent()}
                     disabled={specLoading}
                   >
                     {specLoading ? "Loading..." : "Reload"}

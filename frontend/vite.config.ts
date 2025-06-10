@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import reactPlugin from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
   plugins: [
@@ -10,6 +11,13 @@ export default defineConfig({
     // @ts-expect-error fastRefresh is not in types
     reactPlugin({ fastRefresh: false }),
     tailwindcss(),
+    // Bundle analyzer for performance optimization
+    visualizer({
+      filename: 'dist/stats.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true
+    }),
   ],
   resolve: {
     alias: {

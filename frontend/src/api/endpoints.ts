@@ -1084,7 +1084,7 @@ export async function fetchTankSensors(): Promise<EntityCollection> {
  * @returns Promise resolving to control response
  */
 export async function turnLightOn(entityId: string): Promise<ControlEntityResponse> {
-  return controlEntity(entityId, { command: 'set', parameters: { state: true } });
+  return controlEntity(entityId, { command: 'set', state: true });
 }
 
 /**
@@ -1094,7 +1094,7 @@ export async function turnLightOn(entityId: string): Promise<ControlEntityRespon
  * @returns Promise resolving to control response
  */
 export async function turnLightOff(entityId: string): Promise<ControlEntityResponse> {
-  return controlEntity(entityId, { command: 'set', parameters: { state: false } });
+  return controlEntity(entityId, { command: 'set', state: false });
 }
 
 /**
@@ -1120,7 +1120,8 @@ export async function setLightBrightness(
 ): Promise<ControlEntityResponse> {
   return controlEntity(entityId, {
     command: 'set',
-    parameters: { brightness: Math.max(0, Math.min(100, brightness)) }
+    state: true, // Setting brightness usually implies turning the light on
+    brightness: Math.max(0, Math.min(100, brightness))
   });
 }
 

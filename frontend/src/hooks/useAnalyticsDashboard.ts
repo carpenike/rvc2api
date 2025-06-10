@@ -71,7 +71,7 @@ export function usePerformanceTrends(
         params.append("metrics", metrics.join(","))
       }
 
-      const response = await apiGet<unknown>(`/api/analytics/trends?${params.toString()}`)
+      const response = await apiGet<import('@/api/types/domains').PerformanceTrendsResponse>(`/api/analytics/trends?${params.toString()}`)
       return response
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -97,7 +97,7 @@ export function useSystemInsights(
       params.append("min_severity", minSeverity)
       params.append("limit", limit.toString())
 
-      const response = await apiGet<unknown>(`/api/analytics/insights?${params.toString()}`)
+      const response = await apiGet<import('@/api/types/domains').SystemInsightsResponse>(`/api/analytics/insights?${params.toString()}`)
       return response
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -121,7 +121,7 @@ export function useHistoricalAnalysis(
       params.append("time_window_hours", timeWindowHours.toString())
       params.append("include_predictions", includePredictions.toString())
 
-      const response = await apiGet<unknown>(`/api/analytics/historical?${params.toString()}`)
+      const response = await apiGet<import('@/api/types/domains').HistoricalAnalysisResponse>(`/api/analytics/historical?${params.toString()}`)
       return response
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -147,7 +147,7 @@ export function useMetricsAggregation(
         params.append("metric_groups", metricGroups.join(","))
       }
 
-      const response = await apiGet<unknown>(`/api/analytics/aggregation?${params.toString()}`)
+      const response = await apiGet<import('@/api/types/domains').MetricsAggregationResponse>(`/api/analytics/aggregation?${params.toString()}`)
       return response
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -162,7 +162,7 @@ export function useAnalyticsStatus() {
   return useQuery({
     queryKey: ANALYTICS_KEYS.status(),
     queryFn: async () => {
-      const response = await apiGet<unknown>("/api/analytics/status")
+      const response = await apiGet<import('@/api/types/domains').AnalyticsServiceStatus>("/api/analytics/status")
       return response
     },
     staleTime: 30 * 1000, // 30 seconds
@@ -177,7 +177,7 @@ export function useAnalyticsHealth() {
   return useQuery({
     queryKey: ANALYTICS_KEYS.health(),
     queryFn: async () => {
-      const response = await apiGet<unknown>("/api/analytics/health")
+      const response = await apiGet<Record<string, unknown>>("/api/analytics/health")
       return response
     },
     staleTime: 30 * 1000, // 30 seconds
@@ -197,12 +197,12 @@ export function useRecordCustomMetric() {
       value: number
       metadata?: Record<string, unknown>
     }) => {
-      const response = await apiPost<unknown>("/api/analytics/metrics", data)
+      const response = await apiPost<{ success: boolean; message: string }>("/api/analytics/metrics", data)
       return response
     },
     onSuccess: () => {
       // Invalidate analytics data to reflect new metric
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ANALYTICS_KEYS.all,
       })
     },
@@ -242,37 +242,37 @@ export function useAnalyticsDashboard(options: AnalyticsDashboardOptions = {}) {
 
   // Refresh functions
   const refreshTrends = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.trends(timeWindowHours, resolution, metrics),
     })
   }
 
   const refreshInsights = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.insights(categories, minSeverity, 50),
     })
   }
 
   const refreshHistorical = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.historical(analysisType, timeWindowHours, includePredictions),
     })
   }
 
   const refreshAggregation = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.aggregation(aggregationWindows, metricGroups),
     })
   }
 
   const refreshStatus = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.status(),
     })
   }
 
   const refreshAll = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ANALYTICS_KEYS.all,
     })
   }
@@ -342,22 +342,28 @@ export function useAnalyticsDashboardStats() {
     return null
   }
 
-  const trendsMetrics = Object.keys((trends as { metrics?: Record<string, unknown> })?.metrics || {}).length
-  const totalInsights = (insights as { total_insights?: number })?.total_insights || 0
-  const patternsFound = (historical as { summary?: { patterns_found?: number } })?.summary?.patterns_found || 0
-  const kpis = Object.keys((aggregation as { kpis?: Record<string, unknown> })?.kpis || {}).length
+  const trendsData = trends as import('@/api/types/domains').PerformanceTrendsResponse | undefined
+  const insightsData = insights as import('@/api/types/domains').SystemInsightsResponse | undefined
+  const historicalData = historical as import('@/api/types/domains').HistoricalAnalysisResponse | undefined
+  const aggregationData = aggregation as import('@/api/types/domains').MetricsAggregationResponse | undefined
+  const statusData = status as import('@/api/types/domains').AnalyticsServiceStatus | undefined
+
+  const trendsMetrics = Object.keys(trendsData?.metrics || {}).length
+  const totalInsights = insightsData?.summary?.total_count || 0
+  const patternsFound = historicalData?.summary?.patterns_found || 0
+  const kpis = Object.keys(aggregationData?.kpis || {}).length
 
   return {
     trendsMetrics,
     totalInsights,
     patternsFound,
     kpis,
-    serviceHealth: (status as { service_status?: string })?.service_status === "operational",
+    serviceHealth: statusData?.service_status === "operational",
     dataQuality: trendsMetrics > 0 && totalInsights > 0 ? "good" : "limited",
     lastUpdate: Math.max(
-      (trends as { time_window_hours?: number })?.time_window_hours || 0,
-      (insights as { summary?: { total_count?: number } })?.summary?.total_count || 0,
-      (historical as { summary?: { confidence?: number } })?.summary?.confidence || 0
+      trendsData?.time_window_hours || 0,
+      insightsData?.summary?.total_count || 0,
+      historicalData?.summary?.patterns_found || 0
     )
   }
 }
@@ -368,18 +374,13 @@ export function useAnalyticsDashboardStats() {
 export function useAnalyticsPerformanceSummary() {
   const trends = usePerformanceTrends(24, "1h")
 
-  if (!(trends.data as { summary?: unknown })?.summary) {
+  const trendsData = trends.data as import('@/api/types/domains').PerformanceTrendsResponse | undefined
+  if (!trendsData?.summary) {
     return null
   }
 
-  const summary = (trends.data as { summary: {
-    trending_up?: number
-    trending_down?: number
-    stable?: number
-    total_anomalies?: number
-    key_insights?: string[]
-  } }).summary
-  // const metrics = trends.data.metrics || {} // Currently unused but may be needed for future enhancements
+  const summary = trendsData.summary
+  // const metrics = trendsData.metrics || {} // Currently unused but may be needed for future enhancements
 
   // Calculate overall performance score
   const trendingUp = summary.trending_up || 0
@@ -392,8 +393,8 @@ export function useAnalyticsPerformanceSummary() {
     : 0
 
   // Get most critical alerts
-  const alerts = (trends.data as { alerts?: { severity: string }[] })?.alerts || []
-  const criticalAlerts = alerts.filter((alert: { severity: string }) => alert.severity === "high" || alert.severity === "critical")
+  const alerts = trendsData.alerts || []
+  const criticalAlerts = alerts.filter(alert => alert.severity === "high" || alert.severity === "critical")
 
   return {
     performanceScore: Math.round(performanceScore),

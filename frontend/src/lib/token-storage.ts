@@ -160,7 +160,7 @@ class TokenStorageManager {
     const delay = Math.max(0, refreshAt - Date.now())
 
     this.refreshTimeout = setTimeout(() => {
-      this.attemptTokenRefresh()
+      void this.attemptTokenRefresh()
     }, delay)
   }
 
@@ -195,7 +195,7 @@ class TokenStorageManager {
       if (this.isRefreshTokenValid()) {
         setTimeout(() => {
           this.isRefreshing = false
-          this.attemptTokenRefresh()
+          void this.attemptTokenRefresh()
         }, REFRESH_RETRY_DELAY_MS)
       } else {
         this.refreshCallbacks.onTokenExpired?.()
@@ -256,14 +256,14 @@ class TokenStorageManager {
       if (this.isRefreshTokenValid()) {
         if (this.needsRefresh()) {
           // Immediately refresh if needed
-          this.attemptTokenRefresh()
+          void this.attemptTokenRefresh()
         } else {
           // Schedule refresh for later
           this.scheduleTokenRefresh(tokenData)
         }
       } else {
         // Tokens expired, clear them
-        this.clearTokens()
+        void this.clearTokens()
       }
     }
   }

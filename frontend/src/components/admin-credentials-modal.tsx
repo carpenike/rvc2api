@@ -99,7 +99,7 @@ export function AdminCredentialsModal({
               </Alert>
 
               <Button
-                onClick={handleRetrieveCredentials}
+                onClick={() => void handleRetrieveCredentials()}
                 disabled={isLoading}
                 className="w-full"
               >
@@ -128,7 +128,7 @@ export function AdminCredentialsModal({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCopyToClipboard(credentials.username, "username")}
+                      onClick={() => void handleCopyToClipboard(credentials.username, "username")}
                     >
                       <IconCopy className="h-4 w-4" />
                       {copiedField === "username" ? "Copied!" : "Copy"}
@@ -163,7 +163,7 @@ export function AdminCredentialsModal({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCopyToClipboard(credentials.password, "password")}
+                      onClick={() => void handleCopyToClipboard(credentials.password, "password")}
                     >
                       <IconCopy className="h-4 w-4" />
                       {copiedField === "password" ? "Copied!" : "Copy"}

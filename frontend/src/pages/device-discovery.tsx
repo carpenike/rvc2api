@@ -182,7 +182,7 @@ function AutoDiscoveryWizard({ onDiscoveryComplete }: { onDiscoveryComplete: () 
 
               <div className="flex gap-2">
                 <Button
-                  onClick={handleStartScan}
+                  onClick={() => void handleStartScan()}
                   disabled={selectedProtocols.length === 0}
                   className="flex-1"
                 >
@@ -405,7 +405,7 @@ function DeviceSetupDialog({
 
           <div className="flex gap-2">
             <Button
-              onClick={handleSetup}
+              onClick={() => void handleSetup()}
               disabled={!deviceName || !deviceType || !area}
               className="flex-1"
             >

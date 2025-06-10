@@ -172,12 +172,12 @@ export function useControlEntity() {
 
     onSuccess: (data: ControlEntityResponse, variables) => {
       // Invalidate the specific entity and related queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
       if (data.entity_type === 'light') {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
       } else if (data.entity_type === 'lock') {
-        queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
       }
     },
 
@@ -243,8 +243,8 @@ export function useControlEntity() {
     },
 
     onError: (_err, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(variables.entityId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
       if (pendingTimers.current[variables.entityId]) {
         clearTimeout(pendingTimers.current[variables.entityId]);
         delete pendingTimers.current[variables.entityId];
@@ -268,17 +268,17 @@ export function useLightControl() {
     },
     turnOn: {
       mutate: ({ entityId }: { entityId: string }) =>
-        controlEntity.mutate({ entityId, command: { command: 'set', state: 'on' } }),
+        controlEntity.mutate({ entityId, command: { command: 'set', state: true } }),
       isPending: controlEntity.isPending,
     },
     turnOff: {
       mutate: ({ entityId }: { entityId: string }) =>
-        controlEntity.mutate({ entityId, command: { command: 'set', state: 'off' } }),
+        controlEntity.mutate({ entityId, command: { command: 'set', state: false } }),
       isPending: controlEntity.isPending,
     },
     setBrightness: {
       mutate: ({ entityId, brightness }: { entityId: string; brightness: number }) =>
-        controlEntity.mutate({ entityId, command: { command: 'set', state: 'on', brightness } }),
+        controlEntity.mutate({ entityId, command: { command: 'set', state: true, brightness } }),
       isPending: controlEntity.isPending,
     },
     brightnessUp: {
@@ -301,9 +301,9 @@ export function useLockControl() {
   const queryClient = useQueryClient();
 
   const invalidateLock = (entityId: string) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(entityId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
-    queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.entities.detail(entityId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.locks.list() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.entities.list() });
   };
 
   return {

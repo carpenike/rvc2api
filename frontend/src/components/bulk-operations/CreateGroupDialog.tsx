@@ -116,7 +116,7 @@ export function CreateGroupDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           {/* Group Name */}
           <div className="space-y-2">
             <Label htmlFor="group-name">Group Name *</Label>

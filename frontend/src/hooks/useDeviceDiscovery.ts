@@ -196,7 +196,7 @@ export function useDiscoverDevices() {
     },
     onSuccess: () => {
       // Invalidate and refetch discovery data
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEVICE_DISCOVERY_KEYS.all,
       })
     },
@@ -235,10 +235,10 @@ export function usePollDevice() {
     },
     onSuccess: () => {
       // Invalidate topology and availability data
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEVICE_DISCOVERY_KEYS.topology(),
       })
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEVICE_DISCOVERY_KEYS.availability(),
       })
     },
@@ -272,7 +272,7 @@ export function useStartAutoDiscovery() {
     },
     onSuccess: () => {
       // Invalidate all discovery data after auto-discovery
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEVICE_DISCOVERY_KEYS.all,
       })
     },
@@ -308,11 +308,11 @@ export function useSetupDevice() {
     },
     onSuccess: () => {
       // Invalidate discovery data and entity data after device setup
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEVICE_DISCOVERY_KEYS.all,
       })
       // Also invalidate entities since we may have created new ones
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["entities"],
       })
     },
@@ -340,7 +340,7 @@ export function useDeviceDiscovery() {
   const setupDevice = useSetupDevice()
 
   const refresh = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: DEVICE_DISCOVERY_KEYS.all,
     })
   }

@@ -7,13 +7,14 @@
 
 // Export all types
 export type * from './types';
+export type * from './types/domains';
 
 // Export client utilities
 export {
-    API_BASE, APIClientError, apiDelete, apiGet,
+    APIClientError, API_BASE, WS_BASE, apiDelete, apiGet,
     apiPost,
     apiPut, apiRequest, buildQueryString, env, handleApiResponse, logApiRequest,
-    logApiResponse, WS_BASE
+    logApiResponse
 } from './client';
 
 // Export all endpoint functions
@@ -38,8 +39,16 @@ export {
     turnLightOn, unlockEntity
 } from './endpoints';
 
+// Export domain APIs - avoid conflicts with main types
+export {
+    bulkControlEntitiesV2, controlEntityV2, convertLegacyEntityCollection,
+    // Entities domain functions
+    fetchEntitiesV2,
+    fetchEntityV2, fetchSchemasV2
+} from './domains';
+
 // Export WebSocket functionality
-export { createCANScanWebSocket, createEntityWebSocket, createLogWebSocket, createSystemStatusWebSocket, getWebSocketStateString, isWebSocketSupported, RVCWebSocketClient } from './websocket';
+export { RVCWebSocketClient, createCANScanWebSocket, createEntityWebSocket, createLogWebSocket, createSystemStatusWebSocket, getWebSocketStateString, isWebSocketSupported } from './websocket';
 
 export type {
     WebSocketConfig, WebSocketHandlers, WebSocketState
@@ -47,7 +56,7 @@ export type {
 
 // Re-export types that are commonly used
 export type {
-    AllCANStats, APIError, CANMessage, CANMessageUpdate, CANSendParams, ControlCommand,
+    APIError, AllCANStats, CANMessage, CANMessageUpdate, CANSendParams, ControlCommand,
     ControlEntityResponse, EntitiesQueryParams, Entity,
     EntityCollection, EntityUpdateMessage, FeatureStatus, HealthStatus, HistoryEntry, HistoryQueryParams, LightEntity,
     LockEntity, MetadataResponse, SystemStatusMessage, TankEntity, TemperatureEntity, UnknownPGNEntry, UnmappedEntry, WebSocketMessage

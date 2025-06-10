@@ -103,7 +103,7 @@ const MFASetup: React.FC = () => {
       toast.success('MFA has been successfully enabled!');
       setShowBackupCodes(true);
       setBackupCodes(setupData?.backup_codes || []);
-      refetchStatus();
+      void refetchStatus();
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -129,7 +129,7 @@ const MFASetup: React.FC = () => {
       toast.success('MFA has been disabled');
       setSetupData(null);
       setTotpCode('');
-      refetchStatus();
+      void refetchStatus();
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -179,7 +179,7 @@ const MFASetup: React.FC = () => {
       setBackupCodes(data.backup_codes);
       setShowBackupCodes(true);
       toast.success('New backup codes generated');
-      refetchStatus();
+      void refetchStatus();
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -205,13 +205,13 @@ const MFASetup: React.FC = () => {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
   };
 
   const copyAllBackupCodes = () => {
     const allCodes = backupCodes.join('\n');
-    navigator.clipboard.writeText(allCodes);
+    void navigator.clipboard.writeText(allCodes);
     toast.success('All backup codes copied to clipboard');
   };
 

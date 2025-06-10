@@ -133,7 +133,7 @@ export function useAcknowledgeRecommendation() {
     },
     onSuccess: () => {
       // Invalidate and refetch recommendations
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: PREDICTIVE_MAINTENANCE_KEYS.all,
       })
     },
@@ -195,7 +195,7 @@ export function usePredictiveMaintenance(filters?: PredictiveMaintenanceFilters)
   const acknowledgeRecommendation = useAcknowledgeRecommendation()
 
   const refresh = () => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: PREDICTIVE_MAINTENANCE_KEYS.all,
     })
   }

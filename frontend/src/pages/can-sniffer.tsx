@@ -94,8 +94,8 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
   // Combine backend stats with enhanced backend data or frontend fallback
   const stats = {
     // Use enhanced backend data first, then basic backend data, then frontend calculation
-    total: (enhancedStats as any)?.total_messages ?? (backendStats as any)?.total_messages ?? messages.length,
-    errorMessages: (enhancedStats as any)?.total_errors ?? (backendStats as any)?.total_errors ?? messages.filter(msg => msg.error).length,
+    total: (enhancedStats as { total_messages?: number })?.total_messages ?? (backendStats as { total_messages?: number })?.total_messages ?? messages.length,
+    errorMessages: (enhancedStats as { total_errors?: number })?.total_errors ?? (backendStats as { total_errors?: number })?.total_errors ?? messages.filter(msg => msg.error).length,
     lastMinute: messages.filter(msg =>
       Date.now() - new Date(msg.timestamp).getTime() < 60000
     ).length, // Keep this frontend for now as it's time-sensitive
@@ -461,66 +461,55 @@ export default function CANSniffer() {
   if (error) {
     // Extract error details for better user messaging
     const getErrorDetails = () => {
-      if (error && typeof error === 'object' && (error as any) instanceof Error) {
+      if (error && typeof error === 'object' && 'statusCode' in error && typeof (error as { statusCode?: number }).statusCode === 'number') {
         // Check for specific API error types
-        if ('statusCode' in error && typeof (error as { statusCode?: number }).statusCode === 'number') {
-          const statusCode = (error as { statusCode: number }).statusCode;
+        const statusCode = (error as { statusCode: number }).statusCode;
 
-          switch (statusCode) {
-            case 404:
-              return {
-                title: "CAN Feature Disabled",
-                message: "The CAN interface feature is currently disabled in the system configuration.",
-                isConnectionError: false,
-                showRetry: false,
-                troubleshooting: [
-                  "Contact your system administrator to enable the CAN interface feature",
-                  "Check the system configuration settings"
-                ]
-              };
-            case 503:
-              return {
-                title: "CAN Bus Connection Error",
-                message: "Failed to connect to CAN bus interface. No interfaces are available or connected.",
-                isConnectionError: true,
-                showRetry: true,
-                troubleshooting: [
-                  "Ensure CAN interfaces are configured and connected",
-                  "Check that vCAN interfaces are available (if using virtual CAN)",
-                  "Verify physical CAN connections and termination",
-                  "Check interface status with 'ip link show' or 'ifconfig'"
-                ]
-              };
-            default:
-              return {
-                title: "API Error",
-                message: (error as any)?.message || "An unexpected error occurred while communicating with the server.",
-                isConnectionError: false,
-                showRetry: true,
-                troubleshooting: ["Try refreshing the page", "Check your network connection"]
-              };
-          }
+        switch (statusCode) {
+          case 404:
+            return {
+              title: "CAN Feature Disabled",
+              message: "The CAN interface feature is currently disabled in the system configuration.",
+              isConnectionError: false,
+              showRetry: false,
+              troubleshooting: [
+                "Contact your system administrator to enable the CAN interface feature",
+                "Check the system configuration settings"
+              ]
+            };
+          case 503:
+            return {
+              title: "CAN Bus Connection Error",
+              message: "Failed to connect to CAN bus interface. No interfaces are available or connected.",
+              isConnectionError: true,
+              showRetry: true,
+              troubleshooting: [
+                "Ensure CAN interfaces are configured and connected",
+                "Check that vCAN interfaces are available (if using virtual CAN)",
+                "Verify physical CAN connections and termination",
+                "Check interface status with 'ip link show' or 'ifconfig'"
+              ]
+            };
+          default:
+            return {
+              title: "API Error",
+              message: (error as { message?: string })?.message || "An unexpected error occurred while communicating with the server.",
+              isConnectionError: false,
+              showRetry: true,
+              troubleshooting: ["Try refreshing the page", "Check your network connection"]
+            };
         }
-
-        // Generic error handling
-        return {
-          title: "Connection Error",
-          message: (error as any)?.message || "An error occurred while loading CAN data.",
-          isConnectionError: true,
-          showRetry: true,
-          troubleshooting: ["Try refreshing the page", "Check your network connection"]
-        };
       }
 
-      // Fallback for unknown error types
+      // Generic error handling for string errors or non-object errors
       return {
-        title: "Unknown Error",
-        message: "An unexpected error occurred.",
-        isConnectionError: false,
+        title: "Connection Error",
+        message: typeof error === 'string' ? error : "An error occurred while loading CAN data.",
+        isConnectionError: true,
         showRetry: true,
-        troubleshooting: ["Try refreshing the page"]
+        troubleshooting: ["Try refreshing the page", "Check your network connection"]
       };
-    };
+    }
 
     const errorDetails = getErrorDetails();
 
@@ -535,7 +524,7 @@ export default function CANSniffer() {
 
               {errorDetails.showRetry && (
                 <div className="flex gap-2">
-                  <Button onClick={connect} variant="outline" size="sm">
+                  <Button onClick={() => void connect()} variant="outline" size="sm">
                     <IconRefresh className="h-4 w-4 mr-2" />
                     {errorDetails.isConnectionError ? "Retry Connection" : "Retry"}
                   </Button>
@@ -592,7 +581,7 @@ export default function CANSniffer() {
               <IconTrash className="h-4 w-4" />
               Clear
             </Button>
-            <Button onClick={connect} variant="outline" className="gap-2">
+            <Button onClick={() => void connect()} variant="outline" className="gap-2">
               <IconRefresh className="h-4 w-4" />
               Refresh
             </Button>

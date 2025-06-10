@@ -129,10 +129,10 @@ export function useBulkControl() {
     mutationFn: bulkControlEntities,
     onSuccess: (data) => {
       // Invalidate related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.summary })
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.entities })
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.activity })
-      queryClient.invalidateQueries({ queryKey: ['entities'] }) // Also invalidate main entities query
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.summary })
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.entities })
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.activity })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] }) // Also invalidate main entities query
 
       // Show success toast
       const successMessage = data.failed === 0
@@ -162,9 +162,9 @@ export function useAcknowledgeAlert() {
     mutationFn: acknowledgeAlert,
     onSuccess: (data, _alertId) => {
       // Invalidate analytics query to refresh alerts
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.analytics })
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.summary })
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.activity })
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.analytics })
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.summary })
+      void queryClient.invalidateQueries({ queryKey: DASHBOARD_KEYS.activity })
 
       toast.success('Alert Acknowledged', {
         description: data.message,
@@ -190,7 +190,7 @@ export function useRefreshDashboard() {
   return () => {
     // Invalidate all dashboard queries
     Object.values(DASHBOARD_KEYS).forEach(key => {
-      queryClient.invalidateQueries({ queryKey: key })
+      void queryClient.invalidateQueries({ queryKey: key })
     })
 
     toast.info('Dashboard Refreshed', {
@@ -223,8 +223,8 @@ export function useDashboardState() {
 
     // Actions
     refresh: () => {
-      summary.refetch()
-      analytics.refetch()
+      void summary.refetch()
+      void analytics.refetch()
     },
 
     // Status helpers

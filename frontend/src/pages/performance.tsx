@@ -394,12 +394,12 @@ export default function PerformancePage() {
   });
 
   const handleRefreshAll = () => {
-    refetchHealth();
-    refetchMetrics();
-    refetchResources();
-    refetchRecommendations();
-    refetchDeviations();
-    refetchThroughput();
+    void refetchHealth();
+    void refetchMetrics();
+    void refetchResources();
+    void refetchRecommendations();
+    void refetchDeviations();
+    void refetchThroughput();
   };
 
   const handleGenerateReport = async () => {
@@ -461,7 +461,7 @@ export default function PerformancePage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button onClick={handleGenerateReport} disabled={isGeneratingReport}>
+            <Button onClick={() => void handleGenerateReport()} disabled={isGeneratingReport}>
               <Download className="h-4 w-4 mr-2" />
               {isGeneratingReport ? 'Generating...' : 'Export Report'}
             </Button>

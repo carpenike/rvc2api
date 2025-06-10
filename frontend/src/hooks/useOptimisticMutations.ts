@@ -83,7 +83,7 @@ export function useOptimisticEntityControl() {
       }
 
       toast.error('Control Failed', {
-        description: `Failed to control ${variables.entityId}: ${(_err as any)?.message || 'Unknown error'}`,
+        description: `Failed to control ${variables.entityId}: ${_err instanceof Error ? _err.message : 'Unknown error'}`,
       })
     },
 
@@ -108,8 +108,8 @@ export function useOptimisticEntityControl() {
 
     onSettled: () => {
       // Always refetch after error or success to ensure we have the latest data
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
     },
   })
 }
@@ -168,7 +168,7 @@ export function useOptimisticLightControl() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
     },
   })
 
@@ -221,7 +221,7 @@ export function useOptimisticLightControl() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
     },
   })
 
@@ -275,7 +275,7 @@ export function useOptimisticLightControl() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
     },
   })
 
@@ -329,7 +329,7 @@ export function useOptimisticLightControl() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
     },
   })
 
@@ -406,8 +406,8 @@ export function useOptimisticBulkControl() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
+      void queryClient.invalidateQueries({ queryKey: ['entities'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
     },
   })
 }
@@ -486,7 +486,7 @@ export function useOptimisticMutation<TData, TError, TVariables>({
     onSettled: () => {
       // Always refetch to ensure consistency
       queryKeys.forEach(key => {
-        queryClient.invalidateQueries({ queryKey: key })
+        void queryClient.invalidateQueries({ queryKey: key })
       })
     },
   })

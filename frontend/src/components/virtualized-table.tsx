@@ -69,19 +69,28 @@ function VirtualizedRow<T>({
     )
   }
 
-  return (
+  return onRowClick ? (
+    <button
+      style={style}
+      className={`flex border-b hover:bg-muted/50 transition-colors cursor-pointer w-full text-left`}
+      onClick={() => onRowClick(item, index)}
+      type="button"
+    >
+      {columns.map((column) => (
+        <div
+          key={column.id}
+          className={`flex-1 p-2 flex items-center text-sm ${column.className || ''}`}
+          style={{ width: column.width }}
+        >
+          {column.accessor(item)}
+        </div>
+      ))}
+    </button>
+  ) : (
     <div
       style={style}
-      className={`flex border-b hover:bg-muted/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
-      onClick={onRowClick ? () => onRowClick(item, index) : undefined}
-      onKeyDown={onRowClick ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onRowClick(item, index)
-        }
-      } : undefined}
-      tabIndex={onRowClick ? 0 : -1}
-      role={onRowClick ? 'button' : undefined}
+      className="flex border-b hover:bg-muted/50 transition-colors"
+      role="row"
     >
       {columns.map((column) => (
         <div

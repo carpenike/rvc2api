@@ -1,5 +1,21 @@
 # GitHub Copilot Instructions for CoachIQ
 
+## CRITICAL CODE QUALITY REQUIREMENTS
+
+**MANDATORY**: ALL code changes must pass linting, type checking, and build verification BEFORE proceeding to the next task. Run quality checks incrementally throughout development, not just at the end.
+
+**Quality Gates (NON-NEGOTIABLE):**
+```bash
+# Frontend (run after ANY code change)
+cd frontend
+npm run typecheck && npm run lint && npm run build
+
+# Backend (run after ANY code change)
+poetry run pyright backend && poetry run ruff check . && poetry run ruff format backend
+```
+
+## Core Requirements
+
 - All build, cache, and output files (e.g., dist, dist-ssr, .vite, .vite-temp, node_modules, _.tsbuildinfo, .cache, _.log) are excluded from linting and type checking in both root and frontend ESLint configs.
 - All API calls are made via /api/entities endpoints, not /api/lights, /api/locks, etc. to ensure a unified and extensible API design.
 - All API endpoints require comprehensive documentation with examples, descriptions, and response schemas to maintain the OpenAPI specification.
@@ -40,21 +56,28 @@ Each `.instructions.md` file contains targeted guidance for specific languages, 
 
 ## Linting & Code Quality Requirements
 
+**INCREMENTAL QUALITY WORKFLOW**:
+1. Make code changes
+2. Run quality checks immediately (see commands above)
+3. Fix all issues before proceeding to next task
+4. NEVER accumulate technical debt
+
 ### Python
 
 - **Version**: 3.12+
-- **Formatting**: ruff format (line length: 100)
-- **Linting**: ruff (configured in pyproject.toml)
-- **Type Checking**: pyright (basic mode, configured in pyrightconfig.json)
+- **Formatting**: ruff format (line length: 100) - **RUN AFTER EVERY CHANGE**
+- **Linting**: ruff (configured in pyproject.toml) - **MUST PASS WITH ZERO WARNINGS**
+- **Type Checking**: pyright (basic mode, configured in pyrightconfig.json) - **MUST PASS COMPLETELY**
 - **Import Order**: Group as stdlib → third-party → local
 - **Custom Type Stubs**: Created in typings/ directory for external libraries
 - **Line Endings**: LF (Unix style)
-- **Code Validation**: All code must pass both linting AND type checking
+- **Code Validation**: All code must pass both linting AND type checking BEFORE proceeding
 
 ### TypeScript/React
 
-- **ESLint**: Using flat config in eslint.config.js and eslint.config.mjs
-- **TypeScript**: Strict mode enabled with project references
+- **ESLint**: Using flat config in eslint.config.js and eslint.config.mjs - **ZERO WARNINGS REQUIRED**
+- **TypeScript**: Strict mode enabled with project references - **COMPILATION MUST SUCCEED**
+- **Build Verification**: `npm run build` must complete successfully
 - **Formatting**: Follow ESLint configuration rules
 - **Line Endings**: LF (Unix style)
 - **Indentation**: 2 spaces

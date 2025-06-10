@@ -287,7 +287,7 @@ function ApplicationHealthCard() {
             </AlertDescription>
           </Alert>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="mt-4"
           >
@@ -439,7 +439,7 @@ function CANBusStatusCard() {
             </AlertDescription>
           </Alert>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="mt-4"
           >
@@ -611,7 +611,7 @@ function EntityStatisticsCard() {
             </AlertDescription>
           </Alert>
           <Button
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             variant="outline"
             className="mt-4"
           >
@@ -883,7 +883,7 @@ function SystemAlertsCard() {
                           </div>
                         </div>
                         <Button
-                          onClick={() => acknowledgeAlert.mutate(alert.alert_id)}
+                          onClick={() => void acknowledgeAlert.mutate(alert.alert_id)}
                           size="sm"
                           variant="ghost"
                           className="ml-2 text-xs"

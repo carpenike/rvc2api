@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, ExternalLink, FileText, Search, Server } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SearchResult {
   title: string;
@@ -76,9 +76,9 @@ export default function Documentation() {
   };
 
   // Load status on component mount
-  useState(() => {
-    loadDocStatus();
-  });
+  useEffect(() => {
+    void loadDocStatus();
+  }, []);
 
   return (
     <AppLayout>
@@ -127,10 +127,10 @@ export default function Documentation() {
                     placeholder="Search documentation... (e.g., 'lighting control', 'CAN bus setup')"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    onKeyDown={(e) => e.key === "Enter" && void handleSearch()}
                     className="flex-1"
                   />
-                  <Button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()}>
+                  <Button onClick={() => void handleSearch()} disabled={isSearching || !searchQuery.trim()}>
                     {isSearching ? "Searching..." : "Search"}
                   </Button>
                 </div>
@@ -445,7 +445,7 @@ export default function Documentation() {
                         className="w-full justify-start h-auto p-2"
                         onClick={() => {
                           setSearchQuery(topic);
-                          handleSearch();
+                          void handleSearch();
                         }}
                       >
                         <Search className="mr-2 h-3 w-3" />

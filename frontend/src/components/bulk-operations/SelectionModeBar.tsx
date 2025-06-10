@@ -66,7 +66,8 @@ export function SelectionModeBar({
 
   const handleSetBrightness = async () => {
     try {
-      const result = await setBulkBrightness(selectedDevices, brightness[0])
+      const brightnessValue = brightness[0] ?? 50; // Default to 50 if undefined
+      const result = await setBulkBrightness(selectedDevices, brightnessValue)
       if (result?.operation_id) {
         setActiveOperationId(result.operation_id)
       }
@@ -105,7 +106,7 @@ export function SelectionModeBar({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleAllOff}
+                onClick={() => void handleAllOff()}
                 disabled={isLoading}
                 className="gap-2"
               >
@@ -116,7 +117,7 @@ export function SelectionModeBar({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleSystemCheck}
+                onClick={() => void handleSystemCheck()}
                 disabled={isLoading}
                 className="gap-2"
               >
@@ -164,7 +165,7 @@ export function SelectionModeBar({
             <div className="mt-4 pt-4 border-t">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium min-w-0">
-                  Brightness: {brightness[0]}%
+                  Brightness: {brightness[0] ?? 50}%
                 </span>
                 <div className="flex-1">
                   <Slider
@@ -177,7 +178,7 @@ export function SelectionModeBar({
                 </div>
                 <Button
                   size="sm"
-                  onClick={handleSetBrightness}
+                  onClick={() => void handleSetBrightness()}
                   disabled={isLoading}
                 >
                   Apply

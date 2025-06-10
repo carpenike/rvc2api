@@ -71,8 +71,8 @@ export function DeviceDiscoveryTable({
     },
     onSuccess: () => {
       // Refresh data after successful poll
-      queryClient.invalidateQueries({ queryKey: ['network-topology'] })
-      queryClient.invalidateQueries({ queryKey: ['device-availability'] })
+      void queryClient.invalidateQueries({ queryKey: ['network-topology'] })
+      void queryClient.invalidateQueries({ queryKey: ['device-availability'] })
     }
   })
 
@@ -416,7 +416,7 @@ export function DeviceDiscoveryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handlePollDevice(entry)}
+                        onClick={() => void handlePollDevice(entry)}
                         disabled={pollMutation.isPending}
                         className="gap-1"
                       >
