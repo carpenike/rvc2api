@@ -156,7 +156,7 @@ export function useControlEntity() {
               entity.timestamp !== lastConfirmedTimestamps.current[entityId]
             ) {
               clearTimeout(pendingTimers.current[entityId]);
-              delete pendingTimers.current[entityId];
+              pendingTimers.current[entityId] = undefined;
               lastConfirmedTimestamps.current[entityId] = entity.timestamp;
             }
           }
@@ -238,7 +238,7 @@ export function useControlEntity() {
         }
         // Show a toast notification
         toast("No confirmation from backend. State reverted.");
-        delete pendingTimers.current[entityId];
+        pendingTimers.current[entityId] = undefined;
       }, 2000);
     },
 
@@ -247,7 +247,7 @@ export function useControlEntity() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.lights.list() });
       if (pendingTimers.current[variables.entityId]) {
         clearTimeout(pendingTimers.current[variables.entityId]);
-        delete pendingTimers.current[variables.entityId];
+        pendingTimers.current[variables.entityId] = undefined;
       }
     },
   });

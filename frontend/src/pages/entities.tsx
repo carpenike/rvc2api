@@ -20,17 +20,17 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSelectionMode } from "@/hooks/useBulkOperations"
 import { useOptimisticBulkControl } from "@/hooks/useOptimisticMutations"
 import {
-    IconAlertTriangle,
-    IconBulb,
-    IconCpu,
-    IconDroplet,
-    IconEdit,
-    IconLock,
-    IconSearch,
-    IconSettings,
-    IconTemperature,
-    IconTrendingUp,
-    IconX
+  IconAlertTriangle,
+  IconBulb,
+  IconCpu,
+  IconDroplet,
+  IconEdit,
+  IconLock,
+  IconSearch,
+  IconSettings,
+  IconTemperature,
+  IconTrendingUp,
+  IconX
 } from "@tabler/icons-react"
 import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
@@ -531,15 +531,26 @@ export default function EntitiesPage() {
         {/* Entities Grid */}
         {filteredEntities.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEntities.map(entity => (
-              <ProtocolEntityCard
-                key={entity.entity_id}
-                entity={entity}
-                isSelected={selectionMode.selectedIds.has(entity.entity_id)}
-                onSelectChange={selectionMode.mode === "selecting" ? (selected) => handleEntitySelect(entity.entity_id, selected) : undefined}
-                showProtocolInfo={selectedProtocol === "all"}
-              />
-            ))}
+            {filteredEntities.map(entity => {
+              const cardProps: {
+                key: string;
+                entity: Entity;
+                isSelected: boolean;
+                showProtocolInfo: boolean;
+                onSelectChange?: (selected: boolean) => void;
+              } = {
+                key: entity.entity_id,
+                entity: entity,
+                isSelected: selectionMode.selectedIds.has(entity.entity_id),
+                showProtocolInfo: selectedProtocol === "all"
+              };
+
+              if (selectionMode.mode === "selecting") {
+                cardProps.onSelectChange = (selected) => handleEntitySelect(entity.entity_id, selected);
+              }
+
+              return <ProtocolEntityCard key={entity.entity_id} {...cardProps} />;
+            })}
           </div>
         ) : (
           <Card>

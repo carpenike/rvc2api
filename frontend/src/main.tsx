@@ -37,7 +37,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryProvider>
       <AuthProvider>
-        <WebSocketProvider enableEntityUpdates={true} enableSystemStatus={true} enableCANScan={false}>
+        <WebSocketProvider enableEntityUpdates enableSystemStatus enableCANScan={false}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

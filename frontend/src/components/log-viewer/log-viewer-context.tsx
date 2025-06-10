@@ -250,7 +250,7 @@ export function LogViewerProvider({
     return filtered;
   }, [logs, filters]);
 
-  const fetchMore = async () => {
+  const fetchMore = useCallback(async () => {
     if (!hasMore || loading || mode !== "history" || !cursor || historyUnavailable) return;
     setLoading(true);
     try {
@@ -288,54 +288,55 @@ export function LogViewerProvider({
     } finally {
       setLoading(false);
     }
-  };
+  }, [hasMore, loading, mode, cursor, historyUnavailable, apiEndpoint, config.maxHistorySize]);
 
-  const updateFilters = (newFilters: Partial<LogFilters>) => {
+  const updateFilters = useCallback((newFilters: Partial<LogFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-  };
+  }, []);
 
-  const clearLogs = () => {
+  const clearLogs = useCallback(() => {
     setLogs([]);
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null);
     setHistoryUnavailable(false);
-  };
+  }, []);
 
-  const pauseStream = () => {
+  const pauseStream = useCallback(() => {
     setIsPaused(true);
-  };
+  }, []);
 
-  const resumeStream = () => {
+  const resumeStream = useCallback(() => {
     setIsPaused(false);
-  };
+  }, []);
 
-  const reconnect = () => {
+  const reconnect = useCallback(() => {
     connectWs();
-  };
+  }, [connectWs]);
+
+  const contextValue = useMemo(() => ({
+    logs: filteredLogs,
+    rawLogs: logs,
+    loading,
+    filters,
+    updateFilters,
+    clearLogs,
+    pauseStream,
+    resumeStream,
+    isPaused,
+    fetchMore,
+    hasMore,
+    mode,
+    setMode,
+    connectionStatus,
+    reconnect,
+    error,
+    clearError,
+  }), [filteredLogs, logs, loading, filters, updateFilters, clearLogs, pauseStream, resumeStream, isPaused, fetchMore, hasMore, mode, setMode, connectionStatus, reconnect, error, clearError]);
 
   return (
-    <LogViewerContext.Provider
-      value={{
-        logs: filteredLogs,
-        rawLogs: logs,
-        loading,
-        filters,
-        updateFilters,
-        clearLogs,
-        pauseStream,
-        resumeStream,
-        isPaused,
-        fetchMore,
-        hasMore,
-        mode,
-        setMode,
-        connectionStatus,
-        reconnect,
-        error,
-        clearError,
-      }}
+    <LogViewerContext.Provider value={contextValue}
     >
       {children}
     </LogViewerContext.Provider>

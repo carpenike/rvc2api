@@ -211,7 +211,7 @@ function EntityOverviewCard() {
           {Object.entries(entityCounts).map(([type, count]) => (
             <div key={type} className="flex justify-between items-center">
               <span className="capitalize">{type.replace('_', ' ')}</span>
-              <Badge variant="secondary">{count as number}</Badge>
+              <Badge variant="secondary">{count}</Badge>
             </div>
           ))}
           {Object.keys(entityCounts).length === 0 && (

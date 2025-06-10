@@ -1,5 +1,5 @@
 import { ThemeProviderContext, type Theme, type ThemeProviderState } from "@/contexts/theme-context"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 
 interface ThemeProviderProps {
   children: React.ReactNode
@@ -45,7 +45,7 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener("change", handleChange)
   }, [])
 
-  const value: ThemeProviderState = {
+  const value: ThemeProviderState = useMemo(() => ({
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme)
@@ -53,7 +53,7 @@ export function ThemeProvider({
     },
     systemTheme,
     resolvedTheme: theme === "system" ? systemTheme : theme,
-  }
+  }), [theme, storageKey, systemTheme])
 
   return (
     <ThemeProviderContext.Provider value={value}>

@@ -57,8 +57,8 @@ const ANALYTICS_KEYS = {
  * Get performance trends
  */
 export function usePerformanceTrends(
-  timeWindowHours: number = 24,
-  resolution: string = "1h",
+  timeWindowHours = 24,
+  resolution = "1h",
   metrics?: string[]
 ) {
   return useQuery({
@@ -84,8 +84,8 @@ export function usePerformanceTrends(
  */
 export function useSystemInsights(
   categories?: string[],
-  minSeverity: string = "low",
-  limit: number = 50
+  minSeverity = "low",
+  limit = 50
 ) {
   return useQuery({
     queryKey: ANALYTICS_KEYS.insights(categories, minSeverity, limit),
@@ -109,9 +109,9 @@ export function useSystemInsights(
  * Get historical analysis
  */
 export function useHistoricalAnalysis(
-  analysisType: string = "pattern_detection",
-  timeWindowHours: number = 168,
-  includePredictions: boolean = true
+  analysisType = "pattern_detection",
+  timeWindowHours = 168,
+  includePredictions = true
 ) {
   return useQuery({
     queryKey: ANALYTICS_KEYS.historical(analysisType, timeWindowHours, includePredictions),
@@ -374,7 +374,7 @@ export function useAnalyticsDashboardStats() {
 export function useAnalyticsPerformanceSummary() {
   const trends = usePerformanceTrends(24, "1h")
 
-  const trendsData = trends.data as import('@/api/types/domains').PerformanceTrendsResponse | undefined
+  const trendsData = trends.data
   if (!trendsData?.summary) {
     return null
   }

@@ -74,19 +74,16 @@ export function EntitySelectorV2({
     ...paginationParams
   });
 
-  const entities = entityCollection?.entities || [];
-  const totalCount = entityCollection?.total_count || 0;
-  const hasNext = entityCollection?.has_next || false;
-
   // Filter entities for bulk operations if needed
   const filteredEntities = useMemo(() => {
+    const entities = entityCollection?.entities || [];
     if (!bulkOperationsOnly) return entities;
 
     // Only include entities that support common bulk operations
     return entities.filter(entity =>
       ['light', 'lock', 'switch', 'fan'].includes(entity.device_type.toLowerCase())
     );
-  }, [entities, bulkOperationsOnly]);
+  }, [entityCollection?.entities, bulkOperationsOnly]);
 
   // Group entities based on groupBy setting
   const groupedEntities = useMemo(() => {
@@ -377,7 +374,7 @@ export function EntitySelectorV2({
                       >
                         <Checkbox
                           checked={isEntitySelected(entity.entity_id)}
-                          onChange={() => {}} // Read-only behavior
+                          onChange={() => undefined} // Read-only behavior
                         />
 
                         <div className="flex items-center gap-2 min-w-0 flex-1">

@@ -5,37 +5,37 @@
  * Shows real-time device connections and status.
  */
 
-import type { EntityData, ProtocolBridgeStatus, SpartanK2Entity, DeviceAvailability } from "@/api/types"
+import {
+    discoverDevices,
+    fetchDeviceAvailability,
+    fetchDeviceDiscoveryStatus,
+    fetchFireflyEntities,
+    fetchJ1939Entities,
+    fetchNetworkTopology,
+    fetchProtocolBridgeStatus,
+    fetchProtocolThroughput,
+    fetchSpartanK2Entities
+} from "@/api/endpoints"
+import type { DeviceAvailability, EntityData, ProtocolBridgeStatus, SpartanK2Entity } from "@/api/types"
 import { AppLayout } from "@/components/app-layout"
+import { DeviceDiscoveryTable } from "@/components/network/DeviceDiscoveryTable"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DeviceDiscoveryTable } from "@/components/network/DeviceDiscoveryTable"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEntities } from "@/hooks/useEntities"
-import { useQuery } from "@tanstack/react-query"
 import {
-  fetchProtocolBridgeStatus,
-  fetchJ1939Entities,
-  fetchFireflyEntities,
-  fetchSpartanK2Entities,
-  fetchProtocolThroughput,
-  fetchNetworkTopology,
-  fetchDeviceAvailability,
-  fetchDeviceDiscoveryStatus,
-  discoverDevices
-} from "@/api/endpoints"
-import {
-  IconAlertTriangle,
-  IconInfoCircle,
-  IconRefresh,
-  IconNetwork,
-  IconGitBranch,
-  IconActivity
+    IconActivity,
+    IconAlertTriangle,
+    IconGitBranch,
+    IconInfoCircle,
+    IconNetwork,
+    IconRefresh
 } from "@tabler/icons-react"
+import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 
 
@@ -413,7 +413,7 @@ function MultiProtocolStats({ entities }: { entities: EntityData[] }) {
             {Object.entries(stats.protocolCounts || {}).map(([protocol, count]) => (
               <div key={protocol} className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${protocolColors[protocol as keyof typeof protocolColors] || 'bg-gray-500'}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${protocolColors[protocol as keyof typeof protocolColors] || 'bg-gray-500'}`} />
                   <span className="text-sm capitalize">{protocol}</span>
                 </div>
                 <Badge variant="outline">{count}</Badge>
@@ -642,20 +642,34 @@ export default function NetworkMap() {
             <div className="grid gap-8 lg:grid-cols-4">
               {/* Device Discovery Table - Takes 3/4 width */}
               <div className="lg:col-span-3">
-                <DeviceDiscoveryTable
-                  topology={networkTopology}
-                  availability={deviceAvailability}
-                  isLoading={isLoading}
-                  onRefresh={() => {
-                    void refetch();
-                    void refetchTopology();
-                  }}
-                />
+                {networkTopology && deviceAvailability ? (
+                  <DeviceDiscoveryTable
+                    topology={networkTopology}
+                    availability={deviceAvailability}
+                    isLoading={isLoading}
+                    onRefresh={() => {
+                      void refetch();
+                      void refetchTopology();
+                    }}
+                  />
+                ) : (
+                  <DeviceDiscoveryTable
+                    isLoading={isLoading}
+                    onRefresh={() => {
+                      void refetch();
+                      void refetchTopology();
+                    }}
+                  />
+                )}
               </div>
 
               {/* Network Stats Sidebar - Takes 1/4 width */}
               <div>
-                <NetworkStatsSidebar entities={entitiesArray} availability={deviceAvailability} />
+                {deviceAvailability ? (
+                  <NetworkStatsSidebar entities={entitiesArray} availability={deviceAvailability} />
+                ) : (
+                  <NetworkStatsSidebar entities={entitiesArray} />
+                )}
               </div>
             </div>
           </TabsContent>
@@ -748,28 +762,28 @@ export default function NetworkMap() {
                   <CardContent>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="w-4 h-4 bg-blue-600 rounded-full mx-auto mb-2"></div>
+                        <div className="w-4 h-4 bg-blue-600 rounded-full mx-auto mb-2" />
                         <div className="text-lg font-bold">
                           {allEntities.filter(e => (e as EntityData & { protocol?: string }).protocol === 'rvc').length}
                         </div>
                         <div className="text-sm text-muted-foreground">RV-C</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="w-4 h-4 bg-emerald-600 rounded-full mx-auto mb-2"></div>
+                        <div className="w-4 h-4 bg-emerald-600 rounded-full mx-auto mb-2" />
                         <div className="text-lg font-bold">
                           {allEntities.filter(e => (e as EntityData & { protocol?: string }).protocol === 'j1939').length}
                         </div>
                         <div className="text-sm text-muted-foreground">J1939</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="w-4 h-4 bg-violet-600 rounded-full mx-auto mb-2"></div>
+                        <div className="w-4 h-4 bg-violet-600 rounded-full mx-auto mb-2" />
                         <div className="text-lg font-bold">
                           {allEntities.filter(e => (e as EntityData & { protocol?: string }).protocol === 'firefly').length}
                         </div>
                         <div className="text-sm text-muted-foreground">Firefly</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="w-4 h-4 bg-red-600 rounded-full mx-auto mb-2"></div>
+                        <div className="w-4 h-4 bg-red-600 rounded-full mx-auto mb-2" />
                         <div className="text-lg font-bold">
                           {allEntities.filter(e => (e as EntityData & { protocol?: string }).protocol === 'spartan_k2').length}
                         </div>
@@ -802,7 +816,7 @@ export default function NetworkMap() {
                       <div className="text-center">
                         <div className="text-2xl font-bold text-green-600">
                           {Math.round((allEntities.filter(e => {
-                            const entity = e as EntityData;
+                            const entity = e;
                             return entity.state === 'on' || entity.state === 'online';
                           }).length / Math.max(allEntities.length, 1)) * 100)}%
                         </div>

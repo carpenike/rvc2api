@@ -1,3 +1,4 @@
+import type { LogFilters } from "./log-viewer-context";
 import { useLogViewer } from "./useLogViewer";
 
 const LEVELS = [
@@ -17,7 +18,13 @@ export function LogLevelFilter() {
     <select
       className="border rounded px-2 py-1 text-sm bg-background"
       value={filters.level || ""}
-      onChange={e => updateFilters({ level: e.target.value || undefined })}
+      onChange={e => {
+        const filters: Partial<LogFilters> = {};
+        if (e.target.value) {
+          filters.level = e.target.value;
+        }
+        updateFilters(filters);
+      }}
       aria-label="Filter by log level"
     >
       <option value="">All Levels</option>

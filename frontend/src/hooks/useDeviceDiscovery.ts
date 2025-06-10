@@ -96,8 +96,8 @@ export function useDeviceAvailability() {
  * Get enhanced network map
  */
 export function useEnhancedNetworkMap(
-  includeOffline: boolean = true,
-  groupByProtocol: boolean = true
+  includeOffline = true,
+  groupByProtocol = true
 ) {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.networkMap(includeOffline, groupByProtocol),
@@ -136,7 +136,7 @@ export function useSupportedProtocols() {
 /**
  * Get device profile
  */
-export function useDeviceProfile(deviceAddress: number, protocol: string = "rvc") {
+export function useDeviceProfile(deviceAddress: number, protocol = "rvc") {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.deviceProfile(deviceAddress, protocol),
     queryFn: async (): Promise<DeviceProfile> => {
@@ -157,7 +157,7 @@ export function useDeviceProfile(deviceAddress: number, protocol: string = "rvc"
 /**
  * Get setup recommendations
  */
-export function useSetupRecommendations(includeConfigured: boolean = false) {
+export function useSetupRecommendations(includeConfigured = false) {
   return useQuery({
     queryKey: DEVICE_DISCOVERY_KEYS.recommendations(includeConfigured),
     queryFn: async (): Promise<SetupRecommendations> => {
@@ -181,7 +181,7 @@ export function useDiscoverDevices() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (protocol: string = "rvc") => {
+    mutationFn: async (protocol = "rvc") => {
       const response = await fetch("/api/discovery/discover", {
         method: "POST",
         headers: {
@@ -410,7 +410,7 @@ export function useDeviceDiscoveryStats() {
 /**
  * Hook for getting device by address
  */
-export function useDeviceByAddress(address: number, protocol: string = "rvc") {
+export function useDeviceByAddress(address: number, protocol = "rvc") {
   const { topology } = useDeviceDiscovery()
 
   if (!topology?.devices) {

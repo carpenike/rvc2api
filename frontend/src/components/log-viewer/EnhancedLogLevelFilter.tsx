@@ -15,6 +15,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import type { LogFilters } from "./log-viewer-context";
 import { useLogViewer } from "./useLogViewer";
 
 const LEVELS = [
@@ -60,7 +61,11 @@ export function EnhancedLogLevelFilter() {
                     key={level.value}
                     value={level.value}
                     onSelect={() => {
-                      updateFilters({ level: level.value || undefined });
+                      const filters: Partial<LogFilters> = {};
+                      if (level.value) {
+                        filters.level = level.value;
+                      }
+                      updateFilters(filters);
                       setOpen(false);
                     }}
                   >

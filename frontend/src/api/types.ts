@@ -1304,11 +1304,11 @@ export interface BulkOperationStatus {
   success_count: number;
   failure_count: number;
   progress_percentage: number;
-  failed_devices: Array<{
+  failed_devices: {
     device_id: string;
     error: string;
     timestamp: string;
-  }>;
+  }[];
   created_at: string;
   updated_at: string;
 }
@@ -1381,22 +1381,22 @@ export interface MaintenanceRecommendation {
 export interface ComponentTrendData {
   component_id: string;
   metric_name: string;
-  trend_points: Array<{
+  trend_points: {
     timestamp: string;
     value: number;
     metric: string;
-  }>;
+  }[];
   normal_range: {
     min: number;
     max: number;
     metric: string;
   };
-  anomalies: Array<{
+  anomalies: {
     timestamp: string;
     value: number;
     severity: "medium" | "high";
     description: string;
-  }>;
+  }[];
   prediction_confidence: number;
   trend_analysis: string;
 }

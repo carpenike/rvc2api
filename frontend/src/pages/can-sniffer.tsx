@@ -162,6 +162,56 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
   )
 }
 
+// Helper functions for table accessors (to avoid inline JSX components)
+const renderPGNBadge = (pgn: number) => <PGNBadge pgn={pgn} />;
+const renderDescriptionCell = (pgn: number) => <DescriptionCell pgn={pgn} />;
+const renderInstanceCell = (instance?: number) => <InstanceCell instance={instance} />;
+const renderSourceBadge = (source: number) => <SourceBadge source={source} />;
+
+// Helper components for table cells (defined outside render to avoid recreation)
+function PGNBadge({ pgn }: { pgn: number }) {
+  return (
+    <Badge variant="outline" className="font-mono text-xs">
+      {pgn}
+    </Badge>
+  );
+}
+
+function DescriptionCell({ pgn }: { pgn: number }) {
+  const getPGNDescription = (pgnNum: number) => {
+    // This would normally come from the RV-C spec database
+    const knownPGNs: Record<string, string> = {
+      '1FFFF': 'Device Control',
+      '1FFF0': 'Light Control',
+      '1FFE0': 'Tank Status',
+      '1FFD0': 'Temperature',
+      // Add more as needed
+    }
+    return knownPGNs[pgnNum.toString()] || 'Unknown'
+  }
+
+  return <span className="text-sm">{getPGNDescription(pgn)}</span>
+}
+
+function InstanceCell({ instance }: { instance?: number }) {
+  if (instance !== undefined) {
+    return (
+      <Badge variant="secondary" className="text-xs">
+        {instance}
+      </Badge>
+    );
+  }
+  return <span className="text-muted-foreground">-</span>;
+}
+
+function SourceBadge({ source }: { source: number }) {
+  return (
+    <Badge variant="outline" className="text-xs">
+      {source}
+    </Badge>
+  );
+}
+
 /**
  * Enhanced CAN message table with virtualization
  */
@@ -188,18 +238,6 @@ function CANMessageTable({ messages, isPaused }: { messages: CANMessage[]; isPau
     return data.map(byte => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ')
   }
 
-  const getPGNDescription = (pgn: string) => {
-    // This would normally come from the RV-C spec database
-    const knownPGNs: Record<string, string> = {
-      '1FFFF': 'Device Control',
-      '1FFF0': 'Light Control',
-      '1FFE0': 'Tank Status',
-      '1FFD0': 'Temperature',
-      // Add more as needed
-    }
-    return knownPGNs[pgn] || 'Unknown'
-  }
-
   // Define columns for virtualized table
   const columns: VirtualizedTableColumn<CANMessage>[] = [
     {
@@ -213,44 +251,27 @@ function CANMessageTable({ messages, isPaused }: { messages: CANMessage[]; isPau
       id: 'pgn',
       header: 'PGN',
       width: 80,
-      accessor: (message) => (
-        <Badge variant="outline" className="font-mono text-xs">
-          {message.pgn}
-        </Badge>
-      )
+      accessor: (message) => renderPGNBadge(message.pgn)
     },
     {
       id: 'description',
       header: 'Description',
       width: 200,
-      accessor: (message) => (
-        <span className="text-sm">{getPGNDescription(message.pgn)}</span>
-      )
+      accessor: (message) => renderDescriptionCell(message.pgn)
     },
     {
       id: 'instance',
       header: 'Inst',
       width: 60,
       className: 'text-center',
-      accessor: (message) =>
-        message.instance !== undefined ? (
-          <Badge variant="secondary" className="text-xs">
-            {message.instance}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
+      accessor: (message) => renderInstanceCell(message.instance)
     },
     {
       id: 'source',
       header: 'Src',
       width: 60,
       className: 'text-center',
-      accessor: (message) => (
-        <Badge variant="outline" className="text-xs">
-          {message.source}
-        </Badge>
-      )
+      accessor: (message) => renderSourceBadge(message.source)
     },
     {
       id: 'data',

@@ -21,15 +21,6 @@ import {
   entitiesV2QueryKeys,
 } from '../useEntitiesV2';
 
-// Mock the API client
-vi.mock('@/api/domains/entities', () => ({
-  fetchEntitiesV2: vi.fn(),
-  fetchEntityV2: vi.fn(),
-  controlEntityV2: vi.fn(),
-  bulkControlEntitiesV2: vi.fn(),
-  fetchSchemasV2: vi.fn(),
-}));
-
 // Import mocked functions
 import {
   fetchEntitiesV2,
@@ -45,6 +36,15 @@ import type {
   BulkOperationResultSchema,
   OperationResultSchema,
 } from '@/api/types/domains';
+
+// Mock the API client
+vi.mock('@/api/domains/entities', () => ({
+  fetchEntitiesV2: vi.fn(),
+  fetchEntityV2: vi.fn(),
+  controlEntityV2: vi.fn(),
+  bulkControlEntitiesV2: vi.fn(),
+  fetchSchemasV2: vi.fn(),
+}));
 
 const mockEntityCollection: EntityCollectionSchema = {
   entities: [
@@ -113,9 +113,12 @@ function createTestWrapper() {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const TestQueryProvider = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  TestQueryProvider.displayName = 'TestQueryProvider';
+
+  return TestQueryProvider;
 }
 
 describe('entitiesV2QueryKeys', () => {

@@ -8,7 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { controlEntity, toggleLight, setLightBrightness, brightnessUp, brightnessDown } from '@/api/endpoints'
+import { brightnessDown, brightnessUp, controlEntity, setLightBrightness, toggleLight } from '@/api/endpoints'
 import type { ControlCommand, ControlEntityResponse, Entity, LightEntity } from '@/api/types'
 
 /**
@@ -38,7 +38,7 @@ export function useOptimisticEntityControl() {
 
       // Optimistically update the entity state
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[entityId]) return old
+        if (!old?.[entityId]) return old
 
         const entity = { ...old[entityId] }
 
@@ -90,7 +90,7 @@ export function useOptimisticEntityControl() {
     onSuccess: (data, variables) => {
       // Update with actual server response
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[variables.entityId]) return old
+        if (!old?.[variables.entityId]) return old
 
         return {
           ...old,
@@ -137,7 +137,7 @@ export function useOptimisticLightControl() {
 
       // Optimistically toggle the light
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[entityId]) return old
+        if (!old?.[entityId]) return old
 
         const entity = { ...old[entityId] }
         entity.state = entity.state === 'on' ? 'off' : 'on'
@@ -189,7 +189,7 @@ export function useOptimisticLightControl() {
 
       // Optimistically update brightness
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[entityId]) return old
+        if (!old?.[entityId]) return old
 
         const entity = { ...old[entityId] } as LightEntity
         entity.brightness = brightness
@@ -242,7 +242,7 @@ export function useOptimisticLightControl() {
 
       // Optimistically increase brightness by 10%
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[entityId]) return old
+        if (!old?.[entityId]) return old
 
         const entity = { ...old[entityId] } as LightEntity
         const currentBrightness = entity.brightness || 0
@@ -296,7 +296,7 @@ export function useOptimisticLightControl() {
 
       // Optimistically decrease brightness by 10%
       queryClient.setQueryData(['entities'], (old: Record<string, Entity> | undefined) => {
-        if (!old || !old[entityId]) return old
+        if (!old?.[entityId]) return old
 
         const entity = { ...old[entityId] } as LightEntity
         const currentBrightness = entity.brightness || 0
@@ -448,7 +448,15 @@ export function useOptimisticMutation<TData, TError, TVariables>({
       // Apply optimistic update
       const rollback = onOptimisticUpdate(variables, queryClient) as (() => void) | undefined
 
-      return { previousStates, rollback }
+      const result: { previousStates?: Record<string, unknown>; rollback?: () => void } = {
+        previousStates,
+      };
+
+      if (rollback) {
+        result.rollback = rollback;
+      }
+
+      return result;
     },
 
     onError: (error, variables, context) => {

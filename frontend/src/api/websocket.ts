@@ -83,7 +83,7 @@ export class RVCWebSocketClient {
   private _state: WebSocketState = 'disconnected';
 
   constructor(
-    private endpoint: string,
+    private readonly endpoint: string,
     handlers: WebSocketHandlers = {},
     config: WebSocketConfig = {}
   ) {

@@ -6,90 +6,90 @@
  */
 
 import {
-  API_BASE,
-  APIClientError,
-  apiGet,
-  apiPost,
-  apiDelete,
-  buildQueryString,
-  logApiRequest,
-  logApiResponse
+    API_BASE,
+    APIClientError,
+    apiDelete,
+    apiGet,
+    apiPost,
+    buildQueryString,
+    logApiRequest,
+    logApiResponse
 } from './client';
 
 import type {
-  ActivityFeed,
-  AllCANStats,
-  BaselineDeviation,
-  BulkControlRequest,
-  BulkControlResponse,
-  BulkOperationPayload,
-  BulkOperationRequest,
-  BulkOperationResponse,
-  BulkOperationStatus,
-  CANBusSummary,
-  CANInterfaceMapping,
-  CANMessage,
-  CANMetrics,
-  CANSendParams,
-  CoachConfiguration,
-  ConfigurationSystemStatus,
-  ConfigurationUpdateRequest,
-  ConfigurationUpdateResponse,
-  ConfigurationValidation,
-  ControlCommand,
-  ControlEntityResponse,
-  CreateEntityMappingRequest,
-  CreateEntityMappingResponse,
-  DashboardSummary,
-  // Device Discovery Types
-  DeviceAvailability,
-  DeviceDiscoveryStatus,
-  DeviceGroup,
-  DeviceGroupRequest,
-  DiagnosticStats,
-  DiagnosticTroubleCode,
-  DiscoverDevicesRequest,
-  DiscoverDevicesResponse,
-  DTCCollection,
-  DTCFilters,
-  DTCResolutionResponse,
-  EntitiesQueryParams,
-  Entity,
-  EntityCollection,
-  EntitySummary,
-  FaultCorrelation,
-  FeatureManagementResponse,
-  FeatureStatusResponse,
-  HealthStatus,
-  HistoryEntry,
-  HistoryQueryParams,
-  // Auth Types
-  LoginResponse,
-  LockoutStatus,
-  RefreshTokenRequest,
-  RefreshTokenResponse,
-  UnlockAccountRequest,
-  User,
-  MaintenancePrediction,
-  MetadataResponse,
-  NetworkTopology,
-  OptimizationSuggestion,
-  PerformanceAnalyticsStats,
-  PerformanceMetrics,
-  PerformanceReport,
-  PollDeviceRequest,
-  PollDeviceResponse,
-  ProtocolBridgeStatus,
-  QueueStatus,
-  ResourceUsage,
-  SupportedProtocols,
-  SystemAnalytics,
-  SystemHealthResponse,
-  SystemMetrics,
-  SystemSettings,
-  TrendData,
-  UnknownPGNResponse,
-  UnmappedResponse
+    ActivityFeed,
+    AllCANStats,
+    BaselineDeviation,
+    BulkControlRequest,
+    BulkControlResponse,
+    BulkOperationPayload,
+    BulkOperationRequest,
+    BulkOperationResponse,
+    BulkOperationStatus,
+    CANBusSummary,
+    CANInterfaceMapping,
+    CANMessage,
+    CANMetrics,
+    CANSendParams,
+    CoachConfiguration,
+    ConfigurationSystemStatus,
+    ConfigurationUpdateRequest,
+    ConfigurationUpdateResponse,
+    ConfigurationValidation,
+    ControlCommand,
+    ControlEntityResponse,
+    CreateEntityMappingRequest,
+    CreateEntityMappingResponse,
+    DashboardSummary,
+    // Device Discovery Types
+    DeviceAvailability,
+    DeviceDiscoveryStatus,
+    DeviceGroup,
+    DeviceGroupRequest,
+    DiagnosticStats,
+    DiagnosticTroubleCode,
+    DiscoverDevicesRequest,
+    DiscoverDevicesResponse,
+    DTCCollection,
+    DTCFilters,
+    DTCResolutionResponse,
+    EntitiesQueryParams,
+    Entity,
+    EntityCollection,
+    EntitySummary,
+    FaultCorrelation,
+    FeatureManagementResponse,
+    FeatureStatusResponse,
+    HealthStatus,
+    HistoryEntry,
+    HistoryQueryParams,
+    LockoutStatus,
+    // Auth Types
+    LoginResponse,
+    MaintenancePrediction,
+    MetadataResponse,
+    NetworkTopology,
+    OptimizationSuggestion,
+    PerformanceAnalyticsStats,
+    PerformanceMetrics,
+    PerformanceReport,
+    PollDeviceRequest,
+    PollDeviceResponse,
+    ProtocolBridgeStatus,
+    QueueStatus,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+    ResourceUsage,
+    SupportedProtocols,
+    SystemAnalytics,
+    SystemHealthResponse,
+    SystemMetrics,
+    SystemSettings,
+    TrendData,
+    UnknownPGNResponse,
+    UnlockAccountRequest,
+    UnmappedResponse,
+    User
 } from './types';
 
 //
@@ -708,7 +708,7 @@ export async function fetchActiveDTCs(filters?: DTCFilters): Promise<DTCCollecti
 export async function resolveDTC(
   protocol: string,
   code: number,
-  sourceAddress: number = 0
+  sourceAddress = 0
 ): Promise<DTCResolutionResponse> {
   const url = '/api/diagnostics/dtc';
   const request = { protocol, code, source_address: sourceAddress };
@@ -759,7 +759,7 @@ export async function fetchFaultCorrelations(timeWindowSeconds?: number): Promis
  * @param timeHorizonDays - Planning horizon in days (default: 90)
  * @returns Promise resolving to maintenance predictions
  */
-export async function fetchMaintenancePredictions(timeHorizonDays: number = 90): Promise<MaintenancePrediction[]> {
+export async function fetchMaintenancePredictions(timeHorizonDays = 90): Promise<MaintenancePrediction[]> {
   const queryString = buildQueryString({ time_horizon_days: timeHorizonDays });
   const url = `/api/diagnostics/predictions?${queryString}`;
 
@@ -926,7 +926,7 @@ export async function fetchPerformanceStatus(): Promise<Record<string, unknown>>
  * @param timeWindowSeconds - Time window for deviation analysis (default: 3600)
  * @returns Promise resolving to baseline deviation alerts
  */
-export async function fetchBaselineDeviations(timeWindowSeconds: number = 3600): Promise<BaselineDeviation[]> {
+export async function fetchBaselineDeviations(timeWindowSeconds = 3600): Promise<BaselineDeviation[]> {
   const queryString = buildQueryString({ time_window_seconds: timeWindowSeconds });
   const url = `/api/performance/baseline-deviations?${queryString}`;
 
@@ -973,7 +973,7 @@ export async function fetchPerformanceStatistics(): Promise<PerformanceAnalytics
  * @param timeWindowSeconds - Time window for report (default: 3600)
  * @returns Promise resolving to performance report
  */
-export async function generatePerformanceReport(timeWindowSeconds: number = 3600): Promise<PerformanceReport> {
+export async function generatePerformanceReport(timeWindowSeconds = 3600): Promise<PerformanceReport> {
   const url = '/api/performance/report';
 
   logApiRequest('POST', url, { time_window_seconds: timeWindowSeconds });
@@ -1269,11 +1269,11 @@ export async function fetchCANInterfaceMappings(): Promise<CANInterfaceMapping[]
     physical_interface: mapping.physical_interface || '',
     bitrate: mapping.bitrate || 0,
     is_active: mapping.is_active || false,
-    last_activity: mapping.last_activity,
+    ...(mapping.last_activity && { last_activity: mapping.last_activity }),
     message_count: mapping.message_count || 0,
     error_count: mapping.error_count || 0,
     validation_status: (result.validation[logical_name]?.status as "valid" | "invalid" | "warning") || "invalid",
-    validation_message: result.validation[logical_name]?.message
+    ...(result.validation[logical_name]?.message && { validation_message: result.validation[logical_name]?.message })
   }));
 
   return mappingsArray;
@@ -1446,7 +1446,7 @@ export async function fetchDeviceAvailability(): Promise<DeviceAvailability> {
  * @param protocol - Protocol to use for discovery (default: "rvc")
  * @returns Promise resolving to discovery results
  */
-export async function discoverDevices(protocol: string = "rvc"): Promise<DiscoverDevicesResponse> {
+export async function discoverDevices(protocol = "rvc"): Promise<DiscoverDevicesResponse> {
   const url = '/api/discovery/discover';
   const request: DiscoverDevicesRequest = { protocol };
 
@@ -1563,7 +1563,7 @@ export async function revokeRefreshToken(refreshToken: string): Promise<void> {
   const request: RefreshTokenRequest = { refresh_token: refreshToken };
 
   logApiRequest('POST', url, { refresh_token: '[REDACTED]' });
-  await apiPost<void>(url, request);
+  await apiPost<null>(url, request);
   logApiResponse(url, 'Token revoked');
 }
 

@@ -673,7 +673,7 @@ function EntityStatisticsCard() {
               {Object.entries(entityCounts).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between p-2 border rounded">
                   <span className="text-sm font-medium">{formatEntityType(type)}</span>
-                  <Badge variant="outline">{count as number}</Badge>
+                  <Badge variant="outline">{count}</Badge>
                 </div>
               ))}
             </div>

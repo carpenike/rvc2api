@@ -49,7 +49,11 @@ class MockWebSocket {
     this.readyState = MockWebSocket.CLOSING;
     setTimeout(() => {
       this.readyState = MockWebSocket.CLOSED;
-      this.onclose?.(new CloseEvent('close', { code: code || 1000, reason }));
+      const closeEventInit: CloseEventInit = { code: code || 1000 };
+      if (reason !== undefined) {
+        closeEventInit.reason = reason;
+      }
+      this.onclose?.(new CloseEvent('close', closeEventInit));
     }, 5);
   }
 
@@ -85,11 +89,14 @@ function createWrapper() {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const TestQueryProvider = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   );
+  TestQueryProvider.displayName = 'TestQueryProvider';
+
+  return TestQueryProvider;
 }
 
 describe('WebSocket Integration Tests', () => {

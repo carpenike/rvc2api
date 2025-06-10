@@ -20,11 +20,6 @@ import { useState } from "react"
 // import { Separator } from "@/components/ui/separator" // Reserved for layout improvements
 import { useAnalyticsDashboard } from "@/hooks/useAnalyticsDashboard"
 import type {
-  PerformanceTrendsResponse,
-  SystemInsightsResponse,
-  HistoricalAnalysisResponse,
-  MetricsAggregationResponse,
-  AnalyticsServiceStatus,
   PerformanceAlert,
   SystemInsight,
   HistoricalPattern,
@@ -75,7 +70,7 @@ function PerformanceTrendsCard() {
     )
   }
 
-  const trendsData = trends as PerformanceTrendsResponse | undefined
+  const trendsData = trends
   const summary = trendsData?.summary || {
     trending_up: 0,
     trending_down: 0,
@@ -265,7 +260,7 @@ function SystemInsightsCard() {
     )
   }
 
-  const insightsData = insights as SystemInsightsResponse | undefined
+  const insightsData = insights
   const insightsList = insightsData?.insights || []
   const summary = insightsData?.summary || {
     total_count: 0,
@@ -431,7 +426,7 @@ function HistoricalAnalysisCard() {
     )
   }
 
-  const historicalData = historical as HistoricalAnalysisResponse | undefined
+  const historicalData = historical
   const patterns = historicalData?.patterns || []
   const anomalies = historicalData?.anomalies || []
   const correlations = historicalData?.correlations || []
@@ -615,7 +610,7 @@ function MetricsAggregationCard() {
     )
   }
 
-  const aggregationData = aggregation as MetricsAggregationResponse | undefined
+  const aggregationData = aggregation
   const windows = aggregationData?.windows || {}
   const kpis = aggregationData?.kpis || {}
   const recommendations = aggregationData?.recommendations || []
@@ -739,7 +734,7 @@ export default function AnalyticsDashboardPage() {
             <AlertTitle>Analytics Service Status</AlertTitle>
             <AlertDescription>
               {(() => {
-                const statusData = status as AnalyticsServiceStatus | undefined
+                const statusData = status
                 return (
                   <>
                     Service: {statusData?.service_status || 'Unknown'} |

@@ -41,19 +41,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
   if (isLoading || !authStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     )
   }
 
   // If auth is disabled, render children immediately
   if (authStatus.mode === "none") {
-    return <>{children}</>
+    return children
   }
 
   // If authenticated, render children
   if (isAuthenticated) {
-    return <>{children}</>
+    return children
   }
 
   // If not authenticated, don't render anything (will redirect to login)

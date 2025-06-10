@@ -232,7 +232,7 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
       setShowDetailDialog(false);
     },
     onError: (error) => {
-      toast.error('Failed to resolve DTC: ' + (error as Error).message);
+      toast.error('Failed to resolve DTC: ' + (error).message);
     },
   });
 
@@ -378,8 +378,16 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
                     className="pl-10"
                   />
                 </div>
-                <Select value={filters.severity || undefined} onValueChange={(value) =>
-                  setFilters(prev => ({ ...prev, severity: value || undefined }))
+                <Select value={filters.severity || ''} onValueChange={(value) =>
+                  setFilters(prev => {
+                    const newFilters = { ...prev };
+                    if (value) {
+                      newFilters.severity = value;
+                    } else {
+                      delete newFilters.severity;
+                    }
+                    return newFilters;
+                  })
                 }>
                   <SelectTrigger className="w-full sm:w-32">
                     <SelectValue placeholder="Severity" />
@@ -392,8 +400,16 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
                     <SelectItem value="low">Low</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={filters.protocol || undefined} onValueChange={(value) =>
-                  setFilters(prev => ({ ...prev, protocol: value || undefined }))
+                <Select value={filters.protocol || ''} onValueChange={(value) =>
+                  setFilters(prev => {
+                    const newFilters = { ...prev };
+                    if (value) {
+                      newFilters.protocol = value;
+                    } else {
+                      delete newFilters.protocol;
+                    }
+                    return newFilters;
+                  })
                 }>
                   <SelectTrigger className="w-full sm:w-32">
                     <SelectValue placeholder="Protocol" />
@@ -479,14 +495,14 @@ export const DTCManager: React.FC<DTCManagerProps> = ({
                     // Loading skeleton
                     [...Array(5)].map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16"></div></TableCell>
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-12"></div></TableCell>
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-20"></div></TableCell>
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16"></div></TableCell>
-                        {!compact && <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-32"></div></TableCell>}
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-8"></div></TableCell>
-                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16"></div></TableCell>
-                        {showActions && <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-20"></div></TableCell>}
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16" /></TableCell>
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-12" /></TableCell>
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-20" /></TableCell>
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16" /></TableCell>
+                        {!compact && <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-32" /></TableCell>}
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-8" /></TableCell>
+                        <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-16" /></TableCell>
+                        {showActions && <TableCell><div className="animate-pulse bg-gray-200 h-4 rounded w-20" /></TableCell>}
                       </TableRow>
                     ))
                   ) : filteredAndSortedDTCs.length ? (

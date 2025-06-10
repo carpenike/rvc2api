@@ -23,7 +23,7 @@ export function LogViewer({
     <LogViewerProvider
       websocketUrl={websocketUrl}
       apiEndpoint={apiEndpoint}
-      initialFilters={initialFilters}
+      {...(initialFilters && { initialFilters })}
     >
       <div className="flex flex-col h-full">
         <LogToolbar />

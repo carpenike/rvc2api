@@ -89,10 +89,10 @@ const CompactHealthScore: React.FC<SystemHealthScoreProps> = ({
       <Card className="w-full">
         <CardContent className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="animate-pulse bg-gray-200 rounded-full h-10 w-10"></div>
+            <div className="animate-pulse bg-gray-200 rounded-full h-10 w-10" />
             <div className="flex-1 space-y-2">
-              <div className="animate-pulse bg-gray-200 h-4 rounded w-20"></div>
-              <div className="animate-pulse bg-gray-200 h-2 rounded w-full"></div>
+              <div className="animate-pulse bg-gray-200 h-4 rounded w-20" />
+              <div className="animate-pulse bg-gray-200 h-2 rounded w-full" />
             </div>
           </div>
         </CardContent>
@@ -167,9 +167,9 @@ const FullHealthScore: React.FC<SystemHealthScoreProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="animate-pulse bg-gray-200 h-4 rounded"></div>
-            <div className="animate-pulse bg-gray-200 h-20 rounded"></div>
-            <div className="animate-pulse bg-gray-200 h-32 rounded"></div>
+            <div className="animate-pulse bg-gray-200 h-4 rounded" />
+            <div className="animate-pulse bg-gray-200 h-20 rounded" />
+            <div className="animate-pulse bg-gray-200 h-32 rounded" />
           </div>
         </CardContent>
       </Card>

@@ -22,7 +22,7 @@ import type { APIError } from './types';
 export const API_BASE = (() => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  if (apiUrl && apiUrl.trim()) {
+  if (apiUrl?.trim()) {
     return apiUrl;
   }
 
@@ -45,11 +45,11 @@ export const API_BASE = (() => {
  */
 export const WS_BASE = (() => {
   const backendWsUrl = import.meta.env.VITE_BACKEND_WS_URL;
-  if (backendWsUrl && backendWsUrl.trim()) {
+  if (backendWsUrl?.trim()) {
     return backendWsUrl;
   }
   const wsUrl = import.meta.env.VITE_WS_URL;
-  if (wsUrl && wsUrl.trim()) {
+  if (wsUrl?.trim()) {
     return wsUrl;
   }
 
@@ -173,20 +173,22 @@ export async function apiGet<T>(url: string): Promise<T> {
  * Creates a POST request
  */
 export async function apiPost<T>(url: string, data?: unknown): Promise<T> {
-  return apiRequest<T>(url, {
-    method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
-  });
+  const options: RequestInit = { method: 'POST' };
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+  return apiRequest<T>(url, options);
 }
 
 /**
  * Creates a PUT request
  */
 export async function apiPut<T>(url: string, data?: unknown): Promise<T> {
-  return apiRequest<T>(url, {
-    method: 'PUT',
-    body: data ? JSON.stringify(data) : undefined,
-  });
+  const options: RequestInit = { method: 'PUT' };
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+  return apiRequest<T>(url, options);
 }
 
 /**
@@ -202,7 +204,7 @@ export async function apiDelete<T>(url: string): Promise<T> {
  * @param params - Object of query parameters
  * @returns Query string (without leading ?)
  */
-export function buildQueryString(params: Record<string, unknown> | { [key: string]: string | number | boolean | undefined }): string {
+export function buildQueryString(params: Record<string, unknown> | Record<string, string | number | boolean | undefined>): string {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -290,7 +292,7 @@ export async function withRetry<T>(
     }
   }
 
-  throw lastError!;
+  throw new Error(lastError?.message || 'Request failed after retries');
 }
 
 /**

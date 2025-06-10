@@ -168,7 +168,7 @@ export default function AdminSettingsPage() {
                       Lock accounts after failed login attempts
                     </div>
                   </div>
-                  <Switch disabled defaultChecked={true} />
+                  <Switch disabled defaultChecked />
                 </div>
               </div>
 
@@ -215,7 +215,7 @@ export default function AdminSettingsPage() {
                       Enable detailed logging and debug information
                     </div>
                   </div>
-                  <Switch disabled defaultChecked={true} />
+                  <Switch disabled defaultChecked />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -225,7 +225,7 @@ export default function AdminSettingsPage() {
                       Make API docs publicly accessible
                     </div>
                   </div>
-                  <Switch disabled defaultChecked={true} />
+                  <Switch disabled defaultChecked />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -235,7 +235,7 @@ export default function AdminSettingsPage() {
                       Collect and display performance data
                     </div>
                   </div>
-                  <Switch disabled defaultChecked={true} />
+                  <Switch disabled defaultChecked />
                 </div>
               </div>
 

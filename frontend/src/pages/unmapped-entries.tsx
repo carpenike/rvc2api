@@ -17,14 +17,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MappingDialog } from "@/components/unmapped-entries/mapping-dialog"
 import { useUnmappedEntries } from "@/hooks/useSystem"
 import {
-  IconAlertTriangle,
-  IconCircuitSwitchOpen,
-  IconClock,
-  IconInfoCircle,
-  IconMapPin,
-  IconPlus,
-  IconRefresh,
-  IconSettings
+    IconAlertTriangle,
+    IconCircuitSwitchOpen,
+    IconClock,
+    IconInfoCircle,
+    IconMapPin,
+    IconPlus,
+    IconRefresh,
+    IconSettings
 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -421,9 +421,9 @@ export default function UnmappedEntries() {
     entity_id: string
     friendly_name: string
     device_type: string
-    suggested_area?: string
-    capabilities?: string[]
-    notes?: string
+    suggested_area?: string | undefined
+    capabilities?: string[] | undefined
+    notes?: string | undefined
   }) => {
     try {
       if (!selectedEntry) {
@@ -439,9 +439,9 @@ export default function UnmappedEntries() {
         entity_id: mappingData.entity_id,
         friendly_name: mappingData.friendly_name,
         device_type: mappingData.device_type,
-        suggested_area: mappingData.suggested_area || "",
-        capabilities: mappingData.capabilities || [],
-        notes: mappingData.notes || "",
+        suggested_area: mappingData.suggested_area ?? "",
+        capabilities: mappingData.capabilities ?? [],
+        notes: mappingData.notes ?? "",
       })
 
       if (result.status === "success") {

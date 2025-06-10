@@ -5,17 +5,10 @@
  * bulk operations, and enhanced error handling.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import type {
-  BulkControlRequestSchema,
-  ControlCommandSchema,
-  EntitiesQueryParams,
-  EntityCollectionSchema,
-  EntitySchema,
-} from '../../api/types/domains';
 import {
   bulkControlEntitiesV2,
   controlEntityV2,
@@ -23,6 +16,13 @@ import {
   fetchEntityV2,
   fetchSchemasV2,
 } from '../../api/domains/entities';
+import type {
+  BulkControlRequestSchema,
+  ControlCommandSchema,
+  EntitiesQueryParams,
+  EntityCollectionSchema,
+  EntitySchema,
+} from '../../api/types/domains';
 
 //
 // ===== QUERY KEYS =====
@@ -326,12 +326,17 @@ export function useEntitySelection() {
         throw new Error('No entities selected for bulk operation');
       }
 
-      return bulkControlMutation.mutate({
+      const request: BulkControlRequestSchema = {
         entity_ids: selectedEntityIds,
         command,
         ignore_errors: options?.ignoreErrors ?? true,
-        timeout_seconds: options?.timeout,
-      });
+      };
+
+      if (options?.timeout !== undefined) {
+        request.timeout_seconds = options.timeout;
+      }
+
+      return bulkControlMutation.mutate(request);
     },
     [selectedEntityIds, bulkControlMutation]
   );

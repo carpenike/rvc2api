@@ -7,6 +7,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useState } from "react"
+
+// Import API functions from endpoints
+import {
+  createBulkOperation,
+  createDeviceGroup,
+  deleteDeviceGroup,
+  executeGroupOperation,
+  fetchBulkOperationStatus,
+  fetchDeviceGroups,
+  updateDeviceGroup,
+} from "@/api/endpoints"
 // import type { Entity } from "@/api/types" // Currently unused but may be needed for future type constraints
 
 // Types
@@ -62,24 +73,13 @@ export interface BulkOperationComplete {
   status: string
   success_count: number
   failure_count: number
-  failed_devices: Array<{
+  failed_devices: {
     device_id: string
     error: string
     timestamp: string
-  }>
+  }[]
   timestamp: string
 }
-
-// Import API functions from endpoints
-import {
-  createBulkOperation,
-  createDeviceGroup,
-  deleteDeviceGroup,
-  executeGroupOperation,
-  fetchBulkOperationStatus,
-  fetchDeviceGroups,
-  updateDeviceGroup,
-} from "@/api/endpoints"
 
 // Hooks
 export function useBulkOperations() {

@@ -159,9 +159,9 @@ export function BulkOperationsModalV2({
                     <EntitySelectorV2
                       selectedEntityIds={selectedEntityIds}
                       onSelectionChange={handleSelectionChange}
-                      multiSelect={true}
+                      multiSelect
                       maxSelection={50}
-                      bulkOperationsOnly={true}
+                      bulkOperationsOnly
                     />
                   </div>
 

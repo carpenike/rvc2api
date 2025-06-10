@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  IconAlertCircle,
-  IconRefresh,
-  IconWifi,
-  IconX,
-  IconLoader2
+    IconAlertCircle,
+    IconLoader2,
+    IconRefresh,
+    IconWifi,
+    IconX
 } from "@tabler/icons-react"
 
 
@@ -198,9 +198,9 @@ export function ErrorDisplay({
 // Quick error states for common scenarios
 const ErrorStates = {
   // Network/API errors
-  NetworkError: ({ onRetry }: { onRetry?: () => void }) => (
-    <ErrorDisplay
-      error={{
+  NetworkError: ({ onRetry }: { onRetry?: () => void }) => {
+    const errorProps: { error: ErrorInfo; onRetry?: () => void } = {
+      error: {
         title: "Connection Error",
         message: "Unable to connect to the server. Please check your network connection.",
         isConnectionError: true,
@@ -210,10 +210,13 @@ const ErrorStates = {
           "Verify the server is running",
           "Try refreshing the page"
         ]
-      }}
-      onRetry={onRetry}
-    />
-  ),
+      }
+    };
+    if (onRetry) {
+      errorProps.onRetry = onRetry;
+    }
+    return <ErrorDisplay {...errorProps} />;
+  },
 
   // Feature disabled errors
   FeatureDisabled: ({ featureName }: { featureName: string }) => (
@@ -250,9 +253,9 @@ const ErrorStates = {
   ),
 
   // CAN bus specific errors
-  CANError: ({ onRetry }: { onRetry?: () => void }) => (
-    <ErrorDisplay
-      error={{
+  CANError: ({ onRetry }: { onRetry?: () => void }) => {
+    const errorProps: { error: ErrorInfo; onRetry?: () => void } = {
+      error: {
         title: "CAN Bus Error",
         message: "Unable to connect to CAN bus interfaces. Check that interfaces are configured and active.",
         isConnectionError: true,
@@ -264,10 +267,13 @@ const ErrorStates = {
           "Verify physical CAN connections and termination",
           "Check interface status with system tools"
         ]
-      }}
-      onRetry={onRetry}
-    />
-  )
+      }
+    };
+    if (onRetry) {
+      errorProps.onRetry = onRetry;
+    }
+    return <ErrorDisplay {...errorProps} />;
+  }
 }
 
 // Loading state wrapper component
@@ -299,7 +305,9 @@ export function LoadingWrapper({
     // Check for specific error types
     if ('statusCode' in error) {
       const statusCode = (error as Error & { statusCode?: number }).statusCode
-      errorInfo.statusCode = statusCode
+      if (statusCode !== undefined) {
+        errorInfo.statusCode = statusCode
+      }
 
       if (statusCode === 404) {
         errorInfo.title = "Not Found"
@@ -312,11 +320,16 @@ export function LoadingWrapper({
       }
     }
 
-    return <ErrorDisplay error={errorInfo} onRetry={onRetry} />
+    const errorDisplayProps: { error: ErrorInfo; onRetry?: () => void } = { error: errorInfo };
+    if (onRetry) {
+      errorDisplayProps.onRetry = onRetry;
+    }
+
+    return <ErrorDisplay {...errorDisplayProps} />
   }
 
-  return <>{children}</>
+  return children
 }
 
 // Export patterns and states
-export { LoadingPatterns, ErrorStates }
+export { ErrorStates, LoadingPatterns }

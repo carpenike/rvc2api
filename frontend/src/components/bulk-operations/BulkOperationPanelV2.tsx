@@ -87,10 +87,12 @@ export function BulkOperationPanelV2({
       try {
         reset(); // Clear previous operation state
 
-        await executeBulkOperation(command, {
-          ignoreErrors,
-          timeout: operationTimeout[0]
-        });
+        const options: { ignoreErrors: boolean; timeout?: number } = { ignoreErrors };
+        if (operationTimeout[0] !== undefined) {
+          options.timeout = operationTimeout[0];
+        }
+
+        executeBulkOperation(command, options);
 
         toast.success(`Bulk operation initiated for ${selectedCount} entities`);
       } catch (error) {
@@ -102,15 +104,18 @@ export function BulkOperationPanelV2({
   );
 
   // Quick action handlers
-  const handleTurnAllOn = () => executeOperation({ command: 'set', state: true });
-  const handleTurnAllOff = () => executeOperation({ command: 'set', state: false });
-  const handleToggleAll = () => executeOperation({ command: 'toggle' });
-  const handleSetBrightness = () => executeOperation({
-    command: 'set',
-    brightness: brightness[0]
-  });
-  const handleBrightnessUp = () => executeOperation({ command: 'brightness_up' });
-  const handleBrightnessDown = () => executeOperation({ command: 'brightness_down' });
+  const handleTurnAllOn = () => void executeOperation({ command: 'set', state: true });
+  const handleTurnAllOff = () => void executeOperation({ command: 'set', state: false });
+  const handleToggleAll = () => void executeOperation({ command: 'toggle' });
+  const handleSetBrightness = () => {
+    const command: ControlCommandSchema = { command: 'set' };
+    if (brightness[0] !== undefined) {
+      command.brightness = brightness[0];
+    }
+    void executeOperation(command);
+  };
+  const handleBrightnessUp = () => void executeOperation({ command: 'brightness_up' });
+  const handleBrightnessDown = () => void executeOperation({ command: 'brightness_down' });
 
   // Operation result display
   const getOperationStatusDisplay = () => {

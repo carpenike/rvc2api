@@ -6,7 +6,7 @@
  */
 
 import { useWebSocketManager } from '@/hooks/useWebSocket';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { WebSocketContext, type ConnectionMetrics, type WebSocketContextType } from './websocket-context';
 
 interface WebSocketProviderProps {
@@ -43,11 +43,12 @@ export function WebSocketProvider({
         ...prev,
         connectedAt: new Date(),
       }));
-    } else if (!webSocketManager.isAnyConnected) {
-      setMetrics(prev => ({
-        ...prev,
-        connectedAt: undefined,
-      }));
+    } else if (!webSocketManager.isAnyConnected && metrics.connectedAt) {
+      setMetrics(prev => {
+        const { connectedAt, ...rest } = prev;
+        void connectedAt; // Explicitly ignore the unused variable
+        return rest;
+      });
     }
   }, [webSocketManager.isAnyConnected, metrics.connectedAt]);
 
@@ -66,13 +67,13 @@ export function WebSocketProvider({
     return () => clearInterval(interval);
   }, [webSocketManager.isAnyConnected]);
 
-  const contextValue: WebSocketContextType = {
+  const contextValue: WebSocketContextType = useMemo(() => ({
     isConnected: webSocketManager.isAnyConnected,
     hasError: Boolean(webSocketManager.hasAnyError),
     connectAll: webSocketManager.connectAll,
     disconnectAll: webSocketManager.disconnectAll,
     metrics,
-  };
+  }), [webSocketManager.isAnyConnected, webSocketManager.hasAnyError, webSocketManager.connectAll, webSocketManager.disconnectAll, metrics]);
 
   return (
     <WebSocketContext.Provider value={contextValue}>

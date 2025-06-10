@@ -146,7 +146,7 @@ export function useAcknowledgeRecommendation() {
 export function useComponentTrends(
   componentId: string,
   metric?: string,
-  days: number = 30
+  days = 30
 ) {
   return useQuery({
     queryKey: PREDICTIVE_MAINTENANCE_KEYS.trends(componentId, metric, days),

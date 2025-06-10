@@ -7,8 +7,9 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type {
+    RVCWebSocketClient} from '../api';
 import {
-    RVCWebSocketClient,
     createCANScanWebSocket,
     createEntityWebSocket,
     createLogWebSocket,

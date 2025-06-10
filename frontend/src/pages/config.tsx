@@ -160,7 +160,7 @@ export default function ConfigurationPage() {
       }
       acc[category].push([featureName, feature]);
       return acc;
-    }, {} as Record<string, Array<[string, FeatureFlag]>>);
+    }, {} as Record<string, [string, FeatureFlag][]>);
 
     return {
       filteredFeatures: filtered,
@@ -284,8 +284,8 @@ export default function ConfigurationPage() {
                   <Card key={i}>
                     <CardContent className="p-4">
                       <div className="text-center">
-                        <div className="h-8 w-16 bg-gray-200 rounded mx-auto mb-2 animate-pulse"></div>
-                        <div className="h-4 w-24 bg-gray-200 rounded mx-auto animate-pulse"></div>
+                        <div className="h-8 w-16 bg-gray-200 rounded mx-auto mb-2 animate-pulse" />
+                        <div className="h-4 w-24 bg-gray-200 rounded mx-auto animate-pulse" />
                       </div>
                     </CardContent>
                   </Card>
@@ -489,7 +489,7 @@ export default function ConfigurationPage() {
                                                     risk.riskLevel === 'high' ? 'bg-red-400' :
                                                     risk.riskLevel === 'medium' ? 'bg-amber-400' :
                                                     'bg-emerald-400'
-                                                  }`}></div>
+                                                  }`} />
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                   <div className="space-y-1 text-xs">

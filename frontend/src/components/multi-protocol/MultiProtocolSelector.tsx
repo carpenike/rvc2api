@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  IconCpu,
-  IconEngine,
-  IconBulb,
-  IconTruck,
-  IconNetwork,
-  IconActivity,
-  IconAlertTriangle
+    IconActivity,
+    IconAlertTriangle,
+    IconBulb,
+    IconCpu,
+    IconEngine,
+    IconNetwork,
+    IconTruck
 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
@@ -283,13 +283,21 @@ export function MultiProtocolSelector({
   }
 
   if (showCompact) {
+    const compactProps: {
+      selectedProtocol: ProtocolType;
+      onProtocolChange: (protocol: ProtocolType) => void;
+      protocolStats?: Record<string, { count: number; health: number; status: string; }>;
+    } = {
+      selectedProtocol,
+      onProtocolChange,
+    };
+    if (protocolStats) {
+      compactProps.protocolStats = protocolStats;
+    }
+
     return (
       <div className={className}>
-        <CompactProtocolSelector
-          selectedProtocol={selectedProtocol}
-          onProtocolChange={onProtocolChange}
-          protocolStats={protocolStats}
-        />
+        <CompactProtocolSelector {...compactProps} />
       </div>
     )
   }
@@ -311,15 +319,30 @@ export function MultiProtocolSelector({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {protocolsWithStats.map((protocol) => (
-          <ProtocolCard
-            key={protocol.id}
-            protocol={protocol}
-            isSelected={selectedProtocol === protocol.id}
-            onClick={() => onProtocolChange(protocol.id)}
-            stats={protocolStats?.[protocol.id]}
-          />
-        ))}
+        {protocolsWithStats.map((protocol) => {
+          const cardProps: {
+            protocol: ProtocolInfo;
+            isSelected: boolean;
+            onClick: () => void;
+            stats?: { count: number; health: number; status: string; };
+          } = {
+            protocol,
+            isSelected: selectedProtocol === protocol.id,
+            onClick: () => onProtocolChange(protocol.id),
+          };
+
+          const stats = protocolStats?.[protocol.id];
+          if (stats) {
+            cardProps.stats = stats;
+          }
+
+          return (
+            <ProtocolCard
+              key={protocol.id}
+              {...cardProps}
+            />
+          );
+        })}
       </div>
 
       {selectedProtocol !== "all" && (

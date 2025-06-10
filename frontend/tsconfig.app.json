@@ -19,6 +19,13 @@
     "noUncheckedSideEffectImports": true,
     "noUncheckedIndexedAccess": true,
     "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "isolatedModules": true,
     "incremental": true,
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }

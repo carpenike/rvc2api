@@ -33,8 +33,8 @@ import {
     IconSettings,
     IconShield,
     IconTarget,
-    IconWifi,
-    IconWand
+    IconWand,
+    IconWifi
 } from "@tabler/icons-react"
 
 /**
@@ -518,14 +518,18 @@ function DiscoveredDevicesList() {
                           const discoveredDevice: DiscoveredDevice = {
                             address: device.source_address,
                             protocol: device.protocol,
-                            device_type: device.device_type,
                             capabilities: device.capabilities,
                             last_seen: device.last_seen,
                             first_seen: device.first_seen,
                             response_count: device.response_count,
                             response_times: [],
                             status: device.status
+                          };
+
+                          if (device.device_type !== undefined) {
+                            discoveredDevice.device_type = device.device_type;
                           }
+
                           setSelectedDevice(discoveredDevice)
                           setShowProfile(true)
                         }}
@@ -539,14 +543,18 @@ function DiscoveredDevicesList() {
                           const discoveredDevice: DiscoveredDevice = {
                             address: device.source_address,
                             protocol: device.protocol,
-                            device_type: device.device_type,
                             capabilities: device.capabilities,
                             last_seen: device.last_seen,
                             first_seen: device.first_seen,
                             response_count: device.response_count,
                             response_times: [],
                             status: device.status
+                          };
+
+                          if (device.device_type !== undefined) {
+                            discoveredDevice.device_type = device.device_type;
                           }
+
                           setSelectedDevice(discoveredDevice)
                           setShowSetup(true)
                         }}

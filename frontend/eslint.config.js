@@ -1,8 +1,10 @@
 import js from "@eslint/js";
+import query from "@tanstack/eslint-plugin-query";
+import importPlugin from "eslint-plugin-import";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import query from "@tanstack/eslint-plugin-query";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -12,6 +14,8 @@ export default tseslint.config(
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
+      ...tseslint.configs.strict,
+      ...tseslint.configs.stylistic,
       ...query.configs["flat/recommended"]
     ],
     files: ["**/*.{ts,tsx}"],
@@ -19,18 +23,36 @@ export default tseslint.config(
       ecmaVersion: 2020,
       globals: globals.browser,
       parserOptions: {
-        project: ["./tsconfig.json", "./tsconfig.app.json"],
+        project: "./tsconfig.eslint.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
+      "import": importPlugin,
+      "react": react,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11y,
       "@tanstack/query": query,
     },
+    settings: {
+      react: {
+        version: "detect",
+        runtime: "automatic", // Modern JSX transform (React 17+)
+      },
+      "import/resolver": {
+        typescript: {
+          alwaysTryTypes: true,
+          project: "./tsconfig.eslint.json",
+        },
+        node: {
+          extensions: [".js", ".jsx", ".ts", ".tsx"],
+        },
+      },
+    },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      ...react.configs.recommended.rules,
       ...jsxA11y.configs.strict.rules,
       "react-refresh/only-export-components": [
         "warn",
@@ -51,13 +73,90 @@ export default tseslint.config(
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-explicit-any": "error",
+
+      // Enhanced Type Safety Rules (Safety-Critical Application)
+      "@typescript-eslint/no-unnecessary-condition": "warn", // Downgrade from error
+      "@typescript-eslint/strict-boolean-expressions": ["warn", { // More permissive
+        "allowString": true,
+        "allowNumber": true,
+        "allowNullableObject": true,
+        "allowNullableBoolean": true,
+        "allowNullableString": true,
+        "allowNullableNumber": true,
+        "allowAny": true // Allow any for now during migration
+      }],
+      "@typescript-eslint/no-unsafe-assignment": "warn", // Downgrade from error
+      "@typescript-eslint/no-unsafe-call": "warn", // Downgrade from error
+      "@typescript-eslint/no-unsafe-return": "warn", // Downgrade from error
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-loss-of-precision": "error",
+      "@typescript-eslint/prefer-readonly": "warn", // Downgrade from error
+
       // Performance-critical async/promise rules
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
-      // Code quality rules
+
+      // React Safety Rules
+      "react-hooks/exhaustive-deps": "error",
+      "react/jsx-no-constructed-context-values": "error",
+      "react/jsx-key": "error",
+      "react/no-array-index-key": "warn", // Downgrade from error
+      "react/no-danger": "error",
+      "react/no-unstable-nested-components": "error",
+      "react/jsx-no-useless-fragment": "error",
+      "react/jsx-no-bind": ["warn", { // More permissive for modern React
+        "ignoreDOMComponents": true,
+        "ignoreRefs": true,
+        "allowArrowFunctions": true, // Allow arrow functions
+        "allowFunctions": true,
+        "allowBind": false
+      }],
+
+      // React JSX Rules (Modern React 17+ configuration)
+      "react/react-in-jsx-scope": "off", // Not needed with new JSX transform
+      "react/jsx-uses-react": "off", // Not needed with new JSX transform
+
+      // Code Quality & Maintainability (Relaxed for existing codebase)
+      "complexity": ["warn", { "max": 15 }], // Increased from 10
+      "max-depth": ["warn", { "max": 4 }], // Increased from 3
+      "max-lines-per-function": ["warn", { "max": 100 }], // Increased from 50
+      "@typescript-eslint/consistent-type-imports": "warn", // Downgrade from error
+      "@typescript-eslint/naming-convention": [
+        "warn", // Downgrade from error
+        {
+          "selector": "interface",
+          "format": ["PascalCase"],
+          "prefix": ["I"]
+        },
+        {
+          "selector": "typeAlias",
+          "format": ["PascalCase"]
+        }
+      ],
+
+      // Memory Safety & Best Practices
       "prefer-const": "error",
       "no-var": "error",
+      "no-throw-literal": "error",
+      "import/no-cycle": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
+
+      // Additional Quality Rules (Phase 1 Enhancement)
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn", // Downgrade from error
+      "@typescript-eslint/prefer-nullish-coalescing": "warn", // Downgrade from error
+      "@typescript-eslint/prefer-optional-chain": "warn", // Downgrade from error
+      "@typescript-eslint/no-non-null-assertion": "warn", // Downgrade from error
+      "import/no-duplicates": "warn", // Downgrade from error
+      "import/first": "warn", // Downgrade from error
+      "import/newline-after-import": "warn", // Downgrade from error
+
+      // React Best Practices
+      "react/jsx-boolean-value": ["error", "never"],
+      "react/self-closing-comp": "warn", // Auto-fixable
+      "react/jsx-no-duplicate-props": "error",
+      "react/no-children-prop": "error",
+      "react/jsx-curly-brace-presence": ["error", { "props": "never", "children": "never" }],
+      "react/no-unescaped-entities": "warn", // Allow quotes in JSX text
     },
   },
   {

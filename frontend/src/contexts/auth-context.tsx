@@ -30,8 +30,8 @@ import {
   type TokenData
 } from '@/lib/token-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 
 interface AuthContextType {
   // Current state
@@ -169,9 +169,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     mutationFn: (request: MagicLinkRequest) => sendMagicLink(request.email, request.redirect_url),
     onSuccess: () => {
       // Magic link sent successfully - no additional action needed
-      // User will receive email and click link to authenticate
+    },
+    onError: (error) => {
+      console.error('Magic link failed:', error);
     },
   });
+
+  // Destructure mutation functions for stable references
+  const { mutateAsync: loginMutateAsync, error: loginError } = loginMutation;
+  const { mutateAsync: logoutMutateAsync } = logoutMutation;
+  const { mutateAsync: magicLinkMutateAsync } = magicLinkMutation;
 
   // Admin credentials mutation
   const adminCredentialsMutation = useMutation({
@@ -215,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isLoading = statusLoading || userLoading;
 
-  const contextValue: AuthContextType = {
+  const contextValue: AuthContextType = useMemo(() => ({
     // Current state
     user: user ?? null,
     authStatus: authStatus as AuthStatus | null,
@@ -223,12 +230,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated,
 
     // Authentication actions
-    login: loginMutation.mutateAsync,
+    login: loginMutateAsync,
     logout: async () => {
-      await logoutMutation.mutateAsync();
+      await logoutMutateAsync();
     },
     sendMagicLink: async (request: MagicLinkRequest) => {
-      await magicLinkMutation.mutateAsync(request);
+      await magicLinkMutateAsync(request);
     },
 
     // Admin credential retrieval
@@ -236,10 +243,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasGeneratedCredentials,
 
     // Error states
-    loginError: loginMutation.error,
-    userError: userError as Error | null,
-    statusError: statusError as Error | null,
-  };
+    loginError: loginError,
+    userError: userError,
+    statusError: statusError,
+  }), [
+    user,
+    authStatus,
+    isLoading,
+    isAuthenticated,
+    loginMutateAsync,
+    loginError,
+    logoutMutateAsync,
+    magicLinkMutateAsync,
+    adminCredentialsMutation.mutateAsync,
+    hasGeneratedCredentials,
+    userError,
+    statusError
+  ]);
 
   return (
     <AuthContext.Provider value={contextValue}>

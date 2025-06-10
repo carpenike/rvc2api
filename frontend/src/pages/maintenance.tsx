@@ -184,9 +184,8 @@ function RVHealthOverviewCard() {
  * Component Health List
  */
 function ComponentHealthList({ systemType }: { systemType?: string }) {
-  const { componentHealth, isLoading, error } = usePredictiveMaintenance({
-    systemType,
-  })
+  const filters = systemType ? { systemType } : undefined;
+  const { componentHealth, isLoading, error } = usePredictiveMaintenance(filters);
 
   if (isLoading) {
     return (
@@ -294,9 +293,8 @@ function ComponentHealthList({ systemType }: { systemType?: string }) {
  * Maintenance Recommendations List
  */
 function MaintenanceRecommendationsList({ level }: { level?: string }) {
-  const { recommendations, acknowledgeRecommendation, isLoading, error } = usePredictiveMaintenance({
-    recommendationLevel: level,
-  })
+  const filters = level ? { recommendationLevel: level } : undefined;
+  const { recommendations, acknowledgeRecommendation, isLoading, error } = usePredictiveMaintenance(filters);
 
   if (isLoading) {
     return (
@@ -556,7 +554,11 @@ export default function PredictiveMaintenancePage() {
                 </SelectContent>
               </Select>
             </div>
-            <ComponentHealthList systemType={systemFilter || undefined} />
+            {systemFilter ? (
+              <ComponentHealthList systemType={systemFilter} />
+            ) : (
+              <ComponentHealthList />
+            )}
           </TabsContent>
 
           <TabsContent value="recommendations" className="space-y-4">
@@ -574,7 +576,11 @@ export default function PredictiveMaintenancePage() {
                 </SelectContent>
               </Select>
             </div>
-            <MaintenanceRecommendationsList level={recommendationFilter || undefined} />
+            {recommendationFilter ? (
+              <MaintenanceRecommendationsList level={recommendationFilter} />
+            ) : (
+              <MaintenanceRecommendationsList />
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useDeviceGroups } from "@/hooks/useBulkOperations"
+import { useDeviceGroups, type DeviceGroupRequest } from "@/hooks/useBulkOperations"
 import { useEntities } from "@/hooks/useEntities"
 import { IconDevices, IconUsers } from "@tabler/icons-react"
 import { useState } from "react"
@@ -58,12 +58,17 @@ export function CreateGroupDialog({
         exemptions.all_off = Array.from(exemptFromAllOff)
       }
 
-      await createGroup.mutateAsync({
+      const groupRequest: DeviceGroupRequest = {
         name: name.trim(),
-        description: description.trim() || undefined,
         device_ids: selectedDevices,
         exemptions,
-      })
+      };
+
+      if (description.trim()) {
+        groupRequest.description = description.trim();
+      }
+
+      await createGroup.mutateAsync(groupRequest)
 
       toast.success(`Device group "${name}" created successfully`)
 

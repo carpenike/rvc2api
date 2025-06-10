@@ -97,12 +97,12 @@ function getLogRowBg(level?: string) {
 interface LogRowProps {
   index: number;
   style: React.CSSProperties;
-  logs: Array<{
+  logs: {
     timestamp: string;
     level: string;
     message: string;
     logger?: string;
-  }>;
+  }[];
 }
 
 const LogRow = forwardRef<HTMLDivElement, LogRowProps>(({ index, style, logs }, ref) => {

@@ -36,8 +36,8 @@ export function LogDrawer({ websocketUrl, apiEndpoint, trigger = "View Logs", in
             variant="drawer"
             websocketUrl={websocketUrl}
             apiEndpoint={apiEndpoint}
-            initialFilters={initialFilters}
-            useVirtualization={true}
+            {...(initialFilters && { initialFilters })}
+            useVirtualization
           />
         </div>
       </DrawerContent>

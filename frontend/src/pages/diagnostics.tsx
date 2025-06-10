@@ -11,33 +11,33 @@
  * - Peace of mind focus
  */
 
-import { useState } from "react"
+import type { DiagnosticTroubleCode, DTCFilters } from "@/api/types"
 import { AppLayout } from "@/components/app-layout"
+import SmartManualCard from "@/components/diagnostics/SmartManualCard"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useDiagnosticsState, useResolveDTC } from "@/hooks/useDiagnostics"
-import SmartManualCard from "@/components/diagnostics/SmartManualCard"
-import type { DiagnosticTroubleCode, DTCFilters } from "@/api/types"
 import {
-  IconActivity,
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconBook,
-  IconCheck,
-  IconClock,
-  IconInfoCircle,
-  IconRefresh,
-  IconShield,
-  IconTool,
-  IconTrendingUp,
-  IconX,
-  IconXboxX
+    IconActivity,
+    IconAlertCircle,
+    IconAlertTriangle,
+    IconBook,
+    IconCheck,
+    IconClock,
+    IconInfoCircle,
+    IconRefresh,
+    IconShield,
+    IconTool,
+    IconTrendingUp,
+    IconX,
+    IconXboxX
 } from "@tabler/icons-react"
+import { useState } from "react"
 
 /**
  * Helper function to convert technical DTCs to human-readable messages
@@ -150,8 +150,8 @@ function SystemHealthCard() {
     degrading: { icon: IconAlertTriangle, color: "text-amber-500" },
   }
 
-  const TrendIcon = trendIcons[healthTrend as keyof typeof trendIcons]?.icon || IconActivity
-  const trendColor = trendIcons[healthTrend as keyof typeof trendIcons]?.color || "text-blue-500"
+  const TrendIcon = trendIcons[healthTrend]?.icon || IconActivity
+  const trendColor = trendIcons[healthTrend]?.color || "text-blue-500"
 
   return (
     <Card className="@container/card from-primary/5 to-card bg-gradient-to-t shadow-xs">
@@ -312,7 +312,15 @@ function DTCFilters({
     <div className="flex gap-3 flex-wrap">
       <Select
         value={filters.severity || "all"}
-        onValueChange={(value) => onFiltersChange({ ...filters, severity: value === "all" ? undefined : value })}
+        onValueChange={(value) => {
+          const newFilters: DTCFilters = { ...filters };
+          if (value !== "all") {
+            newFilters.severity = value;
+          } else {
+            delete newFilters.severity;
+          }
+          onFiltersChange(newFilters);
+        }}
       >
         <SelectTrigger className="w-32">
           <SelectValue placeholder="Severity" />
@@ -329,7 +337,15 @@ function DTCFilters({
 
       <Select
         value={filters.protocol || "all"}
-        onValueChange={(value) => onFiltersChange({ ...filters, protocol: value === "all" ? undefined : value })}
+        onValueChange={(value) => {
+          const newFilters: DTCFilters = { ...filters };
+          if (value !== "all") {
+            newFilters.protocol = value;
+          } else {
+            delete newFilters.protocol;
+          }
+          onFiltersChange(newFilters);
+        }}
       >
         <SelectTrigger className="w-32">
           <SelectValue placeholder="Protocol" />
@@ -345,7 +361,15 @@ function DTCFilters({
 
       <Select
         value={filters.system_type || "all"}
-        onValueChange={(value) => onFiltersChange({ ...filters, system_type: value === "all" ? undefined : value })}
+        onValueChange={(value) => {
+          const newFilters: DTCFilters = { ...filters };
+          if (value !== "all") {
+            newFilters.system_type = value;
+          } else {
+            delete newFilters.system_type;
+          }
+          onFiltersChange(newFilters);
+        }}
       >
         <SelectTrigger className="w-32">
           <SelectValue placeholder="System" />
@@ -537,9 +561,11 @@ export default function AdvancedDiagnostics() {
                 <ActiveDTCsList filters={filters} />
               </div>
               <div>
-                <SmartManualCard
-                  activeDTC={dtcs?.dtcs && dtcs.dtcs.length > 0 ? dtcs.dtcs[0] : undefined}
-                />
+                {dtcs?.dtcs && dtcs.dtcs.length > 0 && dtcs.dtcs[0] ? (
+                  <SmartManualCard activeDTC={dtcs.dtcs[0]} />
+                ) : (
+                  <SmartManualCard />
+                )}
               </div>
             </div>
           </TabsContent>

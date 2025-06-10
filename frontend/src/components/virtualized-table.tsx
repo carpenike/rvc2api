@@ -72,7 +72,7 @@ function VirtualizedRow<T>({
   return onRowClick ? (
     <button
       style={style}
-      className={`flex border-b hover:bg-muted/50 transition-colors cursor-pointer w-full text-left`}
+      className="flex border-b hover:bg-muted/50 transition-colors cursor-pointer w-full text-left"
       onClick={() => onRowClick(item, index)}
       type="button"
     >
@@ -171,12 +171,19 @@ export function VirtualizedTable<T>({
   }, [data.length])
 
   // Memoize list data to prevent unnecessary re-renders
-  const listData = useMemo(() => ({
-    items: data,
-    columns,
-    getRowKey,
-    onRowClick
-  }), [data, columns, getRowKey, onRowClick])
+  const listData = useMemo(() => {
+    const listItemData = {
+      items: data,
+      columns,
+      getRowKey,
+    } as { items: T[]; columns: VirtualizedTableColumn<T>[]; getRowKey: (item: T, index: number) => string; onRowClick?: (item: T, index: number) => void }
+
+    if (onRowClick) {
+      listItemData.onRowClick = onRowClick
+    }
+
+    return listItemData
+  }, [data, columns, getRowKey, onRowClick])
 
   if (isLoading && data.length === 0) {
     return (

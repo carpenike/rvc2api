@@ -1,4 +1,4 @@
-import type { LogEntry } from "./log-viewer-context";
+import type { LogEntry, LogFilters } from "./log-viewer-context";
 import { useLogViewer } from "./useLogViewer";
 
 export function ModuleFilter() {
@@ -9,7 +9,13 @@ export function ModuleFilter() {
     <select
       className="border rounded px-2 py-1 text-sm bg-background"
       value={filters.module || ""}
-      onChange={e => updateFilters({ module: e.target.value || undefined })}
+      onChange={e => {
+        const filters: Partial<LogFilters> = {};
+        if (e.target.value) {
+          filters.module = e.target.value;
+        }
+        updateFilters(filters);
+      }}
       aria-label="Filter by module"
     >
       <option value="">All Modules</option>
