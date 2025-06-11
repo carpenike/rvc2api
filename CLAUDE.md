@@ -38,10 +38,12 @@ Each file contains targeted guidance for specific development workflows and cont
 
 - **All Python scripts must be run using Poetry.** Use `poetry run python <script>.py` or `poetry run <command>`, never `python <script>.py` directly.
 - **MANDATORY CODE QUALITY GATES**: ALL code changes must pass linting, type checking, and build verification BEFORE proceeding to the next task. Run quality checks incrementally throughout development, not just at the end.
+- **SAFETY-CRITICAL VALIDATION**: This is an RV-C vehicle control system. Code quality failures can result in dangerous malfunctions. ALL safety-critical validation MUST pass.
 - **Use Domain API v2 for new development**: All new API integrations should use `/api/v2/{domain}` endpoints (e.g., `/api/v2/entities`) with domain-driven architecture patterns.
 - **Legacy API compatibility**: Legacy `/api/entities` endpoints remain available but prefer Domain API v2 for enhanced features, bulk operations, and better performance.
 - **All API endpoints require comprehensive documentation** with examples, descriptions, and response schemas to maintain the OpenAPI specification.
 - **Domain API command structure**: Use structured command objects: `{"command": "set|toggle|brightness_up|brightness_down", "state": true/false, "brightness": 0-100, "parameters": {}}`
+- **BRANDED TYPES**: Use branded types from `@/types/branded` for all safety-critical data (temperatures, pressures, speeds) to prevent type confusion.
 
 ### Code Quality Requirements (MANDATORY)
 
@@ -50,17 +52,20 @@ Each file contains targeted guidance for specific development workflows and cont
 **Frontend Quality Gates:**
 ```bash
 cd frontend
-npm run typecheck    # TypeScript compilation MUST pass
-npm run lint         # ESLint MUST pass with zero warnings
-npm run build        # Production build MUST succeed
+npm run typecheck       # TypeScript compilation MUST pass (strict mode)
+npm run lint           # ESLint MUST pass (SonarJS + security rules)
+npm run security:audit # Dependency vulnerabilities MUST be resolved
+npm run build          # Production build MUST succeed
 ```
 
 **Backend Quality Gates:**
 ```bash
 cd backend
-poetry run pyright backend    # Type checking MUST pass
-poetry run ruff check .        # Linting MUST pass
-poetry run ruff format backend # Code formatting MUST be applied
+poetry run pyright backend    # Type checking MUST pass (strict mode)
+poetry run ruff check .        # Linting MUST pass (safety-critical rules)
+poetry run ruff format .       # Code formatting MUST be applied
+poetry run bandit -c pyproject.toml -r backend  # Security scanning MUST pass
+poetry run pip-audit           # Dependency vulnerabilities MUST be resolved
 ```
 
 **When to Run Quality Checks:**
@@ -80,6 +85,7 @@ poetry run ruff format backend # Code formatting MUST be applied
 - `/fix-type-errors` - Automated type error resolution
 - `/code-quality-check` - Comprehensive quality validation
 - `/build-and-test` - Full build and test verification
+- `./scripts/code_quality_check.sh` - Complete safety-critical validation suite
 
 ## Domain API v2 Architecture Patterns
 
