@@ -92,22 +92,30 @@ import type {
     User
 } from './types';
 
+// Import Domain API v2 types for enhanced functionality
+import type {
+    EntityCollectionSchema,
+    EntitySchema,
+    OperationResultSchema
+} from './types/domains';
+
 //
-// ===== ENTITIES API (/api/entities) =====
+// ===== ENTITIES API (/api/v2/entities) =====
 //
 
 /**
  * Fetch all entities with optional filtering
+ * Now uses Domain API v2 for enhanced functionality and performance
  *
  * @param params - Optional query parameters for filtering
  * @returns Promise resolving to entity collection
  */
-export async function fetchEntities(params?: EntitiesQueryParams): Promise<EntityCollection> {
+export async function fetchEntities(params?: EntitiesQueryParams): Promise<EntityCollectionSchema> {
   const queryString = params ? buildQueryString(params) : '';
-  const url = queryString ? `/api/entities?${queryString}` : '/api/entities';
+  const url = queryString ? `/api/v2/entities?${queryString}` : '/api/v2/entities';
 
   logApiRequest('GET', url, params);
-  const result = await apiGet<EntityCollection>(url);
+  const result = await apiGet<EntityCollectionSchema>(url);
   logApiResponse(url, result);
 
   return result;
@@ -115,15 +123,16 @@ export async function fetchEntities(params?: EntitiesQueryParams): Promise<Entit
 
 /**
  * Fetch a specific entity by ID
+ * Now uses Domain API v2 for enhanced entity data format
  *
  * @param entityId - The entity ID to fetch
  * @returns Promise resolving to the entity data
  */
-export async function fetchEntity(entityId: string): Promise<Entity> {
-  const url = `/api/entities/${entityId}`;
+export async function fetchEntity(entityId: string): Promise<EntitySchema> {
+  const url = `/api/v2/entities/${entityId}`;
 
   logApiRequest('GET', url);
-  const result = await apiGet<Entity>(url);
+  const result = await apiGet<EntitySchema>(url);
   logApiResponse(url, result);
 
   return result;
@@ -131,6 +140,7 @@ export async function fetchEntity(entityId: string): Promise<Entity> {
 
 /**
  * Control an entity (turn on/off, set brightness, etc.)
+ * Now uses Domain API v2 for enhanced safety and acknowledgment patterns
  *
  * @param entityId - The entity ID to control
  * @param command - The control command to execute
@@ -139,11 +149,11 @@ export async function fetchEntity(entityId: string): Promise<Entity> {
 export async function controlEntity(
   entityId: string,
   command: ControlCommand
-): Promise<ControlEntityResponse> {
-  const url = `/api/entities/${entityId}/control`;
+): Promise<OperationResultSchema> {
+  const url = `/api/v2/entities/${entityId}/control`;
 
   logApiRequest('POST', url, command);
-  const result = await apiPost<ControlEntityResponse>(url, command);
+  const result = await apiPost<OperationResultSchema>(url, command);
   logApiResponse(url, result);
 
   return result;
@@ -151,6 +161,7 @@ export async function controlEntity(
 
 /**
  * Fetch entity history
+ * Now uses Domain API v2 for enhanced history data and pagination
  *
  * @param entityId - The entity ID to get history for
  * @param params - Optional query parameters (limit, since)
@@ -162,8 +173,8 @@ export async function fetchEntityHistory(
 ): Promise<HistoryEntry[]> {
   const queryString = params ? buildQueryString(params) : '';
   const url = queryString
-    ? `/api/entities/${entityId}/history?${queryString}`
-    : `/api/entities/${entityId}/history`;
+    ? `/api/v2/entities/${entityId}/history?${queryString}`
+    : `/api/v2/entities/${entityId}/history`;
 
   logApiRequest('GET', url, params);
   const result = await apiGet<HistoryEntry[]>(url);
@@ -174,11 +185,12 @@ export async function fetchEntityHistory(
 
 /**
  * Fetch unmapped CAN entries
+ * Now uses Domain API v2 for enhanced unmapped data format
  *
  * @returns Promise resolving to unmapped entries
  */
 export async function fetchUnmappedEntries(): Promise<UnmappedResponse> {
-  const url = '/api/unmapped';
+  const url = '/api/v2/entities/debug/unmapped';
 
   logApiRequest('GET', url);
   const result = await apiGet<UnmappedResponse>(url);
@@ -189,6 +201,7 @@ export async function fetchUnmappedEntries(): Promise<UnmappedResponse> {
 
 /**
  * Create entity mapping from unmapped entry
+ * Now uses Domain API v2 for enhanced mapping creation and validation
  *
  * @param request - Entity mapping configuration details
  * @returns Promise resolving to mapping creation response
@@ -196,7 +209,7 @@ export async function fetchUnmappedEntries(): Promise<UnmappedResponse> {
 export async function createEntityMapping(
   request: CreateEntityMappingRequest
 ): Promise<CreateEntityMappingResponse> {
-  const url = '/api/entities/mappings';
+  const url = '/api/v2/entities/mappings';
 
   logApiRequest('POST', url, request);
   const result = await apiPost<CreateEntityMappingResponse>(url, request);
@@ -207,11 +220,12 @@ export async function createEntityMapping(
 
 /**
  * Fetch unknown PGN entries
+ * Now uses Domain API v2 for enhanced unknown PGN data format
  *
  * @returns Promise resolving to unknown PGN entries
  */
 export async function fetchUnknownPGNs(): Promise<UnknownPGNResponse> {
-  const url = '/api/unknown-pgns';
+  const url = '/api/v2/entities/debug/unknown-pgns';
 
   logApiRequest('GET', url);
   const result = await apiGet<UnknownPGNResponse>(url);
@@ -222,11 +236,12 @@ export async function fetchUnknownPGNs(): Promise<UnknownPGNResponse> {
 
 /**
  * Get entity metadata (device types, areas, etc.)
+ * Now uses Domain API v2 for enhanced metadata format and validation
  *
  * @returns Promise resolving to metadata response
  */
 export async function fetchEntityMetadata(): Promise<MetadataResponse> {
-  const url = '/api/metadata';
+  const url = '/api/v2/entities/metadata';
 
   logApiRequest('GET', url);
   const result = await apiGet<MetadataResponse>(url);
@@ -527,12 +542,13 @@ export async function fetchActivityFeed(params?: { limit?: number; since?: strin
 
 /**
  * Perform bulk control operations on multiple entities
+ * Now uses Domain API v2 for enhanced bulk operations with safety controls
  *
  * @param request - Bulk control request with entity IDs and command
  * @returns Promise resolving to bulk control response
  */
 export async function bulkControlEntities(request: BulkControlRequest): Promise<BulkControlResponse> {
-  const url = '/api/dashboard/bulk-control';
+  const url = '/api/v2/entities/bulk-control';
 
   logApiRequest('POST', url, request);
   const result = await apiPost<BulkControlResponse>(url, request);
@@ -992,7 +1008,7 @@ export async function generatePerformanceReport(timeWindowSeconds = 3600): Promi
  *
  * @returns Promise resolving to J1939 entity collection
  */
-export async function fetchJ1939Entities(): Promise<EntityCollection> {
+export async function fetchJ1939Entities(): Promise<EntityCollectionSchema> {
   return fetchEntities({ protocol: 'j1939' } as EntitiesQueryParams);
 }
 
@@ -1001,7 +1017,7 @@ export async function fetchJ1939Entities(): Promise<EntityCollection> {
  *
  * @returns Promise resolving to Firefly entity collection
  */
-export async function fetchFireflyEntities(): Promise<EntityCollection> {
+export async function fetchFireflyEntities(): Promise<EntityCollectionSchema> {
   return fetchEntities({ protocol: 'firefly' } as EntitiesQueryParams);
 }
 
@@ -1010,7 +1026,7 @@ export async function fetchFireflyEntities(): Promise<EntityCollection> {
  *
  * @returns Promise resolving to Spartan K2 entity collection
  */
-export async function fetchSpartanK2Entities(): Promise<EntityCollection> {
+export async function fetchSpartanK2Entities(): Promise<EntityCollectionSchema> {
   return fetchEntities({ protocol: 'spartan_k2' } as EntitiesQueryParams);
 }
 
@@ -1039,7 +1055,7 @@ export async function fetchProtocolBridgeStatus(): Promise<ProtocolBridgeStatus>
  *
  * @returns Promise resolving to light entities only
  */
-export async function fetchLights(): Promise<EntityCollection> {
+export async function fetchLights(): Promise<EntityCollectionSchema> {
   return fetchEntities({ device_type: 'light' });
 }
 
@@ -1049,7 +1065,7 @@ export async function fetchLights(): Promise<EntityCollection> {
  *
  * @returns Promise resolving to lock entities only
  */
-export async function fetchLocks(): Promise<EntityCollection> {
+export async function fetchLocks(): Promise<EntityCollectionSchema> {
   return fetchEntities({ device_type: 'lock' });
 }
 
@@ -1059,7 +1075,7 @@ export async function fetchLocks(): Promise<EntityCollection> {
  *
  * @returns Promise resolving to temperature sensor entities only
  */
-export async function fetchTemperatureSensors(): Promise<EntityCollection> {
+export async function fetchTemperatureSensors(): Promise<EntityCollectionSchema> {
   return fetchEntities({ device_type: 'temperature_sensor' });
 }
 
@@ -1069,7 +1085,7 @@ export async function fetchTemperatureSensors(): Promise<EntityCollection> {
  *
  * @returns Promise resolving to tank sensor entities only
  */
-export async function fetchTankSensors(): Promise<EntityCollection> {
+export async function fetchTankSensors(): Promise<EntityCollectionSchema> {
   return fetchEntities({ device_type: 'tank_sensor' });
 }
 
@@ -1083,7 +1099,7 @@ export async function fetchTankSensors(): Promise<EntityCollection> {
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function turnLightOn(entityId: string): Promise<ControlEntityResponse> {
+export async function turnLightOn(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'set', state: true });
 }
 
@@ -1093,7 +1109,7 @@ export async function turnLightOn(entityId: string): Promise<ControlEntityRespon
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function turnLightOff(entityId: string): Promise<ControlEntityResponse> {
+export async function turnLightOff(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'set', state: false });
 }
 
@@ -1103,7 +1119,7 @@ export async function turnLightOff(entityId: string): Promise<ControlEntityRespo
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function toggleLight(entityId: string): Promise<ControlEntityResponse> {
+export async function toggleLight(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'toggle', parameters: {} });
 }
 
@@ -1117,7 +1133,7 @@ export async function toggleLight(entityId: string): Promise<ControlEntityRespon
 export async function setLightBrightness(
   entityId: string,
   brightness: number
-): Promise<ControlEntityResponse> {
+): Promise<OperationResultSchema> {
   return controlEntity(entityId, {
     command: 'set',
     state: true, // Setting brightness usually implies turning the light on
@@ -1131,7 +1147,7 @@ export async function setLightBrightness(
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function brightnessUp(entityId: string): Promise<ControlEntityResponse> {
+export async function brightnessUp(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'brightness_up', parameters: {} });
 }
 
@@ -1141,7 +1157,7 @@ export async function brightnessUp(entityId: string): Promise<ControlEntityRespo
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function brightnessDown(entityId: string): Promise<ControlEntityResponse> {
+export async function brightnessDown(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'brightness_down', parameters: {} });
 }
 
@@ -1155,7 +1171,7 @@ export async function brightnessDown(entityId: string): Promise<ControlEntityRes
  * @param entityId - The lock entity ID
  * @returns Promise resolving to control response
  */
-export async function lockEntity(entityId: string): Promise<ControlEntityResponse> {
+export async function lockEntity(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'lock', parameters: {} });
 }
 
@@ -1165,7 +1181,7 @@ export async function lockEntity(entityId: string): Promise<ControlEntityRespons
  * @param entityId - The lock entity ID
  * @returns Promise resolving to control response
  */
-export async function unlockEntity(entityId: string): Promise<ControlEntityResponse> {
+export async function unlockEntity(entityId: string): Promise<OperationResultSchema> {
   return controlEntity(entityId, { command: 'unlock', parameters: {} });
 }
 

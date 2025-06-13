@@ -264,7 +264,7 @@ export async function withRetry<T>(
     ...config,
   };
 
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {

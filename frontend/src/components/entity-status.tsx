@@ -1,8 +1,9 @@
 /**
  * Entity Status Component
  *
- * Demonstrates the new state management system by showing real entity data.
- * This component serves as an example of how to use the new React Query hooks.
+ * Demonstrates the enhanced state management system with Domain API v2 progressive enhancement.
+ * This component serves as an example of how to use the enhanced React Query hooks that
+ * automatically use Domain API v2 when available and fall back to legacy API.
  */
 
 import type { LightEntity } from "@/api/types";
@@ -10,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEntities, useHealthStatus, useLightControl, useLights } from "@/hooks";
+import { useEntities, useHealthStatus, useLightControl, useLights, useBulkEntityControl } from "@/hooks";
+import { useEntitiesDomainAPIAvailability } from "@/hooks/domains/useEntitiesV2";
 
 /**
  * Simple loading skeleton for entity cards
@@ -224,9 +226,103 @@ function EntityOverviewCard() {
 }
 
 /**
+ * Domain API v2 Status Component
+ * Demonstrates the enhanced Domain API v2 progressive enhancement features
+ */
+function DomainAPIStatusCard() {
+  const { data: isDomainAPIAvailable, isLoading, error } = useEntitiesDomainAPIAvailability();
+  const { data: entities } = useEntities(); // Uses enhanced hook with progressive enhancement
+  const bulkControl = useBulkEntityControl(); // Enhanced bulk operations
+
+  if (isLoading) {
+    return <EntityCardSkeleton />;
+  }
+
+  // Convert entities to array for bulk operations demo
+  const entitiesArray = entities ? Object.values(entities) : [];
+  const lightEntities = entitiesArray.filter(entity => entity.device_type === 'light');
+
+  const handleBulkLightControl = (action: 'on' | 'off') => {
+    const lightIds = lightEntities.map(light => light.entity_id);
+    if (lightIds.length === 0) return;
+
+    bulkControl.mutate({
+      entityIds: lightIds.slice(0, 5), // Limit to first 5 for demo
+      command: { command: 'set', state: action === 'on' },
+      ignoreErrors: true,
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Domain API v2 Status</CardTitle>
+        <CardDescription>Progressive enhancement with fallback support</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-3">
+          {/* API Status */}
+          <div className="flex justify-between items-center">
+            <span>Domain API v2</span>
+            <Badge variant={isDomainAPIAvailable ? 'default' : 'secondary'}>
+              {isDomainAPIAvailable ? 'Available' : 'Legacy Fallback'}
+            </Badge>
+          </div>
+
+          {/* Features Status */}
+          <div className="flex justify-between items-center">
+            <span>Enhanced Features</span>
+            <Badge variant={isDomainAPIAvailable ? 'default' : 'outline'}>
+              {isDomainAPIAvailable ? 'Validation + Bulk Ops' : 'Basic Operations'}
+            </Badge>
+          </div>
+
+          {/* Bulk Operations Demo */}
+          {lightEntities.length > 0 && (
+            <div className="flex flex-col gap-2 pt-2 border-t">
+              <span className="text-sm font-medium">Bulk Light Control Demo</span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkLightControl('on')}
+                  disabled={bulkControl.isPending}
+                >
+                  {bulkControl.isPending ? 'Processing...' : `Turn On ${Math.min(lightEntities.length, 5)} Lights`}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkLightControl('off')}
+                  disabled={bulkControl.isPending}
+                >
+                  Turn Off
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {isDomainAPIAvailable
+                  ? 'Using Domain API v2 with validation and safety-aware optimistic updates'
+                  : 'Using legacy API with individual calls fallback'}
+              </span>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <Badge variant="destructive">
+              Error: {error.message}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
  * Main component export
  */
 export {
   EntityCardSkeleton, EntityOverviewCard, LightControlCard,
-  SystemStatusCard
+  SystemStatusCard, DomainAPIStatusCard
 };

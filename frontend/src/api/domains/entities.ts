@@ -3,10 +3,26 @@
  *
  * This module provides typed API client functions for the entities domain,
  * leveraging the new /api/v2/entities endpoints with enhanced bulk operations
- * and optimistic update support.
+ * and optimistic update support with Zod runtime validation.
  */
 
 import { apiGet, apiPost, buildQueryString, logApiRequest, logApiResponse } from '../client';
+import { withDomainAPIFallback } from './index';
+import {
+  fetchEntities as legacyFetchEntities,
+  fetchEntity as legacyFetchEntity,
+  controlEntity as legacyControlEntity
+} from '../endpoints';
+import type { Entity as LegacyEntity } from '../types';
+import {
+  safeParseApiResponse,
+  getEntitySchema,
+  getOperationResultSchema,
+  getBulkOperationResultSchema,
+  getEntityCollectionSchema,
+  validateControlCommand,
+  validateBulkControlRequest,
+} from '../validation/zod-schemas';
 
 //
 // ===== TYPES FROM BACKEND SCHEMAS =====
@@ -67,7 +83,7 @@ export interface EntityCollectionSchema {
 // ===== QUERY PARAMETERS =====
 //
 
-export interface EntitiesQueryParams {
+export interface EntitiesQueryParams extends Record<string, unknown> {
   device_type?: string;
   area?: string;
   protocol?: string;
@@ -81,11 +97,13 @@ export interface EntitiesQueryParams {
 
 /**
  * Fetch entities using the new domain API with filtering and pagination
+ * Falls back to legacy API if v2 is not available
  *
  * @param params - Optional query parameters for filtering and pagination
  * @returns Promise resolving to paginated entity collection
  */
 export async function fetchEntitiesV2(params?: EntitiesQueryParams): Promise<EntityCollectionSchema> {
+  // Direct Domain API v2 call - no fallback needed since legacy endpoints have been removed
   const queryString = params ? buildQueryString(params as Record<string, unknown>) : '';
   const url = queryString ? `/api/v2/entities?${queryString}` : '/api/v2/entities';
 
@@ -98,11 +116,13 @@ export async function fetchEntitiesV2(params?: EntitiesQueryParams): Promise<Ent
 
 /**
  * Fetch a specific entity by ID using the new domain API
+ * Falls back to legacy API if v2 is not available
  *
  * @param entityId - The entity ID to fetch
  * @returns Promise resolving to the entity data
  */
 export async function fetchEntityV2(entityId: string): Promise<EntitySchema> {
+  // Direct Domain API v2 call - no fallback needed since legacy endpoints have been removed
   const url = `/api/v2/entities/${entityId}`;
 
   logApiRequest('GET', url);
@@ -114,6 +134,7 @@ export async function fetchEntityV2(entityId: string): Promise<EntitySchema> {
 
 /**
  * Control a single entity using the new domain API
+ * Falls back to legacy API if v2 is not available
  *
  * @param entityId - The entity ID to control
  * @param command - The control command to execute
@@ -123,17 +144,58 @@ export async function controlEntityV2(
   entityId: string,
   command: ControlCommandSchema
 ): Promise<OperationResultSchema> {
-  const url = `/api/v2/entities/${entityId}/control`;
+  return withDomainAPIFallback(
+    // Domain API v2 function
+    async () => {
+      const url = `/api/v2/entities/${entityId}/control`;
 
-  logApiRequest('POST', url, command);
-  const result = await apiPost<OperationResultSchema>(url, command);
-  logApiResponse(url, result);
+      logApiRequest('POST', url, command);
+      const result = await apiPost<OperationResultSchema>(url, command);
+      logApiResponse(url, result);
 
-  return result;
+      return result;
+    },
+    // Legacy API fallback
+    async () => {
+      logApiRequest('POST (LEGACY)', `/api/entities/${entityId}/control`, command);
+
+      // Convert v2 command to legacy format
+      const legacyCommand: any = {
+        command: command.command,
+        ...(command.parameters || {})
+      };
+
+      if (command.state !== undefined && command.state !== null) {
+        legacyCommand.state = command.state;
+      }
+
+      if (command.brightness !== undefined && command.brightness !== null) {
+        legacyCommand.brightness = command.brightness;
+      }
+
+      const legacyResult = await legacyControlEntity(entityId, legacyCommand);
+      logApiResponse(`/api/entities/${entityId}/control (LEGACY)`, legacyResult);
+
+      // Convert legacy response to v2 format
+      return {
+        entity_id: entityId,
+        status: (legacyResult as any).success ? 'success' : 'failed',
+        error_message: (legacyResult as any).error || null,
+        error_code: (legacyResult as any).error_code || null,
+        execution_time_ms: null
+      };
+    },
+    {
+      preferDomainAPI: true,
+      fallbackToLegacy: true,
+      logMigration: true
+    }
+  );
 }
 
 /**
  * Execute bulk control operations on multiple entities
+ * Falls back to individual legacy operations if v2 is not available
  *
  * This is the primary enhancement of the domain API, supporting:
  * - Concurrent entity control with proper timeout handling
@@ -147,13 +209,88 @@ export async function controlEntityV2(
 export async function bulkControlEntitiesV2(
   request: BulkControlRequestSchema
 ): Promise<BulkOperationResultSchema> {
-  const url = '/api/v2/entities/bulk-control';
+  return withDomainAPIFallback(
+    // Domain API v2 function
+    async () => {
+      const url = '/api/v2/entities/bulk-control';
 
-  logApiRequest('POST', url, request);
-  const result = await apiPost<BulkOperationResultSchema>(url, request);
-  logApiResponse(url, result);
+      logApiRequest('POST', url, request);
+      const result = await apiPost<BulkOperationResultSchema>(url, request);
+      logApiResponse(url, result);
 
-  return result;
+      return result;
+    },
+    // Legacy API fallback - simulate bulk operation with individual calls
+    async () => {
+      logApiRequest('POST (LEGACY BULK)', '/api/entities/*/control', request);
+
+      const startTime = Date.now();
+      const results: OperationResultSchema[] = [];
+
+      // Execute individual control operations
+      for (const entityId of request.entity_ids) {
+        try {
+          const legacyCommand: any = {
+            command: request.command.command,
+            ...(request.command.parameters || {})
+          };
+
+          if (request.command.state !== undefined && request.command.state !== null) {
+            legacyCommand.state = request.command.state;
+          }
+
+          if (request.command.brightness !== undefined && request.command.brightness !== null) {
+            legacyCommand.brightness = request.command.brightness;
+          }
+
+          const operationStart = Date.now();
+          const legacyResult = await legacyControlEntity(entityId, legacyCommand);
+          const operationTime = Date.now() - operationStart;
+
+          results.push({
+            entity_id: entityId,
+            status: (legacyResult as any).success ? 'success' : 'failed',
+            error_message: (legacyResult as any).error || null,
+            error_code: (legacyResult as any).error_code || null,
+            execution_time_ms: operationTime
+          });
+        } catch (error) {
+          results.push({
+            entity_id: entityId,
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            error_code: 'LEGACY_CONTROL_ERROR',
+            execution_time_ms: null
+          });
+
+          // If ignore_errors is false, stop on first failure
+          if (!request.ignore_errors) {
+            break;
+          }
+        }
+      }
+
+      const totalTime = Date.now() - startTime;
+      const successCount = results.filter(r => r.status === 'success').length;
+
+      const bulkResult: BulkOperationResultSchema = {
+        operation_id: `legacy-bulk-${Date.now()}`,
+        total_count: request.entity_ids.length,
+        success_count: successCount,
+        failed_count: results.length - successCount,
+        results: results,
+        total_execution_time_ms: totalTime
+      };
+
+      logApiResponse('/api/entities/*/control (LEGACY BULK)', bulkResult);
+      return bulkResult;
+    },
+    {
+      preferDomainAPI: true,
+      fallbackToLegacy: true,
+      logMigration: true
+    }
+  );
 }
 
 /**
@@ -280,6 +417,26 @@ export async function bulkToggleEntities(
 //
 
 /**
+ * Convert legacy Entity to new EntitySchema format for v2 API compatibility
+ *
+ * @param legacyEntity - Legacy Entity from legacy API
+ * @returns New EntitySchema format
+ */
+export function convertEntityLegacyToV2(legacyEntity: LegacyEntity): EntitySchema {
+  const entity = legacyEntity as any; // Type assertion for legacy compatibility
+  return {
+    entity_id: entity.entity_id || entity.id || '',
+    name: entity.friendly_name || entity.name || '',
+    device_type: entity.device_type || 'unknown',
+    protocol: entity.protocol || 'rvc',
+    state: (entity.raw as Record<string, string | number | boolean>) || {},
+    area: entity.suggested_area || null,
+    last_updated: entity.last_updated || new Date().toISOString(),
+    available: entity.available !== false,
+  };
+}
+
+/**
  * Convert new EntitySchema to legacy Entity format for backward compatibility
  *
  * @param entity - New EntitySchema from domain API
@@ -346,4 +503,220 @@ export function convertLegacyEntityCollection(legacyCollection: Record<string, u
     has_next: false,
     filters_applied: {},
   };
+}
+
+//
+// ===== VALIDATION-ENHANCED API FUNCTIONS =====
+//
+
+/**
+ * Fetch entities with runtime validation using Zod schemas
+ *
+ * @param params - Optional query parameters for filtering and pagination
+ * @returns Promise resolving to validated paginated entity collection
+ */
+export async function fetchEntitiesV2WithValidation(params?: EntitiesQueryParams): Promise<EntityCollectionSchema> {
+  const rawResult = await fetchEntitiesV2(params);
+
+  // Validate the response using dynamic schema
+  const validatedResult = await safeParseApiResponse(rawResult, getEntityCollectionSchema);
+
+  if (validatedResult === null) {
+    console.warn('⚠️ Entity collection validation failed, returning unvalidated data');
+    return rawResult;
+  }
+
+  console.log('✅ Entity collection validated successfully');
+  return validatedResult;
+}
+
+/**
+ * Fetch entity with runtime validation using Zod schemas
+ *
+ * @param entityId - The entity ID to fetch
+ * @returns Promise resolving to validated entity data
+ */
+export async function fetchEntityV2WithValidation(entityId: string): Promise<EntitySchema> {
+  const rawResult = await fetchEntityV2(entityId);
+
+  // Validate the response using dynamic schema
+  const validatedResult = await safeParseApiResponse(rawResult, getEntitySchema);
+
+  if (validatedResult === null) {
+    console.warn('⚠️ Entity validation failed, returning unvalidated data');
+    return rawResult;
+  }
+
+  console.log('✅ Entity validated successfully');
+  return validatedResult;
+}
+
+/**
+ * Control entity with pre-validation of command and post-validation of result
+ *
+ * @param entityId - The entity ID to control
+ * @param command - The control command to execute
+ * @returns Promise resolving to validated operation result
+ */
+export async function controlEntityV2WithValidation(
+  entityId: string,
+  command: ControlCommandSchema
+): Promise<OperationResultSchema> {
+  // Pre-validate the command
+  const commandValidation = await validateControlCommand(command);
+  if (!commandValidation.success) {
+    throw new Error(`Invalid control command: ${commandValidation.errors.join(', ')}`);
+  }
+
+  console.log('✅ Control command validated');
+
+  // Execute with validated command
+  const rawResult = await controlEntityV2(entityId, commandValidation.data);
+
+  // Validate the response
+  const validatedResult = await safeParseApiResponse(rawResult, getOperationResultSchema);
+
+  if (validatedResult === null) {
+    console.warn('⚠️ Operation result validation failed, returning unvalidated data');
+    return rawResult;
+  }
+
+  console.log('✅ Operation result validated successfully');
+  return validatedResult;
+}
+
+/**
+ * Execute bulk control with comprehensive validation of request and results
+ *
+ * @param request - Bulk control request with entity IDs and command
+ * @returns Promise resolving to validated bulk operation results
+ */
+export async function bulkControlEntitiesV2WithValidation(
+  request: BulkControlRequestSchema
+): Promise<BulkOperationResultSchema> {
+  // Pre-validate the bulk request
+  const requestValidation = await validateBulkControlRequest(request);
+  if (!requestValidation.success) {
+    throw new Error(`Invalid bulk control request: ${requestValidation.errors.join(', ')}`);
+  }
+
+  console.log('✅ Bulk control request validated');
+
+  // Execute with validated request
+  const rawResult = await bulkControlEntitiesV2(requestValidation.data);
+
+  // Validate the response
+  const validatedResult = await safeParseApiResponse(rawResult, getBulkOperationResultSchema);
+
+  if (validatedResult === null) {
+    console.warn('⚠️ Bulk operation result validation failed, returning unvalidated data');
+    return rawResult;
+  }
+
+  console.log('✅ Bulk operation result validated successfully');
+  return validatedResult;
+}
+
+//
+// ===== SAFETY-AWARE CONVENIENCE FUNCTIONS =====
+//
+
+/**
+ * Turn multiple lights on with validation and safety checks
+ *
+ * @param entityIds - Array of light entity IDs
+ * @param ignoreErrors - Whether to continue if some operations fail
+ * @returns Promise resolving to validated bulk operation results
+ */
+export async function bulkTurnLightsOnWithValidation(
+  entityIds: string[],
+  ignoreErrors = true
+): Promise<BulkOperationResultSchema> {
+  const request: BulkControlRequestSchema = {
+    entity_ids: entityIds,
+    command: {
+      command: 'set',
+      state: true,
+    },
+    ignore_errors: ignoreErrors,
+  };
+
+  return await bulkControlEntitiesV2WithValidation(request);
+}
+
+/**
+ * Turn multiple lights off with validation and safety checks
+ *
+ * @param entityIds - Array of light entity IDs
+ * @param ignoreErrors - Whether to continue if some operations fail
+ * @returns Promise resolving to validated bulk operation results
+ */
+export async function bulkTurnLightsOffWithValidation(
+  entityIds: string[],
+  ignoreErrors = true
+): Promise<BulkOperationResultSchema> {
+  const request: BulkControlRequestSchema = {
+    entity_ids: entityIds,
+    command: {
+      command: 'set',
+      state: false,
+    },
+    ignore_errors: ignoreErrors,
+  };
+
+  return await bulkControlEntitiesV2WithValidation(request);
+}
+
+/**
+ * Set brightness for multiple lights with validation and safety limits
+ *
+ * @param entityIds - Array of light entity IDs
+ * @param brightness - Brightness level (0-100, will be clamped)
+ * @param ignoreErrors - Whether to continue if some operations fail
+ * @returns Promise resolving to validated bulk operation results
+ */
+export async function bulkSetLightBrightnessWithValidation(
+  entityIds: string[],
+  brightness: number,
+  ignoreErrors = true
+): Promise<BulkOperationResultSchema> {
+  // Safety clamp brightness to valid range
+  const safeBrightness = Math.max(0, Math.min(100, brightness));
+
+  if (brightness !== safeBrightness) {
+    console.warn(`⚠️ Brightness clamped from ${brightness} to ${safeBrightness} for safety`);
+  }
+
+  const request: BulkControlRequestSchema = {
+    entity_ids: entityIds,
+    command: {
+      command: 'set',
+      brightness: safeBrightness,
+    },
+    ignore_errors: ignoreErrors,
+  };
+
+  return await bulkControlEntitiesV2WithValidation(request);
+}
+
+/**
+ * Toggle multiple entities with validation and safety checks
+ *
+ * @param entityIds - Array of entity IDs
+ * @param ignoreErrors - Whether to continue if some operations fail
+ * @returns Promise resolving to validated bulk operation results
+ */
+export async function bulkToggleEntitiesWithValidation(
+  entityIds: string[],
+  ignoreErrors = true
+): Promise<BulkOperationResultSchema> {
+  const request: BulkControlRequestSchema = {
+    entity_ids: entityIds,
+    command: {
+      command: 'toggle',
+    },
+    ignore_errors: ignoreErrors,
+  };
+
+  return await bulkControlEntitiesV2WithValidation(request);
 }

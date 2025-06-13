@@ -8,7 +8,9 @@
 // Entity management hooks
 export {
   useControlEntity, useEntities,
-  useEntity, useEntityHistory, useEntityMetadata, useLight, useLightControl, useLights, useLock, useLockControl, useLocks, useTankSensor, useTankSensors, useTemperatureSensor, useTemperatureSensors
+  useEntity, useEntityHistory, useEntityMetadata, useLight, useLightControl, useLights, useLock, useLockControl, useLocks, useTankSensor, useTankSensors, useTemperatureSensor, useTemperatureSensors,
+  // Enhanced Domain API v2 hooks
+  useBulkEntityControl
 } from './useEntities';
 
 // System and CAN bus hooks
@@ -64,3 +66,24 @@ export {
   useComponentTrends,
   useMaintenanceHistory
 } from './usePredictiveMaintenance';
+
+// Domain API v2 hooks with safety-aware optimistic updates
+export {
+  // Basic domain hooks
+  useEntitiesV2,
+  useEntityV2,
+  useEntitiesSchemasV2,
+  useEntitiesDomainAPIAvailability,
+  useControlEntityV2,
+  useBulkControlEntitiesV2,
+  useEntitySelection,
+  useEntityPagination,
+  useEntityFilters,
+  // Validation-enhanced hooks
+  useEntitiesV2WithValidation,
+  useEntityV2WithValidation,
+  useControlEntityV2WithValidation,
+  useBulkControlEntitiesV2WithValidation,
+  useBulkLightControlWithValidation,
+  useEntitySelectionWithValidation,
+} from './domains/useEntitiesV2';

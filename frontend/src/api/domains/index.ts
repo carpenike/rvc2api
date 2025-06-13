@@ -6,7 +6,7 @@
  * over the legacy monolithic API.
  */
 
-// Entities Domain
+// Entities Domain (includes both regular and validation-enhanced functions)
 export * from './entities';
 
 // Future domains (placeholders for Phase 3+)

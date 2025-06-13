@@ -66,7 +66,7 @@
     "sonner": "^2.0.4",
     "tailwind-merge": "^3.3.0",
     "vaul": "^1.1.2",
-    "zod": "^3.25.49"
+    "zod": "^3.25.62"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
