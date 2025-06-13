@@ -1,96 +1,118 @@
 # Entity API Reference
 
-Entities represent the devices and systems in your RV, such as lights, tanks, and temperature sensors. The Entity API allows you to interact with these devices.
+!!! warning "API Version Notice"
+    This documentation describes the **Domain API v2** which is now the primary API.
+    Legacy `/api/entities` endpoints have been removed. Please use `/api/v2/entities` for all entity operations.
 
-## Entity Model
+Entities represent the devices and systems in your RV, such as lights, tanks, and temperature sensors. The Entity API v2 provides enhanced safety-critical controls and bulk operations.
 
-Each entity has the following structure:
+## Entity Model (v2)
+
+Each entity in the v2 API has the following structure:
 
 ```json
 {
-  "id": "light_1",
+  "entity_id": "light_1",
   "name": "Living Room Light",
   "device_type": "light",
-  "suggested_area": "living_room",
-  "state": "on",
-  "raw": {
-    "operating_status": 100
+  "protocol": "rvc",
+  "state": {
+    "operating_status": 100,
+    "state": "on"
   },
-  "capabilities": ["toggle", "brightness"],
-  "last_updated": "2023-05-18T15:30:45",
-  "source_type": "rv-c"
+  "area": "living_room",
+  "last_updated": "2023-05-18T15:30:45Z",
+  "available": true
 }
 ```
+
+### Key Changes from Legacy API:
+- `id` → `entity_id`
+- `suggested_area` → `area`
+- `raw` → `state` (unified state object)
+- Added `protocol` field
+- Added `available` field for device availability
+- Removed `capabilities` (now inferred from device_type)
 
 ## List Entities
 
 ```
-GET /api/entities
+GET /api/v2/entities
 ```
 
-Returns all entities, with optional filtering by device type or area.
+Returns entities with enhanced pagination, filtering, and safety-critical metadata.
 
 ### Query Parameters
 
-| Parameter   | Type   | Description                                     |
-| ----------- | ------ | ----------------------------------------------- |
-| device_type | string | Optional. Filter by device type (e.g., "light") |
-| area        | string | Optional. Filter by area (e.g., "living_room")  |
+| Parameter   | Type    | Description                                                      |
+| ----------- | ------- | ---------------------------------------------------------------- |
+| device_type | string  | Optional. Filter by device type (e.g., "light")                  |
+| area        | string  | Optional. Filter by area (e.g., "living_room")                   |
+| page        | integer | Optional. Page number for pagination (default: 1)                |
+| page_size   | integer | Optional. Number of items per page (default: 100, max: 1000)     |
+| sort_by     | string  | Optional. Sort field (entity_id, name, last_updated)             |
+| sort_order  | string  | Optional. Sort order (asc, desc) (default: asc)                  |
 
 ### Example
 
 Get all lights:
 
 ```
-GET /api/entities?device_type=light
+GET /api/v2/entities?device_type=light
 ```
 
-Get all entities in the bedroom:
+Get entities in the bedroom with pagination:
 
 ```
-GET /api/entities?area=bedroom
+GET /api/v2/entities?area=bedroom&page=1&page_size=50
 ```
 
 ### Response
 
 ```json
 {
-  "light_1": {
-    "id": "light_1",
-    "name": "Living Room Light",
-    "device_type": "light",
-    "suggested_area": "living_room",
-    "state": "on",
-    "raw": {
-      "operating_status": 100
+  "items": [
+    {
+      "entity_id": "light_1",
+      "name": "Living Room Light",
+      "device_type": "light",
+      "protocol": "rvc",
+      "state": {
+        "operating_status": 100,
+        "state": "on"
+      },
+      "area": "living_room",
+      "last_updated": "2023-05-18T15:30:45Z",
+      "available": true
     },
-    "capabilities": ["toggle", "brightness"],
-    "last_updated": "2023-05-18T15:30:45",
-    "source_type": "rv-c"
-  },
-  "light_2": {
-    "id": "light_2",
-    "name": "Bedroom Light",
-    "device_type": "light",
-    "suggested_area": "bedroom",
-    "state": "off",
-    "raw": {
-      "operating_status": 0
-    },
-    "capabilities": ["toggle", "brightness"],
-    "last_updated": "2023-05-18T15:25:30",
-    "source_type": "rv-c"
-  }
+    {
+      "entity_id": "light_2",
+      "name": "Bedroom Light",
+      "device_type": "light",
+      "protocol": "rvc",
+      "state": {
+        "operating_status": 0,
+        "state": "off"
+      },
+      "area": "bedroom",
+      "last_updated": "2023-05-18T15:25:30Z",
+      "available": true
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "page_size": 100,
+  "total_pages": 1
 }
 ```
 
 ## Get Entity by ID
 
 ```
-GET /api/entities/{entity_id}
+GET /api/v2/entities/{entity_id}
 ```
 
-Returns a specific entity by ID.
+Returns a specific entity by ID with enhanced metadata.
 
 ### Path Parameters
 
@@ -102,27 +124,27 @@ Returns a specific entity by ID.
 
 ```json
 {
-  "id": "light_1",
+  "entity_id": "light_1",
   "name": "Living Room Light",
   "device_type": "light",
-  "suggested_area": "living_room",
-  "state": "on",
-  "raw": {
-    "operating_status": 100
+  "protocol": "rvc",
+  "state": {
+    "operating_status": 100,
+    "state": "on"
   },
-  "capabilities": ["toggle", "brightness"],
-  "last_updated": "2023-05-18T15:30:45",
-  "source_type": "rv-c"
+  "area": "living_room",
+  "last_updated": "2023-05-18T15:30:45Z",
+  "available": true
 }
 ```
 
 ## Control Entity
 
 ```
-POST /api/entities/{entity_id}/control
+POST /api/v2/entities/{entity_id}/control
 ```
 
-Controls an entity by sending commands.
+Controls an entity with safety-critical command/acknowledgment patterns.
 
 ### Path Parameters
 
@@ -137,8 +159,9 @@ The request body contains a command object with the following structure:
 | Field      | Type    | Description                                                                 |
 | ---------- | ------- | --------------------------------------------------------------------------- |
 | command    | string  | The command to execute: "set", "toggle", "brightness_up", "brightness_down" |
-| state      | string  | Optional. The desired state: "on" or "off" (used with "set" command)        |
+| state      | boolean | Optional. The desired state: true (on) or false (off) (used with "set" command) |
 | brightness | integer | Optional. The desired brightness: 0-100 (used with "set" command)           |
+| parameters | object  | Optional. Additional command-specific parameters                             |
 
 ### Command Examples
 
@@ -147,7 +170,7 @@ Turn a light on:
 ```json
 {
   "command": "set",
-  "state": "on"
+  "state": true
 }
 ```
 
@@ -156,7 +179,7 @@ Turn a light off:
 ```json
 {
   "command": "set",
-  "state": "off"
+  "state": false
 }
 ```
 
@@ -165,7 +188,7 @@ Set brightness to 75%:
 ```json
 {
   "command": "set",
-  "state": "on",
+  "state": true,
   "brightness": 75
 }
 ```
@@ -198,44 +221,106 @@ Decrease brightness by 10%:
 
 ```json
 {
-  "command": "set",
-  "state": "on",
-  "brightness": 75,
-  "description": "Light turned on and set to 75% brightness"
+  "entity_id": "light_1",
+  "success": true,
+  "command": {
+    "command": "set",
+    "state": true,
+    "brightness": 75
+  },
+  "acknowledgment": {
+    "timestamp": "2023-05-18T15:30:46Z",
+    "source": "rvc",
+    "confirmed": true
+  },
+  "new_state": {
+    "operating_status": 75,
+    "state": "on"
+  }
 }
 ```
 
-## Get Entity History
+## Bulk Control Entities
 
 ```
-GET /api/entities/{entity_id}/history
+POST /api/v2/entities/bulk/control
 ```
 
-Returns the history of an entity's state changes.
+Control multiple entities in a single operation with partial success handling.
 
-### Path Parameters
+### Request Body
 
-| Parameter | Type   | Description                             |
-| --------- | ------ | --------------------------------------- |
-| entity_id | string | The ID of the entity to get history for |
+```json
+{
+  "entity_ids": ["light_1", "light_2", "light_3"],
+  "command": {
+    "command": "set",
+    "state": false
+  },
+  "options": {
+    "continue_on_error": true,
+    "timeout": 5.0
+  }
+}
+```
 
 ### Response
 
 ```json
-[
-  {
-    "timestamp": "2023-05-18T15:30:45",
-    "state": "on",
-    "raw": {
-      "operating_status": 100
+{
+  "success": true,
+  "total": 3,
+  "succeeded": 2,
+  "failed": 1,
+  "results": [
+    {
+      "entity_id": "light_1",
+      "success": true,
+      "acknowledgment": {
+        "timestamp": "2023-05-18T15:30:46Z",
+        "confirmed": true
+      }
+    },
+    {
+      "entity_id": "light_2",
+      "success": true,
+      "acknowledgment": {
+        "timestamp": "2023-05-18T15:30:46Z",
+        "confirmed": true
+      }
+    },
+    {
+      "entity_id": "light_3",
+      "success": false,
+      "error": "Entity not available"
     }
-  },
-  {
-    "timestamp": "2023-05-18T15:25:30",
-    "state": "off",
-    "raw": {
-      "operating_status": 0
-    }
-  }
-]
+  ]
+}
 ```
+
+## Additional Endpoints
+
+### Get Entity Metadata
+
+```
+GET /api/v2/entities/metadata
+```
+
+Returns metadata about available device types, areas, and capabilities.
+
+### Get Protocol Summary
+
+```
+GET /api/v2/entities/protocol-summary
+```
+
+Returns a summary of entities grouped by protocol with statistics.
+
+### Debug Endpoints
+
+```
+GET /api/v2/entities/debug/pending-commands
+GET /api/v2/entities/debug/state-sync
+```
+
+Provides debug information for pending commands and state synchronization (requires debug mode).

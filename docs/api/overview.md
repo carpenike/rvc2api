@@ -4,7 +4,21 @@ The CoachIQ server provides a RESTful API for interacting with RV-C devices and 
 
 ## API Base URL
 
-All API endpoints are located under `/api`.
+The primary API uses Domain API v2 with endpoints under `/api/v2/{domain}`. Legacy endpoints under `/api` have been deprecated and removed.
+
+### Domain API v2 (Primary)
+
+- **Entities**: `/api/v2/entities` - Entity management with safety-critical patterns
+- **Diagnostics**: `/api/v2/diagnostics` - System diagnostics and health monitoring
+- **Networks**: `/api/v2/networks` - Network interface management
+- **System**: `/api/v2/system` - System configuration and status
+
+### Specialized APIs
+
+Some specialized functionality remains under `/api`:
+- **CAN Bus**: `/api/can` - Low-level CAN bus operations
+- **Configuration**: `/api/config` - System configuration management
+- **Authentication**: `/api/auth` - Authentication and authorization
 
 ## Authentication
 
@@ -53,13 +67,16 @@ Error responses include a JSON body with details about the error:
 
 The API is organized into the following categories:
 
-### Entity API
+### Entity API v2
 
-Endpoints for managing and controlling entities (devices like lights, temperature sensors, etc.) in the RV.
+Domain API v2 endpoints for managing and controlling entities with safety-critical patterns:
 
-- `GET /api/entities` - List all entities with optional filtering by device type and area
-- `GET /api/entities/{id}` - Get details for a specific entity
-- `POST /api/entities/{id}/control` - Control an entity (e.g., turn a light on/off)
+- `GET /api/v2/entities` - List all entities with pagination and advanced filtering
+- `GET /api/v2/entities/{entity_id}` - Get details for a specific entity
+- `POST /api/v2/entities/{entity_id}/control` - Control an entity with command/acknowledgment
+- `POST /api/v2/entities/bulk/control` - Control multiple entities in a single operation
+- `GET /api/v2/entities/metadata` - Get available device types and capabilities
+- `GET /api/v2/entities/protocol-summary` - Get protocol statistics
 
 ### CAN Bus API
 

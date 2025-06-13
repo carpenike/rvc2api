@@ -45,6 +45,38 @@ Each file contains targeted guidance for specific development workflows and cont
 - **Domain API command structure**: Use structured command objects: `{"command": "set|toggle|brightness_up|brightness_down", "state": true/false, "brightness": 0-100, "parameters": {}}`
 - **BRANDED TYPES**: Use branded types from `@/types/branded` for all safety-critical data (temperatures, pressures, speeds) to prevent type confusion.
 
+### Command Execution Best Practices (BIAS TOWARDS ACTION)
+
+**IMPORTANT**: Claude should take a bias towards action and ensure commands execute successfully on the first attempt:
+
+1. **Before executing any terminal command**:
+   - Review the command syntax carefully to avoid syntax errors
+   - Verify all file paths and arguments are correctly formatted
+   - Use proper quoting for paths with spaces or special characters
+   - Ensure you're in the correct directory for the command
+
+2. **If a command is not found**:
+   - First check if you're using the correct command prefix (e.g., `poetry run` for Python commands)
+   - Check if the command exists in the current PATH
+   - Verify you're in the correct directory (frontend vs backend)
+   - Check if dependencies need to be installed first (`poetry install` or `npm install`)
+
+3. **Common command patterns to remember**:
+   - Backend Python: Always use `poetry run python` not just `python`
+   - Backend tools: `poetry run pytest`, `poetry run ruff`, `poetry run pyright`
+   - Frontend: Navigate to `frontend/` directory first, then use `npm run`
+   - Scripts: Make sure scripts are executable with `chmod +x` if needed
+
+4. **Path verification before file operations**:
+   - Use `pwd` to confirm current directory
+   - Use `ls` to verify file/directory exists before operating on it
+   - Use absolute paths when uncertain about relative paths
+
+5. **Recovery from failures**:
+   - If a command fails, diagnose the issue immediately
+   - Check error messages for missing dependencies or incorrect paths
+   - Don't repeat the same failed command without fixing the underlying issue
+
 ### Code Quality Requirements (MANDATORY)
 
 **CRITICAL**: After ANY code change, you MUST run quality checks before proceeding:
