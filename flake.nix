@@ -80,7 +80,6 @@
 
           nativeBuildInputs = with pythonPackages; [ poetry-core ];
           propagatedBuildInputs = [
-            pythonPackages.cachetools
             pythonPackages.coloredlogs
             pythonPackages.fastapi
             pythonPackages.httptools
@@ -113,6 +112,7 @@
             pythonPackages.pyotp
             pythonPackages.qrcode
             pythonPackages.slowapi
+            pythonPackages.cachetools
             # Advanced analytics and diagnostics dependencies
             pythonPackages.numpy
             pythonPackages.scipy
