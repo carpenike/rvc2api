@@ -10,6 +10,7 @@ This module provides authentication endpoints for the CoachIQ system including:
 The router adapts to the configured authentication mode automatically.
 """
 
+import json
 import logging
 from typing import Annotated, Any
 
@@ -410,7 +411,7 @@ async def login_step_with_mfa_check(
 
         # Check if MFA is required for this user
         if auth_manager.is_mfa_available():
-            mfa_status = auth_manager.get_mfa_status(user_id)
+            mfa_status = await auth_manager.get_mfa_status(user_id)
             if mfa_status["mfa_enabled"]:
                 # MFA is enabled - return challenge
                 logger.info(f"MFA verification required for user: {form_data.username}")
@@ -475,7 +476,7 @@ async def complete_login_with_mfa(
 
     try:
         # Verify MFA code
-        success = auth_manager.verify_mfa_code(current_user.user_id, mfa_verification.totp_code)
+        success = await auth_manager.verify_mfa_code(current_user.user_id, mfa_verification.totp_code)
 
         if not success:
             raise HTTPException(
@@ -497,7 +498,7 @@ async def complete_login_with_mfa(
 
         refresh_token = ""
         if auth_manager.settings.enable_refresh_tokens:
-            refresh_token = auth_manager.generate_refresh_token(
+            refresh_token = await auth_manager.generate_refresh_token(
                 user_id=current_user.user_id,
                 username=current_user.username or "",
                 additional_claims={
@@ -554,7 +555,7 @@ async def refresh_access_token(
         )
 
     try:
-        access_token, new_refresh_token = auth_manager.refresh_access_token(
+        access_token, new_refresh_token = await auth_manager.refresh_access_token(
             refresh_request.refresh_token
         )
 
@@ -608,7 +609,7 @@ async def revoke_refresh_token(
         )
 
     try:
-        revoked = auth_manager.revoke_refresh_token(refresh_request.refresh_token)
+        revoked = await auth_manager.revoke_refresh_token(refresh_request.refresh_token)
         if revoked:
             logger.info("Refresh token revoked successfully")
         else:
@@ -798,7 +799,7 @@ async def logout(
 
     # Revoke all refresh tokens for the user if refresh tokens are enabled
     if auth_manager.settings.enable_refresh_tokens:
-        revoked_count = auth_manager.revoke_all_user_refresh_tokens(current_user.user_id)
+        revoked_count = await auth_manager.revoke_all_user_refresh_tokens(current_user.user_id)
         if revoked_count > 0:
             logger.info(f"Revoked {revoked_count} refresh tokens for user {current_user.user_id}")
 
@@ -833,7 +834,7 @@ async def send_user_invitation(
         invitation = await invitation_service.create_invitation(
             email=request.email,
             invited_by_admin=current_admin.user_id,
-            role=request.role,
+            role=request.role or "user",
             message=request.message,
         )
 
@@ -1106,7 +1107,7 @@ async def get_user_lockout_status(
             detail="Account lockout is disabled",
         )
 
-    status_data = auth_manager.get_lockout_status(username)
+    status_data = await auth_manager.get_lockout_status(username)
     return LockoutStatus(**status_data)
 
 
@@ -1129,7 +1130,7 @@ async def get_all_lockout_status(
             detail="Account lockout is disabled",
         )
 
-    all_status = auth_manager.get_all_lockout_status()
+    all_status = await auth_manager.get_all_lockout_status()
     return [LockoutStatus(**status_data) for status_data in all_status]
 
 
@@ -1159,7 +1160,7 @@ async def unlock_user_account(
             detail="Account lockout is disabled",
         )
 
-    was_unlocked = auth_manager.unlock_account(unlock_request.username, current_admin.user_id)
+    was_unlocked = await auth_manager.unlock_account(unlock_request.username, current_admin.user_id)
 
     if was_unlocked:
         logger.info(
@@ -1169,21 +1170,13 @@ async def unlock_user_account(
             "message": f"Account unlocked successfully for user {unlock_request.username}",
             "unlocked_by": current_admin.user_id,
         }
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No active lockout found for user {unlock_request.username}",
-        )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"No active lockout found for user {unlock_request.username}",
+    )
 
 
 # Multi-Factor Authentication (MFA) endpoints
-
-
-class MFAVerificationRequest(BaseModel):
-    """MFA verification request model."""
-
-    totp_code: str
-    warning: str = "Save these backup codes immediately! They will not be displayed again."
 
 
 @router.post("/mfa/setup")
@@ -1211,7 +1204,7 @@ async def setup_mfa(
         )
 
     # Check if MFA is already enabled
-    mfa_status = auth_manager.get_mfa_status(current_user.user_id)
+    mfa_status = await auth_manager.get_mfa_status(current_user.user_id)
     if mfa_status["mfa_enabled"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1219,7 +1212,7 @@ async def setup_mfa(
         )
 
     try:
-        mfa_data = auth_manager.generate_mfa_secret(current_user.user_id)
+        mfa_data = await auth_manager.generate_mfa_secret(current_user.user_id)
         logger.info(f"MFA setup initiated for user {current_user.user_id}")
 
         return MFASecretResponse(**mfa_data)
@@ -1258,7 +1251,7 @@ async def verify_mfa_setup(
         )
 
     try:
-        success = auth_manager.verify_mfa_setup(
+        success = await auth_manager.verify_mfa_setup(
             current_user.user_id, verification_request.totp_code
         )
 
@@ -1268,11 +1261,10 @@ async def verify_mfa_setup(
                 "message": "MFA has been successfully enabled for your account",
                 "status": "enabled",
             }
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid TOTP code. Please check your authenticator app and try again.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid TOTP code. Please check your authenticator app and try again.",
+        )
     except AuthenticationError as e:
         logger.error(f"MFA verification failed for user {current_user.user_id}: {e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -1305,16 +1297,15 @@ async def verify_mfa_code(
         )
 
     try:
-        success = auth_manager.verify_mfa_code(current_user.user_id, verification_request.totp_code)
+        success = await auth_manager.verify_mfa_code(current_user.user_id, verification_request.totp_code)
 
         if success:
             logger.info(f"MFA code verified for user {current_user.user_id}")
             return {"message": "MFA code verified successfully", "status": "verified"}
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid MFA code. Please check your authenticator app or backup codes and try again.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid MFA code. Please check your authenticator app or backup codes and try again.",
+        )
     except AuthenticationError as e:
         logger.error(f"MFA verification failed for user {current_user.user_id}: {e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -1344,7 +1335,7 @@ async def get_mfa_status(
             detail="MFA is not available",
         )
 
-    mfa_status = auth_manager.get_mfa_status(current_user.user_id)
+    mfa_status = await auth_manager.get_mfa_status(current_user.user_id)
     return MFAStatus(**mfa_status)
 
 
@@ -1372,7 +1363,7 @@ async def get_backup_codes(
             detail="MFA is not available",
         )
 
-    backup_codes = auth_manager.get_backup_codes(current_user.user_id)
+    backup_codes = await auth_manager.get_backup_codes(current_user.user_id)
 
     if backup_codes is None:
         raise HTTPException(
@@ -1381,7 +1372,10 @@ async def get_backup_codes(
         )
 
     logger.info(f"Backup codes retrieved for user {current_user.user_id}")
-    return BackupCodesResponse(backup_codes=backup_codes)
+    return BackupCodesResponse(
+        backup_codes=backup_codes,
+        warning="Save these backup codes immediately! They will not be displayed again."
+    )
 
 
 @router.post("/mfa/regenerate-backup-codes")
@@ -1408,7 +1402,7 @@ async def regenerate_backup_codes(
             detail="MFA is not available",
         )
 
-    new_backup_codes = auth_manager.regenerate_backup_codes(current_user.user_id)
+    new_backup_codes = await auth_manager.regenerate_backup_codes(current_user.user_id)
 
     if new_backup_codes is None:
         raise HTTPException(
@@ -1417,7 +1411,10 @@ async def regenerate_backup_codes(
         )
 
     logger.info(f"Backup codes regenerated for user {current_user.user_id}")
-    return BackupCodesResponse(backup_codes=new_backup_codes)
+    return BackupCodesResponse(
+        backup_codes=new_backup_codes,
+        warning="Save these backup codes immediately! They will not be displayed again."
+    )
 
 
 @router.delete("/mfa/disable")
@@ -1444,7 +1441,7 @@ async def disable_mfa(
             detail="MFA is not available",
         )
 
-    was_disabled = auth_manager.disable_mfa(current_user.user_id, current_user.user_id)
+    was_disabled = await auth_manager.disable_mfa(current_user.user_id, current_user.user_id)
 
     if was_disabled:
         logger.info(f"MFA disabled for user {current_user.user_id}")
@@ -1452,11 +1449,10 @@ async def disable_mfa(
             "message": "MFA has been successfully disabled for your account",
             "status": "disabled",
         }
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="MFA is not enabled for this user",
-        )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="MFA is not enabled for this user",
+    )
 
 
 # Admin MFA management endpoints
@@ -1484,7 +1480,7 @@ async def get_all_mfa_status(
             detail="MFA is not available",
         )
 
-    all_status = auth_manager.get_all_mfa_status()
+    all_status = await auth_manager.get_all_mfa_status()
     return [MFAStatus(**status_data) for status_data in all_status]
 
 
@@ -1520,7 +1516,7 @@ async def admin_disable_mfa(
             detail="MFA is not available",
         )
 
-    was_disabled = auth_manager.disable_mfa(disable_request.user_id, current_admin.user_id)
+    was_disabled = await auth_manager.disable_mfa(disable_request.user_id, current_admin.user_id)
 
     if was_disabled:
         logger.info(
@@ -1530,8 +1526,250 @@ async def admin_disable_mfa(
             "message": f"MFA has been successfully disabled for user {disable_request.user_id}",
             "disabled_by": current_admin.user_id,
         }
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"MFA is not enabled for user {disable_request.user_id}",
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"MFA is not enabled for user {disable_request.user_id}",
+    )
+
+
+# Secure Authentication Endpoints with HttpOnly Cookies
+
+@router.post("/secure/login", response_model=dict)
+@auth_rate_limit
+async def secure_login(
+    request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth_manager: Annotated[AuthManager, Depends(get_auth_manager)],
+) -> dict[str, Any]:
+    """
+    Secure login with HttpOnly cookie token storage.
+
+    Args:
+        form_data: Login form data (username and password)
+        auth_manager: Authentication manager instance
+
+    Returns:
+        Login success response with secure cookies set
+
+    Raises:
+        HTTPException: If authentication fails
+    """
+    from backend.services.secure_token_service import SecureTokenService
+
+    try:
+        # Authenticate user using existing auth manager
+        if auth_manager.auth_mode == AuthMode.NONE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Authentication is disabled"
+            )
+
+        if auth_manager.auth_mode != AuthMode.SINGLE_USER:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Secure login only available in single-user mode"
+            )
+
+        # Validate credentials
+        user_info = await auth_manager.authenticate_admin(
+            form_data.username,
+            form_data.password
         )
+
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
+
+        # Create secure token service
+        token_service = SecureTokenService(auth_manager)
+
+        # Issue token pair
+        token_pair = await token_service.issue_token_pair(
+            user_id=user_info["user_id"],
+            username=user_info["username"],
+            additional_claims={
+                "mode": "single-user",
+                "admin": True,
+                "secure_auth": True
+            }
+        )
+
+        # Create response
+        response_data = {
+            "message": "Login successful",
+            "user": {
+                "user_id": user_info["user_id"],
+                "username": user_info["username"],
+                "admin": True
+            },
+            "token_type": token_pair.token_type,
+            "expires_in": token_pair.access_token_expires_in,
+            "secure_cookies": True
+        }
+
+        from fastapi import Response
+        response = Response(
+            content=json.dumps(response_data),
+            media_type="application/json"
+        )
+
+        # Set secure cookies
+        token_service.set_secure_cookies(response, token_pair)
+
+        logger.info(f"Secure login successful for user: {user_info['username']}")
+        return response
+
+    except AccountLockedError as e:
+        logger.warning(f"Login attempt for locked account: {form_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=str(e)
+        ) from e
+    except AuthenticationError as e:
+        logger.warning(f"Authentication failed for user: {form_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        ) from e
+
+
+@router.post("/secure/refresh")
+async def secure_refresh(
+    request: Request,
+    auth_manager: Annotated[AuthManager, Depends(get_auth_manager)],
+) -> dict[str, Any]:
+    """
+    Refresh access token using HttpOnly refresh token cookie.
+
+    Args:
+        request: HTTP request with refresh token cookie
+        auth_manager: Authentication manager instance
+
+    Returns:
+        Refresh success response with new tokens
+
+    Raises:
+        HTTPException: If refresh token is invalid
+    """
+    from backend.services.secure_token_service import SecureTokenService
+
+    # Get refresh token from cookie
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token provided",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        # Create token service
+        token_service = SecureTokenService(auth_manager)
+
+        # Refresh the access token
+        refresh_result = await token_service.refresh_access_token(refresh_token)
+
+        # Create response
+        response_data = {
+            "message": "Token refreshed successfully",
+            "token_type": "Bearer",
+            "expires_in": refresh_result.access_token_expires_in,
+            "refresh_rotated": refresh_result.refresh_rotated
+        }
+
+        from fastapi import Response
+        response = Response(
+            content=json.dumps(response_data),
+            media_type="application/json"
+        )
+
+        # Set new access token in header
+        response.headers["X-Access-Token"] = refresh_result.access_token
+        response.headers["X-Token-Type"] = "Bearer"
+        response.headers["X-Expires-In"] = str(refresh_result.access_token_expires_in)
+
+        # Update refresh token cookie if rotated
+        if refresh_result.refresh_rotated and refresh_result.new_refresh_token:
+            token_service.set_refresh_cookie(response, refresh_result.new_refresh_token)
+
+        logger.info("Token refresh successful")
+        return response
+
+    except InvalidTokenError as e:
+        logger.warning(f"Invalid refresh token provided: {e}")
+        # Clear invalid refresh token cookie
+        from fastapi import Response
+        error_response = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+        # Would need to create custom response to clear cookie
+        raise error_response
+
+
+@router.post("/secure/logout")
+async def secure_logout(
+    request: Request,
+    auth_manager: Annotated[AuthManager, Depends(get_auth_manager)],
+) -> dict[str, str]:
+    """
+    Secure logout with cookie cleanup and token revocation.
+
+    Args:
+        request: HTTP request
+        auth_manager: Authentication manager instance
+
+    Returns:
+        Logout confirmation message
+    """
+    from backend.services.secure_token_service import SecureTokenService
+
+    # Get refresh token for revocation
+    refresh_token = request.cookies.get("refresh_token")
+
+    # Get user info from access token if available
+    auth_header = request.headers.get("Authorization")
+    user_id = None
+
+    if auth_header:
+        token_service = SecureTokenService(auth_manager)
+        access_token = token_service.extract_access_token(auth_header)
+        if access_token:
+            try:
+                token_payload = auth_manager.validate_token(access_token)
+                user_id = token_payload.get("sub")
+            except InvalidTokenError:
+                pass  # Token invalid, continue with logout
+
+    # Revoke tokens if we have user info
+    if user_id:
+        try:
+            token_service = SecureTokenService(auth_manager)
+            await token_service.revoke_all_tokens(user_id)
+            logger.info(f"Revoked all tokens for user: {user_id}")
+        except Exception as e:
+            logger.warning(f"Failed to revoke tokens during logout: {e}")
+
+    # Create response with cleared cookies
+    response_data = {
+        "message": "Logged out successfully",
+        "secure_cookies_cleared": True
+    }
+
+    from fastapi import Response
+    response = Response(
+        content=json.dumps(response_data),
+        media_type="application/json"
+    )
+
+    # Clear authentication cookies
+    if refresh_token:
+        token_service = SecureTokenService(auth_manager)
+        token_service.clear_auth_cookies(response)
+
+    logger.info("Secure logout completed")
+    return response

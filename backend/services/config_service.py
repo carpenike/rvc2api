@@ -46,7 +46,7 @@ class ConfigService:
         """
         config_data = self.app_state.config_data
 
-        summary = {
+        return {
             "entities": {
                 "total_configured": len(self.app_state.entity_manager.get_entity_ids()),
                 "light_entities": len(self.app_state.entity_manager.get_light_entity_ids()),
@@ -65,7 +65,6 @@ class ConfigService:
             "raw_config_keys": list(config_data.keys()) if config_data else [],
         }
 
-        return summary
 
     async def get_environment_info(self) -> dict[str, Any]:
         """
@@ -133,7 +132,8 @@ class ConfigService:
         if entity_id:
             entity = self.app_state.entity_manager.get_entity(entity_id)
             if not entity:
-                raise ValueError(f"Entity '{entity_id}' not found in configuration")
+                msg = f"Entity '{entity_id}' not found in configuration"
+                raise ValueError(msg)
             return {
                 "entity_id": entity_id,
                 "configuration": entity.config,
@@ -142,18 +142,17 @@ class ConfigService:
                     entity.config if entity.config.get("device_type") == "light" else None
                 ),
             }
-        else:
-            # Return summary of all entities
-            entities = {}
-            for eid, entity in self.app_state.entity_manager.get_all_entities().items():
-                config = entity.config
-                entities[eid] = {
-                    "device_type": config.get("device_type"),
-                    "suggested_area": config.get("suggested_area"),
-                    "capabilities": config.get("capabilities", []),
-                    "is_light": config.get("device_type") == "light",
-                }
-            return {"entities": entities}
+        # Return summary of all entities
+        entities = {}
+        for eid, entity in self.app_state.entity_manager.get_all_entities().items():
+            config = entity.config
+            entities[eid] = {
+                "device_type": config.get("device_type"),
+                "suggested_area": config.get("suggested_area"),
+                "capabilities": config.get("capabilities", []),
+                "is_light": config.get("device_type") == "light",
+            }
+        return {"entities": entities}
 
     async def get_decoder_info(self) -> dict[str, Any]:
         """
@@ -249,13 +248,15 @@ class ConfigService:
         _, actual_map_path = get_actual_paths()
 
         if not actual_map_path or not os.path.exists(actual_map_path):
-            raise FileNotFoundError(f"Device mapping file not found: {actual_map_path}")
+            msg = f"Device mapping file not found: {actual_map_path}"
+            raise FileNotFoundError(msg)
 
         try:
             with open(actual_map_path, encoding="utf-8") as f:
                 return f.read()
         except Exception as e:
-            raise OSError(f"Error reading device mapping file: {e}") from e
+            msg = f"Error reading device mapping file: {e}"
+            raise OSError(msg) from e
 
     async def get_spec_content(self) -> str:
         """
@@ -274,13 +275,15 @@ class ConfigService:
         actual_spec_path, _ = get_actual_paths()
 
         if not actual_spec_path or not os.path.exists(actual_spec_path):
-            raise FileNotFoundError(f"RV-C spec file not found: {actual_spec_path}")
+            msg = f"RV-C spec file not found: {actual_spec_path}"
+            raise FileNotFoundError(msg)
 
         try:
             with open(actual_spec_path, encoding="utf-8") as f:
                 return f.read()
         except Exception as e:
-            raise OSError(f"Error reading spec file: {e}") from e
+            msg = f"Error reading spec file: {e}"
+            raise OSError(msg) from e
 
     async def get_config_status(self) -> dict[str, Any]:
         """

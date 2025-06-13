@@ -8,10 +8,12 @@ and lifecycle management of the authentication system.
 
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from backend.core.config import get_settings
+from backend.core.persistence_feature import get_persistence_feature
 from backend.services.auth_manager import AuthManager
+from backend.services.auth_repository import AuthRepository
 from backend.services.feature_base import Feature
 
 
@@ -30,6 +32,7 @@ class AuthenticationFeature(Feature):
         """Initialize the authentication feature."""
         super().__init__(**kwargs)
         self.auth_manager: AuthManager | None = None
+        self.auth_repository: AuthRepository | None = None
         self.logger = logging.getLogger(__name__)
         self.settings = get_settings()
 
@@ -38,16 +41,30 @@ class AuthenticationFeature(Feature):
         await super().startup()
 
         try:
-            # Get notification manager if available
+            # Get notification manager if available (optional)
             notification_manager = None
-            if hasattr(self, "feature_manager") and self.feature_manager:
-                notification_manager = self.feature_manager.get_feature_instance("notifications")
+            # TODO: Implement notification manager access when needed
+
+            # Initialize auth repository with database manager from persistence feature (MANDATORY)
+            # Get persistence feature using the established pattern
+            persistence_feature = get_persistence_feature()
+            database_manager = persistence_feature.get_database_manager()
+
+            if not database_manager:
+                msg = "Database manager not available - authentication requires mandatory persistence"
+                self.logger.error(msg)
+                raise RuntimeError(msg)
+
+            # Create the auth repository (MANDATORY)
+            auth_repository = AuthRepository(database_manager)
+            self.auth_repository = auth_repository
+            self.logger.info("Auth repository initialized with mandatory database persistence")
 
             # Initialize auth manager
             self.auth_manager = AuthManager(
                 auth_settings=self.settings.auth,
                 notification_manager=notification_manager,
-                logger=self.logger,
+                auth_repository=auth_repository,
             )
 
             await self.auth_manager.startup()
@@ -137,7 +154,7 @@ class AuthenticationFeature(Feature):
         Returns:
             list[str]: List of required feature names
         """
-        return ["notifications"]
+        return ["persistence", "notifications"]
 
     def is_ready(self) -> bool:
         """
@@ -167,7 +184,6 @@ class AuthenticationFeature(Feature):
             stats = asyncio.run(self.auth_manager.get_stats())
             if stats.get("jwt_available") and stats.get("secret_key_configured"):
                 return "healthy"
-            else:
-                return "degraded"
+            return "degraded"
         except Exception:
             return "failed"

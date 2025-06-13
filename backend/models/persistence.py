@@ -133,7 +133,8 @@ class UserConfiguration(BaseModel):
         # Remove any path separators for security
         clean_name = v.replace("/", "_").replace("\\", "_").replace("..", "_")
         if clean_name != v:
-            raise ValueError("Configuration name contains invalid characters")
+            msg = "Configuration name contains invalid characters"
+            raise ValueError(msg)
         return v
 
 
@@ -200,7 +201,8 @@ class DatabaseBackupRequest(BaseModel):
         # Remove any path separators for security
         clean_name = v.replace("/", "_").replace("\\", "_").replace("..", "_")
         if clean_name != v:
-            raise ValueError("Backup name contains invalid characters")
+            msg = "Backup name contains invalid characters"
+            raise ValueError(msg)
         return v
 
 
@@ -224,7 +226,8 @@ class DatabaseRestoreRequest(BaseModel):
         """Validate backup path exists and is safe."""
         # Basic path validation - actual existence check happens in service
         if not v.endswith(".db"):
-            raise ValueError("Backup path must end with .db extension")
+            msg = "Backup path must end with .db extension"
+            raise ValueError(msg)
         return v
 
 

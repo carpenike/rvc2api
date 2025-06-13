@@ -78,8 +78,7 @@ def _safe_create_metric(
         if "Duplicated timeseries" in str(e):
             logger.warning(f"Metric '{name}' already registered, skipping: {e}")
             return None
-        else:
-            raise
+        raise
 
 
 def initialize_backend_metrics():
@@ -150,7 +149,8 @@ def get_can_tx_queue_length() -> Gauge:
     if not _METRICS_INITIALIZED:
         initialize_backend_metrics()
     if CAN_TX_QUEUE_LENGTH is None:
-        raise RuntimeError("CAN TX queue length metric failed to initialize")
+        msg = "CAN TX queue length metric failed to initialize"
+        raise RuntimeError(msg)
     return CAN_TX_QUEUE_LENGTH
 
 
@@ -159,7 +159,8 @@ def get_can_tx_enqueue_total() -> Counter:
     if not _METRICS_INITIALIZED:
         initialize_backend_metrics()
     if CAN_TX_ENQUEUE_TOTAL is None:
-        raise RuntimeError("CAN TX enqueue total metric failed to initialize")
+        msg = "CAN TX enqueue total metric failed to initialize"
+        raise RuntimeError(msg)
     return CAN_TX_ENQUEUE_TOTAL
 
 
@@ -168,7 +169,8 @@ def get_can_tx_enqueue_latency() -> Histogram:
     if not _METRICS_INITIALIZED:
         initialize_backend_metrics()
     if CAN_TX_ENQUEUE_LATENCY is None:
-        raise RuntimeError("CAN TX enqueue latency metric failed to initialize")
+        msg = "CAN TX enqueue latency metric failed to initialize"
+        raise RuntimeError(msg)
     return CAN_TX_ENQUEUE_LATENCY
 
 
@@ -177,7 +179,8 @@ def get_http_requests() -> Counter:
     if not _METRICS_INITIALIZED:
         initialize_backend_metrics()
     if HTTP_REQUESTS is None:
-        raise RuntimeError("HTTP requests metric failed to initialize")
+        msg = "HTTP requests metric failed to initialize"
+        raise RuntimeError(msg)
     return HTTP_REQUESTS
 
 
@@ -186,7 +189,8 @@ def get_http_latency() -> Histogram:
     if not _METRICS_INITIALIZED:
         initialize_backend_metrics()
     if HTTP_LATENCY is None:
-        raise RuntimeError("HTTP latency metric failed to initialize")
+        msg = "HTTP latency metric failed to initialize"
+        raise RuntimeError(msg)
     return HTTP_LATENCY
 
 

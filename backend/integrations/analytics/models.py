@@ -369,12 +369,11 @@ class ResourceUtilization(BaseModel):
         """Get performance status based on current usage."""
         if self.current_usage >= self.threshold_critical:
             return PerformanceStatus.CRITICAL
-        elif self.current_usage >= self.threshold_warning:
+        if self.current_usage >= self.threshold_warning:
             return PerformanceStatus.WARNING
-        elif self.current_usage <= 50.0:
+        if self.current_usage <= 50.0:
             return PerformanceStatus.OPTIMAL
-        else:
-            return PerformanceStatus.GOOD
+        return PerformanceStatus.GOOD
 
     def is_overutilized(self) -> bool:
         """Check if resource is overutilized."""

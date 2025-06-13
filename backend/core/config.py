@@ -145,7 +145,7 @@ class CORSSettings(BaseSettings):
             if not v:
                 return []
             return [origin.strip() for origin in v.split(",") if origin.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return v
         return v
 
@@ -158,7 +158,7 @@ class CORSSettings(BaseSettings):
             if not v:
                 return []
             return [method.strip().upper() for method in v.split(",") if method.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return [method.strip().upper() for method in v if method.strip()]
         return v
 
@@ -171,7 +171,7 @@ class CORSSettings(BaseSettings):
             if not v:
                 return []
             return [header.strip() for header in v.split(",") if header.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return v
         return v
 
@@ -226,7 +226,8 @@ class LoggingSettings(BaseSettings):
         if isinstance(v, str):
             v = v.upper()
             if v not in valid_levels:
-                raise ValueError(f"Invalid logging level: {v}. Must be one of {valid_levels}")
+                msg = f"Invalid logging level: {v}. Must be one of {valid_levels}"
+                raise ValueError(msg)
         return v
 
     @field_validator("file", mode="before")
@@ -275,7 +276,7 @@ class CANSettings(BaseSettings):
         """Parse comma-separated interfaces from environment variable."""
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return v
         # Return default if unable to parse
         return ["can0"]
@@ -286,7 +287,7 @@ class CANSettings(BaseSettings):
         """Parse comma-separated filters from environment variable."""
         if isinstance(v, str):
             return [f.strip() for f in v.split(",") if f.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return v
         # Return default if unable to parse
         return []
@@ -338,7 +339,7 @@ class CANSettings(BaseSettings):
                     mappings[logical] = physical
 
             return mappings
-        elif isinstance(v, dict):
+        if isinstance(v, dict):
             return v
         # Return default value if unable to parse
         return {"house": "can0", "chassis": "can1"}
@@ -442,8 +443,7 @@ class RVCSettings(BaseSettings):
 
         # Fall back to config directory
         config_dir = self.get_config_dir()
-        spec_file = config_dir / "rvc.json"
-        return spec_file
+        return config_dir / "rvc.json"
 
     def get_coach_mapping_path(self) -> Path:
         """Get the coach mapping YAML file path."""
@@ -469,8 +469,7 @@ class RVCSettings(BaseSettings):
 
         # Fall back to config directory
         config_dir = self.get_config_dir()
-        default_file = config_dir / "coach_mapping.default.yml"
-        return default_file
+        return config_dir / "coach_mapping.default.yml"
 
     def _get_bundled_file(self, filename: str) -> Path | None:
         """Try to locate a specific bundled config file using importlib.resources."""
@@ -512,14 +511,14 @@ class RVCSettings(BaseSettings):
 
 
 class PersistenceSettings(BaseSettings):
-    """Data persistence configuration settings."""
+    """Data persistence configuration settings - MANDATORY in new architecture."""
 
     model_config = SettingsConfigDict(env_prefix="COACHIQ_PERSISTENCE__", case_sensitive=False)
 
-    enabled: bool = Field(default=False, description="Enable data persistence")
+    # NOTE: enabled field removed - persistence is now mandatory
     data_dir: Path = Field(
         default=Path("/var/lib/coachiq"),
-        description="Base directory for persistent data storage",
+        description="Base directory for persistent data storage (REQUIRED)",
     )
     create_dirs: bool = Field(
         default=True,
@@ -572,7 +571,7 @@ class PersistenceSettings(BaseSettings):
         Returns:
             List of directories that were created
         """
-        if not self.enabled or not self.create_dirs:
+        if not self.create_dirs:
             return []
 
         directories = [
@@ -638,8 +637,7 @@ class SMTPChannelConfig(BaseSettings):
 
         if auth_part:
             return f"{protocol}://{auth_part}@{host_part}?{query_string}"
-        else:
-            return f"{protocol}://{host_part}?{query_string}"
+        return f"{protocol}://{host_part}?{query_string}"
 
 
 class SlackChannelConfig(BaseSettings):
@@ -869,6 +867,26 @@ class FeaturesSettings(BaseSettings):
         default=100, description="Maximum activity feed entries", ge=10, le=1000
     )
 
+    # Domain API v2 Features (Safety-Critical Implementation)
+    domain_api_v2: bool = Field(
+        default=False, description="EMERGENCY SAFETY FLAG: Domain-driven API v2 with safety-critical command/acknowledgment patterns"
+    )
+    entities_api_v2: bool = Field(
+        default=False, description="Domain-specific entities API v2 with bulk operations and safety interlocks"
+    )
+    diagnostics_api_v2: bool = Field(
+        default=False, description="Domain-specific diagnostics API v2 with enhanced fault correlation"
+    )
+    analytics_api_v2: bool = Field(
+        default=False, description="Domain-specific analytics API v2 with advanced telemetry"
+    )
+    networks_api_v2: bool = Field(
+        default=False, description="Domain-specific networks API v2 with CAN bus monitoring and interface management"
+    )
+    system_api_v2: bool = Field(
+        default=False, description="Domain-specific system API v2 with configuration management and service monitoring"
+    )
+
 
 class MultiNetworkSettings(BaseSettings):
     """Multi-network CAN management configuration settings."""
@@ -939,7 +957,7 @@ class MultiNetworkSettings(BaseSettings):
         """Parse comma-separated whitelist from environment variable."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return v
         return []
 
@@ -1029,7 +1047,7 @@ class J1939Settings(BaseSettings):
         """Parse comma-separated PGN list from environment variable."""
         if isinstance(v, str):
             return [int(pgn.strip()) for pgn in v.split(",") if pgn.strip().isdigit()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return [int(pgn) for pgn in v if isinstance(pgn, int | str) and str(pgn).isdigit()]
         return v
 
@@ -1047,8 +1065,7 @@ class J1939Settings(BaseSettings):
         from backend.core.config_utils import get_config_dir
 
         config_dir = get_config_dir()
-        spec_file = config_dir / "j1939.json"
-        return spec_file
+        return config_dir / "j1939.json"
 
     def get_standard_pgns_path(self) -> Path:
         """Get the standard J1939 PGNs definition file path."""
@@ -1064,8 +1081,7 @@ class J1939Settings(BaseSettings):
         from backend.core.config_utils import get_config_dir
 
         config_dir = get_config_dir()
-        pgns_file = config_dir / "j1939_standard_pgns.json"
-        return pgns_file
+        return config_dir / "j1939_standard_pgns.json"
 
     def _get_bundled_file(self, filename: str) -> Path | None:
         """Try to locate a specific bundled config file using importlib.resources."""
@@ -1218,12 +1234,12 @@ class FireflySettings(BaseSettings):
             dgns = []
             for dgn_str in v.split(","):
                 dgn_str = dgn_str.strip()
-                if dgn_str.startswith("0x") or dgn_str.startswith("0X"):
+                if dgn_str.startswith(("0x", "0X")):
                     dgns.append(int(dgn_str, 16))
                 elif dgn_str.isdigit():
                     dgns.append(int(dgn_str))
             return dgns
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return [int(dgn) if isinstance(dgn, str) and dgn.isdigit() else dgn for dgn in v]
         return v
 
@@ -1355,14 +1371,120 @@ class SpartanK2Settings(BaseSettings):
             pgns = []
             for pgn_str in v.split(","):
                 pgn_str = pgn_str.strip()
-                if pgn_str.startswith("0x") or pgn_str.startswith("0X"):
+                if pgn_str.startswith(("0x", "0X")):
                     pgns.append(int(pgn_str, 16))
                 elif pgn_str.isdigit():
                     pgns.append(int(pgn_str))
             return pgns
-        elif isinstance(v, list):
+        if isinstance(v, list):
             return [int(pgn) if isinstance(pgn, str) and pgn.isdigit() else pgn for pgn in v]
         return v
+
+
+class APIDomainSettings(BaseSettings):
+    """API Domain configuration settings for safety-critical operations."""
+
+    model_config = SettingsConfigDict(env_prefix="COACHIQ_API_DOMAINS__", case_sensitive=False)
+
+    # Core domain API settings
+    enabled: bool = Field(default=False, description="Enable Domain API v2 architecture")
+    safety_mode: str = Field(
+        default="strict",
+        description="Safety mode: strict, permissive, emergency_stop"
+    )
+
+    # Validation and schema settings
+    enable_runtime_validation: bool = Field(
+        default=True, description="Enable runtime schema validation for all operations"
+    )
+    enable_schema_export: bool = Field(
+        default=True, description="Enable Pydantic to TypeScript schema export"
+    )
+    validation_mode: str = Field(
+        default="strict",
+        description="Validation mode: strict, lenient, development"
+    )
+
+    # Command execution and safety settings
+    command_timeout_seconds: float = Field(
+        default=5.0, ge=0.1, le=30.0, description="Default command timeout in seconds"
+    )
+    max_pending_commands: int = Field(
+        default=10, ge=1, le=100, description="Maximum pending commands per session"
+    )
+    enable_command_acknowledgment: bool = Field(
+        default=True, description="Enable command/acknowledgment patterns for safety"
+    )
+    enable_state_reconciliation: bool = Field(
+        default=True, description="Enable state reconciliation with RV-C bus"
+    )
+    state_sync_interval_seconds: float = Field(
+        default=2.0, ge=0.5, le=30.0, description="State synchronization interval"
+    )
+
+    # Emergency and safety controls
+    enable_emergency_stop: bool = Field(
+        default=True, description="Enable emergency stop capability"
+    )
+    enable_safety_interlocks: bool = Field(
+        default=True, description="Enable safety interlocks for vehicle operations"
+    )
+    require_explicit_confirmation: bool = Field(
+        default=True, description="Require explicit safety confirmation for critical operations"
+    )
+
+    # Operation limits and performance
+    max_bulk_operation_size: int = Field(
+        default=50, ge=1, le=200, description="Maximum entities per bulk operation"
+    )
+    bulk_operation_timeout_seconds: float = Field(
+        default=30.0, ge=5.0, le=300.0, description="Bulk operation timeout"
+    )
+    max_concurrent_operations: int = Field(
+        default=10, ge=1, le=50, description="Maximum concurrent operations"
+    )
+
+    # Audit and logging settings
+    enable_audit_logging: bool = Field(
+        default=True, description="Enable comprehensive audit logging for all operations"
+    )
+    audit_log_retention_days: int = Field(
+        default=90, ge=1, le=365, description="Audit log retention period in days"
+    )
+    log_sensitive_data: bool = Field(
+        default=False, description="Include sensitive data in audit logs (dev only)"
+    )
+
+    # Authentication and authorization
+    enable_device_validation: bool = Field(
+        default=True, description="Enable device-level validation before operations"
+    )
+    enable_state_verification: bool = Field(
+        default=True, description="Enable post-operation state verification"
+    )
+    authentication_timeout_seconds: float = Field(
+        default=300.0, ge=60.0, le=3600.0, description="Authentication session timeout"
+    )
+
+    @field_validator("safety_mode", mode="before")
+    @classmethod
+    def validate_safety_mode(cls, v):
+        """Validate safety mode setting."""
+        valid_modes = {"strict", "permissive", "emergency_stop"}
+        if isinstance(v, str) and v.lower() not in valid_modes:
+            msg = f"Invalid safety mode: {v}. Must be one of {valid_modes}"
+            raise ValueError(msg)
+        return v.lower() if isinstance(v, str) else v
+
+    @field_validator("validation_mode", mode="before")
+    @classmethod
+    def validate_validation_mode(cls, v):
+        """Validate validation mode setting."""
+        valid_modes = {"strict", "lenient", "development"}
+        if isinstance(v, str) and v.lower() not in valid_modes:
+            msg = f"Invalid validation mode: {v}. Must be one of {valid_modes}"
+            raise ValueError(msg)
+        return v.lower() if isinstance(v, str) else v
 
 
 class Settings(BaseSettings):
@@ -1432,6 +1554,7 @@ class Settings(BaseSettings):
     features: FeaturesSettings = Field(default_factory=FeaturesSettings)
     notifications: NotificationSettings = Field(default_factory=NotificationSettings)
     auth: AuthenticationSettings = Field(default_factory=AuthenticationSettings)
+    api_domains: APIDomainSettings = Field(default_factory=APIDomainSettings)
 
     def __init__(self, **data):
         # Import here to avoid circular dependency and initialize advanced_diagnostics field
@@ -1472,7 +1595,8 @@ class Settings(BaseSettings):
         """Validate environment name."""
         valid_envs = {"development", "testing", "staging", "production"}
         if isinstance(v, str) and v.lower() not in valid_envs:
-            raise ValueError(f"Invalid environment: {v}. Must be one of {valid_envs}")
+            msg = f"Invalid environment: {v}. Must be one of {valid_envs}"
+            raise ValueError(msg)
         return v.lower() if isinstance(v, str) else v
 
     @field_validator("rvc_spec_path", "rvc_coach_mapping_path", mode="before")
@@ -1584,6 +1708,50 @@ def get_settings() -> Settings:
     return Settings()
 
 
+def get_hierarchical_settings() -> Settings:
+    """
+    Get settings instance using the new hierarchical configuration loader.
+
+    This function implements the 8-layer configuration hierarchy:
+    1. Core Protocol Specification (JSON)
+    2. Coach Model Base Definition (YAML)
+    3. User Structural Customizations (JSON Patch)
+    4. System Settings (TOML)
+    5. User Config Overrides (TOML)
+    6. User Model Selection & System State (SQLite)
+    7. User Preferences (SQLite)
+    8. Secrets & Runtime Overrides (Environment Variables)
+
+    Returns:
+        Settings instance with hierarchical configuration loaded
+    """
+    try:
+        from backend.core.config_loader import create_configuration_loader
+
+        # Create and run the configuration loader
+        loader = create_configuration_loader()
+        config_dict = loader.load()
+
+        # Initialize Pydantic settings from the merged config
+        # Pydantic will still apply environment variable loading (Layer 8)
+        return Settings(**config_dict)
+
+    except ImportError:
+        # Fallback to standard loading if config_loader not available
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "Hierarchical config loader not available, falling back to environment-only config"
+        )
+        return Settings()
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).error(f"Hierarchical config loading failed: {e}")
+        # Fallback to standard loading
+        return Settings()
+
+
 # Convenience functions for getting specific setting sections
 def get_server_settings() -> ServerSettings:
     """Get server settings."""
@@ -1638,6 +1806,11 @@ def get_firefly_settings() -> FireflySettings:
 def get_notification_settings() -> NotificationSettings:
     """Get notification settings."""
     return get_settings().notifications
+
+
+def get_api_domain_settings() -> APIDomainSettings:
+    """Get API domain settings."""
+    return get_settings().api_domains
 
 
 # Note: Use get_settings() function instead of a global instance

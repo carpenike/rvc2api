@@ -159,8 +159,7 @@ async def get_health_overview(
     _check_predictive_maintenance_feature_enabled(request)
 
     try:
-        overview = await pm_service.get_health_overview()
-        return overview
+        return await pm_service.get_health_overview()
 
     except Exception as e:
         logger.error(f"Error retrieving health overview: {e}", exc_info=True)
@@ -186,11 +185,10 @@ async def get_component_health(
     _check_predictive_maintenance_feature_enabled(request)
 
     try:
-        components = await pm_service.get_component_health(
+        return await pm_service.get_component_health(
             system_type=system_type,
             status=status,
         )
-        return components
 
     except Exception as e:
         logger.error(f"Error retrieving component health: {e}", exc_info=True)
@@ -248,12 +246,11 @@ async def get_maintenance_recommendations(
     _check_predictive_maintenance_feature_enabled(request)
 
     try:
-        recommendations = await pm_service.get_maintenance_recommendations(
+        return await pm_service.get_maintenance_recommendations(
             level=level,
             component_id=component_id,
             acknowledged=acknowledged,
         )
-        return recommendations
 
     except Exception as e:
         logger.error(f"Error retrieving maintenance recommendations: {e}", exc_info=True)
@@ -380,12 +377,11 @@ async def get_maintenance_history(
     _check_predictive_maintenance_feature_enabled(request)
 
     try:
-        history = await pm_service.get_maintenance_history(
+        return await pm_service.get_maintenance_history(
             component_id=component_id,
             maintenance_type=maintenance_type,
             days=days,
         )
-        return history
 
     except Exception as e:
         logger.error(f"Error retrieving maintenance history: {e}", exc_info=True)

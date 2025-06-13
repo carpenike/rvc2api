@@ -68,7 +68,10 @@ class VectorService:
         Raises:
             RuntimeError: Always raises since functionality is not implemented
         """
-        raise RuntimeError(
+        msg = (
             "Vector search functionality not implemented in backend structure. "
             "This feature is available in the legacy core_daemon structure."
+        )
+        raise RuntimeError(
+            msg
         )

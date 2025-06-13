@@ -155,7 +155,8 @@ class NetworkRegistry:
         """Register a new CAN network."""
         async with self._lock:
             if network_id in self.networks:
-                raise ValueError(f"Network '{network_id}' already registered")
+                msg = f"Network '{network_id}' already registered"
+                raise ValueError(msg)
 
             # Check for interface conflicts
             for existing_network in self.networks.values():

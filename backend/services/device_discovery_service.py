@@ -312,7 +312,7 @@ class DeviceDiscoveryService:
         if deep_scan:
             logger.info("Phase 2: Deep device profiling")
             for protocol, devices in all_discovered.items():
-                for addr, _device in devices.items():
+                for addr in devices:
                     try:
                         profile = await self.get_device_profile(addr, protocol)
                         if profile:
@@ -430,7 +430,8 @@ class DeviceDiscoveryService:
         # Validate device exists
         device_info = self.topology.devices.get(device_address)
         if not device_info:
-            raise ValueError(f"Device {device_address:02X} not found in topology")
+            msg = f"Device {device_address:02X} not found in topology"
+            raise ValueError(msg)
 
         capabilities = capabilities or []
         configuration = configuration or {}
@@ -526,7 +527,7 @@ class DeviceDiscoveryService:
 
         unconfigured_devices = []
 
-        for _addr, device in self.topology.devices.items():
+        for device in self.topology.devices.values():
             # Determine if device is configured
             is_configured = bool(device.device_type and device.device_type != "unknown")
 
@@ -814,7 +815,7 @@ class DeviceDiscoveryService:
 
     async def _suggest_device_areas(self, device_info: DeviceInfo) -> list[str]:
         """Suggest multiple area options."""
-        areas = [
+        return [
             "living_room",
             "bedroom",
             "kitchen",
@@ -824,7 +825,6 @@ class DeviceDiscoveryService:
             "exterior",
             "climate",
         ]
-        return areas
 
     async def _get_device_type_options(self, device_type: str) -> dict[str, Any]:
         """Get device-type specific configuration options."""

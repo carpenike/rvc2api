@@ -725,7 +725,8 @@ def get_websocket_manager() -> WebSocketManager:
         RuntimeError: If the WebSocketManager has not been initialized
     """
     if websocket_manager is None:
+        msg = "WebSocketManager not initialized. Call initialize_websocket_manager first."
         raise RuntimeError(
-            "WebSocketManager not initialized. Call initialize_websocket_manager first."
+            msg
         )
     return websocket_manager

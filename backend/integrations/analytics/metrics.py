@@ -90,8 +90,7 @@ def _safe_create_metric(
         if "Duplicated timeseries" in str(e):
             logger.warning(f"Performance metric '{name}' already registered, skipping: {e}")
             return None
-        else:
-            raise
+        raise
 
 
 def initialize_performance_metrics():
@@ -263,7 +262,8 @@ def get_protocol_message_rate() -> Counter:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PROTOCOL_MESSAGE_RATE is None:
-        raise RuntimeError("Protocol message rate metric failed to initialize")
+        msg = "Protocol message rate metric failed to initialize"
+        raise RuntimeError(msg)
     return PROTOCOL_MESSAGE_RATE
 
 
@@ -272,7 +272,8 @@ def get_protocol_latency() -> Histogram:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PROTOCOL_MESSAGE_LATENCY is None:
-        raise RuntimeError("Protocol latency metric failed to initialize")
+        msg = "Protocol latency metric failed to initialize"
+        raise RuntimeError(msg)
     return PROTOCOL_MESSAGE_LATENCY
 
 
@@ -281,7 +282,8 @@ def get_protocol_errors() -> Counter:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PROTOCOL_MESSAGE_ERRORS is None:
-        raise RuntimeError("Protocol errors metric failed to initialize")
+        msg = "Protocol errors metric failed to initialize"
+        raise RuntimeError(msg)
     return PROTOCOL_MESSAGE_ERRORS
 
 
@@ -290,7 +292,8 @@ def get_resource_utilization() -> Gauge:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if RESOURCE_CPU_USAGE is None:
-        raise RuntimeError("Resource utilization metric failed to initialize")
+        msg = "Resource utilization metric failed to initialize"
+        raise RuntimeError(msg)
     return RESOURCE_CPU_USAGE
 
 
@@ -299,7 +302,8 @@ def get_can_interface_utilization() -> Gauge:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if CAN_INTERFACE_UTILIZATION is None:
-        raise RuntimeError("CAN interface utilization metric failed to initialize")
+        msg = "CAN interface utilization metric failed to initialize"
+        raise RuntimeError(msg)
     return CAN_INTERFACE_UTILIZATION
 
 
@@ -308,7 +312,8 @@ def get_baseline_deviation() -> Gauge:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PERFORMANCE_BASELINE_DEVIATION is None:
-        raise RuntimeError("Baseline deviation metric failed to initialize")
+        msg = "Baseline deviation metric failed to initialize"
+        raise RuntimeError(msg)
     return PERFORMANCE_BASELINE_DEVIATION
 
 
@@ -317,7 +322,8 @@ def get_anomaly_detection() -> Counter:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PERFORMANCE_ANOMALY_DETECTED is None:
-        raise RuntimeError("Anomaly detection metric failed to initialize")
+        msg = "Anomaly detection metric failed to initialize"
+        raise RuntimeError(msg)
     return PERFORMANCE_ANOMALY_DETECTED
 
 
@@ -326,7 +332,8 @@ def get_optimization_applied() -> Counter:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if PERFORMANCE_OPTIMIZATION_APPLIED is None:
-        raise RuntimeError("Optimization applied metric failed to initialize")
+        msg = "Optimization applied metric failed to initialize"
+        raise RuntimeError(msg)
     return PERFORMANCE_OPTIMIZATION_APPLIED
 
 
@@ -335,7 +342,8 @@ def get_trend_analysis_slope() -> Gauge:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if TREND_ANALYSIS_SLOPE is None:
-        raise RuntimeError("Trend analysis slope metric failed to initialize")
+        msg = "Trend analysis slope metric failed to initialize"
+        raise RuntimeError(msg)
     return TREND_ANALYSIS_SLOPE
 
 
@@ -344,7 +352,8 @@ def get_trend_analysis_r_squared() -> Gauge:
     if not _PERFORMANCE_METRICS_INITIALIZED:
         initialize_performance_metrics()
     if TREND_ANALYSIS_R_SQUARED is None:
-        raise RuntimeError("Trend analysis R-squared metric failed to initialize")
+        msg = "Trend analysis R-squared metric failed to initialize"
+        raise RuntimeError(msg)
     return TREND_ANALYSIS_R_SQUARED
 
 

@@ -27,7 +27,8 @@ def get_app_state(request: Request) -> Any:
         RuntimeError: If the app state is not initialized
     """
     if not hasattr(request.app.state, "app_state"):
-        raise RuntimeError("Application state not initialized")
+        msg = "Application state not initialized"
+        raise RuntimeError(msg)
     return request.app.state.app_state
 
 
@@ -45,7 +46,8 @@ def get_entity_service(request: Request) -> Any:
         RuntimeError: If the entity service is not initialized
     """
     if not hasattr(request.app.state, "entity_service"):
-        raise RuntimeError("Entity service not initialized")
+        msg = "Entity service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.entity_service
 
 
@@ -63,7 +65,8 @@ def get_can_service(request: Request) -> Any:
         RuntimeError: If the CAN service is not initialized
     """
     if not hasattr(request.app.state, "can_service"):
-        raise RuntimeError("CAN service not initialized")
+        msg = "CAN service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.can_service
 
 
@@ -81,7 +84,8 @@ def get_feature_manager_from_request(request: Request) -> Any:
         RuntimeError: If the feature manager is not initialized
     """
     if not hasattr(request.app.state, "feature_manager"):
-        raise RuntimeError("Feature manager not initialized")
+        msg = "Feature manager not initialized"
+        raise RuntimeError(msg)
     return request.app.state.feature_manager
 
 
@@ -99,7 +103,8 @@ def get_config_service(request: Request) -> Any:
         RuntimeError: If the config service is not initialized
     """
     if not hasattr(request.app.state, "config_service"):
-        raise RuntimeError("Config service not initialized")
+        msg = "Config service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.config_service
 
 
@@ -117,7 +122,8 @@ def get_docs_service(request: Request) -> Any:
         RuntimeError: If the docs service is not initialized
     """
     if not hasattr(request.app.state, "docs_service"):
-        raise RuntimeError("Docs service not initialized")
+        msg = "Docs service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.docs_service
 
 
@@ -135,7 +141,8 @@ def get_vector_service(request: Request) -> Any:
         RuntimeError: If the vector service is not initialized
     """
     if not hasattr(request.app.state, "vector_service"):
-        raise RuntimeError("Vector service not initialized")
+        msg = "Vector service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.vector_service
 
 
@@ -154,11 +161,13 @@ def get_github_update_checker(request: Request) -> Any:
     """
     feature_manager = get_feature_manager_from_request(request)
     if "github_update_checker" not in feature_manager.features:
-        raise RuntimeError("GitHub update checker feature not found")
+        msg = "GitHub update checker feature not found"
+        raise RuntimeError(msg)
 
     update_checker_feature = feature_manager.features["github_update_checker"]
     if not getattr(update_checker_feature, "enabled", False):
-        raise RuntimeError("GitHub update checker feature is not enabled")
+        msg = "GitHub update checker feature is not enabled"
+        raise RuntimeError(msg)
 
     return update_checker_feature.get_update_checker()
 
@@ -177,7 +186,8 @@ def get_can_interface_service(request: Request) -> Any:
         RuntimeError: If the CAN interface service is not initialized
     """
     if not hasattr(request.app.state, "can_interface_service"):
-        raise RuntimeError("CAN interface service not initialized")
+        msg = "CAN interface service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.can_interface_service
 
 
@@ -197,7 +207,8 @@ def get_websocket_manager(request: Request) -> Any:
     feature_manager = get_feature_manager_from_request(request)
     websocket_feature = feature_manager.get_feature("websocket")
     if not websocket_feature:
-        raise RuntimeError("WebSocket feature not found or not enabled")
+        msg = "WebSocket feature not found or not enabled"
+        raise RuntimeError(msg)
     return websocket_feature
 
 
@@ -215,7 +226,8 @@ def get_persistence_service(request: Request) -> Any:
         RuntimeError: If the persistence service is not initialized
     """
     if not hasattr(request.app.state, "persistence_service"):
-        raise RuntimeError("Persistence service not initialized")
+        msg = "Persistence service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.persistence_service
 
 
@@ -233,7 +245,8 @@ def get_database_manager(request: Request) -> Any:
         RuntimeError: If the database manager is not initialized
     """
     if not hasattr(request.app.state, "database_manager"):
-        raise RuntimeError("Database manager not initialized")
+        msg = "Database manager not initialized"
+        raise RuntimeError(msg)
     return request.app.state.database_manager
 
 
@@ -251,7 +264,8 @@ def get_config_repository(request: Request) -> Any:
         RuntimeError: If the configuration repository is not initialized
     """
     if not hasattr(request.app.state, "config_repository"):
-        raise RuntimeError("Configuration repository not initialized")
+        msg = "Configuration repository not initialized"
+        raise RuntimeError(msg)
     return request.app.state.config_repository
 
 
@@ -269,7 +283,8 @@ def get_dashboard_repository(request: Request) -> Any:
         RuntimeError: If the dashboard repository is not initialized
     """
     if not hasattr(request.app.state, "dashboard_repository"):
-        raise RuntimeError("Dashboard repository not initialized")
+        msg = "Dashboard repository not initialized"
+        raise RuntimeError(msg)
     return request.app.state.dashboard_repository
 
 
@@ -296,11 +311,13 @@ def get_auth_manager(request: Request = None) -> Any:
 
     auth_feature = feature_manager.get_feature("authentication")
     if not auth_feature:
-        raise RuntimeError("Authentication feature not found or not enabled")
+        msg = "Authentication feature not found or not enabled"
+        raise RuntimeError(msg)
 
     auth_manager = auth_feature.get_auth_manager()
     if not auth_manager:
-        raise RuntimeError("Authentication manager not initialized")
+        msg = "Authentication manager not initialized"
+        raise RuntimeError(msg)
 
     return auth_manager
 
@@ -333,22 +350,6 @@ def get_notification_manager(request: Request = None) -> Any:
     return notification_feature.get_notification_manager()
 
 
-def get_bulk_operations_service(request: Request) -> Any:
-    """
-    Get the bulk operations service from the FastAPI application state.
-
-    Args:
-        request: The FastAPI request object
-
-    Returns:
-        The bulk operations service
-
-    Raises:
-        RuntimeError: If the bulk operations service is not initialized
-    """
-    if not hasattr(request.app.state, "bulk_operations_service"):
-        raise RuntimeError("Bulk operations service not initialized")
-    return request.app.state.bulk_operations_service
 
 
 def get_predictive_maintenance_service(request: Request) -> Any:
@@ -365,5 +366,125 @@ def get_predictive_maintenance_service(request: Request) -> Any:
         RuntimeError: If the predictive maintenance service is not initialized
     """
     if not hasattr(request.app.state, "predictive_maintenance_service"):
-        raise RuntimeError("Predictive maintenance service not initialized")
+        msg = "Predictive maintenance service not initialized"
+        raise RuntimeError(msg)
     return request.app.state.predictive_maintenance_service
+
+
+def get_feature_manager_from_app(app) -> Any:
+    """
+    Get the feature manager from the FastAPI application state.
+
+    Args:
+        app: The FastAPI application instance
+
+    Returns:
+        The feature manager
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized
+    """
+    if not hasattr(app.state, "feature_manager"):
+        # Fallback to global feature manager if not in app state
+        from backend.services.feature_manager import get_feature_manager
+        return get_feature_manager()
+    return app.state.feature_manager
+
+
+def get_config_manager_from_request(request: Request) -> Any:
+    """
+    Get the config manager from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The config manager
+
+    Raises:
+        RuntimeError: If the config manager is not initialized
+    """
+    if not hasattr(request.app.state, "config_manager"):
+        msg = "Config manager not initialized"
+        raise RuntimeError(msg)
+    return request.app.state.config_manager
+
+
+def get_feature_manager(request: Request = None) -> Any:
+    """
+    Get the feature manager from the FastAPI application state or global instance.
+
+    Args:
+        request: The FastAPI request object (optional)
+
+    Returns:
+        The feature manager
+
+    Raises:
+        RuntimeError: If the feature manager is not initialized
+    """
+    if request:
+        return get_feature_manager_from_request(request)
+    else:
+        # Fallback to global feature manager
+        from backend.services.feature_manager import get_feature_manager as get_global_feature_manager
+        return get_global_feature_manager()
+
+
+def get_entity_domain_service(request: Request) -> Any:
+    """
+    Get or create the entity domain service with all required dependencies.
+
+    This creates a safety-critical domain service for entity operations with
+    comprehensive safety interlocks, command/acknowledgment patterns, and
+    state reconciliation capabilities.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The entity domain service
+
+    Raises:
+        RuntimeError: If any required dependencies are not initialized
+    """
+    # Import here to avoid circular imports
+    from backend.services.entity_domain_service import EntityDomainService
+
+    # Check if already cached in app state
+    if hasattr(request.app.state, "entity_domain_service"):
+        return request.app.state.entity_domain_service
+
+    # Get all required dependencies
+    try:
+        config_service = get_config_service(request)
+        auth_manager = get_auth_manager(request)
+        feature_manager = get_feature_manager_from_request(request)
+        entity_service = get_entity_service(request)
+        websocket_manager = get_websocket_manager(request)
+
+        # Get entity manager from feature manager
+        entity_manager_feature = feature_manager.get_feature("entity_manager")
+        if not entity_manager_feature:
+            msg = "Entity manager feature not found or not enabled"
+            raise RuntimeError(msg)
+        entity_manager = entity_manager_feature.get_entity_manager()
+
+        # Create domain service
+        domain_service = EntityDomainService(
+            config_service=config_service,
+            auth_manager=auth_manager,
+            feature_manager=feature_manager,
+            entity_service=entity_service,
+            websocket_manager=websocket_manager,
+            entity_manager=entity_manager,
+        )
+
+        # Cache in app state for reuse
+        request.app.state.entity_domain_service = domain_service
+
+        return domain_service
+
+    except Exception as e:
+        msg = f"Failed to create entity domain service: {e}"
+        raise RuntimeError(msg)

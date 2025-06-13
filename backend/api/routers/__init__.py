@@ -6,12 +6,12 @@ Each router is responsible for a specific area of functionality and delegates
 business logic to appropriate services.
 """
 
-from backend.api.routers import can, config, docs, entities, logs
+from backend.api.routers import can, config, docs, logs, migration
 
 __all__ = [
     "can",
     "config",
     "docs",
-    "entities",
     "logs",
+    "migration",
 ]

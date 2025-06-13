@@ -140,7 +140,8 @@ class DashboardService:
             feature_manager = get_feature_manager()
             entity_manager_feature = feature_manager.get_feature("entity_manager")
             if entity_manager_feature is None:
-                raise RuntimeError("EntityManager feature not found in feature manager")
+                msg = "EntityManager feature not found in feature manager"
+                raise RuntimeError(msg)
 
             self._entity_manager = entity_manager_feature.get_entity_manager()
 
@@ -379,8 +380,9 @@ class DashboardService:
 
         # Validate request size
         if len(request.entity_ids) > features.bulk_operation_limit:
+            msg = f"Too many entities requested. Maximum: {features.bulk_operation_limit}"
             raise ValueError(
-                f"Too many entities requested. Maximum: {features.bulk_operation_limit}"
+                msg
             )
 
         results = []

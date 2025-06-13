@@ -7,7 +7,10 @@ completely removes legacy state dictionary dependencies.
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from backend.services.entity_persistence_service import EntityPersistenceService
 
 from backend.core.entity_manager import EntityManager
 from backend.services.feature_base import Feature
@@ -55,6 +58,9 @@ class EntityManagerFeature(Feature):
 
         # Initialize the EntityManager
         self.entity_manager = EntityManager()
+
+        # Initialize the persistence service (will be started in startup)
+        self._persistence_service: EntityPersistenceService | None = None
 
     async def startup(self) -> None:
         """Initialize the EntityManager feature on startup."""
@@ -123,11 +129,45 @@ class EntityManagerFeature(Feature):
         except Exception as e:
             logger.error(f"Failed to load entity configuration during startup: {e}")
             # Don't fail startup completely, but log the error
-            pass
+
+        # Initialize entity persistence service if persistence is available
+        try:
+            from backend.core.persistence_feature import get_persistence_feature
+            from backend.services.entity_persistence_service import EntityPersistenceService
+
+            # Get the persistence feature
+            persistence_feature = get_persistence_feature()
+            database_manager = persistence_feature.get_database_manager()
+
+            if database_manager:
+                # Create and start the persistence service
+                self._persistence_service = EntityPersistenceService(
+                    entity_manager=self.entity_manager,
+                    database_manager=database_manager,
+                    debounce_delay=0.5,  # 500ms debounce for SSD optimization
+                )
+                await self._persistence_service.start()
+                logger.info("Entity persistence service started successfully")
+            else:
+                logger.warning("Database manager not available - entity persistence disabled")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize entity persistence service: {e}")
+            # Continue without persistence rather than failing startup
+            self._persistence_service = None
 
     async def shutdown(self) -> None:
         """Clean up resources on shutdown."""
         logger.info("Shutting down EntityManager feature")
+
+        # Stop the persistence service if it's running
+        if self._persistence_service:
+            try:
+                await self._persistence_service.stop()
+                logger.info("Entity persistence service stopped")
+            except Exception as e:
+                logger.error(f"Error stopping entity persistence service: {e}")
+
         # EntityManager doesn't require explicit cleanup, but we could add it here if needed
 
     @property
@@ -195,7 +235,8 @@ def get_entity_manager_feature() -> EntityManagerFeature:
         RuntimeError: If the feature has not been initialized
     """
     if _entity_manager_feature is None:
-        raise RuntimeError("EntityManager feature has not been initialized")
+        msg = "EntityManager feature has not been initialized"
+        raise RuntimeError(msg)
 
     return _entity_manager_feature
 

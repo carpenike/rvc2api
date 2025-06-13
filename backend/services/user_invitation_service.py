@@ -106,7 +106,8 @@ class UserInvitationService:
             existing_id = self._invitations_by_email[email]
             existing = self._invitations.get(existing_id)
             if existing and not existing.used and existing.expires_at > datetime.now(UTC):
-                raise ValueError(f"Active invitation already exists for {email}")
+                msg = f"Active invitation already exists for {email}"
+                raise ValueError(msg)
 
         # Generate unique invitation ID and token
         invitation_id = str(uuid.uuid4())

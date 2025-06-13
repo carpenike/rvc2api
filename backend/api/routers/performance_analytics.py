@@ -209,10 +209,9 @@ async def get_computed_resource_status(
             """Apply backend business logic for resource status classification."""
             if usage_pct >= critical_threshold:
                 return "critical"
-            elif usage_pct >= warning_threshold:
+            if usage_pct >= warning_threshold:
                 return "warning"
-            else:
-                return "good"
+            return "good"
 
         cpu_usage = resource_data.get("cpu_usage", 0.0) * 100
         memory_usage = resource_data.get("memory_usage", 0.0) * 100
@@ -621,8 +620,7 @@ async def get_protocol_throughput(
     try:
         if hasattr(feature, "telemetry_collector") and feature.telemetry_collector:
             return feature.telemetry_collector.get_protocol_throughput()
-        else:
-            return {}
+        return {}
 
     except Exception as e:
         logger.error(f"Error getting protocol throughput: {e}")

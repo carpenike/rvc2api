@@ -46,6 +46,9 @@ class BAMHandler:
     TP_DT_PGN = 0xEB00  # Transport Protocol Data Transfer
     BAM_CONTROL_BYTE = 0x20  # Identifies a BAM start message
 
+    # CAN frame constants
+    CAN_FRAME_SIZE = 8  # Standard CAN frame data size
+
     def __init__(self, session_timeout: float = 30.0, max_concurrent_sessions: int = 100):
         """
         Initialize the BAM handler.
@@ -55,6 +58,7 @@ class BAMHandler:
             max_concurrent_sessions: Maximum number of concurrent BAM sessions to track
         """
         self.sessions: dict[tuple[int, int], BAMSession] = {}
+        self.source_to_sessions: dict[int, list[int]] = {}  # source -> [target_pgns]
         self.session_timeout = session_timeout
         self.max_concurrent_sessions = max_concurrent_sessions
         self._last_cleanup = time.time()
@@ -79,14 +83,14 @@ class BAMHandler:
 
         if pgn == self.TP_CM_PGN:
             return self._handle_control_message(data, source_address)
-        elif pgn == self.TP_DT_PGN:
+        if pgn == self.TP_DT_PGN:
             return self._handle_data_transfer(data, source_address)
 
         return None
 
     def _handle_control_message(self, data: bytes, source_address: int) -> tuple[int, bytes] | None:
         """Handle a Transport Protocol Control message."""
-        if len(data) < 8:
+        if len(data) < self.CAN_FRAME_SIZE:
             logger.warning(f"TP.CM message too short: {len(data)} bytes")
             return None
 
@@ -125,6 +129,12 @@ class BAMHandler:
             total_packets=total_packets,
         )
 
+        # Update source-to-sessions mapping for O(1) lookup
+        if source_address not in self.source_to_sessions:
+            self.source_to_sessions[source_address] = []
+        if target_pgn not in self.source_to_sessions[source_address]:
+            self.source_to_sessions[source_address].append(target_pgn)
+
         logger.debug(
             f"Started BAM session: source={source_address:02X}, PGN={target_pgn:05X}, "
             f"size={total_size}, packets={total_packets}"
@@ -134,23 +144,25 @@ class BAMHandler:
 
     def _handle_data_transfer(self, data: bytes, source_address: int) -> tuple[int, bytes] | None:
         """Handle a Transport Protocol Data Transfer message."""
-        if len(data) < 8:
+        if len(data) < self.CAN_FRAME_SIZE:
             logger.warning(f"TP.DT message too short: {len(data)} bytes")
             return None
 
         sequence_number = data[0]
         payload = data[1:8]  # 7 bytes of actual data per packet
 
-        # Find the active session for this source
+        # Find the active session for this source using O(1) lookup
         session = None
         session_key = None
 
-        # We need to find which session this data belongs to
-        # In BAM, we only know the source address from the CAN frame
-        for key, sess in self.sessions.items():
-            if key[0] == source_address and not sess.complete:
-                session = sess
-                session_key = key
+        # Use O(1) lookup to source's active sessions
+        target_pgns = self.source_to_sessions.get(source_address, [])
+        for target_pgn in target_pgns:
+            potential_key = (source_address, target_pgn)
+            potential_session = self.sessions.get(potential_key)
+            if potential_session and not potential_session.complete:
+                session = potential_session
+                session_key = potential_key
                 break
 
         if not session:
@@ -179,7 +191,7 @@ class BAMHandler:
 
                 # Clean up the completed session
                 if session_key:
-                    del self.sessions[session_key]
+                    self._remove_session(session_key)
 
                 logger.debug(
                     f"Completed BAM message: PGN={session.target_pgn:05X}, "
@@ -230,7 +242,7 @@ class BAMHandler:
                 keys_to_remove.append(key)
 
         for key in keys_to_remove:
-            del self.sessions[key]
+            self._remove_session(key)
 
         self._last_cleanup = current_time
 
@@ -243,11 +255,29 @@ class BAMHandler:
         oldest_session = self.sessions[oldest_key]
 
         logger.warning(
-            f"Removing oldest BAM session due to capacity: source={oldest_session.source_address:02X}, "
-            f"PGN={oldest_session.target_pgn:05X}"
+            "Removing oldest BAM session due to capacity: source=%02X, PGN=%05X",
+            oldest_session.source_address,
+            oldest_session.target_pgn,
         )
 
-        del self.sessions[oldest_key]
+        self._remove_session(oldest_key)
+
+    def _remove_session(self, session_key: tuple[int, int]) -> None:
+        """Remove a session and update source-to-sessions mapping."""
+        source_address, target_pgn = session_key
+
+        # Remove from main sessions dict
+        if session_key in self.sessions:
+            del self.sessions[session_key]
+
+        # Update source-to-sessions mapping
+        if source_address in self.source_to_sessions:
+            if target_pgn in self.source_to_sessions[source_address]:
+                self.source_to_sessions[source_address].remove(target_pgn)
+
+            # Clean up empty source entries
+            if not self.source_to_sessions[source_address]:
+                del self.source_to_sessions[source_address]
 
     def get_active_session_count(self) -> int:
         """Get the number of active BAM sessions."""

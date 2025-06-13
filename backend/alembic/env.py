@@ -6,6 +6,9 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# Import auth models to include them in metadata
+from backend.models import auth  # noqa: F401
+
 # Import our database models and engine
 from backend.models.database import Base
 from backend.services.database_engine import DatabaseSettings

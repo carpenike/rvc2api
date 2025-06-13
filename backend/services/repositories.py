@@ -54,22 +54,18 @@ class BaseRepository(ABC, Generic[T]):
     @abstractmethod
     async def create(self, entity: T) -> T:
         """Create a new entity."""
-        pass
 
     @abstractmethod
     async def get_by_id(self, entity_id: Any) -> T | None:
         """Get an entity by its ID."""
-        pass
 
     @abstractmethod
     async def update(self, entity: T) -> T:
         """Update an existing entity."""
-        pass
 
     @abstractmethod
     async def delete(self, entity_id: Any) -> bool:
         """Delete an entity by its ID."""
-        pass
 
 
 class ConfigRepository(BaseRepository[dict[str, Any]]):
@@ -514,7 +510,8 @@ class DashboardRepository(BaseRepository[dict[str, Any]]):
             existing_dashboard = result.scalar_one_or_none()
 
             if not existing_dashboard:
-                raise ValueError(f"Dashboard with id {dashboard_id} not found")
+                msg = f"Dashboard with id {dashboard_id} not found"
+                raise ValueError(msg)
 
             # If setting as default, unset other defaults
             if is_default:

@@ -193,8 +193,7 @@ class PerformanceAnalyticsFeature(Feature):
 
         if self.is_healthy():
             return "healthy"
-        else:
-            return "unhealthy"
+        return "unhealthy"
 
     def get_status(self) -> dict[str, Any]:
         """Get comprehensive status of the performance analytics feature."""
@@ -228,9 +227,9 @@ class PerformanceAnalyticsFeature(Feature):
             status["trend_statistics"] = self.trend_analyzer.get_trend_statistics()
 
         if self.optimization_engine:
-            status[
-                "optimization_statistics"
-            ] = self.optimization_engine.get_optimization_statistics()
+            status["optimization_statistics"] = (
+                self.optimization_engine.get_optimization_statistics()
+            )
 
         return status
 
@@ -602,16 +601,16 @@ class PerformanceAnalyticsFeature(Feature):
         """Generate human-readable status summary."""
         if status == PerformanceStatus.EXCELLENT:
             return "System performance is excellent with all metrics within optimal ranges."
-        elif status == PerformanceStatus.GOOD:
+        if status == PerformanceStatus.GOOD:
             return f"System performance is good with {recommendation_count} optimization opportunities identified."
-        elif status == PerformanceStatus.ACCEPTABLE:
+        if status == PerformanceStatus.ACCEPTABLE:
             return f"System performance is acceptable with {deviation_count} baseline deviations detected."
-        elif status == PerformanceStatus.DEGRADED:
+        if status == PerformanceStatus.DEGRADED:
             return (
                 f"System performance is degraded. {recommendation_count} optimizations recommended."
             )
-        else:  # CRITICAL
-            return "Critical performance issues detected. Immediate attention required."
+        # CRITICAL
+        return "Critical performance issues detected. Immediate attention required."
 
     # Background monitoring tasks
 

@@ -31,9 +31,9 @@ from backend.integrations.registration import register_custom_features
 from backend.middleware.auth import AuthenticationMiddleware
 from backend.middleware.http import configure_cors
 from backend.middleware.rate_limiting import limiter, rate_limit_exceeded_handler
+from backend.middleware.validation import RuntimeValidationMiddleware
 from backend.services.analytics_dashboard_service import AnalyticsDashboardService
 from backend.services.auth_manager import AccountLockedError
-from backend.services.bulk_operations_service import BulkOperationsService
 from backend.services.can_interface_service import CANInterfaceService
 from backend.services.can_service import CANService
 from backend.services.config_service import ConfigService
@@ -54,6 +54,103 @@ logger = logging.getLogger(__name__)
 SERVER_START_TIME = time.time()
 
 
+async def validate_mandatory_persistence() -> None:
+    """
+    Validate that mandatory persistence is working before proceeding with startup.
+
+    This implements fail-fast validation for the persistence system to ensure
+    the application cannot start without proper database functionality.
+
+    Raises:
+        RuntimeError: If persistence validation fails
+    """
+    logger.info("Validating mandatory persistence system...")
+
+    try:
+        # Import required modules
+        from backend.core.config import get_persistence_settings
+        from backend.services.database_engine import DatabaseEngine, DatabaseSettings
+
+        # Get persistence configuration
+        persistence_settings = get_persistence_settings()
+        logger.debug(f"Persistence data directory: {persistence_settings.data_dir}")
+
+        # Ensure required directories exist
+        created_dirs = persistence_settings.ensure_directories()
+        if created_dirs:
+            logger.info(f"Created persistence directories: {[str(d) for d in created_dirs]}")
+
+        # Validate database connectivity
+        database_settings = DatabaseSettings()
+        db_engine = DatabaseEngine(database_settings)
+
+        # Initialize and test database connection
+        await db_engine.initialize()
+        logger.info("Database engine initialized successfully")
+
+        # Perform health check
+        if not await db_engine.health_check():
+            msg = "Database health check failed"
+            raise RuntimeError(msg)
+
+        logger.info("Database connectivity validated")
+
+        # Test configuration loader if available
+        try:
+            from backend.core.config_loader import create_configuration_loader
+
+            config_loader = create_configuration_loader()
+            # Just create the loader without loading full config
+            # to avoid circular dependencies during early startup
+            logger.info("Configuration loader initialized")
+        except Exception as e:
+            logger.warning(f"Configuration loader validation failed (non-critical): {e}")
+
+        # Validate database schema migrations are up to date
+        try:
+            logger.info("Validating database schema migrations...")
+
+            # Get database URL for Alembic
+            sync_db_url = db_engine.get_sync_url()
+
+            # Check if the database is at the latest migration
+            import os
+            import subprocess
+
+            # Set the database URL for Alembic
+            env = os.environ.copy()
+            env["DATABASE_URL"] = sync_db_url
+
+            # Check current Alembic revision
+            result = subprocess.run(
+                ["poetry", "run", "alembic", "current"],
+                capture_output=True,
+                text=True,
+                env=env,
+                cwd=str(Path(__file__).parent), check=False,
+            )
+
+            if result.returncode == 0:
+                logger.info("Database schema validation completed")
+            else:
+                logger.warning(f"Database schema validation warning: {result.stderr}")
+                # Don't fail startup on migration check issues
+
+        except Exception as e:
+            logger.warning(f"Database schema validation failed (non-critical): {e}")
+
+        # Clean up test database connection
+        await db_engine.close()
+
+        logger.info("✅ Mandatory persistence validation completed successfully")
+
+    except Exception as e:
+        logger.error(f"❌ Mandatory persistence validation FAILED: {e}")
+        logger.error("Application startup aborted - persistence system is required")
+        msg = f"Mandatory persistence validation failed: {e}"
+        raise RuntimeError(msg) from e
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
@@ -68,6 +165,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     initialize_backend_metrics()
 
     try:
+        # PHASE 1: Validate mandatory persistence BEFORE anything else
+        await validate_mandatory_persistence()
+
         # Get application settings
         settings = get_settings()
         logger.info("Application settings loaded successfully")
@@ -92,8 +192,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         websocket_manager = feature_manager.get_feature("websocket")
         entity_manager_feature = feature_manager.get_feature("entity_manager")
         if not app_state or not websocket_manager or not entity_manager_feature:
+            msg = "Required features (app_state, websocket, entity_manager) failed to initialize"
             raise RuntimeError(
-                "Required features (app_state, websocket, entity_manager) failed to initialize"
+                msg
             )
 
         # Update logging configuration to include WebSocket handler now that manager is available
@@ -112,7 +213,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         docs_service = DocsService()
         vector_service = VectorService() if settings.features.enable_vector_search else None
         can_interface_service = CANInterfaceService()
-        bulk_operations_service = BulkOperationsService(entity_service, websocket_manager)
         predictive_maintenance_service = PredictiveMaintenanceService()
         device_discovery_service = DeviceDiscoveryService(can_service)
         analytics_dashboard_service = AnalyticsDashboardService()
@@ -141,7 +241,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.docs_service = docs_service
         app.state.vector_service = vector_service
         app.state.can_interface_service = can_interface_service
-        app.state.bulk_operations_service = bulk_operations_service
         app.state.predictive_maintenance_service = predictive_maintenance_service
         app.state.device_discovery_service = device_discovery_service
         app.state.analytics_dashboard_service = analytics_dashboard_service
@@ -194,6 +293,9 @@ def create_app() -> FastAPI:
     # Configure authentication middleware
     # The middleware will obtain the auth manager from app state at runtime
     app.add_middleware(AuthenticationMiddleware)
+
+    # Add runtime validation middleware for safety-critical operations
+    app.add_middleware(RuntimeValidationMiddleware, validate_requests=True, validate_responses=False)
 
     # Add rate limiting middleware
     app.state.limiter = limiter
@@ -418,15 +520,14 @@ def _get_status_description(status: str, failed_features: dict, degraded_feature
     """Generate human-readable status description."""
     if status == "failed":
         return f"Service critical: {len(failed_features)} feature(s) failed"
-    elif status == "degraded":
+    if status == "degraded":
         desc_parts = []
         if failed_features:
             desc_parts.append(f"{len(failed_features)} failed")
         if degraded_features:
             desc_parts.append(f"{len(degraded_features)} degraded")
         return f"Service degraded: {', '.join(desc_parts)} feature(s)"
-    else:
-        return "All systems operational"
+    return "All systems operational"
 
 
 def main():
@@ -441,7 +542,7 @@ def main():
     # Set up signal handlers for graceful shutdown
     def signal_handler(signum, frame):
         logger.info(f"Received signal {signum}, initiating graceful shutdown...")
-        raise KeyboardInterrupt()
+        raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

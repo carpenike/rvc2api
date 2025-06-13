@@ -298,7 +298,8 @@ class AnalyticsSQLiteStorage:
     ) -> None:
         """Persist metric to SQLite."""
         if not self._connection:
-            raise RuntimeError("SQLite connection not available")
+            msg = "SQLite connection not available"
+            raise RuntimeError(msg)
 
         cursor = self._connection.cursor()
         cursor.execute(
@@ -347,7 +348,8 @@ class AnalyticsSQLiteStorage:
     async def persist_insight(self, insight: SystemInsight) -> None:
         """Persist insight to SQLite."""
         if not self._connection:
-            raise RuntimeError("SQLite connection not available")
+            msg = "SQLite connection not available"
+            raise RuntimeError(msg)
 
         cursor = self._connection.cursor()
         cursor.execute(
@@ -375,7 +377,8 @@ class AnalyticsSQLiteStorage:
     async def persist_pattern(self, pattern: PatternAnalysis) -> None:
         """Persist pattern to SQLite."""
         if not self._connection:
-            raise RuntimeError("SQLite connection not available")
+            msg = "SQLite connection not available"
+            raise RuntimeError(msg)
 
         cursor = self._connection.cursor()
         cursor.execute(
@@ -619,13 +622,12 @@ class AnalyticsStorageService:
 
     def get_storage_stats(self) -> dict[str, Any]:
         """Get comprehensive storage statistics."""
-        stats = {
+        return {
             "persistence_enabled": self.persistence_enabled,
             "memory_stats": self.memory_storage.get_memory_stats(),
             "sqlite_available": self.sqlite_storage is not None,
         }
 
-        return stats
 
     def close(self) -> None:
         """Clean up storage resources."""

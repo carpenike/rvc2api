@@ -96,10 +96,9 @@ class DatabaseSettings(BaseSettings):
                 dev_data_dir = Path("backend/data/persistent")
                 db_dir = dev_data_dir / "database"
                 return str(db_dir / "coachiq.db")
-            else:
-                # Use the configured persistent data directory for production
-                db_dir = persistence_settings.get_database_dir()
-                return str(db_dir / "coachiq.db")
+            # Use the configured persistent data directory for production
+            db_dir = persistence_settings.get_database_dir()
+            return str(db_dir / "coachiq.db")
         except Exception:
             # Fall back to configured path if persistence system is unavailable
             pass
@@ -123,21 +122,21 @@ class DatabaseSettings(BaseSettings):
             db_path = self.get_database_path()
             return f"sqlite+aiosqlite:///{db_path}"
 
-        elif self.backend == DatabaseBackend.POSTGRESQL:
+        if self.backend == DatabaseBackend.POSTGRESQL:
             return (
                 f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
                 f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
             )
 
-        elif self.backend == DatabaseBackend.MYSQL:
+        if self.backend == DatabaseBackend.MYSQL:
             # Note: Would need aiomysql dependency
             return (
                 f"mysql+aiomysql://{self.postgres_user}:{self.postgres_password}"
                 f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
             )
 
-        else:
-            raise ValueError(f"Unsupported database backend: {self.backend}")
+        msg = f"Unsupported database backend: {self.backend}"
+        raise ValueError(msg)
 
     def get_engine_kwargs(self) -> dict[str, Any]:
         """
@@ -300,7 +299,8 @@ class DatabaseEngine:
             RuntimeError: If the engine is not initialized
         """
         if not self._session_factory:
-            raise RuntimeError("Database engine not initialized")
+            msg = "Database engine not initialized"
+            raise RuntimeError(msg)
 
         async with self._session_factory() as session:
             try:
@@ -335,9 +335,9 @@ class DatabaseEngine:
         # Convert async URLs to sync URLs for Alembic
         if "sqlite+aiosqlite" in async_url:
             return async_url.replace("sqlite+aiosqlite", "sqlite")
-        elif "postgresql+asyncpg" in async_url:
+        if "postgresql+asyncpg" in async_url:
             return async_url.replace("postgresql+asyncpg", "postgresql+psycopg2")
-        elif "mysql+aiomysql" in async_url:
+        if "mysql+aiomysql" in async_url:
             return async_url.replace("mysql+aiomysql", "mysql+pymysql")
 
         return async_url
@@ -359,7 +359,8 @@ def get_database_engine() -> DatabaseEngine:
     """
     global _db_engine
     if _db_engine is None:
-        raise RuntimeError("Database engine not initialized")
+        msg = "Database engine not initialized"
+        raise RuntimeError(msg)
     return _db_engine
 
 

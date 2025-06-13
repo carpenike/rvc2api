@@ -111,7 +111,8 @@ class DatabaseManager:
             return
 
         if not self._engine._engine:
-            raise RuntimeError("Database engine not initialized")
+            msg = "Database engine not initialized"
+            raise RuntimeError(msg)
 
         try:
             async with self._engine._engine.begin() as conn:
@@ -128,10 +129,12 @@ class DatabaseManager:
         Returns:
             True if the database is healthy, False otherwise
         """
-        if not self._initialized:
-            return False
+        # During initialization, we can check health without requiring _initialized flag
+        # After initialization, we check both _initialized and engine health
+        if hasattr(self, '_engine') and self._engine:
+            return await self._engine.health_check()
 
-        return await self._engine.health_check()
+        return False
 
     @asynccontextmanager
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
@@ -145,7 +148,8 @@ class DatabaseManager:
             RuntimeError: If the manager is not initialized
         """
         if not self._initialized:
-            raise RuntimeError("Database manager not initialized")
+            msg = "Database manager not initialized"
+            raise RuntimeError(msg)
 
         # Handle null backend (no persistence)
         database_url = self._engine.settings.get_database_url()
@@ -195,7 +199,8 @@ class DatabaseManager:
         table_info = {}
         async with self.get_session() as session:
             if session.bind is None:
-                raise RuntimeError("Database session has no bind")
+                msg = "Database session has no bind"
+                raise RuntimeError(msg)
             inspector = cast("Inspector", inspect(session.bind))
 
             # Get table names and columns

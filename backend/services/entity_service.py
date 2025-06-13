@@ -66,7 +66,8 @@ class EntityService:
             feature_manager = get_feature_manager()
             entity_manager_feature = feature_manager.get_feature("entity_manager")
             if entity_manager_feature is None:
-                raise RuntimeError("EntityManager feature not found in feature manager")
+                msg = "EntityManager feature not found in feature manager"
+                raise RuntimeError(msg)
 
             self._entity_manager = entity_manager_feature.get_entity_manager()
 
@@ -326,16 +327,17 @@ class EntityService:
         """
         entity = self.entity_manager.get_entity(entity_id)
         if not entity:
-            raise ValueError(f"Entity '{entity_id}' not found")
+            msg = f"Entity '{entity_id}' not found"
+            raise ValueError(msg)
 
         device_type = entity.config.get("device_type")
 
         if device_type == "light":
             return await self.control_light(entity_id, command)
-        else:
-            raise ValueError(
-                f"Control not supported for device type '{device_type}'. Supported types: light"
-            )
+        msg = f"Control not supported for device type '{device_type}'. Supported types: light"
+        raise ValueError(
+            msg
+        )
 
     async def control_light(self, entity_id: str, cmd: ControlCommand) -> ControlEntityResponse:
         """
@@ -354,9 +356,11 @@ class EntityService:
         """
         entity = self.entity_manager.get_entity(entity_id)
         if not entity:
-            raise ValueError(f"Entity '{entity_id}' not found")
+            msg = f"Entity '{entity_id}' not found"
+            raise ValueError(msg)
         if entity.config.get("device_type") != "light":
-            raise ValueError(f"Entity '{entity_id}' is not controllable as a light")
+            msg = f"Entity '{entity_id}' is not controllable as a light"
+            raise ValueError(msg)
 
         current_state = entity.get_state()
         current_state_data = current_state.model_dump()
@@ -404,7 +408,8 @@ class EntityService:
                 new_state = False
                 new_brightness = 0
             else:
-                raise ValueError(f"Invalid state for set command: {cmd.state}")
+                msg = f"Invalid state for set command: {cmd.state}"
+                raise ValueError(msg)
         elif cmd.command == "toggle":
             new_state = not current_on
             if new_state:
@@ -426,17 +431,16 @@ class EntityService:
             if new_brightness > 0:
                 entity.last_known_brightness = int(new_brightness)
         else:
-            raise ValueError(f"Unknown command: {cmd.command}")
+            msg = f"Unknown command: {cmd.command}"
+            raise ValueError(msg)
 
         # Ensure new_brightness is always a valid integer between 0 and 100
         try:
             new_brightness = round(new_brightness)
         except Exception:
             new_brightness = 100 if new_state else 0
-        if new_brightness < 0:
-            new_brightness = 0
-        if new_brightness > 100:
-            new_brightness = 100
+        new_brightness = max(new_brightness, 0)
+        new_brightness = min(new_brightness, 100)
 
         # Broadcast entity update over WebSocket after control
         await self.websocket_manager.broadcast_to_data_clients(
@@ -478,16 +482,20 @@ class EntityService:
         # Get entity information for CAN message creation
         entity = self.entity_manager.get_entity(entity_id)
         if not entity:
-            raise RuntimeError(
+            msg = (
                 f"Control Error: {entity_id} not found in entity manager for "
                 f"action '{action_description}'"
+            )
+            raise RuntimeError(
+                msg
             )
 
         # Extract info needed for CAN message creation from entity config
         entity_config = entity.config
         instance = entity_config.get("instance")
         if instance is None:
-            raise RuntimeError(f"Entity {entity_id} missing 'instance' for CAN message creation")
+            msg = f"Entity {entity_id} missing 'instance' for CAN message creation"
+            raise RuntimeError(msg)
 
         # Get entity's logical interface and resolve to physical interface
         logical_interface = entity_config.get(
@@ -592,4 +600,5 @@ class EntityService:
             )
         except Exception as e:
             logger.error(f"CAN command failed for {entity_id}: {e}")
-            raise RuntimeError(f"CAN command failed: {e}") from e
+            msg = f"CAN command failed: {e}"
+            raise RuntimeError(msg) from e

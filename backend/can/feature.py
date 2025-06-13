@@ -201,7 +201,8 @@ class CANBusFeature(Feature):
                 app_state = feature_manager.get_feature("app_state")
 
                 if not app_state:
-                    raise RuntimeError("AppState feature is required but not found")
+                    msg = "AppState feature is required but not found"
+                    raise RuntimeError(msg)
 
                 # Initialize CAN service with app_state and full startup (interfaces + writer)
                 can_service = CANService(app_state)
@@ -866,8 +867,9 @@ def get_can_feature() -> CANBusFeature:
         RuntimeError: If the CAN feature has not been initialized
     """
     if _can_feature is None:
+        msg = "CAN feature has not been initialized. Call initialize_can_feature() first."
         raise RuntimeError(
-            "CAN feature has not been initialized. Call initialize_can_feature() first."
+            msg
         )
 
     return _can_feature

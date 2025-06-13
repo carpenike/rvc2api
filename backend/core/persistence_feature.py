@@ -83,7 +83,8 @@ class PersistenceFeature(Feature):
             # Initialize the persistence service
             if not await self._persistence_service.initialize():
                 logger.error("Failed to initialize persistence service")
-                raise RuntimeError("Persistence service initialization failed")
+                msg = "Persistence service initialization failed"
+                raise RuntimeError(msg)
 
             # Initialize database manager
             from backend.services.database_manager import DatabaseManager
@@ -100,7 +101,8 @@ class PersistenceFeature(Feature):
             # Initialize database manager
             if not await self._database_manager.initialize():
                 logger.error("Failed to initialize database manager")
-                raise RuntimeError("Database manager initialization failed")
+                msg = "Database manager initialization failed"
+                raise RuntimeError(msg)
 
             # Connect persistence service to database manager
             self._persistence_service.set_database_manager(self._database_manager)
@@ -175,7 +177,7 @@ class PersistenceFeature(Feature):
         try:
             details = {
                 "status": "healthy",
-                "persistence_enabled": self._persistence_service.enabled,
+                "persistence_enabled": True,  # Always enabled in new architecture
                 "database_backend": self._database_manager.backend,
                 "components": {
                     "persistence_service": "initialized",
@@ -189,8 +191,8 @@ class PersistenceFeature(Feature):
                 },
             }
 
-            # Add storage info if persistence is enabled
-            if self._persistence_service.enabled:
+            # Add storage info if persistence is enabled (always in new architecture)
+            if self._persistence_service:
                 import asyncio
 
                 try:
@@ -209,25 +211,29 @@ class PersistenceFeature(Feature):
     def get_persistence_service(self) -> "PersistenceService":
         """Get the PersistenceService instance."""
         if not self._persistence_service:
-            raise RuntimeError("Persistence service not initialized")
+            msg = "Persistence service not initialized"
+            raise RuntimeError(msg)
         return self._persistence_service
 
     def get_database_manager(self) -> "DatabaseManager":
         """Get the DatabaseManager instance."""
         if not self._database_manager:
-            raise RuntimeError("Database manager not initialized")
+            msg = "Database manager not initialized"
+            raise RuntimeError(msg)
         return self._database_manager
 
     def get_config_repository(self) -> "ConfigRepository":
         """Get the ConfigRepository instance."""
         if not self._config_repository:
-            raise RuntimeError("Config repository not initialized")
+            msg = "Config repository not initialized"
+            raise RuntimeError(msg)
         return self._config_repository
 
     def get_dashboard_repository(self) -> "DashboardRepository":
         """Get the DashboardRepository instance."""
         if not self._dashboard_repository:
-            raise RuntimeError("Dashboard repository not initialized")
+            msg = "Dashboard repository not initialized"
+            raise RuntimeError(msg)
         return self._dashboard_repository
 
 
@@ -267,7 +273,8 @@ def get_persistence_feature() -> PersistenceFeature:
         RuntimeError: If the feature has not been initialized
     """
     if _persistence_feature is None:
-        raise RuntimeError("Persistence feature has not been initialized")
+        msg = "Persistence feature has not been initialized"
+        raise RuntimeError(msg)
 
     return _persistence_feature
 

@@ -160,10 +160,9 @@ class NotificationFeature(Feature):
 
         if health_ratio >= 1.0:
             return "healthy"
-        elif health_ratio >= 0.5:
+        if health_ratio >= 0.5:
             return "degraded"
-        else:
-            return "failed"
+        return "failed"
 
     def get_status(self) -> dict[str, Any]:
         """Get comprehensive status of the notification feature."""

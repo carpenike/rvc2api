@@ -13,7 +13,7 @@
 # Core infrastructure features
 persistence:
   enabled: true
-  core: false
+  core: true
   depends_on: []
   description: "Data persistence service for SQLite databases, backups, themes, and user configurations"
   friendly_name: "Data Persistence"
@@ -72,6 +72,24 @@ rvc:
   enable_security: true
   enable_performance: true
   max_queue_size: 10000
+
+canbus_decoder_v2:
+  enabled: false
+  core: true
+  depends_on: [can_interface, rvc]
+  description: "Enhanced CAN bus decoder architecture with safety state engine, protocol router, and configuration service"
+  friendly_name: "CAN Bus Decoder v2"
+  enable_safety_state_engine: true
+  enable_protocol_router: true
+  enable_configuration_service: true
+  enable_bam_optimization: true
+  enable_adaptive_security: false
+  enable_performance_monitoring: true
+  safety_state_timeout_seconds: 30.0
+  moving_speed_threshold_mph: 0.5
+  configuration_cache_ttl_seconds: 300
+  max_concurrent_bam_sessions: 100
+  performance_monitoring_interval_seconds: 10.0
 
 j1939:
   enabled: false
@@ -210,7 +228,7 @@ notifications:
 authentication:
   enabled: true
   core: false
-  depends_on: [notifications]
+  depends_on: [persistence, notifications]
   description: "Authentication system with JWT tokens, magic links, and admin user management"
   friendly_name: "Authentication System"
   mode: "auto" # auto, none, single-user, multi-user
@@ -293,17 +311,12 @@ dashboard_aggregation:
   description: "Aggregated dashboard endpoints for optimized data loading and real-time updates"
   friendly_name: "Dashboard Aggregation"
 
-bulk_operations:
-  enabled: true
-  core: false
-  depends_on: [entity_manager, can_interface]
-  description: "Bulk control operations for entities and advanced filtering capabilities"
-  friendly_name: "Bulk Operations"
+# bulk_operations: REMOVED - Now part of Domain API v2 entities
 
 system_analytics:
   enabled: true
   core: false
-  depends_on: [entity_manager, can_interface]
+  depends_on: [persistence, entity_manager, can_interface]
   description: "System analytics, performance monitoring, and alerting features"
   friendly_name: "System Analytics"
 
@@ -372,7 +385,7 @@ performance_analytics:
 analytics_dashboard:
   enabled: true
   core: false
-  depends_on: [performance_analytics, entity_manager]
+  depends_on: [persistence, performance_analytics, entity_manager]
   description: "Advanced analytics dashboard with performance visualization, trend analysis, and system health monitoring"
   friendly_name: "Analytics Dashboard"
   # Core settings (always available)
@@ -424,7 +437,7 @@ device_discovery:
 predictive_maintenance:
   enabled: true
   core: false
-  depends_on: [entity_manager, can_interface]
+  depends_on: [persistence, entity_manager, can_interface]
   description: "Predictive maintenance with component health tracking, trend analysis, and proactive recommendations"
   friendly_name: "Predictive Maintenance"
   enable_health_scoring: true
@@ -471,3 +484,76 @@ predictive_maintenance:
       vibration_weight: 0.4
       temperature_weight: 0.3
       usage_hours_weight: 0.3
+
+# Domain API v2 Features (Safety-Critical Implementation)
+domain_api_v2:
+  enabled: true
+  core: true
+  depends_on: [entity_manager, can_interface]
+  description: "Domain-driven API v2 with safety-critical command/acknowledgment patterns"
+  friendly_name: "Domain API v2"
+  enable_optimistic_updates: false
+  enable_command_acknowledgment: true
+  enable_state_reconciliation: true
+  enable_emergency_stop: true
+  command_timeout_seconds: 5.0
+  state_sync_interval_seconds: 2.0
+  max_pending_commands: 10
+  require_explicit_confirmation: true
+
+entities_api_v2:
+  enabled: true
+  core: true
+  depends_on: [domain_api_v2, entity_manager, rvc]
+  description: "Domain-specific entities API v2 with bulk operations and safety interlocks"
+  friendly_name: "Entities API v2"
+  enable_bulk_operations: true
+  enable_safety_interlocks: true
+  enable_schema_validation: true
+  enable_audit_logging: true
+  max_bulk_operation_size: 50
+  bulk_operation_timeout_seconds: 30.0
+  enable_device_validation: true
+  enable_state_verification: true
+
+diagnostics_api_v2:
+  enabled: false
+  core: false
+  depends_on: [domain_api_v2, advanced_diagnostics]
+  description: "Domain-specific diagnostics API v2 with enhanced fault correlation"
+  friendly_name: "Diagnostics API v2"
+  enable_real_time_monitoring: true
+  enable_predictive_alerts: true
+  enable_cross_protocol_analysis: true
+  enable_maintenance_scheduling: true
+
+analytics_api_v2:
+  enabled: false
+  core: false
+  depends_on: [domain_api_v2, performance_analytics, analytics_dashboard]
+  description: "Domain-specific analytics API v2 with advanced telemetry"
+  friendly_name: "Analytics API v2"
+  enable_real_time_telemetry: true
+  enable_trend_analysis: true
+  enable_performance_optimization: true
+  enable_fleet_insights: false
+
+networks_api_v2:
+  enabled: false
+  core: false
+  depends_on: [domain_api_v2, can_interface]
+  description: "Domain-specific networks API v2 with CAN bus monitoring and interface management"
+  friendly_name: "Networks API v2"
+  enable_interface_monitoring: true
+  enable_protocol_analysis: true
+  enable_real_time_stats: true
+
+system_api_v2:
+  enabled: false
+  core: false
+  depends_on: [domain_api_v2]
+  description: "Domain-specific system API v2 with configuration management and service monitoring"
+  friendly_name: "System API v2"
+  enable_service_monitoring: true
+  enable_configuration_api: true
+  enable_system_health: true

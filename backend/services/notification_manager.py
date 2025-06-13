@@ -60,9 +60,12 @@ class NotificationManager:
             ImportError: If Apprise or Jinja2 dependencies are not available
         """
         if not DEPENDENCIES_AVAILABLE:
-            raise ImportError(
+            msg = (
                 "NotificationManager requires 'apprise' and 'jinja2' packages. "
                 "Please install them with: pip install apprise jinja2"
+            )
+            raise ImportError(
+                msg
             )
 
         self.config = config
@@ -383,13 +386,12 @@ class NotificationManager:
         try:
             # Run Apprise notification in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 None,
                 lambda: self.apprise_obj.notify(
                     body=body, title=title, notify_type=notify_type, tag=tag
                 ),
             )
-            return result
         except Exception as e:
             self.logger.error(f"Apprise notification failed: {e}")
             return False

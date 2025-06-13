@@ -6,26 +6,19 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 class ReaderProtocol(Protocol):
     """Protocol for the systemd.journal.Reader class."""
 
-    def this_boot(self) -> None:
-        ...
+    def this_boot(self) -> None: ...
 
-    def seek_realtime(self, dt: datetime) -> None:
-        ...
+    def seek_realtime(self, dt: datetime) -> None: ...
 
-    def add_match(self, **kwargs: Any) -> None:
-        ...
+    def add_match(self, **kwargs: Any) -> None: ...
 
-    def seek_cursor(self, cursor: str) -> None:
-        ...
+    def seek_cursor(self, cursor: str) -> None: ...
 
-    def get_cursor(self) -> str:
-        ...
+    def get_cursor(self) -> str: ...
 
-    def __iter__(self) -> "ReaderProtocol":
-        ...
+    def __iter__(self) -> "ReaderProtocol": ...
 
-    def __next__(self) -> dict[str, Any]:
-        ...
+    def __next__(self) -> dict[str, Any]: ...
 
 
 class JournalModuleProtocol(Protocol):
@@ -51,7 +44,6 @@ except ImportError:
 class JournalLogEntry(dict[str, Any]):
     """Represents a single log entry from journald."""
 
-    pass
 
 
 def parse_journal_entry(entry: dict[str, Any]) -> JournalLogEntry:
@@ -108,7 +100,8 @@ def get_journal_logs(
         A tuple of (list of log entries, next cursor for pagination).
     """
     if systemd is None:
-        raise RuntimeError("systemd.journal module is not available. Install systemd-python.")
+        msg = "systemd.journal module is not available. Install systemd-python."
+        raise RuntimeError(msg)
 
     reader = systemd.journal.Reader()
     reader.this_boot()

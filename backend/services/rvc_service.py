@@ -80,7 +80,6 @@ class RVCService:
         """Initialize handlers for different RV-C message types."""
         # Map DGN numbers to handler methods
         # Example: self._message_handlers[0x1FFFF] = self._handle_temperature
-        pass
 
     async def _process_messages(self) -> None:
         """

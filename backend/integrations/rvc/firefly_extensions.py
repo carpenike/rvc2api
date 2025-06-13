@@ -172,12 +172,11 @@ class FireflyDecoder:
             # Handle different message types
             if dgn_type == FireflyDGNType.MULTIPLEXED:
                 return self._handle_multiplexed_message(message)
-            elif dgn_type == FireflyDGNType.FIREFLY_CUSTOM:
+            if dgn_type == FireflyDGNType.FIREFLY_CUSTOM:
                 return self._decode_firefly_custom_dgn(message)
-            elif dgn_type == FireflyDGNType.SAFETY_INTERLOCK:
+            if dgn_type == FireflyDGNType.SAFETY_INTERLOCK:
                 return self._decode_safety_interlock(message)
-            else:
-                return self._decode_standard_rvc_with_firefly_extensions(message)
+            return self._decode_standard_rvc_with_firefly_extensions(message)
 
         except Exception as e:
             logger.error(f"Error decoding Firefly message DGN {dgn:04X}: {e}")

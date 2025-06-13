@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, String, UniqueConstraint, func
+from sqlalchemy import JSON, DateTime, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -199,4 +199,167 @@ class DashboardModel(BaseModel):
     )
     description: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="Dashboard description"
+    )
+
+
+class EntityState(Base):
+    """
+    Persists the last known state of RV-C entities for restart recovery.
+
+    This model stores entity states to enable system recovery after restarts,
+    ensuring continuity of entity state across application lifecycles.
+    """
+
+    __tablename__ = "entity_states"
+
+    entity_id: Mapped[str] = mapped_column(
+        String(255),
+        primary_key=True,
+        comment="Unique identifier (e.g., 'light.living_room_main', 'tank.fresh_water')",
+    )
+
+    state: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        comment="Complete entity state as JSON (value, raw, state, capabilities, etc.)",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        index=True,
+        comment="Last state update timestamp",
+    )
+
+    # Additional metadata for debugging and monitoring
+    device_type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="Device type for faster querying (light, tank, pump, etc.)",
+    )
+
+    suggested_area: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="Physical area/location of the entity"
+    )
+
+    def to_entity_dict(self) -> dict[str, Any]:
+        """
+        Convert database state back to entity dictionary format.
+
+        Returns:
+            Dictionary suitable for Entity model initialization
+        """
+        entity_data = self.state.copy()
+        entity_data.update(
+            {
+                "entity_id": self.entity_id,
+                "timestamp": self.updated_at.timestamp(),
+                "device_type": self.device_type,
+                "suggested_area": self.suggested_area,
+            }
+        )
+        return entity_data
+
+    @classmethod
+    def from_entity(cls, entity_id: str, entity_data: dict[str, Any]) -> "EntityState":
+        """
+        Create EntityState from entity data dictionary.
+
+        Args:
+            entity_id: Unique entity identifier
+            entity_data: Entity data dictionary
+
+        Returns:
+            EntityState instance
+        """
+        # Extract metadata that gets stored separately
+        device_type = entity_data.get("device_type")
+        suggested_area = entity_data.get("suggested_area")
+
+        # Create state dict excluding metadata fields
+        state_data = {
+            k: v
+            for k, v in entity_data.items()
+            if k not in {"entity_id", "timestamp", "device_type", "suggested_area"}
+        }
+
+        return cls(
+            entity_id=entity_id,
+            state=state_data,
+            device_type=device_type,
+            suggested_area=suggested_area,
+        )
+
+
+class SystemSettings(Base):
+    """
+    System-level mutable configuration settings stored in database.
+
+    Used for settings that need to persist across restarts but can be
+    modified by the system (not user-editable in UI).
+    """
+
+    __tablename__ = "system_settings"
+
+    key: Mapped[str] = mapped_column(
+        String(255),
+        primary_key=True,
+        comment="Setting key (e.g., 'active_coach_model', 'user_patches_file')",
+    )
+
+    value: Mapped[str] = mapped_column(
+        String(4000), nullable=False, comment="Setting value (stored as string, parsed as needed)"
+    )
+
+    last_modified: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        comment="Last modification timestamp",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="Human-readable description of the setting"
+    )
+
+
+class UserSettings(Base):
+    """
+    User preferences and cosmetic settings stored in database.
+
+    Used for user-customizable preferences that don't affect system behavior
+    but enhance the user experience.
+    """
+
+    __tablename__ = "user_settings"
+
+    key: Mapped[str] = mapped_column(
+        String(255),
+        primary_key=True,
+        comment="Setting key (e.g., 'entity.light.living_room.display_name')",
+    )
+
+    value: Mapped[str] = mapped_column(
+        String(4000), nullable=False, comment="Setting value (stored as string, parsed as needed)"
+    )
+
+    last_modified: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        comment="Last modification timestamp",
+    )
+
+    category: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Setting category for grouping (ui, entity, dashboard, etc.)",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="Human-readable description of the setting"
     )

@@ -11,23 +11,17 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 class ReaderProtocol(Protocol):
     """Protocol for the systemd.journal.Reader class."""
 
-    def log_level(self, level: int) -> None:
-        ...
+    def log_level(self, level: int) -> None: ...
 
-    def seek_realtime(self, dt: datetime.datetime) -> None:
-        ...
+    def seek_realtime(self, dt: datetime.datetime) -> None: ...
 
-    def add_match(self, **kwargs: Any) -> None:
-        ...
+    def add_match(self, **kwargs: Any) -> None: ...
 
-    def seek_cursor(self, cursor: str) -> None:
-        ...
+    def seek_cursor(self, cursor: str) -> None: ...
 
-    def __iter__(self) -> "ReaderProtocol":
-        ...
+    def __iter__(self) -> "ReaderProtocol": ...
 
-    def __next__(self) -> dict[str, Any]:
-        ...
+    def __next__(self) -> dict[str, Any]: ...
 
 
 class JournalModuleProtocol(Protocol):
@@ -89,7 +83,8 @@ def query_journald_logs(
         Dict with 'entries' (list of logs), 'next_cursor', and 'has_more'.
     """
     if not is_journald_available():
-        raise RuntimeError("systemd.journal is not available on this system.")
+        msg = "systemd.journal is not available on this system."
+        raise RuntimeError(msg)
 
     if systemd is not None and hasattr(systemd, "journal"):
         j = systemd.journal.Reader()
@@ -134,5 +129,5 @@ def query_journald_logs(
                 break
         has_more = next_cursor is not None
         return {"entries": entries, "next_cursor": next_cursor, "has_more": has_more}
-    else:
-        raise RuntimeError("systemd.journal is not available or improperly configured.")
+    msg = "systemd.journal is not available or improperly configured."
+    raise RuntimeError(msg)

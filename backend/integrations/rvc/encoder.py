@@ -30,7 +30,6 @@ class CANMessage:
 class EncodingError(Exception):
     """Raised when encoding fails."""
 
-    pass
 
 
 class RVCEncoder:
@@ -88,7 +87,8 @@ class RVCEncoder:
         except Exception as e:
             logger.error(f"Failed to load RVC encoder configuration: {e}")
             self._config_loaded = False
-            raise EncodingError(f"Configuration loading failed: {e}") from e
+            msg = f"Configuration loading failed: {e}"
+            raise EncodingError(msg) from e
 
     def is_ready(self) -> bool:
         """Check if the encoder is ready to encode commands."""
@@ -109,11 +109,13 @@ class RVCEncoder:
             EncodingError: If encoding fails
         """
         if not self.is_ready():
-            raise EncodingError("Encoder not ready - configuration not loaded")
+            msg = "Encoder not ready - configuration not loaded"
+            raise EncodingError(msg)
 
         # Look up entity in configuration
         if entity_id not in self.inst_map:
-            raise EncodingError(f"Unknown entity ID: {entity_id}")
+            msg = f"Unknown entity ID: {entity_id}"
+            raise EncodingError(msg)
 
         entity_config = self.inst_map[entity_id]
         dgn_hex = entity_config["dgn_hex"]
@@ -122,14 +124,16 @@ class RVCEncoder:
         # Get the device configuration for this entity
         device_key = (dgn_hex, str(instance))
         if device_key not in self.entity_map:
-            raise EncodingError(f"No device mapping found for entity {entity_id}")
+            msg = f"No device mapping found for entity {entity_id}"
+            raise EncodingError(msg)
 
         device_config = self.entity_map[device_key]
 
         # Determine command DGN based on the dgn_pairs mapping
         command_dgn_hex = self._get_command_dgn(dgn_hex)
         if not command_dgn_hex:
-            raise EncodingError(f"No command DGN found for status DGN {dgn_hex}")
+            msg = f"No command DGN found for status DGN {dgn_hex}"
+            raise EncodingError(msg)
 
         # Get the DGN specification for encoding
         command_dgn_int = int(command_dgn_hex, 16)
@@ -144,7 +148,8 @@ class RVCEncoder:
                 break
 
         if not command_spec:
-            raise EncodingError(f"No specification found for command DGN {command_dgn_hex}")
+            msg = f"No specification found for command DGN {command_dgn_hex}"
+            raise EncodingError(msg)
 
         # Encode the command based on device type and command
         return self._encode_command_payload(command_spec, command, device_config, instance)
@@ -361,9 +366,8 @@ class RVCEncoder:
 
         # Build 29-bit CAN ID
         # Format: [Priority(3)] [Reserved(1)] [Data Page(1)] [PDU Format(8)] [PDU Specific(8)] [Source Address(8)]
-        can_id = (priority << 26) | (pgn << 8) | source_addr
+        return (priority << 26) | (pgn << 8) | source_addr
 
-        return can_id
 
     def validate_command(self, entity_id: str, command: ControlCommand) -> tuple[bool, str]:
         """

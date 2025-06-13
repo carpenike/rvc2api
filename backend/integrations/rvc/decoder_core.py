@@ -6,6 +6,7 @@ for RV-C messages based on the specification.
 """
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,26 @@ logger = logging.getLogger(__name__)
 class DecodingError(Exception):
     """Raised when decoding fails."""
 
-    pass
+
+@dataclass
+class DecodeError:
+    """Structured error information for decode failures."""
+
+    error_type: str
+    message: str
+    signal_name: str
+    raw_data: bytes
+
+
+@dataclass
+class DecodedValue:
+    """Successfully decoded value with metadata."""
+
+    value: int | float | str | bool
+    unit: str | None = None
+    valid: bool = True
+    raw_value: int | None = None
+
 
 
 def get_bits(data_bytes: bytes, start_bit: int, length: int) -> int:
@@ -34,20 +54,26 @@ def get_bits(data_bytes: bytes, start_bit: int, length: int) -> int:
     """
     # Validate inputs
     if not data_bytes:
-        raise DecodingError("Empty data bytes")
+        msg = "Empty data bytes"
+        raise DecodingError(msg)
 
     total_bits = len(data_bytes) * 8
 
     if start_bit < 0:
-        raise DecodingError(f"Invalid start_bit: {start_bit} (must be >= 0)")
+        msg = f"Invalid start_bit: {start_bit} (must be >= 0)"
+        raise DecodingError(msg)
 
     if length <= 0:
-        raise DecodingError(f"Invalid length: {length} (must be > 0)")
+        msg = f"Invalid length: {length} (must be > 0)"
+        raise DecodingError(msg)
 
     if start_bit + length > total_bits:
-        raise DecodingError(
+        msg = (
             f"Bit range {start_bit}:{start_bit + length} exceeds data size "
             f"({total_bits} bits available)"
+        )
+        raise DecodingError(
+            msg
         )
 
     # For very long fields (> 64 bits), we need special handling
@@ -64,7 +90,7 @@ def get_bits(data_bytes: bytes, start_bit: int, length: int) -> int:
     return (raw_int >> start_bit) & mask
 
 
-def decode_signal(signal: dict[str, Any], data_bytes: bytes) -> tuple[Any, int]:
+def decode_signal(signal: dict[str, Any], data_bytes: bytes) -> DecodedValue | DecodeError:
     """
     Decode a single signal from CAN data.
 
@@ -73,11 +99,10 @@ def decode_signal(signal: dict[str, Any], data_bytes: bytes) -> tuple[Any, int]:
         data_bytes: The CAN data bytes
 
     Returns:
-        Tuple of (decoded_value, raw_value)
-
-    Raises:
-        DecodingError: If decoding fails
+        DecodedValue on success or DecodeError on failure
     """
+    signal_name = signal.get("name", "unknown")
+
     try:
         # Extract raw bits
         start_bit = signal.get("start_bit", 0)
@@ -91,44 +116,44 @@ def decode_signal(signal: dict[str, Any], data_bytes: bytes) -> tuple[Any, int]:
         # Calculate physical value
         physical_value = raw_value * scale + offset
 
+        # Get unit
+        unit = signal.get("unit")
+
         # Handle enumerated values
         if "enum" in signal:
             enum_map = signal["enum"]
             # Try to find the enumerated string
             enum_str = enum_map.get(str(raw_value))
             if enum_str is not None:
-                return enum_str, raw_value
-            else:
-                # Return unknown enum value
-                return f"UNKNOWN ({raw_value})", raw_value
+                return DecodedValue(value=enum_str, unit=unit, raw_value=raw_value)
+            # Return unknown enum value
+            return DecodedValue(
+                value=f"UNKNOWN ({raw_value})",
+                unit=unit,
+                valid=False,
+                raw_value=raw_value
+            )
 
-        # Format based on data type
-        unit = signal.get("unit", "")
+        # Determine the appropriate value type
+        if scale != 1 or offset != 0:
+            # This is a scaled value - return as float
+            return DecodedValue(value=physical_value, unit=unit, raw_value=raw_value)
+        # Integer value
+        return DecodedValue(value=int(physical_value), unit=unit, raw_value=raw_value)
 
-        # Check if this should be an integer or float
-        if scale != 1 or offset != 0 or isinstance(physical_value, float):
-            # Format as float with appropriate precision
-            if abs(physical_value) < 0.01 and physical_value != 0:
-                # Very small numbers - use scientific notation
-                formatted = f"{physical_value:.2e}{unit}"
-            else:
-                # Normal range - use fixed decimal
-                formatted = f"{physical_value:.2f}{unit}"
-        else:
-            # Integer value
-            formatted = f"{int(physical_value)}{unit}"
-
-        return formatted, raw_value
-
+    except ValueError as e:
+        return DecodeError("VALUE_ERROR", str(e), signal_name, data_bytes)
+    except KeyError as e:
+        return DecodeError("SPEC_ERROR", f"Missing spec field: {e}", signal_name, data_bytes)
+    except DecodingError as e:
+        return DecodeError("DECODING_ERROR", str(e), signal_name, data_bytes)
     except Exception as e:
-        raise DecodingError(
-            f"Failed to decode signal '{signal.get('name', 'unknown')}': {e}"
-        ) from e
+        return DecodeError("UNKNOWN_ERROR", str(e), signal_name, data_bytes)
 
 
 def decode_payload(
     entry: dict[str, Any], data_bytes: bytes
-) -> tuple[dict[str, str], dict[str, int]]:
+) -> tuple[dict[str, DecodedValue | DecodeError], list[DecodeError]]:
     """
     Decode all signals in a spec entry.
 
@@ -138,39 +163,34 @@ def decode_payload(
 
     Returns:
         Tuple of:
-            - decoded: Dictionary of signal names to human-readable strings
-            - raw_values: Dictionary of signal names to raw integer values
-
-    Raises:
-        DecodingError: If decoding fails
+            - results: Dictionary of signal names to DecodedValue or DecodeError
+            - errors: List of all DecodeError instances for failed signals
     """
-    decoded = {}
-    raw_values = {}
+    results = {}
+    errors = []
 
     signals = entry.get("signals", [])
     if not signals:
         logger.warning(f"No signals defined for PGN {entry.get('pgn', 'unknown')}")
-        return decoded, raw_values
+        return results, errors
 
     for signal in signals:
         signal_name = signal.get("name", "unknown")
 
-        try:
-            decoded_value, raw_value = decode_signal(signal, data_bytes)
-            decoded[signal_name] = decoded_value
-            raw_values[signal_name] = raw_value
+        decode_result = decode_signal(signal, data_bytes)
+        results[signal_name] = decode_result
 
-        except DecodingError as e:
-            logger.error(f"Failed to decode signal '{signal_name}': {e}")
-            # Continue with other signals
-            decoded[signal_name] = "ERROR"
-            raw_values[signal_name] = 0
-        except Exception as e:
-            logger.error(f"Unexpected error decoding signal '{signal_name}': {e}")
-            decoded[signal_name] = "ERROR"
-            raw_values[signal_name] = 0
+        # Collect errors for reporting
+        if isinstance(decode_result, DecodeError):
+            errors.append(decode_result)
+            logger.error(
+                "Failed to decode signal '%s': %s - %s",
+                signal_name,
+                decode_result.error_type,
+                decode_result.message,
+            )
 
-    return decoded, raw_values
+    return results, errors
 
 
 def decode_string_payload(data_bytes: bytes, encoding: str = "utf-8") -> str:

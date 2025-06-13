@@ -344,12 +344,11 @@ class SecurityManager:
         # Common RV-C PGN classifications
         if pgn in range(0x1FEF0, 0x1FEF8):  # Command ranges
             return "control"
-        elif pgn in range(0x1FFB0, 0x1FFC0):  # Status ranges
+        if pgn in range(0x1FFB0, 0x1FFC0):  # Status ranges
             return "status"
-        elif pgn in range(0x1FEC0, 0x1FED0):  # Diagnostic ranges
+        if pgn in range(0x1FEC0, 0x1FED0):  # Diagnostic ranges
             return "diagnostic"
-        else:
-            return "default"
+        return "default"
 
     def _record_anomaly(
         self,
@@ -494,8 +493,7 @@ class SecurityManager:
                 stats = self._source_stats[source_address].copy()
                 stats["dgns_seen"] = list(stats["dgns_seen"])  # Convert set to list
                 return {f"{source_address:02X}": stats}
-            else:
-                return {}
+            return {}
 
         # Return all source statistics
         result = {}

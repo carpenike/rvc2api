@@ -337,8 +337,7 @@ class TrendAnalyzer:
             # High volatility indicates volatile trend
             if mean_value > 0 and std_dev / mean_value > 0.5:  # Coefficient of variation > 50%
                 return TrendDirection.VOLATILE
-            else:
-                return TrendDirection.STABLE
+            return TrendDirection.STABLE
 
         # Classify based on slope
         slope_threshold = std_dev * 0.1  # 10% of std dev as threshold
@@ -349,14 +348,13 @@ class TrendAnalyzer:
                 if self._is_improvement_positive(slope)
                 else TrendDirection.DEGRADING
             )
-        elif slope < -slope_threshold:
+        if slope < -slope_threshold:
             return (
                 TrendDirection.DEGRADING
                 if self._is_improvement_positive(slope)
                 else TrendDirection.IMPROVING
             )
-        else:
-            return TrendDirection.STABLE
+        return TrendDirection.STABLE
 
     def _is_improvement_positive(self, slope: float) -> bool:
         """
@@ -438,7 +436,7 @@ class TrendAnalyzer:
         current_time = time.time()
         cutoff_time = current_time - (self._trend_window_seconds * 2)  # Keep 2x window
 
-        for _, data_points in self._trend_data.items():
+        for data_points in self._trend_data.values():
             # Remove old data points
             while data_points and data_points[0][0] < cutoff_time:
                 data_points.popleft()

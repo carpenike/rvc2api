@@ -8,6 +8,7 @@ single entity registry that serves as the source of truth.
 
 import logging
 import time
+from collections.abc import Callable
 from typing import Any
 
 from backend.models.entity_model import Entity, EntityConfig
@@ -35,6 +36,9 @@ class EntityManager:
         # Protocol-specific tracking
         self.protocol_entities: dict[str, set[str]] = {}  # protocol -> entity_ids
         self.physical_id_map: dict[str, str] = {}  # physical_id -> entity_id
+
+        # State change listeners for observer pattern
+        self._state_change_listeners: list[Callable[[str], None]] = []
 
     def register_entity(
         self, entity_id: str, config: EntityConfig, protocol: str = "rvc"
@@ -211,7 +215,7 @@ class EntityManager:
 
     def update_entity_state(self, entity_id: str, new_state: dict[str, Any]) -> Entity | None:
         """
-        Update an entity's state.
+        Update an entity's state and notify observers.
 
         Args:
             entity_id: ID of the entity to update
@@ -223,6 +227,8 @@ class EntityManager:
         entity = self.get_entity(entity_id)
         if entity:
             entity.update_state(new_state)
+            # Notify state change listeners
+            self._notify_state_change(entity_id)
             return entity
         return None
 
@@ -302,3 +308,39 @@ class EntityManager:
             Dictionary of entity_id to state dictionary
         """
         return {entity_id: entity.to_dict() for entity_id, entity in self.entities.items()}
+
+    def register_state_change_listener(self, listener: Callable[[str], None]) -> None:
+        """
+        Register a listener for entity state changes.
+
+        Args:
+            listener: Function to call when an entity's state changes.
+                     Takes entity_id as parameter.
+        """
+        if listener not in self._state_change_listeners:
+            self._state_change_listeners.append(listener)
+            logger.debug(f"Registered state change listener: {listener}")
+
+    def unregister_state_change_listener(self, listener: Callable[[str], None]) -> None:
+        """
+        Unregister a state change listener.
+
+        Args:
+            listener: Function to remove from listeners list
+        """
+        if listener in self._state_change_listeners:
+            self._state_change_listeners.remove(listener)
+            logger.debug(f"Unregistered state change listener: {listener}")
+
+    def _notify_state_change(self, entity_id: str) -> None:
+        """
+        Notify all registered listeners of an entity state change.
+
+        Args:
+            entity_id: ID of the entity whose state changed
+        """
+        for listener in self._state_change_listeners:
+            try:
+                listener(entity_id)
+            except Exception as e:
+                logger.error(f"Error in state change listener {listener}: {e}", exc_info=True)

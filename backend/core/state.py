@@ -112,7 +112,6 @@ class AppState(Feature):
         except Exception as e:
             logger.error(f"Failed to load entity configuration during startup: {e}")
             # Don't fail startup completely, but log the error
-            pass
 
     async def shutdown(self) -> None:
         """Clean up resources on shutdown."""
@@ -337,7 +336,7 @@ class AppState(Feature):
         # entity_map is keyed by (dgn_hex, instance) tuples, but EntityManager expects
         # entity configs keyed by entity_id strings
         entity_configs: dict[str, EntityConfig] = {}
-        for (_dgn_hex, _instance), entity_dict in entity_map_val.items():
+        for entity_dict in entity_map_val.values():
             if isinstance(entity_dict, dict) and "entity_id" in entity_dict:
                 entity_id = entity_dict["entity_id"]
                 # Use the dictionary directly as it's already compatible with EntityConfig
@@ -368,7 +367,6 @@ class AppState(Feature):
         with contextlib.suppress(Exception):
             logger.debug("Network map update notification requested")
             # TODO: Implement network map WebSocket notification logic here
-            pass
 
     def get_controller_source_addr(self) -> int:
         """Returns the controller's source address."""
@@ -522,5 +520,4 @@ def get_entity_history(entity_id, count=None) -> list:
     if not entity:
         return []
 
-    history_data = [state.model_dump() for state in entity.get_history(count=count)]
-    return history_data
+    return [state.model_dump() for state in entity.get_history(count=count)]

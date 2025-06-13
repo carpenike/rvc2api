@@ -83,21 +83,24 @@ class SQLitePersistenceService(PersistenceServiceInterface):
     def config_repo(self) -> ConfigRepositoryInterface:
         """Get the configuration repository."""
         if self._config_repo is None:
-            raise RuntimeError("Persistence service not initialized")
+            msg = "Persistence service not initialized"
+            raise RuntimeError(msg)
         return self._config_repo
 
     @property
     def dashboard_repo(self) -> DashboardRepositoryInterface:
         """Get the dashboard repository."""
         if self._dashboard_repo is None:
-            raise RuntimeError("Persistence service not initialized")
+            msg = "Persistence service not initialized"
+            raise RuntimeError(msg)
         return self._dashboard_repo
 
     @property
     def unmapped_repo(self) -> UnmappedRepositoryInterface:
         """Get the unmapped repository."""
         if self._unmapped_repo is None:
-            raise RuntimeError("Persistence service not initialized")
+            msg = "Persistence service not initialized"
+            raise RuntimeError(msg)
         return self._unmapped_repo
 
 
@@ -171,7 +174,6 @@ class SQLiteUnmappedRepository(UnmappedRepositoryInterface):
     async def save_unmapped_pgn(self, pgn: UnmappedEntryModel) -> None:
         """Save an unmapped PGN."""
         # Note: This would require creating a new repository for unmapped PGNs
-        pass
 
     async def delete_unmapped_pgn(self, pgn: int) -> bool:
         """Delete an unmapped PGN."""

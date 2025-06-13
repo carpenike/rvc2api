@@ -85,6 +85,9 @@ class User(Base):
     auth_events: Mapped[list["AuthEvent"]] = relationship(
         "AuthEvent", back_populates="user", cascade="all, delete-orphan"
     )
+    mfa: Mapped["UserMFA | None"] = relationship(
+        "UserMFA", back_populates="user", cascade="all, delete-orphan", uselist=False
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email}, role={self.role})>"
@@ -277,6 +280,76 @@ class AuthEvent(Base):
 
     def __repr__(self) -> str:
         return f"<AuthEvent(id={self.id}, type={self.event_type}, success={self.success})>"
+
+
+class UserMFA(Base):
+    """Multi-Factor Authentication settings for users."""
+
+    __tablename__ = "user_mfa"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=False, index=True, unique=True
+    )
+
+    # TOTP settings
+    totp_secret: Mapped[str] = mapped_column(String(255), nullable=False)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # MFA status
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    backup_codes_generated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Recovery codes (JSON array of strings)
+    recovery_codes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+    # Audit fields
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    user: Mapped[User] = relationship("User", back_populates="mfa")
+    backup_codes: Mapped[list["UserMFABackupCode"]] = relationship(
+        "UserMFABackupCode", back_populates="user_mfa", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserMFA(id={self.id}, user_id={self.user_id}, enabled={self.is_enabled})>"
+
+
+class UserMFABackupCode(Base):
+    """Backup codes for MFA recovery."""
+
+    __tablename__ = "user_mfa_backup_codes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_mfa_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("user_mfa.id"), nullable=False, index=True
+    )
+
+    # Backup code data
+    code_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Audit fields
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    user_mfa: Mapped[UserMFA] = relationship("UserMFA", back_populates="backup_codes")
+
+    def __repr__(self) -> str:
+        return f"<UserMFABackupCode(id={self.id}, used={self.is_used})>"
 
 
 class AdminSettings(Base):

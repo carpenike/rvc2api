@@ -52,35 +52,28 @@ class PersistenceFeature(Feature):
             # Load settings to determine persistence mode
             settings = get_settings()
             persistence_settings = get_persistence_settings()
-            self._persistence_enabled = persistence_settings.enabled
+            # MANDATORY PERSISTENCE: Always enabled in new architecture
+            self._persistence_enabled = True
 
-            # Use dependency injection to select implementation
-            if self._persistence_enabled:
-                # Use SQLite persistence
-                if settings.is_development():
-                    # Development-friendly path
-                    db_path = "backend/data/persistent/database/coachiq.db"
-                    # Ensure directory exists
-                    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-                else:
-                    # Production path
-                    db_path = str(persistence_settings.get_database_dir() / "coachiq.db")
-                    # Ensure directory exists
-                    persistence_settings.ensure_directories()
-
-                logger.info(f"Initializing SQLite persistence with database: {db_path}")
-                self._service = SQLitePersistenceService(db_path)
+            # Use SQLite persistence (mandatory)
+            if settings.is_development():
+                # Development-friendly path
+                db_path = "backend/data/persistent/database/coachiq.db"
+                # Ensure directory exists
+                Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             else:
-                # Use in-memory persistence
-                logger.info("Initializing in-memory persistence (no database persistence)")
-                self._service = InMemoryPersistenceService()
+                # Production path
+                db_path = str(persistence_settings.get_database_dir() / "coachiq.db")
+                # Ensure directory exists
+                persistence_settings.ensure_directories()
+
+            logger.info(f"Initializing mandatory SQLite persistence with database: {db_path}")
+            self._service = SQLitePersistenceService(db_path)
 
             # Initialize the service
             await self._service.initialize()
 
-            logger.info(
-                f"Persistence feature started successfully in {'SQLite' if self._persistence_enabled else 'in-memory'} mode"
-            )
+            logger.info("Persistence feature started successfully in mandatory SQLite mode")
 
         except Exception as e:
             self._initialization_error = f"Persistence feature startup failed: {e}"
@@ -131,10 +124,12 @@ class PersistenceFeature(Feature):
             RuntimeError: If the service is not initialized
         """
         if not self.enabled:
-            raise RuntimeError("Persistence feature is disabled")
+            msg = "Persistence feature is disabled"
+            raise RuntimeError(msg)
 
         if not self._service:
-            raise RuntimeError("Persistence service not initialized")
+            msg = "Persistence service not initialized"
+            raise RuntimeError(msg)
 
         return self._service
 
@@ -205,7 +200,8 @@ def get_persistence_feature() -> PersistenceFeature:
     """
     global _persistence_feature
     if _persistence_feature is None:
-        raise RuntimeError("Persistence feature not initialized")
+        msg = "Persistence feature not initialized"
+        raise RuntimeError(msg)
     return _persistence_feature
 
 

@@ -152,7 +152,7 @@ class CoachMappingService:
                     "F",
                 )
             ):
-                for _instance_id, devices in instances.items():
+                for devices in instances.values():
                     if isinstance(devices, list):
                         device_count += len(devices)
                         for device in devices:

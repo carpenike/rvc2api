@@ -185,7 +185,7 @@ def load_config_data(
     unique_instances = {}
 
     for dgn_hex, instance_dict in device_mapping.items():
-        if dgn_hex.startswith("#") or dgn_hex.startswith("_"):
+        if dgn_hex.startswith(("#", "_")):
             # Skip comment lines
             continue
 

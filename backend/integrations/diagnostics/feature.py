@@ -139,8 +139,7 @@ class AdvancedDiagnosticsFeature(Feature):
 
         if self.is_healthy():
             return "healthy"
-        else:
-            return "unhealthy"
+        return "unhealthy"
 
     def get_status(self) -> dict[str, Any]:
         """Get comprehensive status of the advanced diagnostics feature."""
@@ -284,8 +283,7 @@ class AdvancedDiagnosticsFeature(Feature):
             if system_type:
                 system_type_enum = self._parse_system_type(system_type)
                 return self.handler.get_system_health(system_type_enum)
-            else:
-                return self.handler.get_system_health()
+            return self.handler.get_system_health()
 
         except Exception as e:
             logger.error(f"Error getting system health for {system_type}: {e}")

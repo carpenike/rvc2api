@@ -41,7 +41,7 @@ def register_rvc_feature(
     logger.info(f"Registering RVC feature: {name} (enabled={enabled}, core={core})")
 
     # Create the RVC feature with the provided configuration
-    rvc_feature = RVCFeature(
+    return RVCFeature(
         name=name,
         enabled=enabled,
         core=core,
@@ -49,5 +49,3 @@ def register_rvc_feature(
         dependencies=dependencies,
         friendly_name=friendly_name,
     )
-
-    return rvc_feature

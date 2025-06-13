@@ -44,7 +44,8 @@ class CANInterfaceService:
         if logical_name in self._interface_mappings:
             return self._interface_mappings[logical_name]
 
-        raise ValueError(f"Unknown logical CAN interface: {logical_name}")
+        msg = f"Unknown logical CAN interface: {logical_name}"
+        raise ValueError(msg)
 
     def get_all_mappings(self) -> dict[str, str]:
         """Get all current interface mappings."""
@@ -65,7 +66,7 @@ class CANInterfaceService:
             issues.append("Duplicate physical interfaces detected")
 
         # Validate physical interface names
-        for _logical, physical in mappings.items():
+        for physical in mappings.values():
             if not physical.startswith(("can", "vcan")):
                 issues.append(f"Invalid physical interface: {physical}")
 

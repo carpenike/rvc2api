@@ -479,7 +479,7 @@ class AnalyticsDashboardService:
             "key_insights": [],
         }
 
-        for _metric_name, trend_data in metrics.items():
+        for trend_data in metrics.values():
             direction = trend_data.get("trend_direction", "stable")
             if direction == "up":
                 summary["trending_up"] += 1

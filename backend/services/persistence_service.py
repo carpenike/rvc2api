@@ -67,7 +67,8 @@ class PersistenceService:
     @property
     def enabled(self) -> bool:
         """Check if persistence is enabled."""
-        return self._settings.enabled
+        # MANDATORY PERSISTENCE: Always enabled in new architecture
+        return True
 
     @property
     def data_dir(self) -> Path:

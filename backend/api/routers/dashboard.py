@@ -324,9 +324,8 @@ async def acknowledge_alert(
                 "alert_id": alert_id,
                 "acknowledged_at": datetime.now().isoformat(),
             }
-        else:
-            logger.warning(f"Alert {alert_id} not found or already acknowledged")
-            raise HTTPException(status_code=404, detail="Alert not found or already acknowledged")
+        logger.warning(f"Alert {alert_id} not found or already acknowledged")
+        raise HTTPException(status_code=404, detail="Alert not found or already acknowledged")
 
     except HTTPException:
         raise

@@ -169,12 +169,14 @@ class FeatureManager:
 
         def visit(node: str) -> None:
             if node in temp:
-                raise ValueError(f"Cyclic dependency detected at '{node}'")
+                msg = f"Cyclic dependency detected at '{node}'"
+                raise ValueError(msg)
             if node not in visited:
                 temp.add(node)
                 for dep in graph.get(node, []):
                     if dep not in self._features:
-                        raise ValueError(f"Missing dependency '{dep}' for feature '{node}'")
+                        msg = f"Missing dependency '{dep}' for feature '{node}'"
+                        raise ValueError(msg)
                     visit(dep)
                 temp.remove(node)
                 visited.add(node)
@@ -189,16 +191,52 @@ class FeatureManager:
         Start all enabled features in dependency order.
 
         Resolves feature dependencies and starts each enabled feature in the correct order.
+        Implements mandatory persistence validation - persistence must start successfully.
         """
         logger.info("Starting features...")
         try:
             order = self._resolve_dependencies()
+            persistence_started = False
+
             for name in order:
                 feature = self._features[name]
                 if getattr(feature, "enabled", False):
                     logger.info(f"Starting feature: {name}")
-                    if hasattr(feature, "startup"):
-                        await feature.startup()
+
+                    try:
+                        if hasattr(feature, "startup"):
+                            await feature.startup()
+
+                        # Validate persistence feature started successfully
+                        if name == "persistence":
+                            persistence_started = True
+                            # Verify persistence feature is healthy
+                            if hasattr(feature, "health") and feature.health != "healthy":
+                                msg = f"Persistence feature health check failed: {feature.health}"
+                                raise RuntimeError(
+                                    msg
+                                )
+                            logger.info("✅ Mandatory persistence feature started successfully")
+
+                    except Exception as e:
+                        # Persistence failures are critical - fail fast
+                        if name == "persistence":
+                            logger.error(f"❌ CRITICAL: Persistence feature startup failed: {e}")
+                            msg = f"Mandatory persistence feature failed to start: {e}"
+                            raise RuntimeError(
+                                msg
+                            ) from e
+                        # Other feature failures are logged but don't stop startup
+                        logger.error(f"Feature {name} startup failed: {e}")
+                        feature.enabled = False  # Disable failed feature
+
+            # Ensure persistence feature was found and started
+            if "persistence" in self._features and not persistence_started:
+                msg = "Persistence feature was not started - this is required for the application to function"
+                raise RuntimeError(
+                    msg
+                )
+
         except ValueError as e:
             logger.error(f"Feature startup error: {e}")
             raise
@@ -290,6 +328,14 @@ class FeatureManager:
         logger.info("Reloading feature states from configuration")
 
         for feature_name, feature in self._features.items():
+            # MANDATORY PERSISTENCE: Force persistence feature to be enabled
+            if feature_name == "persistence":
+                if not feature.enabled:
+                    logger.info(
+                        "Forcing persistence feature to enabled=true (mandatory in current architecture)"
+                    )
+                    feature.enabled = True
+                continue
             # First check for new standardized environment variable pattern (COACHIQ_FEATURES__*)
             standardized_env_var = f"COACHIQ_FEATURES__ENABLE_{feature_name.upper()}"
             standardized_env_value = os.getenv(standardized_env_var)
@@ -321,6 +367,13 @@ class FeatureManager:
                     "log_streaming": "enable_metrics",  # approximate mapping
                     "api_docs": "enable_api_docs",
                     "websocket": "enable_metrics",  # core feature, use metrics as proxy
+                    # Domain API v2 Features
+                    "domain_api_v2": "domain_api_v2",
+                    "entities_api_v2": "entities_api_v2",
+                    "diagnostics_api_v2": "diagnostics_api_v2",
+                    "analytics_api_v2": "analytics_api_v2",
+                    "networks_api_v2": "networks_api_v2",
+                    "system_api_v2": "system_api_v2",
                 }
 
                 settings_attr = feature_mapping.get(feature_name)
@@ -355,9 +408,13 @@ def _create_entity_manager_feature(**kwargs):
 # Register Persistence factory
 def _create_persistence_feature(**kwargs):
     """Factory function for PersistenceFeature."""
-    from backend.core.persistence_feature import PersistenceFeature
+    from backend.core.persistence_feature import initialize_persistence_feature
 
-    return PersistenceFeature(**kwargs)
+    # Extract config from kwargs for singleton initialization
+    config = kwargs.get("config", {})
+
+    # Initialize the singleton and return it
+    return initialize_persistence_feature(config=config)
 
 
 FeatureManager.register_feature_factory("entity_manager", _create_entity_manager_feature)

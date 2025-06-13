@@ -116,17 +116,20 @@ class CANService:
         """
         # Validate arbitration ID
         if not (0 <= arbitration_id <= 0x1FFFFFFF):
-            raise ValueError(f"Invalid arbitration ID: {arbitration_id}")
+            msg = f"Invalid arbitration ID: {arbitration_id}"
+            raise ValueError(msg)
 
         # Validate data length
         if len(data) > 8:
-            raise ValueError(f"CAN data too long: {len(data)} bytes (max 8)")
+            msg = f"CAN data too long: {len(data)} bytes (max 8)"
+            raise ValueError(msg)
 
         # Validate interface exists
         if interface not in buses:
             available_interfaces = list(buses.keys())
+            msg = f"Interface '{interface}' not found. Available interfaces: {available_interfaces}"
             raise ValueError(
-                f"Interface '{interface}' not found. Available interfaces: {available_interfaces}"
+                msg
             )
 
         # Create CAN message
@@ -330,12 +333,14 @@ class CANService:
 
         # Check if we have any active CAN interfaces
         if not buses:
-            raise ConnectionError("No CAN interfaces are configured")
+            msg = "No CAN interfaces are configured"
+            raise ConnectionError(msg)
 
         # Check if any interfaces are actually connected/working
         active_interfaces = [name for name, bus in buses.items() if bus is not None]
         if not active_interfaces:
-            raise ConnectionError("No CAN interfaces are connected or available")
+            msg = "No CAN interfaces are connected or available"
+            raise ConnectionError(msg)
 
         # TODO: Implement actual message storage and retrieval
         # This could involve:

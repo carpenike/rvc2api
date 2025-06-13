@@ -44,7 +44,8 @@ class DocsService:
             RuntimeError: If app instance is not available or schema generation fails
         """
         if not self.app_instance:
-            raise RuntimeError("FastAPI app instance not available for schema generation")
+            msg = "FastAPI app instance not available for schema generation"
+            raise RuntimeError(msg)
 
         try:
             # Get the OpenAPI schema from FastAPI
@@ -52,7 +53,8 @@ class DocsService:
 
             # Handle case where openapi() returns None
             if schema is None:
-                raise RuntimeError("OpenAPI schema generation returned None")
+                msg = "OpenAPI schema generation returned None"
+                raise RuntimeError(msg)
 
             # Add custom metadata if needed
             if "info" in schema:
@@ -63,7 +65,8 @@ class DocsService:
 
         except Exception as e:
             logger.error(f"Failed to generate OpenAPI schema: {e}")
-            raise RuntimeError(f"Failed to generate OpenAPI schema: {e}") from e
+            msg = f"Failed to generate OpenAPI schema: {e}"
+            raise RuntimeError(msg) from e
 
     async def get_api_info(self) -> dict[str, Any]:
         """
@@ -81,7 +84,7 @@ class DocsService:
             endpoint_count = {}
             total_endpoints = 0
 
-            for _path, methods in paths.items():
+            for methods in paths.values():
                 for method in methods:
                     if method.upper() in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
                         endpoint_count[method.upper()] = endpoint_count.get(method.upper(), 0) + 1

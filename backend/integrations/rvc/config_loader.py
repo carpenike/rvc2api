@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 class ConfigValidationError(Exception):
     """Raised when configuration validation fails."""
 
-    pass
 
 
 def validate_spec_entry(entry: dict[str, Any], pgn_name: str) -> None:
@@ -40,26 +39,32 @@ def validate_spec_entry(entry: dict[str, Any], pgn_name: str) -> None:
     required_keys = ["pgn", "signals"]
     for key in required_keys:
         if key not in entry:
+            msg = f"Invalid PGN entry '{pgn_name}': missing required field '{key}'"
             raise ConfigValidationError(
-                f"Invalid PGN entry '{pgn_name}': missing required field '{key}'"
+                msg
             )
 
     # Validate signals
     if not isinstance(entry["signals"], list):
-        raise ConfigValidationError(f"Invalid PGN entry '{pgn_name}': 'signals' must be a list")
+        msg = f"Invalid PGN entry '{pgn_name}': 'signals' must be a list"
+        raise ConfigValidationError(msg)
 
     for i, signal in enumerate(entry["signals"]):
         if not isinstance(signal, dict):
+            msg = f"Invalid signal {i} in PGN '{pgn_name}': signal must be a dictionary"
             raise ConfigValidationError(
-                f"Invalid signal {i} in PGN '{pgn_name}': signal must be a dictionary"
+                msg
             )
 
         signal_required = ["name", "start_bit", "length"]
         for key in signal_required:
             if key not in signal:
-                raise ConfigValidationError(
+                msg = (
                     f"Invalid signal '{signal.get('name', i)}' in PGN '{pgn_name}': "
                     f"missing required field '{key}'"
+                )
+                raise ConfigValidationError(
+                    msg
                 )
 
 
@@ -85,17 +90,21 @@ def load_rvc_spec(spec_path: str) -> dict[str, Any]:
         logger.error(f"RVC spec file not found: {spec_path}")
         raise
     except json.JSONDecodeError as e:
-        raise ConfigValidationError(f"Invalid JSON in RVC spec file: {e}") from e
+        msg = f"Invalid JSON in RVC spec file: {e}"
+        raise ConfigValidationError(msg) from e
     except Exception as e:
         logger.error(f"Failed to load RVC spec: {e}")
-        raise ConfigValidationError(f"Failed to load RVC spec: {e}") from e
+        msg = f"Failed to load RVC spec: {e}"
+        raise ConfigValidationError(msg) from e
 
     # Validate the spec structure
     if "pgns" not in rvc_spec:
-        raise ConfigValidationError("RVC spec missing required 'pgns' field")
+        msg = "RVC spec missing required 'pgns' field"
+        raise ConfigValidationError(msg)
 
     if not isinstance(rvc_spec["pgns"], dict):
-        raise ConfigValidationError("RVC spec 'pgns' field must be a dictionary")
+        msg = "RVC spec 'pgns' field must be a dictionary"
+        raise ConfigValidationError(msg)
 
     # Validate each PGN entry
     for pgn_name, pgn_entry in rvc_spec["pgns"].items():
@@ -129,13 +138,16 @@ def load_device_mapping(mapping_path: str) -> dict[str, Any]:
         logger.error(f"Device mapping file not found: {mapping_path}")
         raise
     except yaml.YAMLError as e:
-        raise ConfigValidationError(f"Invalid YAML in device mapping file: {e}") from e
+        msg = f"Invalid YAML in device mapping file: {e}"
+        raise ConfigValidationError(msg) from e
     except Exception as e:
         logger.error(f"Failed to load device mapping: {e}")
-        raise ConfigValidationError(f"Failed to load device mapping: {e}") from e
+        msg = f"Failed to load device mapping: {e}"
+        raise ConfigValidationError(msg) from e
 
     if not isinstance(device_mapping, dict):
-        raise ConfigValidationError("Device mapping must be a dictionary")
+        msg = "Device mapping must be a dictionary"
+        raise ConfigValidationError(msg)
 
     return device_mapping
 
@@ -159,10 +171,12 @@ def get_default_paths() -> tuple[str, str]:
 
         # Validate that the files exist
         if not spec_path.exists():
-            raise FileNotFoundError(f"RVC spec file not found: {spec_path}")
+            msg = f"RVC spec file not found: {spec_path}"
+            raise FileNotFoundError(msg)
 
         if not coach_mapping_path.exists():
-            raise FileNotFoundError(f"Coach mapping file not found: {coach_mapping_path}")
+            msg = f"Coach mapping file not found: {coach_mapping_path}"
+            raise FileNotFoundError(msg)
 
         logger.debug(f"Using RVC config files - spec: {spec_path}, mapping: {coach_mapping_path}")
         return (str(spec_path), str(coach_mapping_path))
@@ -233,7 +247,8 @@ def select_coach_mapping_file(config_dir: str | pathlib.Path) -> pathlib.Path:
         return default_mapping
 
     # Last resort - raise error if default is not found
-    raise FileNotFoundError(f"Default coach mapping file not found: {default_mapping}")
+    msg = f"Default coach mapping file not found: {default_mapping}"
+    raise FileNotFoundError(msg)
 
 
 def extract_coach_info(device_mapping: dict[str, Any], mapping_path: str) -> CoachInfo:
@@ -265,7 +280,7 @@ def extract_coach_info(device_mapping: dict[str, Any], mapping_path: str) -> Coa
 
     # Try to parse from filename if no explicit metadata
     basename = os.path.basename(mapping_path)
-    if basename.endswith(".yml") or basename.endswith(".yaml"):
+    if basename.endswith((".yml", ".yaml")):
         basename = basename[:-4] if basename.endswith(".yml") else basename[:-5]
 
     # Look for pattern like "2021_Entegra_Aspire_44R"

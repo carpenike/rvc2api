@@ -94,10 +94,9 @@ class MultiNetworkCANFeature(Feature):
 
             if operational_networks == 0:
                 return "failed"  # No operational networks
-            elif operational_networks < len(status["networks"]):
+            if operational_networks < len(status["networks"]):
                 return "degraded"  # Some networks not operational
-            else:
-                return "healthy"  # All networks operational
+            return "healthy"  # All networks operational
 
         except Exception as e:
             logger.error(f"Health check failed for multi-network CAN feature: {e}")

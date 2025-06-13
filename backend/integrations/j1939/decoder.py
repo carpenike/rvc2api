@@ -188,10 +188,9 @@ class J1939Decoder:
         # Default priority based on PGN ranges
         if pgn in self.j1939_config.priority_critical_pgns:
             return MessagePriority.CRITICAL
-        elif pgn in self.j1939_config.priority_high_pgns:
+        if pgn in self.j1939_config.priority_high_pgns:
             return MessagePriority.HIGH
-        else:
-            return MessagePriority.NORMAL
+        return MessagePriority.NORMAL
 
     def get_system_type(self, pgn: int) -> SystemType:
         """
@@ -332,8 +331,9 @@ class J1939Decoder:
             Extracted integer value
         """
         if start_bit + length > len(data) * 8:
+            msg = f"Signal extends beyond data: start={start_bit}, length={length}, data_bits={len(data) * 8}"
             raise ValueError(
-                f"Signal extends beyond data: start={start_bit}, length={length}, data_bits={len(data) * 8}"
+                msg
             )
 
         # Convert bytes to integer for bit manipulation

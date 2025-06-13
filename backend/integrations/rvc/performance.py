@@ -197,17 +197,16 @@ class PriorityMessageHandler:
         # Fallback to range-based classification
         if 0x1FEC0 <= pgn <= 0x1FECF:  # Diagnostic messages
             return MessagePriority.CRITICAL
-        elif 0x1FE00 <= pgn <= 0x1FE5F:  # Engine/transmission
+        if 0x1FE00 <= pgn <= 0x1FE5F:  # Engine/transmission
             return MessagePriority.HIGH
-        elif 0x1FF00 <= pgn <= 0x1FF9F:  # Control commands
+        if 0x1FF00 <= pgn <= 0x1FF9F:  # Control commands
             return MessagePriority.NORMAL
-        elif 0x1FFA0 <= pgn <= 0x1FFEF:  # Status messages
+        if 0x1FFA0 <= pgn <= 0x1FFEF:  # Status messages
             return MessagePriority.LOW
-        elif 0x1FEF0 <= pgn <= 0x1FEFF:  # Configuration/identification
+        if 0x1FEF0 <= pgn <= 0x1FEFF:  # Configuration/identification
             return MessagePriority.BACKGROUND
-        else:
-            # Default to normal priority for unknown messages
-            return MessagePriority.NORMAL
+        # Default to normal priority for unknown messages
+        return MessagePriority.NORMAL
 
     def should_process_immediately(self, dgn: int) -> bool:
         """

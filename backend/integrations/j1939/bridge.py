@@ -400,15 +400,14 @@ class J1939ProtocolBridge:
         if "temperature" in signal_name.lower():
             # Ensure temperature is in Celsius
             return float(value)
-        elif "speed" in signal_name.lower():
+        if "speed" in signal_name.lower():
             # Ensure speed values are properly formatted
             return float(value)
-        elif "pressure" in signal_name.lower():
+        if "pressure" in signal_name.lower():
             # Ensure pressure values are in proper units
             return float(value)
-        elif "status" in signal_name.lower() or "active" in signal_name.lower():
+        if "status" in signal_name.lower() or "active" in signal_name.lower():
             # Convert to boolean for status signals
             return bool(value)
-        else:
-            # Default conversion
-            return value
+        # Default conversion
+        return value
