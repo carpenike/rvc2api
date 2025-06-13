@@ -5,11 +5,15 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import security from "eslint-plugin-security";
+import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   { ignores: ["dist", "vite.config.ts", "vitest.config.ts"] },
+  // Apply SonarJS recommended rules for safety-critical code
+  sonarjs.configs.recommended,
   {
     extends: [
       js.configs.recommended,
@@ -34,6 +38,7 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11y,
       "@tanstack/query": query,
+      "security": security,
     },
     settings: {
       react: {
@@ -65,14 +70,15 @@ export default tseslint.config(
       "jsx-a11y/aria-unsupported-elements": "error",
       "jsx-a11y/role-has-required-aria-props": "error",
       "jsx-a11y/role-supports-aria-props": "error",
-      // Additional TypeScript rules
+      // Additional TypeScript rules (Safety-Critical Enforcement)
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-explicit-any": "error",  // STRICT: No any types in safety-critical code
+      "@typescript-eslint/no-non-null-assertion": "error",  // STRICT: No ! operator - handle nulls explicitly
 
       // Enhanced Type Safety Rules (Safety-Critical Application)
       "@typescript-eslint/no-unnecessary-condition": "warn", // Downgrade from error
@@ -157,6 +163,17 @@ export default tseslint.config(
       "react/no-children-prop": "error",
       "react/jsx-curly-brace-presence": ["error", { "props": "never", "children": "never" }],
       "react/no-unescaped-entities": "warn", // Allow quotes in JSX text
+
+      // Security Rules (Safety-Critical Application)
+      "security/detect-object-injection": "error",
+      "security/detect-non-literal-regexp": "error",
+      "security/detect-non-literal-fs-filename": "error",
+      "security/detect-eval-with-expression": "error",
+      "security/detect-pseudoRandomBytes": "error",
+      "security/detect-possible-timing-attacks": "warn",
+      "security/detect-unsafe-regex": "error",
+
+      // SonarJS Rules (Additional Safety-Critical Logic) - using defaults from recommended config
     },
   },
   {

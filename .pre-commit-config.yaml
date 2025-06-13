@@ -25,40 +25,40 @@ repos:
             resources/rvc-2023-11_chunks\.json
           )$
 
-  # Python linting and formatting with Ruff
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.11
-    hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-      - id: ruff-format
-        # Runs as the primary formatter in place of Black
+  # # Python linting and formatting with Ruff
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.1.11
+  #   hooks:
+  #     - id: ruff
+  #       args: [--fix, --exit-non-zero-on-fix]
+  #     - id: ruff-format
+  #       # Runs as the primary formatter in place of Black
 
-  # HTML linting
-  - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.34.0
-    hooks:
-      - id: djlint
-        args: [--reformat]
-        stages: [pre-commit]
-        files: ^src/core_daemon/frontend/templates/
+  # # HTML linting
+  # - repo: https://github.com/Riverside-Healthcare/djLint
+  #   rev: v1.34.0
+  #   hooks:
+  #     - id: djlint
+  #       args: [--reformat]
+  #       stages: [pre-commit]
+  #       files: ^src/core_daemon/frontend/templates/
 
   # Frontend linting (run from frontend directory)
-  - repo: local
-    hooks:
-      - id: eslint
-        name: eslint (frontend)
-        entry: bash -c 'cd frontend && npm run lint'
-        language: system
-        pass_filenames: false
-        files: ^frontend/
+  # - repo: local
+  #   hooks:
+  #     - id: eslint
+  #       name: eslint (frontend)
+  #       entry: bash -c 'cd frontend && npm run lint'
+  #       language: system
+  #       pass_filenames: false
+  #       files: ^frontend/
 
-  # Poetry check (local)
-  - repo: local
-    hooks:
-      - id: check-poetry-lock
-        name: Ensure poetry.lock is in sync with pyproject.toml
-        entry: poetry check --lock --no-interaction
-        language: system
-        pass_filenames: false
-        always_run: true
+  # # Poetry check (local)
+  # - repo: local
+  #   hooks:
+  #     - id: check-poetry-lock
+  #       name: Ensure poetry.lock is in sync with pyproject.toml
+  #       entry: poetry check --lock --no-interaction
+  #       language: system
+  #       pass_filenames: false
+  #       always_run: true

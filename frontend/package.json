@@ -16,7 +16,12 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "security:audit": "npm audit --audit-level=critical",
+    "security:fix": "npm audit fix",
+    "security:full": "npm audit --audit-level=moderate",
+    "quality:all": "npm run typecheck && npm run lint && npm run security:audit && npm run build",
+    "quality:fix": "npm run lint:fix && npm run security:fix"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -85,6 +90,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-sonarjs": "^3.0.2",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
