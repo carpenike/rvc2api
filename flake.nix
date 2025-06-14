@@ -69,6 +69,49 @@
         python = pkgs.python312;
         pythonPackages = pkgs.python312Packages;
 
+        # Create Python environment with all dependencies for scripts
+        pythonWithDeps = python.withPackages (ps: [
+          ps.coloredlogs
+          ps.fastapi
+          ps.httptools
+          ps.httpx
+          ps.langchain-community
+          ps.langchain-core
+          ps.prometheus_client
+          ps.psutil
+          ps.pydantic
+          ps.pyroute2
+          ps.python-can
+          ps.python-dotenv
+          ps.pyyaml
+          ps.uvicorn
+          ps.watchfiles
+          ps.websockets
+          ps.sqlalchemy
+          ps.aiosqlite
+          ps.asyncpg
+          ps.alembic
+          ps.jinja2
+          ps.pyjwt
+          ps.passlib
+          ps.python-multipart
+          ps.email-validator
+          ps.pyotp
+          ps.qrcode
+          ps.slowapi
+          ps.cachetools
+          ps.numpy
+          ps.scipy
+          ps.scikit-learn
+          ps.pandas
+          ps.cryptography
+          ps.networkx
+        ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
+          ps.uvloop
+        ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+          ps.apprise
+        ]);
+
         # Read version from VERSION file (source of truth)
         version = builtins.replaceStrings ["\n"] [""] (builtins.readFile ./VERSION);
 
@@ -148,10 +191,24 @@
             mkdir -p $out/share/coachiq/config
             cp -r $src/config/* $out/share/coachiq/config/
 
-            # Console scripts are automatically created by buildPythonPackage
-            # from [tool.poetry.scripts] in pyproject.toml:
-            # - coachiq-daemon (from backend.main:main)
-            # - coachiq-validate-config (from backend.core.config:validate_config_cli)
+            # Create wrapper scripts using Python environment with all dependencies
+            mkdir -p $out/bin
+
+            # Main daemon script
+            cat > $out/bin/coachiq-daemon <<EOF
+#!/bin/sh
+export PYTHONPATH="$out/${python.sitePackages}:\$PYTHONPATH"
+exec ${pythonWithDeps}/bin/python -m backend.main "\$@"
+EOF
+            chmod +x $out/bin/coachiq-daemon
+
+            # Config validation script
+            cat > $out/bin/coachiq-validate-config <<EOF
+#!/bin/sh
+export PYTHONPATH="$out/${python.sitePackages}:\$PYTHONPATH"
+exec ${pythonWithDeps}/bin/python -c "from backend.core.config import validate_config_cli; validate_config_cli()"
+EOF
+            chmod +x $out/bin/coachiq-validate-config
 
             # Health check script
             mkdir -p $out/share/coachiq/nix
