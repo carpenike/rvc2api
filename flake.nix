@@ -543,7 +543,7 @@ EOF
             inherit version;
             src = ./frontend;
 
-            npmDepsHash = "sha256-J1RCOo93sO3ekHWZbaG3tDtLx72thStT0gz59s5yygU=";
+            npmDepsHash = "sha256-eY3ikgJDgfpwq2BgiPorWlZdsaiG0wRDtcKagp4T1VM=";
 
             nativeBuildInputs = [
               pkgs.nodejs_20
