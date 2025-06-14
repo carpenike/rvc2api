@@ -191,26 +191,10 @@
             mkdir -p $out/share/coachiq/config
             cp -r $src/config/* $out/share/coachiq/config/
 
-            # Create wrapper scripts using Python environment with all dependencies
-            mkdir -p $out/bin
-
-            # Main daemon script
-            cat > $out/bin/coachiq-daemon <<EOF
-#!/bin/sh
-export PYTHONPATH="$out/${python.sitePackages}"
-# Use the dedicated production server launcher
-# This provides proper configuration handling, logging setup, and SSL support
-exec ${pythonWithDeps}/bin/python $out/${python.sitePackages}/run_server.py
-EOF
-            chmod +x $out/bin/coachiq-daemon
-
-            # Config validation script
-            cat > $out/bin/coachiq-validate-config <<EOF
-#!/bin/sh
-export PYTHONPATH="$out/${python.sitePackages}:\$PYTHONPATH"
-exec ${pythonWithDeps}/bin/python -c "from backend.core.config import validate_config_cli; validate_config_cli()"
-EOF
-            chmod +x $out/bin/coachiq-validate-config
+            # Console scripts are automatically created by buildPythonPackage
+            # from [tool.poetry.scripts] in pyproject.toml:
+            # - coachiq-daemon (from backend.cli:main)
+            # - coachiq-validate-config (from backend.core.config:validate_config_cli)
 
             # Health check script with Nix-compatible shebang
             mkdir -p $out/share/coachiq/nix
