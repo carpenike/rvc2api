@@ -197,8 +197,10 @@
             # Main daemon script
             cat > $out/bin/coachiq-daemon <<EOF
 #!/bin/sh
-export PYTHONPATH="$out/${python.sitePackages}:\$PYTHONPATH"
-exec ${pythonWithDeps}/bin/python -m backend.main "\$@"
+export PYTHONPATH="$out/${python.sitePackages}"
+# Use the dedicated production server launcher
+# This provides proper configuration handling, logging setup, and SSL support
+exec ${pythonWithDeps}/bin/python $out/${python.sitePackages}/run_server.py
 EOF
             chmod +x $out/bin/coachiq-daemon
 
