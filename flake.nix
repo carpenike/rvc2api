@@ -156,11 +156,13 @@
 
             # Main daemon wrapper
             makeWrapper ${python.interpreter} $out/bin/coachiq-daemon \
-              --add-flags "-m uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+              --add-flags "-m uvicorn backend.main:app --host 0.0.0.0 --port 8000" \
+              --set PYTHONPATH "$out/${python.sitePackages}:$PYTHONPATH"
 
             # Config validation wrapper
             makeWrapper ${python.interpreter} $out/bin/coachiq-validate-config \
-              --add-flags "-c 'from backend.core.config import get_settings; print(\"Configuration valid\")'"
+              --add-flags "-c 'from backend.core.config import get_settings; print(\"Configuration valid\")'" \
+              --set PYTHONPATH "$out/${python.sitePackages}:$PYTHONPATH"
 
             # Health check script
             mkdir -p $out/share/coachiq/nix
