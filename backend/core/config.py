@@ -111,7 +111,7 @@ class CORSSettings(BaseSettings):
     enabled: bool = Field(default=True, description="Enable CORS middleware")
     allow_origins: str | list[str] = Field(
         default_factory=lambda: (
-            ["http://localhost:3000", "http://127.0.0.1:3000"]
+            ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"]
             if __import__("os").getenv("COACHIQ_ENVIRONMENT", "development") == "development"
             else []
         ),
@@ -1873,3 +1873,17 @@ def get_api_domain_settings() -> APIDomainSettings:
 
 # Note: Use get_settings() function instead of a global instance
 # to ensure environment variables are read correctly
+
+
+def validate_config_cli():
+    """CLI entry point for validating configuration."""
+    import sys
+
+    try:
+        settings = get_settings()
+        print("Configuration is valid.")
+        print(f"Server will start on {settings.server.host}:{settings.server.port}")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Configuration validation failed: {e}", file=sys.stderr)
+        sys.exit(1)

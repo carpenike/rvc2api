@@ -78,7 +78,7 @@
           src      = self;
           format   = "pyproject";
 
-          nativeBuildInputs = with pythonPackages; [ poetry-core ] ++ [ pkgs.makeWrapper ];
+          nativeBuildInputs = with pythonPackages; [ poetry-core ];
           propagatedBuildInputs = [
             pythonPackages.coloredlogs
             pythonPackages.fastapi
@@ -148,21 +148,10 @@
             mkdir -p $out/share/coachiq/config
             cp -r $src/config/* $out/share/coachiq/config/
 
-            # Create wrapper scripts that will be used by systemd
-            mkdir -p $out/bin
-
-            # Use makeWrapper to create scripts with the correct Python environment
-            # This ensures PYTHONPATH includes all propagatedBuildInputs
-
-            # Main daemon wrapper
-            makeWrapper ${python.interpreter} $out/bin/coachiq-daemon \
-              --add-flags "-m uvicorn backend.main:app --host 0.0.0.0 --port 8000" \
-              --set PYTHONPATH "$out/${python.sitePackages}:$PYTHONPATH"
-
-            # Config validation wrapper
-            makeWrapper ${python.interpreter} $out/bin/coachiq-validate-config \
-              --add-flags "-c 'from backend.core.config import get_settings; print(\"Configuration valid\")'" \
-              --set PYTHONPATH "$out/${python.sitePackages}:$PYTHONPATH"
+            # Console scripts are automatically created by buildPythonPackage
+            # from [tool.poetry.scripts] in pyproject.toml:
+            # - coachiq-daemon (from backend.main:main)
+            # - coachiq-validate-config (from backend.core.config:validate_config_cli)
 
             # Health check script
             mkdir -p $out/share/coachiq/nix
