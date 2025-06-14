@@ -210,9 +210,12 @@ exec ${pythonWithDeps}/bin/python -c "from backend.core.config import validate_c
 EOF
             chmod +x $out/bin/coachiq-validate-config
 
-            # Health check script
+            # Health check script with Nix-compatible shebang
             mkdir -p $out/share/coachiq/nix
             cp ${./nix/health-check.sh} $out/share/coachiq/nix/health-check.sh
+            # Replace the shebang to use Nix-provided bash and add curl to PATH
+            sed -i '1s|#!/usr/bin/env bash|#!${pkgs.bash}/bin/bash|' $out/share/coachiq/nix/health-check.sh
+            sed -i '2i\\nexport PATH="${pkgs.curl}/bin:$PATH"' $out/share/coachiq/nix/health-check.sh
             chmod +x $out/share/coachiq/nix/health-check.sh
           '';
 
