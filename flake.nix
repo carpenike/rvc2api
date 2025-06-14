@@ -159,8 +159,12 @@
             chmod +x $out/bin/coachiq-daemon
 
             # Config validation wrapper
-            cat > $out/bin/coachiq-validate-config <<'EOF'
+            cat > $out/bin/coachiq-validate-config <<EOF
             #!/bin/sh
+            # Set Python path to find the installed backend module
+            SCRIPT_DIR="\$(dirname "\$(readlink -f "\$0")")"
+            PACKAGE_DIR="\$(dirname "\$SCRIPT_DIR")"
+            export PYTHONPATH="\$PACKAGE_DIR/lib/${python.libPrefix}/site-packages:\$PYTHONPATH"
             exec ${python.interpreter} -c "from backend.core.config import get_settings; print('Configuration valid')"
             EOF
             chmod +x $out/bin/coachiq-validate-config
