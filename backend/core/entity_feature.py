@@ -35,6 +35,9 @@ class EntityManagerFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification=None,
+        log_state_transitions: bool = True,
+        **kwargs
     ) -> None:
         """
         Initialize the EntityManager feature.
@@ -46,6 +49,9 @@ class EntityManagerFeature(Feature):
             config: Configuration options
             dependencies: Feature dependencies
             friendly_name: Human-readable display name for the feature
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions
+            **kwargs: Additional arguments for compatibility
         """
         super().__init__(
             name=name,
@@ -54,6 +60,8 @@ class EntityManagerFeature(Feature):
             config=config or {},
             dependencies=dependencies or [],
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Initialize the EntityManager
@@ -80,8 +88,8 @@ class EntityManagerFeature(Feature):
                 str(settings.rvc_coach_mapping_path) if settings.rvc_coach_mapping_path else None
             )
 
-            logger.info(f"Using RV-C spec path: {rvc_spec_path}")
-            logger.info(f"Using device mapping path: {device_mapping_path}")
+            logger.info("Using RV-C spec path: %s", rvc_spec_path)
+            logger.info("Using device mapping path: %s", device_mapping_path)
 
             # Load entity configuration
             from backend.integrations.rvc import load_config_data
@@ -118,26 +126,27 @@ class EntityManagerFeature(Feature):
                     if entity_key in entity_map:
                         config = entity_map[entity_key]
                         self.entity_manager.register_entity(entity_id, config)
-                        logger.debug(f"Registered entity: {entity_id} from {dgn_hex}:{instance}")
+                        logger.debug("Registered entity: %s from %s:%s", entity_id, dgn_hex, instance)
                     else:
                         logger.warning(
-                            f"Entity {entity_id} not found in entity_map for {dgn_hex}:{instance}"
+                            "Entity %s not found in entity_map for %s:%s", entity_id, dgn_hex, instance
                         )
 
-            logger.info(f"Successfully loaded {len(entity_ids)} entities into EntityManager")
+            logger.info("Successfully loaded %d entities into EntityManager", len(entity_ids))
 
         except Exception as e:
-            logger.error(f"Failed to load entity configuration during startup: {e}")
+            logger.error("Failed to load entity configuration during startup: %s", e)
             # Don't fail startup completely, but log the error
 
-        # Initialize entity persistence service if persistence is available
+        # Initialize entity persistence service using CoreServices
         try:
-            from backend.core.persistence_feature import get_persistence_feature
             from backend.services.entity_persistence_service import EntityPersistenceService
+            from backend.services.feature_manager import get_feature_manager
 
-            # Get the persistence feature
-            persistence_feature = get_persistence_feature()
-            database_manager = persistence_feature.get_database_manager()
+            # Get database manager from CoreServices
+            feature_manager = get_feature_manager()
+            core_services = feature_manager.get_core_services()
+            database_manager = core_services.database_manager
 
             if database_manager:
                 # Create and start the persistence service
@@ -152,7 +161,7 @@ class EntityManagerFeature(Feature):
                 logger.warning("Database manager not available - entity persistence disabled")
 
         except Exception as e:
-            logger.error(f"Failed to initialize entity persistence service: {e}")
+            logger.error("Failed to initialize entity persistence service: %s", e)
             # Continue without persistence rather than failing startup
             self._persistence_service = None
 
@@ -166,7 +175,7 @@ class EntityManagerFeature(Feature):
                 await self._persistence_service.stop()
                 logger.info("Entity persistence service stopped")
             except Exception as e:
-                logger.error(f"Error stopping entity persistence service: {e}")
+                logger.error("Error stopping entity persistence service: %s", e)
 
         # EntityManager doesn't require explicit cleanup, but we could add it here if needed
 

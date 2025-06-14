@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,8 @@ class GitHubUpdateCheckerFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ) -> None:
         super().__init__(
             name=name,
@@ -169,6 +172,8 @@ class GitHubUpdateCheckerFeature(Feature):
             config=config,
             dependencies=dependencies or [],
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
         self._update_checker: GitHubUpdateChecker | None = None
 
@@ -252,6 +257,8 @@ def register_github_update_checker_feature(
     config: dict[str, Any],
     dependencies: list[str],
     friendly_name: str | None = None,
+    safety_classification: SafetyClassification | None = None,
+    log_state_transitions: bool = True,
 ) -> GitHubUpdateCheckerFeature:
     """
     Factory function for creating GitHub update checker feature instances.
@@ -265,6 +272,8 @@ def register_github_update_checker_feature(
         config: Feature configuration from YAML
         dependencies: List of feature dependencies
         friendly_name: Human-readable name for the feature
+        safety_classification: Safety classification for state validation
+        log_state_transitions: Whether to log state transitions for audit
 
     Returns:
         Initialized GitHubUpdateCheckerFeature instance
@@ -276,6 +285,8 @@ def register_github_update_checker_feature(
         config=config,
         dependencies=dependencies,
         friendly_name=friendly_name,
+        safety_classification=safety_classification,
+        log_state_transitions=log_state_transitions,
     )
 
     # Store as global instance for dependency injection

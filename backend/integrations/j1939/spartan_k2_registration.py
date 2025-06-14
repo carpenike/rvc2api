@@ -11,6 +11,8 @@ this provides seamless integration with the YAML-based feature system.
 import logging
 from typing import TYPE_CHECKING, Any
 
+from backend.services.feature_models import SafetyClassification
+
 if TYPE_CHECKING:
     from backend.integrations.j1939.spartan_k2_feature import SpartanK2Feature
 
@@ -24,6 +26,8 @@ def register_spartan_k2_feature(
     config: dict[str, Any],
     dependencies: list[str],
     friendly_name: str | None = None,
+    safety_classification: SafetyClassification | None = None,
+    log_state_transitions: bool = True,
 ) -> "SpartanK2Feature":
     """
     Factory function for creating a SpartanK2Feature instance.
@@ -38,6 +42,8 @@ def register_spartan_k2_feature(
         config: Feature configuration
         dependencies: List of feature dependencies
         friendly_name: Human-readable feature name
+        safety_classification: Safety classification for state validation
+        log_state_transitions: Whether to log state transitions for audit
 
     Returns:
         SpartanK2Feature instance
@@ -53,6 +59,8 @@ def register_spartan_k2_feature(
             config=config,
             dependencies=dependencies,
             friendly_name=friendly_name or "Spartan K2 Chassis",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         logger.info("Spartan K2 chassis feature created successfully")

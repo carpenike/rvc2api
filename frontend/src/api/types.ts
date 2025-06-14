@@ -148,6 +148,7 @@ export interface CANMessage {
   source: number;
   data: number[];
   error?: boolean;
+  interface?: string;
 }
 
 // CAN Metrics (for bus health monitoring)
@@ -205,11 +206,24 @@ export interface MetadataResponse {
 }
 
 // Health Status Response (matches backend /healthz)
+export interface ServiceMetadata {
+  name: string;
+  version: string;
+  environment: string;
+  hostname: string;
+  platform: string;
+}
+
 export interface HealthStatus {
   status: "healthy" | "degraded" | "failed";
   features: Record<string, string>;
   unhealthy_features?: Record<string, string>;
   all_features?: Record<string, string>;
+
+  // Enhanced metadata from Domain API v2
+  response_time_ms?: number;
+  service?: ServiceMetadata;
+  description?: string;
 }
 
 // Feature Status from /api/status/features

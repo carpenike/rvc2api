@@ -6,7 +6,9 @@ and integrations with proper mocking and isolation.
 """
 
 import asyncio
+import tempfile
 from collections.abc import AsyncGenerator, Generator
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -20,12 +22,19 @@ from backend.core.dependencies import (
     get_entity_service,
     get_feature_manager_from_request,
 )
+from backend.core.persistence_feature import (
+    get_database_manager,
+    get_persistence_feature,
+    initialize_persistence_feature,
+)
+from backend.core.services import CoreServices
 from backend.main import app
+from backend.services.database_engine import DatabaseSettings
+from backend.services.database_manager import DatabaseManager
 
 # Import performance test fixtures
 # performance_timer is imported here to make it available as a fixture
 # pylint: disable=unused-import
-# from tests.conftest_performance import performance_timer
 
 
 def _setup_test_app_state() -> None:
@@ -44,6 +53,160 @@ def _setup_test_app_state() -> None:
         app.state.app_state = Mock()
         app.state.docs_service = Mock()
         app.state.vector_service = Mock()
+
+
+# ================================
+# Test Database Configuration
+# ================================
+
+
+@pytest.fixture
+def test_database_path() -> Generator[Path, None, None]:
+    """
+    Create a temporary SQLite database file for testing.
+
+    This fixture creates a real SQLite database file in a temporary directory,
+    which provides more realistic testing scenarios than in-memory databases.
+    The database file is automatically cleaned up after the test.
+    """
+    with tempfile.TemporaryDirectory(prefix="coachiq_test_") as temp_dir:
+        db_path = Path(temp_dir) / "test_coachiq.db"
+        yield db_path
+        # Cleanup is automatic when temp_dir context exits
+
+
+@pytest.fixture
+def test_database_settings(test_database_path: Path) -> DatabaseSettings:
+    """
+    Create database settings configured for testing with real SQLite files.
+
+    Uses the temporary database path from test_database_path fixture
+    to ensure each test gets a clean, isolated database.
+    """
+    return DatabaseSettings(
+        sqlite_path=str(test_database_path),
+        sqlite_timeout=10,  # Shorter timeout for tests
+        echo_sql=False,  # Set to True to debug SQL in tests
+        pool_size=1,  # Minimal pool for tests
+        max_overflow=0,  # No overflow for tests
+    )
+
+
+@pytest.fixture
+async def test_database_manager(
+    test_database_settings: DatabaseSettings,
+) -> AsyncGenerator[DatabaseManager, None]:
+    """
+    Create and initialize a test database manager with real SQLite.
+
+    This fixture provides a fully initialized database manager that uses
+    a temporary SQLite file, ensuring tests work with actual database
+    operations rather than mocked persistence.
+    """
+    manager = DatabaseManager(test_database_settings)
+
+    # Initialize the database manager
+    initialized = await manager.initialize()
+    if not initialized:
+        pytest.fail("Failed to initialize test database manager")
+
+    try:
+        yield manager
+    finally:
+        # Clean up the database manager
+        await manager.cleanup()
+
+
+@pytest.fixture
+async def test_persistence_feature(
+    test_database_manager: DatabaseManager,
+) -> AsyncGenerator[object, None]:
+    """
+    Create and initialize a test persistence feature with real SQLite.
+
+    This fixture provides a fully configured persistence feature that uses
+    the test database manager, enabling realistic testing of persistence
+    operations without mocking the database layer.
+    """
+    # Initialize persistence feature with test configuration
+    persistence_feature = initialize_persistence_feature(
+        config={"database_manager": test_database_manager}
+    )
+
+    # Set the database manager directly on the feature
+    # Note: Accessing private member for test setup - this is acceptable in test code
+    persistence_feature._database_manager = test_database_manager  # noqa: SLF001
+
+    try:
+        # Start the persistence feature
+        await persistence_feature.startup()
+        yield persistence_feature
+    finally:
+        # Clean up the persistence feature
+        await persistence_feature.shutdown()
+
+
+# ================================
+# CoreServices Test Fixtures
+# ================================
+
+
+@pytest.fixture
+async def test_core_services(
+    test_database_manager: DatabaseManager,
+) -> AsyncGenerator[CoreServices, None]:
+    """
+    Create and initialize CoreServices with test database.
+
+    This fixture provides a fully initialized CoreServices instance that uses
+    the test database manager, enabling realistic testing of core infrastructure
+    services without mocking the service layer.
+    """
+    from unittest.mock import patch
+
+    core_services = CoreServices()
+
+    # Patch the service initialization to use our test database manager
+    with patch('backend.core.services.PersistenceService') as mock_persistence_class, \
+         patch('backend.core.services.DatabaseManager') as mock_db_manager_class:
+
+        # Create persistence service mock that works with our test database
+        mock_persistence = Mock()
+        mock_persistence.set_database_manager = Mock()
+        mock_persistence_class.return_value = mock_persistence
+
+        # Use the test database manager directly
+        mock_db_manager_class.return_value = test_database_manager
+
+        # Patch database schema validation to avoid Alembic issues in tests
+        with patch.object(core_services, '_validate_database_schema'):
+            await core_services.startup()
+
+        try:
+            yield core_services
+        finally:
+            await core_services.shutdown()
+
+
+@pytest.fixture
+def mock_core_services() -> CoreServices:
+    """
+    Create a CoreServices instance with fully mocked services.
+
+    Use this fixture for unit tests that need to isolate the code under test
+    from actual database operations. All core services are mocked.
+    """
+    core_services = CoreServices()
+
+    # Mock all services
+    mock_persistence = Mock()
+    mock_db_manager = Mock()
+
+    core_services._persistence = mock_persistence
+    core_services._database_manager = mock_db_manager
+    core_services._initialized = True
+
+    return core_services
 
 
 # ================================
@@ -67,7 +230,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 # ================================
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def client() -> Generator[TestClient, None, None]:
     """
     Synchronous TestClient fixture for FastAPI.
@@ -78,7 +241,33 @@ def client() -> Generator[TestClient, None, None]:
         yield test_client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
+def client_with_persistence(
+    test_persistence_feature: object,
+) -> Generator[TestClient, None, None]:
+    """
+    Synchronous TestClient fixture with real database persistence.
+
+    Use this for testing API endpoints that require actual database
+    operations. The persistence feature is initialized with a real
+    SQLite database file for more realistic testing.
+    """
+    _setup_test_app_state()
+
+    # Override persistence dependencies with test instances
+    app.dependency_overrides[get_persistence_feature] = lambda: test_persistence_feature  # type: ignore[attr-defined]
+    app.dependency_overrides[get_database_manager] = (
+        lambda: test_persistence_feature._database_manager  # noqa: SLF001
+    )  # type: ignore[attr-defined]
+
+    with TestClient(app=app, base_url="http://test") as test_client:
+        yield test_client
+
+    # Clean up overrides
+    app.dependency_overrides.clear()  # type: ignore[attr-defined]
+
+
+@pytest.fixture
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """
     Asynchronous AsyncClient fixture for FastAPI.
@@ -86,9 +275,95 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
     to await client operations directly in your test.
     Note: If you encounter issues with this fixture, ensure httpx is up to date (>=0.23).
     """
+    from httpx import ASGITransport
     _setup_test_app_state()
-    async with AsyncClient() as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture
+async def async_client_with_persistence(
+    test_persistence_feature: object,
+) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Asynchronous AsyncClient fixture with real database persistence.
+
+    Use this for testing async endpoints that require actual database
+    operations. The persistence feature is initialized with a real
+    SQLite database file for comprehensive integration testing.
+    """
+    from httpx import ASGITransport
+    _setup_test_app_state()
+
+    # Override persistence dependencies with test instances
+    app.dependency_overrides[get_persistence_feature] = lambda: test_persistence_feature  # type: ignore[attr-defined]
+    app.dependency_overrides[get_database_manager] = (
+        lambda: test_persistence_feature._database_manager  # noqa: SLF001
+    )  # type: ignore[attr-defined]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+    # Clean up overrides
+    app.dependency_overrides.clear()  # type: ignore[attr-defined]
+
+
+@pytest.fixture
+def client_with_core_services(
+    test_core_services: CoreServices,
+) -> Generator[TestClient, None, None]:
+    """
+    Synchronous TestClient fixture with CoreServices dependency injection.
+
+    Use this for testing API endpoints that require CoreServices infrastructure
+    such as persistence and database access. This replaces the legacy
+    persistence feature dependency pattern.
+    """
+    _setup_test_app_state()
+
+    # Add CoreServices to app state
+    app.state.core_services = test_core_services
+    app.state.persistence_service = test_core_services.persistence
+    app.state.database_manager = test_core_services.database_manager
+
+    # Override legacy dependencies for backward compatibility
+    app.dependency_overrides[get_persistence_feature] = lambda: test_core_services.persistence  # type: ignore[attr-defined]
+    app.dependency_overrides[get_database_manager] = lambda: test_core_services.database_manager  # type: ignore[attr-defined]
+
+    with TestClient(app=app, base_url="http://test") as test_client:
+        yield test_client
+
+    # Clean up overrides
+    app.dependency_overrides.clear()  # type: ignore[attr-defined]
+
+
+@pytest.fixture
+async def async_client_with_core_services(
+    test_core_services: CoreServices,
+) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Asynchronous AsyncClient fixture with CoreServices dependency injection.
+
+    Use this for testing async endpoints that require CoreServices infrastructure.
+    This provides the most realistic testing environment for CoreServices integration.
+    """
+    from httpx import ASGITransport
+    _setup_test_app_state()
+
+    # Add CoreServices to app state
+    app.state.core_services = test_core_services
+    app.state.persistence_service = test_core_services.persistence
+    app.state.database_manager = test_core_services.database_manager
+
+    # Override legacy dependencies for backward compatibility
+    app.dependency_overrides[get_persistence_feature] = lambda: test_core_services.persistence  # type: ignore[attr-defined]
+    app.dependency_overrides[get_database_manager] = lambda: test_core_services.database_manager  # type: ignore[attr-defined]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+    # Clean up overrides
+    app.dependency_overrides.clear()  # type: ignore[attr-defined]
 
 
 # ================================
@@ -330,7 +605,7 @@ def sample_config_data() -> dict[str, str | dict[str, bool | int]]:
 
 
 @pytest.fixture
-def mock_can_bus() -> Generator[Mock, None, None]:
+def mock_can_bus() -> Mock:
     """
     Mock for CAN bus interface operations.
     Use this to mock hardware-level CAN interactions.
@@ -339,11 +614,11 @@ def mock_can_bus() -> Generator[Mock, None, None]:
     mock_instance.send.return_value = True
     mock_instance.receive.return_value = None
     mock_instance.is_connected.return_value = True
-    yield mock_instance
+    return mock_instance
 
 
 @pytest.fixture
-def mock_rvc_decoder() -> Generator[Mock, None, None]:
+def mock_rvc_decoder() -> Mock:
     """
     Mock for RV-C protocol decoder.
     Use this to mock RV-C message decoding operations.
@@ -351,7 +626,7 @@ def mock_rvc_decoder() -> Generator[Mock, None, None]:
     mock_instance = Mock()
     mock_instance.decode_message.return_value = {"decoded": True}
     mock_instance.is_valid_message.return_value = True
-    yield mock_instance
+    return mock_instance
 
 
 # ================================
@@ -378,12 +653,11 @@ def websocket_test_client() -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def clean_app_state() -> Generator[None, None, None]:
+def clean_app_state() -> None:
     """
     Automatically clean up application state after each test.
     Ensures test isolation by preventing state leakage.
     """
-    yield
     # Clean up any global state if needed
     # This is a placeholder for actual state cleanup
 

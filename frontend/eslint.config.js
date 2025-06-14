@@ -11,7 +11,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "vite.config.ts", "vitest.config.ts"] },
+  { ignores: ["dist", "vite.config.ts", "vitest.config.ts", "htmlcov"] },
   // Apply SonarJS recommended rules for safety-critical code
   sonarjs.configs.recommended,
   {

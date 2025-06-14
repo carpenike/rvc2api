@@ -7,7 +7,9 @@ initialization order to avoid metrics collisions and circular imports.
 """
 
 import argparse
+import json
 import logging
+import os
 import platform
 import signal
 import time
@@ -44,6 +46,7 @@ from backend.services.feature_manager import get_feature_manager
 from backend.services.predictive_maintenance_service import PredictiveMaintenanceService
 from backend.services.rvc_service import RVCService
 from backend.services.vector_service import VectorService
+from backend.monitoring import record_health_probe, get_health_monitoring_summary
 
 # Set up early logging before anything else
 setup_early_logging()
@@ -53,102 +56,6 @@ logger = logging.getLogger(__name__)
 # Store startup time for health checks
 SERVER_START_TIME = time.time()
 
-
-async def validate_mandatory_persistence() -> None:
-    """
-    Validate that mandatory persistence is working before proceeding with startup.
-
-    This implements fail-fast validation for the persistence system to ensure
-    the application cannot start without proper database functionality.
-
-    Raises:
-        RuntimeError: If persistence validation fails
-    """
-    logger.info("Validating mandatory persistence system...")
-
-    try:
-        # Import required modules
-        from backend.core.config import get_persistence_settings
-        from backend.services.database_engine import DatabaseEngine, DatabaseSettings
-
-        # Get persistence configuration
-        persistence_settings = get_persistence_settings()
-        logger.debug(f"Persistence data directory: {persistence_settings.data_dir}")
-
-        # Ensure required directories exist
-        created_dirs = persistence_settings.ensure_directories()
-        if created_dirs:
-            logger.info(f"Created persistence directories: {[str(d) for d in created_dirs]}")
-
-        # Validate database connectivity
-        database_settings = DatabaseSettings()
-        db_engine = DatabaseEngine(database_settings)
-
-        # Initialize and test database connection
-        await db_engine.initialize()
-        logger.info("Database engine initialized successfully")
-
-        # Perform health check
-        if not await db_engine.health_check():
-            msg = "Database health check failed"
-            raise RuntimeError(msg)
-
-        logger.info("Database connectivity validated")
-
-        # Test configuration loader if available
-        try:
-            from backend.core.config_loader import create_configuration_loader
-
-            config_loader = create_configuration_loader()
-            # Just create the loader without loading full config
-            # to avoid circular dependencies during early startup
-            logger.info("Configuration loader initialized")
-        except Exception as e:
-            logger.warning(f"Configuration loader validation failed (non-critical): {e}")
-
-        # Validate database schema migrations are up to date
-        try:
-            logger.info("Validating database schema migrations...")
-
-            # Get database URL for Alembic
-            sync_db_url = db_engine.get_sync_url()
-
-            # Check if the database is at the latest migration
-            import os
-            import subprocess
-
-            # Set the database URL for Alembic
-            env = os.environ.copy()
-            env["DATABASE_URL"] = sync_db_url
-
-            # Check current Alembic revision
-            result = subprocess.run(
-                ["poetry", "run", "alembic", "current"],
-                capture_output=True,
-                text=True,
-                env=env,
-                cwd=str(Path(__file__).parent), check=False,
-            )
-
-            if result.returncode == 0:
-                logger.info("Database schema validation completed")
-            else:
-                logger.warning(f"Database schema validation warning: {result.stderr}")
-                # Don't fail startup on migration check issues
-
-        except Exception as e:
-            logger.warning(f"Database schema validation failed (non-critical): {e}")
-
-        # Clean up test database connection
-        await db_engine.close()
-
-        logger.info("✅ Mandatory persistence validation completed successfully")
-
-    except Exception as e:
-        logger.error(f"❌ Mandatory persistence validation FAILED: {e}")
-        logger.error("Application startup aborted - persistence system is required")
-        msg = f"Mandatory persistence validation failed: {e}"
-        raise RuntimeError(msg) from e
 
 
 @asynccontextmanager
@@ -165,8 +72,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     initialize_backend_metrics()
 
     try:
-        # PHASE 1: Validate mandatory persistence BEFORE anything else
-        await validate_mandatory_persistence()
+        # PHASE 1: Initialize Core Services (persistence, database)
+        from backend.core.services import initialize_core_services
+
+        logger.info("Initializing core services...")
+        core_services = await initialize_core_services()
+        logger.info("Core services initialized successfully")
 
         # Get application settings
         settings = get_settings()
@@ -175,9 +86,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Note: Unified logging is already configured in run_server.py
         # No need to reconfigure here to avoid overriding early setup
 
-        # Initialize feature manager
+        # PHASE 2: Initialize feature manager with core services
         feature_manager = get_feature_manager()
-        logger.info("Feature manager initialized")
+        feature_manager.set_core_services(core_services)
+        logger.info("Feature manager initialized with core services")
 
         # Note: Features will be initialized from YAML configuration
         # This ensures proper dependency resolution with entity_manager → app_state
@@ -213,7 +125,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         docs_service = DocsService()
         vector_service = VectorService() if settings.features.enable_vector_search else None
         can_interface_service = CANInterfaceService()
-        predictive_maintenance_service = PredictiveMaintenanceService()
+        predictive_maintenance_service = PredictiveMaintenanceService(core_services.database_manager)
         device_discovery_service = DeviceDiscoveryService(can_service)
         analytics_dashboard_service = AnalyticsDashboardService()
         logger.info("Backend services initialized")
@@ -233,6 +145,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         core_state.app_state = app_state
         # ---------------------------------------------------
+        app.state.core_services = core_services  # Add core services
+        app.state.persistence_service = core_services.persistence  # For legacy dependencies
+        app.state.database_manager = core_services.database_manager  # For legacy dependencies
         app.state.feature_manager = feature_manager
         app.state.config_service = config_service
         app.state.entity_service = entity_service
@@ -253,7 +168,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         yield
 
     except Exception as e:
-        logger.error(f"Error during application startup: {e}")
+        logger.error("Error during application startup: %s", e)
         raise
     finally:
         # Cleanup
@@ -266,6 +181,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Shut down all enabled features
         if hasattr(app.state, "feature_manager"):
             await app.state.feature_manager.shutdown()
+
+        # Shut down core services (AFTER features)
+        from backend.core.services import shutdown_core_services
+        await shutdown_core_services()
 
         logger.info("Backend services stopped")
 
@@ -305,7 +224,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(AccountLockedError)
     async def account_locked_exception_handler(request: Request, exc: AccountLockedError):
         logger = logging.getLogger(__name__)
-        logger.warning(f"Account locked: {exc}")
+        logger.warning("Account locked: %s", exc)
 
         return JSONResponse(
             status_code=423,  # HTTP_423_LOCKED
@@ -336,68 +255,19 @@ async def root():
 
 @app.get("/health")
 async def health_check(request: Request):
-    """Health check endpoint."""
+    """
+    Human-readable diagnostic endpoint for technicians and simple connectivity tests.
+
+    Always returns 200 OK with system information. For automated health monitoring,
+    use /readyz (external monitors) or /healthz (internal orchestration).
+    """
     app_state = get_app_state(request)
-    return {
-        "status": "healthy",
-        "entities": len(app_state.entity_manager.get_entity_ids()),
-        "services": "operational",
-    }
+    settings = get_settings()
 
+    # Calculate uptime
+    uptime_seconds = round(time.time() - SERVER_START_TIME)
 
-@app.get(
-    "/healthz",
-    summary="Liveness probe",
-    description="Returns IETF-compliant health status with feature health aggregation. Returns 503 if any features are unhealthy. Add ?details=true for comprehensive diagnostic information.",
-)
-async def healthz(request: Request, details: bool = False) -> Response:
-    """
-    IETF-compliant liveness probe with feature health aggregation.
-
-    Returns health status using industry-standard nomenclature and format following
-    IETF draft "Health Check Response Format for HTTP APIs".
-
-    Status values:
-    - healthy: All systems operational
-    - degraded: Some issues but service still functional
-    - failed: Critical issues requiring attention
-    """
-    logger.debug(f"GET /healthz - Health check requested with details={details}")
-    import json
-    import os
-
-    start_time = time.time()
-    feature_manager = get_feature_manager_from_request(request)
-    features = feature_manager.features
-    health_report = {name: f.health for name, f in features.items() if getattr(f, "enabled", False)}
-
-    # Determine overall status using industry standards
-    failed_features = {name: status for name, status in health_report.items() if status == "failed"}
-    degraded_features = {
-        name: status for name, status in health_report.items() if status == "degraded"
-    }
-
-    # Overall status logic: failed if any failed, degraded if any degraded, else healthy
-    if failed_features:
-        overall_status = "failed"
-    elif degraded_features:
-        overall_status = "degraded"
-    else:
-        overall_status = "healthy"
-
-    # Log health status
-    if failed_features:
-        logger.warning(
-            f"Health check shows FAILED status - failed features: {list(failed_features.keys())}"
-        )
-    elif degraded_features:
-        logger.warning(
-            f"Health check shows DEGRADED status - degraded features: {list(degraded_features.keys())}"
-        )
-    else:
-        logger.debug("Health check shows HEALTHY status - all features operational")
-
-    # Get service version from VERSION file if available
+    # Get version info
     version = "unknown"
     try:
         version_file = Path(__file__).parent.parent / "VERSION"
@@ -408,99 +278,536 @@ async def healthz(request: Request, details: bool = False) -> Response:
     except Exception:
         version = "unknown"
 
-    # IETF-compliant response structure
-    response_data = {
-        "status": overall_status,
-        "version": "1",  # Health check format version
-        "releaseId": version,
-        "serviceId": "coachiq",
-        "description": _get_status_description(overall_status, failed_features, degraded_features),
-        "timestamp": datetime.now(UTC).isoformat(),
-        "checks": {name: {"status": status} for name, status in health_report.items()},
-        # Backward compatibility for frontend
-        "features": health_report,
-        "response_time_ms": round((time.time() - start_time) * 1000, 2),
-    }
+    # Get enabled protocols
+    feature_manager = get_feature_manager_from_request(request)
+    enabled_protocols = []
+    if feature_manager.is_enabled("rvc"):
+        enabled_protocols.append("rvc")
+    if feature_manager.is_enabled("j1939"):
+        enabled_protocols.append("j1939")
+    if feature_manager.is_enabled("firefly"):
+        enabled_protocols.append("firefly")
 
-    # Add service metadata
-    response_data["service"] = {
-        "name": "coachiq",
+    return {
+        "status": "online",
+        "service_name": settings.app_name,
         "version": version,
         "environment": os.getenv("ENVIRONMENT", "development"),
+        "uptime_seconds": uptime_seconds,
+        "uptime_human": f"{uptime_seconds // 3600}h {(uptime_seconds % 3600) // 60}m {uptime_seconds % 60}s",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "entity_count": len(app_state.entity_manager.get_entity_ids()),
+        "can_interfaces": settings.can.interfaces,
+        "protocols_enabled": enabled_protocols,
         "hostname": platform.node(),
         "platform": platform.system(),
+        "python_version": platform.python_version(),
     }
 
-    # Add problematic features info
-    if failed_features or degraded_features:
-        response_data["issues"] = {}
-        if failed_features:
-            response_data["issues"]["failed"] = list(failed_features.keys())
-        if degraded_features:
-            response_data["issues"]["degraded"] = list(degraded_features.keys())
 
-    # Add detailed diagnostics if requested
-    if details:
-        feature_details = {}
-        for name, feature in features.items():
-            if getattr(feature, "enabled", False) and hasattr(feature, "health_details"):
-                feature_details[name] = feature.health_details
+@app.get(
+    "/healthz",
+    summary="Liveness probe",
+    description="Minimal IETF-compliant liveness probe. Checks only process health, not dependencies. Optimized for <5ms response time.",
+)
+async def healthz(request: Request) -> Response:
+    """
+    Minimal liveness probe following Kubernetes patterns.
 
-        if feature_details:
-            response_data["details"] = feature_details
+    Only checks if the process is alive and responsive - no dependency checking.
+    Optimized for ultra-fast response time (<5ms target).
 
-        # Add system diagnostics
-        response_data["diagnostics"] = {
-            "active_features": len([f for f in features.values() if getattr(f, "enabled", False)]),
-            "total_features": len(features),
-            "python_version": platform.python_version(),
-            "uptime_seconds": round(time.time() - SERVER_START_TIME, 2),
+    Use /readyz for comprehensive dependency checking.
+    Use /startupz for hardware initialization status.
+    """
+    start_time = time.time()
+
+    try:
+        # Minimal liveness checks - only process health
+        # 1. Check if we can access basic application state (proves process is alive)
+        try:
+            _ = get_app_state(request)
+            process_alive = True
+        except Exception:
+            process_alive = False
+
+        # 2. Check if event loop is responsive (basic async health)
+        import asyncio
+        try:
+            # Simple async operation to verify event loop isn't blocked
+            await asyncio.sleep(0)
+            event_loop_responsive = True
+        except Exception:
+            event_loop_responsive = False
+
+        # Overall liveness is just: process alive + event loop responsive
+        is_alive = process_alive and event_loop_responsive
+        ietf_status = "pass" if is_alive else "fail"
+
+        response_time_ms = round((time.time() - start_time) * 1000, 2)
+
+        # Minimal IETF health+json response optimized for speed
+        response_data = {
+            "status": ietf_status,
+            "version": "1",
+            "serviceId": "coachiq-liveness",
+            "description": "Process alive and responsive" if is_alive else "Process unresponsive",
+            "timestamp": datetime.now(UTC).isoformat(),
+            "checks": {
+                "process": {"status": "pass" if process_alive else "fail"},
+                "event_loop": {"status": "pass" if event_loop_responsive else "fail"}
+            },
+            "response_time_ms": response_time_ms,
         }
 
-    # Use proper HTTP status codes and IETF content type
-    status_code = 503 if overall_status == "failed" else 200
-    response_time_ms = round((time.time() - start_time) * 1000, 2)
+        # Only add minimal metadata to keep response small and fast
+        response_data["service"] = {
+            "name": "coachiq",
+            "environment": os.getenv("ENVIRONMENT", "development"),
+        }
 
-    logger.info(
-        f"Health check completed - status: {overall_status}, "
-        f"features_checked: {len(health_report)}, "
-        f"response_time: {response_time_ms}ms, "
-        f"status_code: {status_code}"
-    )
+        # Use appropriate HTTP status code
+        status_code = 200 if is_alive else 503
 
-    return Response(
-        content=json.dumps(response_data),
-        status_code=status_code,
-        media_type="application/health+json",
-        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
-    )
+        # Record metrics for monitoring
+        record_health_probe(
+            endpoint="healthz",
+            response_time_ms=response_time_ms,
+            status_code=status_code,
+            status=ietf_status
+        )
+
+        # Log only on failure or if response is slow (>5ms)
+        if not is_alive:
+            logger.warning(f"Liveness check failed - process_alive: {process_alive}, event_loop: {event_loop_responsive}")
+        elif response_time_ms > 5.0:
+            logger.warning(f"Liveness check slow - {response_time_ms}ms (target: <5ms)")
+        else:
+            logger.debug(f"Liveness check passed - {response_time_ms}ms")
+
+        return Response(
+            content=json.dumps(response_data),
+            status_code=status_code,
+            media_type="application/health+json",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
+
+    except Exception as e:
+        # Even exception handling is minimal for speed
+        logger.error(f"Liveness probe error: {e}")
+        error_response_time = round((time.time() - start_time) * 1000, 2)
+
+        # Record error metrics
+        record_health_probe(
+            endpoint="healthz",
+            response_time_ms=error_response_time,
+            status_code=503,
+            status="fail",
+            error=str(e)
+        )
+
+        error_response = {
+            "status": "fail",
+            "version": "1",
+            "serviceId": "coachiq-liveness",
+            "description": "Liveness probe exception",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+        return Response(
+            content=json.dumps(error_response),
+            status_code=503,
+            media_type="application/health+json",
+        )
+
+
+@app.get(
+    "/startupz",
+    summary="Startup probe",
+    description="Returns IETF-compliant health status for hardware initialization. Succeeds when CAN transceivers are initialized.",
+)
+async def startupz(request: Request) -> Response:
+    """
+    Startup probe for hardware initialization following Kubernetes patterns.
+
+    Focuses specifically on hardware readiness (CAN transceivers) to protect
+    against slow initialization in RV-C environments.
+    """
+    logger.debug("GET /startupz - Startup probe requested")
+    start_time = time.time()
+
+    try:
+        feature_manager = get_feature_manager_from_request(request)
+
+        # Check CAN interface hardware initialization only
+        can_interface_ready = feature_manager.is_enabled("can_interface")
+        can_feature_ready = feature_manager.is_enabled("can_feature")
+
+        # Hardware is considered ready when CAN interfaces are initialized
+        # This is the minimum requirement for the application to start receiving traffic
+        startup_ready = can_interface_ready and can_feature_ready
+
+        # IETF-compliant status
+        ietf_status = "pass" if startup_ready else "fail"
+
+        # Get service version
+        version = "unknown"
+        try:
+            version_file = Path(__file__).parent.parent / "VERSION"
+            if version_file.exists():
+                version = version_file.read_text().strip()
+            else:
+                version = os.getenv("VERSION", "development")
+        except Exception:
+            version = "unknown"
+
+        response_time_ms = round((time.time() - start_time) * 1000, 2)
+
+        # IETF health+json response for startup probe
+        response_data = {
+            "status": ietf_status,
+            "version": "1",
+            "releaseId": version,
+            "serviceId": "coachiq-startup",
+            "description": "Hardware initialization complete" if startup_ready else "Waiting for CAN transceiver initialization",
+            "timestamp": datetime.now(UTC).isoformat(),
+            "checks": {
+                "can_interface": {"status": "pass" if can_interface_ready else "fail"},
+                "can_feature": {"status": "pass" if can_feature_ready else "fail"},
+            },
+            "response_time_ms": response_time_ms,
+        }
+
+        # Add service metadata
+        response_data["service"] = {
+            "name": "coachiq",
+            "version": version,
+            "environment": os.getenv("ENVIRONMENT", "development"),
+            "hostname": platform.node(),
+            "platform": platform.system(),
+        }
+
+        # Use appropriate HTTP status code
+        status_code = 200 if startup_ready else 503
+
+        # Record metrics for monitoring
+        record_health_probe(
+            endpoint="startupz",
+            response_time_ms=response_time_ms,
+            status_code=status_code,
+            status=ietf_status,
+            details={
+                "can_interface_ready": can_interface_ready,
+                "can_feature_ready": can_feature_ready
+            }
+        )
+
+        logger.info(
+            f"Startup probe completed - status: {ietf_status}, "
+            f"can_ready: {startup_ready}, "
+            f"response_time: {response_time_ms}ms, "
+            f"status_code: {status_code}"
+        )
+
+        return Response(
+            content=json.dumps(response_data),
+            status_code=status_code,
+            media_type="application/health+json",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
+
+    except Exception as e:
+        logger.error(f"Error in startup probe: {e}")
+        error_response_time = round((time.time() - start_time) * 1000, 2)
+
+        # Record error metrics
+        record_health_probe(
+            endpoint="startupz",
+            response_time_ms=error_response_time,
+            status_code=503,
+            status="fail",
+            error=str(e)
+        )
+
+        # Return a minimal failure response even if feature manager fails
+        error_response = {
+            "status": "fail",
+            "version": "1",
+            "serviceId": "coachiq-startup",
+            "description": f"Startup probe error: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+        return Response(
+            content=json.dumps(error_response),
+            status_code=503,
+            media_type="application/health+json",
+        )
 
 
 @app.get(
     "/readyz",
     summary="Readiness probe",
-    description="Returns 200 once at least one frame is decoded, else 503.",
+    description="Returns IETF-compliant comprehensive readiness status with dependency checking. Includes safety-critical monitoring.",
 )
-async def readyz(request: Request) -> JSONResponse:
-    """Readiness probe: 200 once at least one frame decoded, else 503."""
-    logger.debug("GET /readyz - Readiness check requested")
-    app_state = get_app_state(request)
-    entity_count = len(app_state.entity_manager.get_entity_ids())
-    ready = entity_count > 0
-    code = 200 if ready else 503
+async def readyz(request: Request, details: bool = False) -> Response:
+    """
+    Comprehensive readiness probe following Kubernetes patterns.
 
-    if ready:
-        logger.debug(f"Readiness check passed - {entity_count} entities available")
-    else:
-        logger.warning("Readiness check failed - no entities decoded yet")
+    Checks all critical system dependencies and safety requirements.
+    Returns 200 only when the service can safely handle traffic.
+    """
+    logger.debug(f"GET /readyz - Readiness probe requested with details={details}")
+    start_time = time.time()
 
-    return JSONResponse(
-        status_code=code,
-        content={
-            "status": "ready" if ready else "pending",
-            "entities": entity_count,
-        },
-    )
+    try:
+        feature_manager = get_feature_manager_from_request(request)
+        app_state = get_app_state(request)
+
+        # Comprehensive readiness checks
+        readiness_checks = {}
+        critical_failures = []
+        warning_failures = []
+
+        # 1. Hardware initialization (from startup probe)
+        can_interface_ready = feature_manager.is_enabled("can_interface")
+        can_feature_ready = feature_manager.is_enabled("can_feature")
+        hardware_ready = can_interface_ready and can_feature_ready
+        readiness_checks["hardware_initialization"] = {
+            "status": "pass" if hardware_ready else "fail",
+            "details": {
+                "can_interface": can_interface_ready,
+                "can_feature": can_feature_ready
+            }
+        }
+        if not hardware_ready:
+            critical_failures.append("hardware_initialization")
+
+        # 2. Core services operational
+        entity_manager_ready = feature_manager.is_enabled("entity_manager")
+        app_state_ready = feature_manager.is_enabled("app_state")
+        websocket_ready = feature_manager.is_enabled("websocket")
+        core_services_ready = entity_manager_ready and app_state_ready and websocket_ready
+        readiness_checks["core_services"] = {
+            "status": "pass" if core_services_ready else "fail",
+            "details": {
+                "entity_manager": entity_manager_ready,
+                "app_state": app_state_ready,
+                "websocket": websocket_ready
+            }
+        }
+        if not core_services_ready:
+            critical_failures.append("core_services")
+
+        # 3. Entity discovery (traffic readiness indicator)
+        entity_count = len(app_state.entity_manager.get_entity_ids())
+        entities_discovered = entity_count > 0
+        readiness_checks["entity_discovery"] = {
+            "status": "pass" if entities_discovered else "fail",
+            "details": {
+                "entity_count": entity_count,
+                "discovery_complete": entities_discovered
+            }
+        }
+        if not entities_discovered:
+            warning_failures.append("entity_discovery")
+
+        # 4. Protocol readiness
+        rvc_ready = feature_manager.is_enabled("rvc")
+        protocol_health = {}
+        if rvc_ready:
+            rvc_feature = feature_manager.get_feature("rvc")
+            rvc_healthy = rvc_feature.is_healthy() if hasattr(rvc_feature, 'is_healthy') else True
+            protocol_health["rvc"] = rvc_healthy
+
+        j1939_ready = feature_manager.is_enabled("j1939")
+        if j1939_ready:
+            j1939_feature = feature_manager.get_feature("j1939")
+            j1939_healthy = j1939_feature.is_healthy() if hasattr(j1939_feature, 'is_healthy') else True
+            protocol_health["j1939"] = j1939_healthy
+
+        protocols_healthy = all(protocol_health.values()) if protocol_health else rvc_ready
+        readiness_checks["protocol_systems"] = {
+            "status": "pass" if protocols_healthy else "fail",
+            "details": {
+                "rvc_enabled": rvc_ready,
+                "j1939_enabled": j1939_ready,
+                "protocol_health": protocol_health
+            }
+        }
+        if not protocols_healthy:
+            critical_failures.append("protocol_systems")
+
+        # 5. Safety-critical systems
+        brake_safety_ready = True
+        if feature_manager.is_enabled("brake_safety_monitoring"):
+            brake_feature = feature_manager.get_feature("brake_safety_monitoring")
+            brake_safety_ready = brake_feature.is_healthy() if hasattr(brake_feature, 'is_healthy') else True
+
+        auth_ready = True
+        if feature_manager.is_enabled("authentication"):
+            auth_feature = feature_manager.get_feature("authentication")
+            auth_ready = auth_feature.is_healthy() if hasattr(auth_feature, 'is_healthy') else True
+
+        safety_systems_ready = brake_safety_ready and auth_ready
+        readiness_checks["safety_systems"] = {
+            "status": "pass" if safety_systems_ready else "fail",
+            "details": {
+                "brake_safety_monitoring": brake_safety_ready,
+                "authentication": auth_ready
+            }
+        }
+        if not safety_systems_ready:
+            critical_failures.append("safety_systems")
+
+        # 6. API readiness
+        domain_api_ready = feature_manager.is_enabled("domain_api_v2")
+        entities_api_ready = feature_manager.is_enabled("entities_api_v2")
+        api_systems_ready = domain_api_ready and entities_api_ready
+        readiness_checks["api_systems"] = {
+            "status": "pass" if api_systems_ready else "fail",
+            "details": {
+                "domain_api_v2": domain_api_ready,
+                "entities_api_v2": entities_api_ready
+            }
+        }
+        if not api_systems_ready:
+            warning_failures.append("api_systems")
+
+        # Overall readiness determination
+        # Critical failures prevent readiness, warning failures are noted but don't block
+        overall_ready = len(critical_failures) == 0
+        ietf_status = "pass" if overall_ready else "fail"
+
+        # Get service version
+        version = "unknown"
+        try:
+            version_file = Path(__file__).parent.parent / "VERSION"
+            if version_file.exists():
+                version = version_file.read_text().strip()
+            else:
+                version = os.getenv("VERSION", "development")
+        except Exception:
+            version = "unknown"
+
+        response_time_ms = round((time.time() - start_time) * 1000, 2)
+
+        # Generate description
+        if critical_failures:
+            description = f"Service not ready: {len(critical_failures)} critical system(s) failed"
+        elif warning_failures:
+            description = f"Service ready with warnings: {len(warning_failures)} non-critical system(s) degraded"
+        else:
+            description = "All systems ready to handle traffic"
+
+        # IETF health+json response for readiness probe
+        response_data = {
+            "status": ietf_status,
+            "version": "1",
+            "releaseId": version,
+            "serviceId": "coachiq-readiness",
+            "description": description,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "checks": {name: {"status": check["status"]} for name, check in readiness_checks.items()},
+            "response_time_ms": response_time_ms,
+        }
+
+        # Add service metadata
+        response_data["service"] = {
+            "name": "coachiq",
+            "version": version,
+            "environment": os.getenv("ENVIRONMENT", "development"),
+            "hostname": platform.node(),
+            "platform": platform.system(),
+        }
+
+        # Add failure categorization for safety-aware orchestration
+        if critical_failures or warning_failures:
+            response_data["issues"] = {
+                "critical": critical_failures,
+                "warning": warning_failures
+            }
+
+        # Add detailed check information if requested
+        if details:
+            response_data["detailed_checks"] = readiness_checks
+
+            # Add system metrics
+            response_data["metrics"] = {
+                "entity_count": entity_count,
+                "enabled_features": len([f for f in feature_manager.get_all_features().values()
+                                       if feature_manager.is_enabled(getattr(f, 'name', ''))]),
+                "critical_systems_healthy": len(critical_failures) == 0,
+                "warning_systems_healthy": len(warning_failures) == 0,
+            }
+
+        # Use appropriate HTTP status code
+        status_code = 200 if overall_ready else 503
+
+        # Record metrics for monitoring
+        record_health_probe(
+            endpoint="readyz",
+            response_time_ms=response_time_ms,
+            status_code=status_code,
+            status=ietf_status,
+            details={
+                "entity_count": entity_count,
+                "critical_failures": critical_failures,
+                "warning_failures": warning_failures,
+                "hardware_ready": hardware_ready,
+                "core_services_ready": core_services_ready,
+                "safety_systems_ready": safety_systems_ready
+            }
+        )
+
+        logger.info(
+            f"Readiness probe completed - status: {ietf_status}, "
+            f"critical_failures: {len(critical_failures)}, "
+            f"warning_failures: {len(warning_failures)}, "
+            f"entities: {entity_count}, "
+            f"response_time: {response_time_ms}ms, "
+            f"status_code: {status_code}"
+        )
+
+        if critical_failures:
+            logger.warning(f"Readiness check failed - critical systems: {critical_failures}")
+        elif warning_failures:
+            logger.info(f"Readiness check passed with warnings: {warning_failures}")
+
+        return Response(
+            content=json.dumps(response_data),
+            status_code=status_code,
+            media_type="application/health+json",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
+
+    except Exception as e:
+        logger.error(f"Error in readiness probe: {e}")
+        error_response_time = round((time.time() - start_time) * 1000, 2)
+
+        # Record error metrics
+        record_health_probe(
+            endpoint="readyz",
+            response_time_ms=error_response_time,
+            status_code=503,
+            status="fail",
+            error=str(e)
+        )
+
+        # Return a minimal failure response
+        error_response = {
+            "status": "fail",
+            "version": "1",
+            "serviceId": "coachiq-readiness",
+            "description": f"Readiness probe error: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+        return Response(
+            content=json.dumps(error_response),
+            status_code=503,
+            media_type="application/health+json",
+        )
 
 
 @app.get(
@@ -516,18 +823,44 @@ def metrics() -> Response:
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 
-def _get_status_description(status: str, failed_features: dict, degraded_features: dict) -> str:
-    """Generate human-readable status description."""
-    if status == "failed":
-        return f"Service critical: {len(failed_features)} feature(s) failed"
-    if status == "degraded":
-        desc_parts = []
-        if failed_features:
-            desc_parts.append(f"{len(failed_features)} failed")
-        if degraded_features:
-            desc_parts.append(f"{len(degraded_features)} degraded")
-        return f"Service degraded: {', '.join(desc_parts)} feature(s)"
-    return "All systems operational"
+@app.get(
+    "/health/monitoring",
+    summary="Health probe monitoring",
+    description="Returns comprehensive monitoring data for health probe performance and reliability.",
+)
+async def health_monitoring(request: Request) -> JSONResponse:
+    """
+    Health probe monitoring endpoint.
+
+    Provides detailed metrics about health endpoint performance, success rates,
+    and alerting information for production monitoring.
+    """
+    logger.debug("GET /health/monitoring - Health monitoring requested")
+
+    try:
+        monitoring_summary = get_health_monitoring_summary()
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "monitoring_summary": monitoring_summary,
+                "timestamp": datetime.now(UTC).isoformat(),
+                "description": "Health probe monitoring data"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error in health monitoring endpoint: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "monitoring_error",
+                "message": f"Failed to retrieve monitoring data: {e}",
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
 
 
 def main():

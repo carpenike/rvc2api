@@ -495,7 +495,7 @@ export default function EntitiesPage() {
                   <SelectItem value="all">All Types</SelectItem>
                   {deviceTypes.map(type => (
                     <SelectItem key={type} value={type}>
-                      {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -533,13 +533,11 @@ export default function EntitiesPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredEntities.map(entity => {
               const cardProps: {
-                key: string;
                 entity: Entity;
                 isSelected: boolean;
                 showProtocolInfo: boolean;
                 onSelectChange?: (selected: boolean) => void;
               } = {
-                key: entity.entity_id,
                 entity: entity,
                 isSelected: selectionMode.selectedIds.has(entity.entity_id),
                 showProtocolInfo: selectedProtocol === "all"

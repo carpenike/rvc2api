@@ -13,6 +13,7 @@ from typing import Any
 
 from backend.integrations.rvc import BAMHandler, decode_payload, decode_product_id, load_config_data
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,8 @@ class CANBusFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ) -> None:
         """
         Initialize the CAN bus feature.
@@ -44,6 +47,8 @@ class CANBusFeature(Feature):
             config: Configuration options (default: None)
             dependencies: Feature dependencies (default: ["app_state"])
             friendly_name: Human-readable display name for the feature
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions for audit
         """
         # Ensure we depend on app_state (required for CAN service initialization)
         deps = dependencies or []
@@ -77,6 +82,8 @@ class CANBusFeature(Feature):
             config=self.config,
             dependencies=deps,
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # CAN bus related attributes
@@ -88,6 +95,7 @@ class CANBusFeature(Feature):
         self._is_running = False
         self._task: asyncio.Task | None = None
         self._simulation_task: asyncio.Task | None = None
+        self._deduplicator = None  # Will be initialized in startup
 
         # RVC decoder data - will be loaded on startup
         self.decoder_map: dict[int, dict] = {}
@@ -110,6 +118,10 @@ class CANBusFeature(Feature):
         # Mark the feature as running before spawning listener/simulation tasks
         # so that they don't exit immediately when checking this flag.
         self._is_running = True
+
+        # Initialize message deduplicator for bridged interfaces
+        from backend.integrations.can.message_deduplicator import CANMessageDeduplicator
+        self._deduplicator = CANMessageDeduplicator(window_ms=50)
 
         # Initialize BAM handler for multi-packet message support
         self.bam_handler = BAMHandler(session_timeout=30.0, max_concurrent_sessions=50)
@@ -328,6 +340,15 @@ class CANBusFeature(Feature):
             interface_name: Name of the interface that received the message
         """
         try:
+            # Check for duplicate messages when using bridged interfaces
+            if self._deduplicator and self._deduplicator.is_duplicate(
+                message.arbitration_id, message.data
+            ):
+                logger.debug(
+                    f"Ignoring duplicate message {message.arbitration_id:08X} on {interface_name}"
+                )
+                return
+
             # Log the received message
             logger.debug(
                 f"CAN RX: {interface_name} ID: {message.arbitration_id:08X} "

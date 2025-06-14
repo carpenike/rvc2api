@@ -180,7 +180,7 @@ export function useSetupRecommendations(includeConfigured = false) {
 export function useDiscoverDevices() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (protocol = "rvc") => {
       const response = await fetch("/api/discovery/discover", {
         method: "POST",
@@ -192,7 +192,7 @@ export function useDiscoverDevices() {
       if (!response.ok) {
         throw new Error(`Failed to discover devices: ${response.statusText}`)
       }
-      return response.json()
+      await response.json()
     },
     onSuccess: () => {
       // Invalidate and refetch discovery data

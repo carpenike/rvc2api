@@ -11,6 +11,7 @@ from typing import Any
 from backend.core.config import get_settings
 from backend.services.device_discovery_service import DeviceDiscoveryService, DeviceInfo
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ class DeviceDiscoveryFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         """
         Initialize the device discovery feature.
@@ -46,6 +49,8 @@ class DeviceDiscoveryFeature(Feature):
             config: Feature configuration
             dependencies: Feature dependencies
             friendly_name: Human-readable name
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions for audit
         """
         super().__init__(
             name=name,
@@ -54,6 +59,8 @@ class DeviceDiscoveryFeature(Feature):
             config=config or {},
             dependencies=dependencies or [],
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         self.settings = get_settings()

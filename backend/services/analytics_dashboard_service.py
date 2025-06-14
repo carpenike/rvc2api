@@ -42,7 +42,7 @@ class AnalyticsDashboardService:
         # Initialize storage service with dual-mode (memory + optional persistence)
         from backend.services.analytics_storage_service import AnalyticsStorageService
 
-        self.storage: AnalyticsStorageService = AnalyticsStorageService(self.feature_manager)
+        self.storage: AnalyticsStorageService = AnalyticsStorageService()
 
         # Configuration from analytics settings
         self.insight_generation_interval = (
@@ -353,7 +353,7 @@ class AnalyticsDashboardService:
     async def get_storage_stats(self) -> dict[str, Any]:
         """Get storage service statistics for diagnostics."""
         try:
-            stats = self.storage.get_storage_stats()
+            stats = await self.storage.get_storage_stats()
 
             # Add service-level information
             stats.update(
@@ -586,7 +586,7 @@ class AnalyticsDashboardService:
         """Analyze historical data for patterns."""
         try:
             # Get storage statistics to determine which metrics to analyze
-            storage_stats = self.storage.get_storage_stats()
+            storage_stats = await self.storage.get_storage_stats()
             memory_stats = storage_stats.get("memory_stats", {})
 
             # Analyze patterns for metrics that have sufficient data

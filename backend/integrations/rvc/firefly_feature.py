@@ -17,6 +17,7 @@ from typing import Any
 
 from backend.core.config import get_firefly_settings
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,8 @@ class FireflyFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         """
         Initialize the Firefly feature.
@@ -52,6 +55,8 @@ class FireflyFeature(Feature):
             config: Optional configuration dictionary
             dependencies: List of feature names this feature depends on
             friendly_name: Human-readable display name for the feature
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions for audit
         """
         super().__init__(
             name=name,
@@ -60,6 +65,8 @@ class FireflyFeature(Feature):
             config=config,
             dependencies=dependencies or ["rvc"],  # Firefly depends on RVC feature
             friendly_name=friendly_name or "Firefly RV Systems",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Firefly components

@@ -2,12 +2,13 @@
 Notification system models for tracking sent notifications and delivery status.
 
 This module contains Pydantic models for the notification system including
-notification logs, delivery tracking, and template contexts.
+notification logs, delivery tracking, template contexts, and queue operations.
 """
 
 from datetime import datetime
 from enum import Enum
 from typing import Any
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -28,6 +29,7 @@ class NotificationChannel(str, Enum):
     SMTP = "smtp"
     SLACK = "slack"
     DISCORD = "discord"
+    PUSHOVER = "pushover"
     WEBHOOK = "webhook"
     SYSTEM = "system"
 
@@ -269,3 +271,138 @@ class NotificationChannelStatus(BaseModel):
     updated_at: datetime = Field(
         default_factory=datetime.utcnow, description="Last update timestamp"
     )
+
+
+# Queue-based notification models for Phase 1 modernization
+
+class NotificationPayload(BaseModel):
+    """
+    Payload model for queue-based notification system.
+
+    This model represents a notification in the persistent queue,
+    containing all information needed for delivery.
+    """
+
+    id: str = Field(default_factory=lambda: str(uuid4()), description="Unique notification ID")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
+
+    # Content
+    message: str = Field(..., description="Notification message body")
+    title: str | None = Field(None, description="Notification title")
+    level: NotificationType = Field(NotificationType.INFO, description="Notification level")
+
+    # Delivery configuration
+    channels: list[NotificationChannel] = Field(default_factory=list, description="Target channels")
+    tags: list[str] = Field(default_factory=list, description="Notification tags")
+    recipient: str | None = Field(None, description="Primary recipient identifier")
+
+    # Template and context
+    template: str | None = Field(None, description="Template name for rendering")
+    context: dict[str, Any] = Field(default_factory=dict, description="Sanitized template context")
+
+    # Queue management
+    status: NotificationStatus = Field(NotificationStatus.PENDING, description="Processing status")
+    retry_count: int = Field(0, description="Number of retry attempts")
+    max_retries: int = Field(3, description="Maximum retry attempts")
+
+    # Scheduling
+    scheduled_for: datetime | None = Field(None, description="Scheduled delivery time")
+    priority: int = Field(1, description="Priority level (1=highest, 10=lowest)")
+
+    # Error tracking
+    last_error: str | None = Field(None, description="Last error message")
+    last_attempt: datetime | None = Field(None, description="Last processing attempt")
+
+    # Source tracking
+    source_component: str | None = Field(None, description="Component that created notification")
+    correlation_id: str | None = Field(None, description="Correlation ID for tracking")
+
+    # Pushover-specific fields
+    pushover_priority: int | None = Field(None, description="Pushover priority level")
+    pushover_device: str | None = Field(None, description="Specific Pushover device")
+
+
+class QueueStatistics(BaseModel):
+    """Statistics about the notification queue."""
+
+    pending_count: int = Field(0, description="Number of pending notifications")
+    processing_count: int = Field(0, description="Number of notifications being processed")
+    completed_count: int = Field(0, description="Number of completed notifications (24h)")
+    failed_count: int = Field(0, description="Number of failed notifications (24h)")
+    dlq_count: int = Field(0, description="Number of notifications in dead letter queue")
+
+    # Performance metrics
+    avg_processing_time: float | None = Field(None, description="Average processing time in seconds")
+    success_rate: float = Field(0.0, description="Success rate (0.0-1.0) over last 24h")
+
+    # Queue health
+    oldest_pending: datetime | None = Field(None, description="Timestamp of oldest pending notification")
+    last_success: datetime | None = Field(None, description="Last successful delivery")
+    last_failure: datetime | None = Field(None, description="Last delivery failure")
+
+    # System status
+    dispatcher_running: bool = Field(False, description="Whether background dispatcher is running")
+    queue_size_bytes: int | None = Field(None, description="Approximate queue database size in bytes")
+
+    # Generated at
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Statistics generation time")
+
+
+class RateLimitStatus(BaseModel):
+    """Status of the rate limiting system."""
+
+    current_tokens: int = Field(0, description="Current available tokens")
+    max_tokens: int = Field(100, description="Maximum tokens in bucket")
+    refill_rate: float = Field(10.0, description="Token refill rate per minute")
+
+    # Recent activity
+    requests_last_minute: int = Field(0, description="Requests in last minute")
+    requests_blocked: int = Field(0, description="Requests blocked by rate limiting")
+
+    # Debouncing status
+    active_debounces: int = Field(0, description="Number of active debounce suppressions")
+
+    # Status
+    healthy: bool = Field(True, description="Whether rate limiting is functioning properly")
+    last_reset: datetime = Field(default_factory=datetime.utcnow, description="Last token bucket reset")
+
+
+class DeadLetterEntry(BaseModel):
+    """Entry in the dead letter queue for permanently failed notifications."""
+
+    id: str = Field(..., description="Unique entry ID")
+    original_notification: NotificationPayload = Field(..., description="Original notification payload")
+
+    # Failure information
+    failed_at: datetime = Field(default_factory=datetime.utcnow, description="When notification finally failed")
+    failure_reason: str = Field(..., description="Final failure reason")
+    total_attempts: int = Field(0, description="Total delivery attempts made")
+
+    # Error history
+    error_history: list[str] = Field(default_factory=list, description="History of error messages")
+
+    # Management
+    reviewed: bool = Field(False, description="Whether failure has been reviewed")
+    can_retry: bool = Field(True, description="Whether notification can be retried")
+    retry_after: datetime | None = Field(None, description="Earliest time for retry")
+
+
+class NotificationBatch(BaseModel):
+    """Batch of notifications for efficient processing."""
+
+    id: str = Field(default_factory=lambda: str(uuid4()), description="Batch ID")
+    notifications: list[NotificationPayload] = Field(..., description="Notifications in batch")
+
+    # Batch metadata
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Batch creation time")
+    batch_size: int = Field(0, description="Number of notifications in batch")
+
+    # Processing status
+    status: str = Field("pending", description="Batch processing status")
+    started_at: datetime | None = Field(None, description="Processing start time")
+    completed_at: datetime | None = Field(None, description="Processing completion time")
+
+    # Results
+    successful_count: int = Field(0, description="Number of successful deliveries")
+    failed_count: int = Field(0, description="Number of failed deliveries")
+    errors: list[str] = Field(default_factory=list, description="Batch processing errors")

@@ -14,7 +14,7 @@ from urllib.parse import quote_plus
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import QueuePool, StaticPool, text
+from sqlalchemy import QueuePool, StaticPool, event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -23,6 +23,65 @@ from sqlalchemy.ext.asyncio import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _setup_sqlite_performance_pragmas(
+    dbapi_connection: Any, _connection_record: Any, settings: "DatabaseSettings"
+) -> None:
+    """
+    Configure SQLite performance optimizations for USB SSD deployment.
+
+    These settings are optimized for Raspberry Pi with USB SSD storage,
+    providing better concurrency, performance, and SSD-friendly behavior.
+
+    Args:
+        dbapi_connection: Raw SQLite connection
+        connection_record: SQLAlchemy connection record
+        settings: Database settings with optimization flags
+    """
+    if not settings.sqlite_enable_optimizations:
+        logger.debug("SQLite performance optimizations disabled")
+        return
+
+    try:
+        cursor = dbapi_connection.cursor()
+
+        # WAL mode for better concurrency and SSD compatibility
+        cursor.execute("PRAGMA journal_mode=WAL")
+
+        # Balanced durability/performance for SSD
+        cursor.execute("PRAGMA synchronous=NORMAL")
+
+        # Use memory for temporary operations
+        cursor.execute("PRAGMA temp_store=MEMORY")
+
+        # Memory mapping for better performance (SSD can handle larger sizes)
+        cursor.execute(f"PRAGMA mmap_size={settings.sqlite_mmap_size}")
+
+        # Larger cache for better performance
+        cursor.execute(f"PRAGMA cache_size={settings.sqlite_cache_size}")
+
+        # Less frequent WAL checkpoints (SSD friendly)
+        cursor.execute(f"PRAGMA wal_autocheckpoint={settings.sqlite_wal_autocheckpoint}")
+
+        # Enable SQLite query optimization
+        cursor.execute("PRAGMA optimize")
+
+        # Longer busy timeout for better concurrency
+        cursor.execute(f"PRAGMA busy_timeout={settings.sqlite_timeout * 1000}")
+
+        cursor.close()
+
+        logger.info(
+            "SQLite performance optimizations applied: "
+            "cache_size=%s, mmap_size=%sMB, wal_autocheckpoint=%s",
+            settings.sqlite_cache_size,
+            settings.sqlite_mmap_size,
+            settings.sqlite_wal_autocheckpoint,
+        )
+
+    except Exception as e:
+        logger.warning("Failed to apply SQLite performance optimizations: %s", e)
 
 
 class DatabaseBackend(str, Enum):
@@ -52,6 +111,20 @@ class DatabaseSettings(BaseSettings):
         default="backend/data/coachiq.db", description="Path to SQLite database file"
     )
     sqlite_timeout: int = Field(default=30, description="SQLite connection timeout in seconds")
+
+    # SQLite performance settings (USB SSD optimized)
+    sqlite_enable_optimizations: bool = Field(
+        default=True, description="Enable SQLite performance optimizations for USB SSD"
+    )
+    sqlite_cache_size: int = Field(
+        default=4000, description="SQLite cache size in pages (negative for KB)"
+    )
+    sqlite_mmap_size: int = Field(
+        default=134217728, description="SQLite memory mapping size in bytes (128MB)"
+    )
+    sqlite_wal_autocheckpoint: int = Field(
+        default=1000, description="WAL auto-checkpoint threshold (SSD friendly)"
+    )
 
     # PostgreSQL settings
     postgres_host: str = Field(default="localhost", description="PostgreSQL host")
@@ -218,7 +291,7 @@ class DatabaseEngine:
         db_dir = db_path.parent
 
         if not db_dir.exists():
-            logger.info(f"Creating database directory: {db_dir}")
+            logger.info("Creating database directory: %s", db_dir)
             db_dir.mkdir(parents=True, exist_ok=True)
 
     @property
@@ -247,11 +320,24 @@ class DatabaseEngine:
             engine_kwargs = self._settings.get_engine_kwargs()
 
             logger.info(
-                f"Initializing database engine for {self._settings.backend.value} "
-                f"with URL: {database_url.split('://', 1)[0]}://***"
+                "Initializing database engine for %s with URL: %s://***",
+                self._settings.backend.value,
+                database_url.split("://", 1)[0]
             )
 
             self._engine = create_async_engine(database_url, **engine_kwargs)
+
+            # Set up SQLite performance optimizations if enabled
+            if (
+                self._settings.backend == DatabaseBackend.SQLITE
+                and self._settings.sqlite_enable_optimizations
+            ):
+
+                @event.listens_for(self._engine.sync_engine, "connect")
+                def setup_sqlite_pragmas(dbapi_connection, connection_record):
+                    _setup_sqlite_performance_pragmas(
+                        dbapi_connection, connection_record, self._settings
+                    )
 
             self._session_factory = async_sessionmaker(
                 bind=self._engine,
@@ -264,10 +350,10 @@ class DatabaseEngine:
             # Test the connection
             await self.health_check()
 
-            logger.info(f"Database engine initialized successfully for {self._settings.backend}")
+            logger.info("Database engine initialized successfully for %s", self._settings.backend)
 
         except Exception as e:
-            logger.error(f"Failed to initialize database engine: {e}")
+            logger.error("Failed to initialize database engine: %s", e)
             raise
 
     async def health_check(self) -> bool:
@@ -285,7 +371,7 @@ class DatabaseEngine:
                 await conn.execute(text("SELECT 1"))
             return True
         except Exception as e:
-            logger.error(f"Database health check failed: {e}")
+            logger.error("Database health check failed: %s", e)
             return False
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:

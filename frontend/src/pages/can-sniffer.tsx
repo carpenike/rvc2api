@@ -163,13 +163,13 @@ function CANStatistics({ messages }: { messages: CANMessage[] }) {
 }
 
 // Helper functions for table accessors (to avoid inline JSX components)
-const renderPGNBadge = (pgn: number) => <PGNBadge pgn={pgn} />;
-const renderDescriptionCell = (pgn: number) => <DescriptionCell pgn={pgn} />;
-const renderInstanceCell = (instance?: number) => <InstanceCell instance={instance} />;
+const renderPGNBadge = (pgn: string) => <PGNBadge pgn={pgn} />;
+const renderDescriptionCell = (pgn: string) => <DescriptionCell pgn={pgn} />;
+const renderInstanceCell = (instance: number | undefined) => <InstanceCell instance={instance} />;
 const renderSourceBadge = (source: number) => <SourceBadge source={source} />;
 
 // Helper components for table cells (defined outside render to avoid recreation)
-function PGNBadge({ pgn }: { pgn: number }) {
+function PGNBadge({ pgn }: { pgn: string }) {
   return (
     <Badge variant="outline" className="font-mono text-xs">
       {pgn}
@@ -177,8 +177,8 @@ function PGNBadge({ pgn }: { pgn: number }) {
   );
 }
 
-function DescriptionCell({ pgn }: { pgn: number }) {
-  const getPGNDescription = (pgnNum: number) => {
+function DescriptionCell({ pgn }: { pgn: string }) {
+  const getPGNDescription = (pgnStr: string) => {
     // This would normally come from the RV-C spec database
     const knownPGNs: Record<string, string> = {
       '1FFFF': 'Device Control',
@@ -187,13 +187,13 @@ function DescriptionCell({ pgn }: { pgn: number }) {
       '1FFD0': 'Temperature',
       // Add more as needed
     }
-    return knownPGNs[pgnNum.toString()] || 'Unknown'
+    return knownPGNs[pgnStr] || 'Unknown'
   }
 
   return <span className="text-sm">{getPGNDescription(pgn)}</span>
 }
 
-function InstanceCell({ instance }: { instance?: number }) {
+function InstanceCell({ instance }: { instance: number | undefined }) {
   if (instance !== undefined) {
     return (
       <Badge variant="secondary" className="text-xs">
@@ -246,6 +246,13 @@ function CANMessageTable({ messages, isPaused }: { messages: CANMessage[]; isPau
       width: 100,
       className: 'font-mono text-xs',
       accessor: (message) => formatTimestamp(message.timestamp)
+    },
+    {
+      id: 'interface',
+      header: 'Interface',
+      width: 70,
+      className: 'text-center',
+      accessor: (message) => message.interface || 'can0'
     },
     {
       id: 'pgn',

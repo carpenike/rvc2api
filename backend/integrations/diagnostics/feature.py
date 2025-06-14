@@ -18,6 +18,7 @@ from backend.integrations.diagnostics.models import (
 )
 from backend.integrations.diagnostics.predictive import PredictiveMaintenanceEngine
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,8 @@ class AdvancedDiagnosticsFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         """Initialize the advanced diagnostics feature."""
         super().__init__(
@@ -48,6 +51,8 @@ class AdvancedDiagnosticsFeature(Feature):
             config=config,
             dependencies=dependencies,
             friendly_name=friendly_name or "Advanced Diagnostics",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Get settings internally

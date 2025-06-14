@@ -9,6 +9,8 @@ feature lifecycle management.
 import logging
 from typing import TYPE_CHECKING, Any
 
+from backend.services.feature_models import SafetyClassification
+
 if TYPE_CHECKING:
     from backend.integrations.rvc.firefly_feature import FireflyFeature
     from backend.services.feature_manager import FeatureManager
@@ -23,6 +25,8 @@ def register_firefly_feature(
     config: dict[str, Any],
     dependencies: list[str],
     friendly_name: str | None = None,
+    safety_classification: SafetyClassification | None = None,
+    log_state_transitions: bool = True,
 ) -> "FireflyFeature":
     """
     Factory function for creating a FireflyFeature instance.
@@ -37,6 +41,8 @@ def register_firefly_feature(
         config: Feature configuration
         dependencies: List of feature dependencies
         friendly_name: Human-readable feature name
+        safety_classification: Safety classification for state validation
+        log_state_transitions: Whether to log state transitions for audit
 
     Returns:
         FireflyFeature instance
@@ -52,6 +58,8 @@ def register_firefly_feature(
             config=config,
             dependencies=dependencies,
             friendly_name=friendly_name or "Firefly RV Systems",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         logger.info("Firefly RV systems feature created successfully")

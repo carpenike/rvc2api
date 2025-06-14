@@ -87,3 +87,14 @@ export {
   useBulkLightControlWithValidation,
   useEntitySelectionWithValidation,
 } from './domains/useEntitiesV2';
+
+// Health monitoring hooks
+export {
+  useSystemHealthStatus,
+  useHealthMonitoring,
+  useReadinessCheck,
+  useLivenessCheck,
+  useStartupCheck,
+  useHumanHealth,
+  useAggregatedHealth
+} from './useHealthStatus';

@@ -23,6 +23,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from backend.core.state import AppState
 from backend.services.feature_base import Feature
+from backend.websocket.auth_handler import get_websocket_auth_handler
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,9 @@ class WebSocketManager(Feature):
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
         app_state: AppState | None = None,
+        safety_classification=None,
+        log_state_transitions: bool = True,
+        **kwargs,
     ) -> None:
         """
         Initialize the WebSocket manager feature.
@@ -71,6 +75,8 @@ class WebSocketManager(Feature):
             config=config or {},
             dependencies=deps,
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Store reference to app_state
@@ -93,6 +99,9 @@ class WebSocketManager(Feature):
         # If we have app_state, wire up the broadcast function
         if self._app_state:
             self._app_state.set_broadcast_function(self.broadcast_can_sniffer_group)
+
+        # Start token expiry check task
+        self.background_tasks.add(asyncio.create_task(self._check_token_expiry_task()))
 
     async def shutdown(self) -> None:
         """Clean up WebSocket connections and background tasks."""
@@ -218,6 +227,34 @@ class WebSocketManager(Feature):
         """
         await self.broadcast_json_to_clients(self.features_clients, features_status)
 
+    async def _check_token_expiry_task(self) -> None:
+        """Periodically check for expired tokens and close connections."""
+        auth_handler = get_websocket_auth_handler()
+        while True:
+            try:
+                await asyncio.sleep(60)  # Check every minute
+
+                # Check all authenticated connections
+                for connection_id, user_info in list(
+                    auth_handler.authenticated_connections.items()
+                ):
+                    # Find the websocket by connection_id
+                    for ws in list(
+                        self.data_clients
+                        | self.log_clients
+                        | self.can_sniffer_clients
+                        | self.network_map_clients
+                        | self.features_clients
+                    ):
+                        if f"{ws.client.host}:{ws.client.port}" == connection_id:
+                            await auth_handler.check_token_expiry(ws, user_info)
+                            break
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in token expiry check: {e}")
+
     # ── WebSocket Endpoints ─────────────────────────────────────────────────────
 
     async def handle_data_connection(self, websocket: WebSocket) -> None:
@@ -227,10 +264,22 @@ class WebSocketManager(Feature):
         Args:
             websocket (WebSocket): The WebSocket connection
         """
-        await websocket.accept()
+        # Authenticate the connection
+        auth_handler = get_websocket_auth_handler()
+        user_info = await auth_handler.authenticate_connection(websocket, require_auth=True)
+
+        if not user_info:
+            return  # Connection already closed by auth handler
+
+        # Check permission to control entities
+        if not await auth_handler.require_permission(websocket, user_info, "control_entities"):
+            await websocket.close(code=1008)
+            return
+
         self.data_clients.add(websocket)
         logger.info(
-            f"Data WebSocket client connected: {websocket.client.host}:{websocket.client.port}"
+            f"Data WebSocket client connected: {websocket.client.host}:{websocket.client.port} "
+            f"(user: {user_info.get('username', 'unknown')})"
         )
         try:
             while True:
@@ -366,6 +415,7 @@ class WebSocketManager(Feature):
             )
         finally:
             self.data_clients.discard(websocket)
+            auth_handler.remove_connection(websocket)
 
     async def handle_log_connection(self, websocket: WebSocket) -> None:
         """
@@ -376,9 +426,19 @@ class WebSocketManager(Feature):
           {"type": "config", "level": "INFO", "modules": ["backend.core", ...]}
         - Server applies per-client log level/module filters
         - Log messages are streamed as JSON text
-        - TODO: Require authentication/authorization for log access
         """
-        await websocket.accept()
+        # Authenticate the connection
+        auth_handler = get_websocket_auth_handler()
+        user_info = await auth_handler.authenticate_connection(websocket, require_auth=True)
+
+        if not user_info:
+            return  # Connection already closed by auth handler
+
+        # Only admin users can view logs
+        if user_info.get("role") != "admin":
+            await websocket.close(code=1008)
+            return
+
         self.log_clients.add(websocket)
         # Set default filter for this client
         ws_handler = None
@@ -432,6 +492,7 @@ class WebSocketManager(Feature):
             if ws_handler:
                 ws_handler.client_filters.pop(websocket, None)
                 ws_handler.client_rate.pop(websocket, None)
+            auth_handler.remove_connection(websocket)
 
     async def handle_can_sniffer_connection(self, websocket: WebSocket) -> None:
         """
@@ -440,10 +501,22 @@ class WebSocketManager(Feature):
         Args:
             websocket (WebSocket): The WebSocket connection
         """
-        await websocket.accept()
+        # Authenticate the connection
+        auth_handler = get_websocket_auth_handler()
+        user_info = await auth_handler.authenticate_connection(websocket, require_auth=True)
+
+        if not user_info:
+            return  # Connection already closed by auth handler
+
+        # Check permission to view CAN data
+        if not await auth_handler.require_permission(websocket, user_info, "view_status"):
+            await websocket.close(code=1008)
+            return
+
         self.can_sniffer_clients.add(websocket)
         logger.info(
-            f"CAN sniffer WebSocket client connected: {websocket.client.host}:{websocket.client.port}"
+            f"CAN sniffer WebSocket client connected: {websocket.client.host}:{websocket.client.port} "
+            f"(user: {user_info.get('username', 'unknown')})"
         )
         try:
             if self._app_state:
@@ -461,6 +534,7 @@ class WebSocketManager(Feature):
             )
         finally:
             self.can_sniffer_clients.discard(websocket)
+            auth_handler.remove_connection(websocket)
 
     async def handle_network_map_connection(self, websocket: WebSocket) -> None:
         """
@@ -726,7 +800,5 @@ def get_websocket_manager() -> WebSocketManager:
     """
     if websocket_manager is None:
         msg = "WebSocketManager not initialized. Call initialize_websocket_manager first."
-        raise RuntimeError(
-            msg
-        )
+        raise RuntimeError(msg)
     return websocket_manager

@@ -521,7 +521,7 @@ export default function Lights() {
     )
   }
 
-  const lightArray = lights ? Object.values(lights) : []
+  const lightArray = lights ? Object.values(lights) as EntityData[] : []
 
   if (lightArray.length === 0) {
     return (

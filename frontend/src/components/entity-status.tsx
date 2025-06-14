@@ -6,6 +6,7 @@
  * automatically use Domain API v2 when available and fall back to legacy API.
  */
 
+import type { ReactNode } from "react";
 import type { LightEntity } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,7 +214,7 @@ function EntityOverviewCard() {
           {Object.entries(entityCounts).map(([type, count]) => (
             <div key={type} className="flex justify-between items-center">
               <span className="capitalize">{type.replace('_', ' ')}</span>
-              <Badge variant="secondary">{count}</Badge>
+              <Badge variant="secondary">{count as ReactNode}</Badge>
             </div>
           ))}
           {Object.keys(entityCounts).length === 0 && (

@@ -25,6 +25,15 @@ import { useSystemAnalytics, useAcknowledgeAlert } from "@/hooks/useDashboard"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { LoadingPatterns } from "@/components/loading-states"
 import {
+    OverallSystemStatusCard,
+    ApplicationHealthSummaryCard,
+    PerformanceMetricsSummaryCard,
+    CANBusStatusSummaryCard,
+    CANMetricsSummaryCard,
+    ComponentHealthGrid,
+    EventLogStreamCard
+} from "@/components/system-status"
+import {
     IconActivity,
     IconAlertCircle,
     IconCheck,
@@ -673,7 +682,7 @@ function EntityStatisticsCard() {
               {Object.entries(entityCounts).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between p-2 border rounded">
                   <span className="text-sm font-medium">{formatEntityType(type)}</span>
-                  <Badge variant="outline">{count}</Badge>
+                  <Badge variant="outline">{String(count)}</Badge>
                 </div>
               ))}
             </div>
@@ -955,73 +964,89 @@ export default function SystemStatus() {
   return (
     <AppLayout>
       <div className="flex-1 space-y-6 p-4 pt-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">System Status</h1>
-          <p className="text-muted-foreground">
-            Comprehensive system health monitoring and performance metrics
-          </p>
-        </div>
-
-        {/* Status Overview Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <ApplicationHealthCard />
-          </div>
+        <div className="flex items-center justify-between">
           <div>
-            <PerformanceMetricsCard />
+            <h1 className="text-3xl font-bold tracking-tight">Operations Monitoring Center</h1>
+            <p className="text-muted-foreground">
+              Real-time system analytics, performance metrics, and diagnostic tools
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <IconActivity className="h-4 w-4" />
+            <span>For quick status, check the sidebar indicator</span>
           </div>
         </div>
 
-        {/* System Alerts */}
-        <SystemAlertsCard />
-
-        {/* Interactive CAN Metrics Chart */}
-        <CANMetricsChart />
-
-        {/* Detailed Status Cards */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <CANBusStatusCard />
-          <EntityStatisticsCard />
+        {/* Row 1: Golden Signal Row - Level 1 & 2 of Information Pyramid */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <OverallSystemStatusCard />
+          <ApplicationHealthSummaryCard />
+          <PerformanceMetricsSummaryCard />
+          <CANBusStatusSummaryCard />
         </div>
 
-        {/* Diagnostic Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <IconServer className="size-5" />
-              System Management
-            </CardTitle>
-            <CardDescription>Advanced diagnostic and monitoring tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Button asChild variant="outline" className="justify-start">
-                <Link to="/can-sniffer">
-                  <IconWifi className="mr-2 h-4 w-4" />
-                  CAN Bus Monitor
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start">
-                <Link to="/unknown-pgns">
-                  <IconAlertCircle className="mr-2 h-4 w-4" />
-                  Unknown PGNs
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start">
-                <Link to="/logs">
-                  <IconDatabase className="mr-2 h-4 w-4" />
-                  System Logs
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start">
-                <Link to="/unmapped-entries">
-                  <IconHelp className="mr-2 h-4 w-4" />
-                  Unmapped Data
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Two-Column Layout: Primary (Problems) vs Secondary (Context) */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+          {/* LEFT COLUMN (2/3 width): Primary - "What needs attention now?" */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* System Alerts - Highest priority after Golden Signals */}
+            <SystemAlertsCard />
+
+            {/* Event Log Stream - Provides immediate context for alerts */}
+            <EventLogStreamCard />
+          </div>
+
+          {/* RIGHT COLUMN (1/3 width): Secondary - "What is the overall state?" */}
+          <div className="space-y-6">
+            {/* Entity Statistics - Context for overall activity */}
+            <EntityStatisticsCard />
+
+            {/* Component Health Grid - Which part of the system has issues */}
+            <ComponentHealthGrid />
+
+            {/* CAN Metrics Summary - Compact visualization with drill-down */}
+            <CANMetricsSummaryCard />
+
+            {/* System Management - Action-oriented tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconServer className="size-5" />
+                  System Management
+                </CardTitle>
+                <CardDescription>Diagnostic tools</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2">
+                  <Button asChild variant="outline" size="sm" className="justify-start">
+                    <Link to="/can-sniffer">
+                      <IconWifi className="mr-2 h-4 w-4" />
+                      CAN Monitor
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="justify-start">
+                    <Link to="/logs">
+                      <IconDatabase className="mr-2 h-4 w-4" />
+                      System Logs
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="justify-start">
+                    <Link to="/unknown-pgns">
+                      <IconAlertCircle className="mr-2 h-4 w-4" />
+                      Unknown PGNs
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="justify-start">
+                    <Link to="/unmapped-entries">
+                      <IconHelp className="mr-2 h-4 w-4" />
+                      Unmapped Data
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </AppLayout>
   )

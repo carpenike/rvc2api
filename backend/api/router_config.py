@@ -21,6 +21,8 @@ from backend.api.routers import (
     logs,
     migration,
     multi_network,
+    notification_analytics,
+    notification_dashboard,
     performance_analytics,
     predictive_maintenance,
     schemas,
@@ -60,6 +62,10 @@ def configure_routers(app: FastAPI) -> None:
     app.include_router(predictive_maintenance.router)
     app.include_router(schemas.router)
     app.include_router(migration.router)
+
+    # Include notification routers
+    app.include_router(notification_dashboard.router)
+    app.include_router(notification_analytics.router)
 
     # Include WebSocket routes that integrate with feature manager
     app.include_router(websocket_router)
@@ -111,9 +117,11 @@ def get_router_info() -> dict[str, Any]:
             },
             {"prefix": "/api/schemas", "tags": ["schemas"], "name": "schemas"},
             {"prefix": "/api/migration", "tags": ["migration"], "name": "migration"},
+            {"prefix": "/api/notifications/dashboard", "tags": ["notification-dashboard"], "name": "notification_dashboard"},
+            {"prefix": "/api/notification-analytics", "tags": ["notification-analytics"], "name": "notification_analytics"},
             {"prefix": "/ws", "tags": ["websocket"], "name": "websocket"},
         ],
-        "total_routers": 13,
+        "total_routers": 15,
         "dependency_injection": True,
         "domain_api_v2": True,
     }

@@ -16,6 +16,7 @@ import logging
 from typing import Any
 
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,8 @@ class J1939Feature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         """
         Initialize the J1939 feature.
@@ -51,6 +54,8 @@ class J1939Feature(Feature):
             config: Optional configuration dictionary
             dependencies: List of feature names this feature depends on
             friendly_name: Human-readable display name for the feature
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions for audit
         """
         super().__init__(
             name=name,
@@ -59,6 +64,8 @@ class J1939Feature(Feature):
             config=config,
             dependencies=dependencies,
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
         self.config = config or {}
 

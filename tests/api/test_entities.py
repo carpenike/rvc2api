@@ -1,8 +1,9 @@
 """
 Tests for the entities API endpoints.
 
-This module tests the /api/entities endpoints including list operations,
-entity retrieval, control operations, and metadata endpoints.
+This module tests the entity endpoints. It will attempt to use Domain API v2
+endpoints first, and fall back to legacy endpoints if they're not available.
+This supports the migration period where both APIs may coexist.
 """
 
 import pytest
@@ -17,31 +18,74 @@ async def test_list_entities_success(
     """Test successful retrieval of all entities."""
     # Arrange
     mock_entities = {
-        "light_1": {
-            "id": "light_1",
-            "name": "Kitchen Light",
-            "device_type": "light",
-            "value": True,
-        },
-        "sensor_1": {
-            "id": "sensor_1",
-            "name": "Temperature Sensor",
-            "device_type": "sensor",
-            "value": 20.5,
-        },
+        "entities": [
+            {
+                "entity_id": "light_1",
+                "name": "Kitchen Light",
+                "device_type": "light",
+                "state": {"state": True},
+                "protocol": "rvc",
+                "available": True,
+                "last_updated": "2023-01-01T12:00:00Z"
+            },
+            {
+                "entity_id": "sensor_1",
+                "name": "Temperature Sensor",
+                "device_type": "sensor",
+                "state": {"value": 20.5},
+                "protocol": "rvc",
+                "available": True,
+                "last_updated": "2023-01-01T12:00:00Z"
+            },
+        ],
+        "total_count": 2,
+        "page": 1,
+        "page_size": 50,
+        "has_next": False,
+        "filters_applied": {}
     }
     override_entity_service.list_entities.return_value = mock_entities
     override_feature_manager.is_enabled.return_value = True
 
-    # Act
-    response = await async_client.get("/api/entities")
+    # Act - Try Domain API v2 first, fall back to legacy if not available
+    response = await async_client.get("/api/v2/entities")
 
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 2
-    assert "light_1" in data
-    assert "sensor_1" in data
+    if response.status_code == 404:
+        # Domain API v2 not available, use legacy endpoint
+        # Update mock for legacy format
+        override_entity_service.list_entities.return_value = {
+            "light_1": {
+                "id": "light_1",
+                "name": "Kitchen Light",
+                "device_type": "light",
+                "value": True,
+            },
+            "sensor_1": {
+                "id": "sensor_1",
+                "name": "Temperature Sensor",
+                "device_type": "sensor",
+                "value": 20.5,
+            },
+        }
+        response = await async_client.get("/api/entities")
+
+        # Assert legacy format
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert "light_1" in data
+        assert "sensor_1" in data
+    else:
+        # Assert Domain API v2 format
+        assert response.status_code == 200
+        data = response.json()
+        assert "entities" in data
+        assert len(data["entities"]) == 2
+        # Check entity IDs in the paginated response
+        entity_ids = [entity["entity_id"] for entity in data["entities"]]
+        assert "light_1" in entity_ids
+        assert "sensor_1" in entity_ids
+
     override_entity_service.list_entities.assert_called_once_with(device_type=None, area=None)
 
 
@@ -53,24 +97,37 @@ async def test_list_entities_with_device_type_filter(
     """Test entity listing with device_type filter."""
     # Arrange
     mock_entities = {
-        "light_1": {
-            "id": "light_1",
-            "name": "Kitchen Light",
-            "device_type": "light",
-            "value": True,
-        },
+        "entities": [
+            {
+                "entity_id": "light_1",
+                "name": "Kitchen Light",
+                "device_type": "light",
+                "state": {"state": True},
+                "protocol": "rvc",
+                "available": True,
+                "last_updated": "2023-01-01T12:00:00Z"
+            },
+        ],
+        "total_count": 1,
+        "page": 1,
+        "page_size": 50,
+        "has_next": False,
+        "filters_applied": {"device_type": "light"}
     }
     override_entity_service.list_entities.return_value = mock_entities
     override_feature_manager.is_enabled.return_value = True
 
     # Act
-    response = await async_client.get("/api/entities?device_type=light")
+    response = await async_client.get("/api/v2/entities?device_type=light")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert "light_1" in data
+    assert "entities" in data
+    assert len(data["entities"]) == 1
+    # Check entity ID in the paginated response
+    entity_ids = [entity["entity_id"] for entity in data["entities"]]
+    assert "light_1" in entity_ids
     override_entity_service.list_entities.assert_called_once_with(device_type="light", area=None)
 
 
@@ -84,7 +141,7 @@ async def test_list_entities_rvc_disabled(
     override_feature_manager.is_enabled.return_value = False
 
     # Act
-    response = await async_client.get("/api/entities")
+    response = await async_client.get("/api/v2/entities")
 
     # Assert
     assert response.status_code == 404
@@ -105,7 +162,7 @@ async def test_list_entity_ids_success(
     override_feature_manager.is_enabled.return_value = True
 
     # Act
-    response = await async_client.get("/api/entities/ids")
+    response = await async_client.get("/api/v2/entities/ids")
 
     # Assert
     assert response.status_code == 200
@@ -122,17 +179,25 @@ async def test_get_entity_success(
     """Test successful retrieval of a specific entity by ID."""
     # Arrange
     entity_id = "light_1"
-    mock_entity = {"id": entity_id, "name": "Kitchen Light", "device_type": "light", "value": True}
+    mock_entity = {
+        "entity_id": entity_id,
+        "name": "Kitchen Light",
+        "device_type": "light",
+        "state": {"state": True},
+        "protocol": "rvc",
+        "available": True,
+        "last_updated": "2023-01-01T12:00:00Z"
+    }
     override_entity_service.get_entity.return_value = mock_entity
     override_feature_manager.is_enabled.return_value = True
 
     # Act
-    response = await async_client.get(f"/api/entities/{entity_id}")
+    response = await async_client.get(f"/api/v2/entities/{entity_id}")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert data["id"] == entity_id
+    assert data["entity_id"] == entity_id
     assert data["name"] == "Kitchen Light"
     override_entity_service.get_entity.assert_called_once_with(entity_id)
 
@@ -149,7 +214,7 @@ async def test_get_entity_not_found(
     override_feature_manager.is_enabled.return_value = True
 
     # Act
-    response = await async_client.get(f"/api/entities/{entity_id}")
+    response = await async_client.get(f"/api/v2/entities/{entity_id}")
 
     # Assert
     assert response.status_code == 404

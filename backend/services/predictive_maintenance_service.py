@@ -20,8 +20,6 @@ from backend.models.predictive_maintenance import (
     MaintenanceRecommendationModel,
     RVHealthOverviewModel,
 )
-from backend.services.in_memory_persistence import InMemoryPersistenceService
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,9 +31,14 @@ class PredictiveMaintenanceService:
     anomaly detection, and proactive maintenance recommendations.
     """
 
-    def __init__(self):
-        """Initialize the predictive maintenance service."""
-        self.persistence = InMemoryPersistenceService()
+    def __init__(self, database_manager=None):
+        """Initialize the predictive maintenance service.
+
+        Args:
+            database_manager: Optional database manager for persistence operations.
+                             If None, persistence operations will be disabled.
+        """
+        self._db_manager = database_manager
 
         # Component health data storage
         self.component_health: dict[str, ComponentHealthModel] = {}

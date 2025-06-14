@@ -17,9 +17,12 @@ Safety-Critical Implementation:
 - Comprehensive audit logging for all operations
 """
 
+import logging
 from typing import Dict, Callable
 from fastapi import FastAPI
 from backend.services.feature_manager import FeatureManager
+
+logger = logging.getLogger(__name__)
 
 # Registry of domain router registration functions
 DOMAIN_ROUTERS: Dict[str, Callable] = {}
@@ -46,11 +49,11 @@ def register_all_domain_routers(app: FastAPI, feature_manager: FeatureManager) -
             try:
                 router = register_func(app.state)
                 app.include_router(router, prefix=f"/api/v2/{domain_name}")
-                print(f"✅ Registered domain router: {domain_name}")
+                logger.info("✅ Registered domain router: %s", domain_name)
             except Exception as e:
-                print(f"❌ Failed to register domain router {domain_name}: {e}")
+                logger.error("❌ Failed to register domain router %s: %s", domain_name, e)
         else:
-            print(f"⚠️  Domain router {domain_name} disabled by feature flag")
+            logger.debug("⚠️  Domain router %s disabled by feature flag", domain_name)
 
 # Import domain modules to trigger registration
 try:
@@ -58,5 +61,5 @@ try:
     # Explicitly reference imported modules to satisfy linter
     _domain_modules = [entities, diagnostics, networks, system]
 except ImportError as e:
-    print(f"⚠️  Some domain modules not available: {e}")
+    logger.warning("⚠️  Some domain modules not available: %s", e)
     _domain_modules = []

@@ -38,12 +38,6 @@ async def get_persistence_status(
     - Storage statistics
     - Database health check
     """
-    if not persistence_service.enabled:
-        return {
-            "enabled": False,
-            "status": "disabled",
-            "message": "Persistence service is disabled",
-        }
 
     try:
         # Get storage information
@@ -64,7 +58,7 @@ async def get_persistence_status(
         }
 
     except Exception as e:
-        logger.error(f"Error getting persistence status: {e}")
+        logger.exception("Error getting persistence status: %s", e)
         return {"enabled": True, "status": "unhealthy", "error": str(e)}
 
 

@@ -8,13 +8,13 @@ and lifecycle management of the authentication system.
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from backend.core.config import get_settings
-from backend.core.persistence_feature import get_persistence_feature
 from backend.services.auth_manager import AuthManager
 from backend.services.auth_repository import AuthRepository
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 
 class AuthenticationFeature(Feature):
@@ -28,9 +28,28 @@ class AuthenticationFeature(Feature):
     - Dependency injection support for auth manager
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        name: str = "authentication",
+        enabled: bool = False,
+        core: bool = False,
+        config: dict[str, Any] | None = None,
+        dependencies: list[str] | None = None,
+        friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
+    ):
         """Initialize the authentication feature."""
-        super().__init__(**kwargs)
+        super().__init__(
+            name=name,
+            enabled=enabled,
+            core=core,
+            config=config,
+            dependencies=dependencies,
+            friendly_name=friendly_name or "Authentication System",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
+        )
         self.auth_manager: AuthManager | None = None
         self.auth_repository: AuthRepository | None = None
         self.logger = logging.getLogger(__name__)
@@ -45,20 +64,21 @@ class AuthenticationFeature(Feature):
             notification_manager = None
             # TODO: Implement notification manager access when needed
 
-            # Initialize auth repository with database manager from persistence feature (MANDATORY)
-            # Get persistence feature using the established pattern
-            persistence_feature = get_persistence_feature()
-            database_manager = persistence_feature.get_database_manager()
+            # Initialize auth repository with database manager from CoreServices
+            from backend.services.feature_manager import get_feature_manager
+            feature_manager = get_feature_manager()
+            core_services = feature_manager.get_core_services()
+            database_manager = core_services.database_manager
 
             if not database_manager:
-                msg = "Database manager not available - authentication requires mandatory persistence"
+                msg = "Database manager not available - authentication requires core services"
                 self.logger.error(msg)
                 raise RuntimeError(msg)
 
-            # Create the auth repository (MANDATORY)
+            # Create the auth repository with core database manager
             auth_repository = AuthRepository(database_manager)
             self.auth_repository = auth_repository
-            self.logger.info("Auth repository initialized with mandatory database persistence")
+            self.logger.info("Auth repository initialized with core database manager")
 
             # Initialize auth manager
             self.auth_manager = AuthManager(
@@ -154,7 +174,7 @@ class AuthenticationFeature(Feature):
         Returns:
             list[str]: List of required feature names
         """
-        return ["persistence", "notifications"]
+        return ["notifications"]
 
     def is_ready(self) -> bool:
         """

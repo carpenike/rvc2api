@@ -64,11 +64,6 @@ class PersistenceService:
         """Get persistence settings."""
         return self._settings
 
-    @property
-    def enabled(self) -> bool:
-        """Check if persistence is enabled."""
-        # MANDATORY PERSISTENCE: Always enabled in new architecture
-        return True
 
     @property
     def data_dir(self) -> Path:
@@ -107,10 +102,6 @@ class PersistenceService:
         if self._initialized:
             return True
 
-        if not self.enabled:
-            logger.info("Persistence service disabled, skipping initialization")
-            self._initialized = True
-            return True
 
         try:
             # Ensure all required directories exist
@@ -147,12 +138,8 @@ class PersistenceService:
 
             database_settings = DatabaseSettings()
 
-            # Check if persistence is enabled
-            if self.enabled:
-                database_settings.sqlite_path = str(await self.get_database_path("coachiq"))
-            else:
-                # In null backend mode, set sqlite_path to ":null:" to trigger null backend
-                database_settings.sqlite_path = ":null:"
+            # Mandatory persistence: always use SQLite
+            database_settings.sqlite_path = str(await self.get_database_path("coachiq"))
 
             self._db_manager = DatabaseManager(database_settings)
             await self._db_manager.initialize()
@@ -161,10 +148,7 @@ class PersistenceService:
             self._config_repository = ConfigRepository(self._db_manager)
             self._dashboard_repository = DashboardRepository(self._db_manager)
 
-            if self.enabled:
-                logger.info("Database components initialized with persistent storage")
-            else:
-                logger.info("Database components initialized in memory-only mode (null backend)")
+            logger.info("Database components initialized with mandatory persistent storage")
 
         except Exception as e:
             logger.error(f"Failed to initialize database components: {e}")

@@ -406,12 +406,12 @@ export function EntitySelectorV2({
           </ScrollArea>
 
           {/* Pagination */}
-          {totalCount > pageSize && (
+          {entityCollection && entityCollection.total_count > pageSize && (
             <>
               <Separator />
               <div className="p-4 flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount}
+                  Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, entityCollection.total_count)} of {entityCollection.total_count}
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -426,7 +426,7 @@ export function EntitySelectorV2({
                     variant="outline"
                     size="sm"
                     onClick={nextPage}
-                    disabled={!hasNext}
+                    disabled={!entityCollection.has_next}
                   >
                     Next
                   </Button>

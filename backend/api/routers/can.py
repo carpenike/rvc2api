@@ -125,10 +125,17 @@ class BackendComputedCANStatistics(BaseModel):
 # Backend-First CANMetrics Response Model
 class BackendComputedCANMetrics(BaseModel):
     """Backend-computed CAN metrics in the exact format expected by frontend."""
+    model_config = {"alias_generator": lambda field_name: field_name}
 
-    message_rate: float = Field(..., description="Current message rate (messages/second)")
-    total_messages: int = Field(..., description="Total messages processed")
-    error_count: int = Field(..., description="Total error count")
+    message_rate: float = Field(
+        ..., description="Current message rate (messages/second)", serialization_alias="messageRate"
+    )
+    total_messages: int = Field(
+        ..., description="Total messages processed", serialization_alias="totalMessages"
+    )
+    error_count: int = Field(
+        ..., description="Total error count", serialization_alias="errorCount"
+    )
     uptime: float = Field(..., description="System uptime in seconds")
 
 
@@ -274,30 +281,30 @@ async def get_computed_can_metrics(
         # Get basic statistics from CAN service
         basic_stats = await can_service.get_bus_statistics()
 
-        # Backend business logic: Aggregate across all interfaces and compute metrics
-        total_messages = (
-            sum(stats.total_messages for stats in basic_stats.values()) if basic_stats else 0
-        )
-        total_errors = (
-            sum(stats.total_errors for stats in basic_stats.values()) if basic_stats else 0
-        )
-        total_uptime = max(stats.uptime for stats in basic_stats.values()) if basic_stats else 0
+        # Backend business logic: Extract metrics from CAN service response
+        summary = basic_stats.get("summary", {}) if basic_stats else {}
 
-        # Backend business logic: Calculate message rate
-        message_rate = total_messages / max(total_uptime, 1) if total_uptime > 0 else 0.0
+        message_rate = summary.get("message_rate", 0.0)
+        total_messages = summary.get("total_messages", 0)
+        total_errors = summary.get("total_errors", 0)
+
+        # Calculate uptime based on total messages and message rate
+        total_uptime = total_messages / max(message_rate, 1) if message_rate > 0 else 0.0
 
         # Return in exact frontend CANMetrics format (camelCase field names)
         return BackendComputedCANMetrics(
-            messageRate=message_rate,
-            totalMessages=total_messages,
-            errorCount=total_errors,
+            message_rate=message_rate,
+            total_messages=total_messages,
+            error_count=total_errors,
             uptime=total_uptime,
         )
 
     except Exception as e:
         logger.error(f"Error retrieving computed CAN metrics: {e}", exc_info=True)
         # Return safe fallback metrics
-        return BackendComputedCANMetrics(messageRate=0.0, totalMessages=0, errorCount=0, uptime=0.0)
+        return BackendComputedCANMetrics(
+            message_rate=0.0, total_messages=0, error_count=0, uptime=0.0
+        )
 
 
 @router.get(

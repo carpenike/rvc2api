@@ -14,6 +14,7 @@ from typing import Any
 from backend.core.config import get_multi_network_settings
 from backend.integrations.can.multi_network_manager import get_multi_network_manager
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ class MultiNetworkCANFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         super().__init__(
             name=name,
@@ -42,6 +45,8 @@ class MultiNetworkCANFeature(Feature):
             config=config,
             dependencies=dependencies or ["can_interface"],
             friendly_name=friendly_name or "Multi-Network CAN Manager",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
         self.manager = get_multi_network_manager()
         self.settings = get_multi_network_settings()

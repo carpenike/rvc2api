@@ -8,6 +8,7 @@ import {
   IconFileDescription,
   IconFileWord,
   IconHelp,
+  IconHeartRateMonitor,
   IconInnerShadowTop,
   IconListDetails,
   IconMapPin,
@@ -25,6 +26,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavSection } from "@/components/nav-section"
 import { NavUser } from "@/components/nav-user"
+import { SystemStatusIndicator } from "@/components/system-status-indicator"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 
 const data = {
@@ -60,6 +62,11 @@ const data = {
       title: "System Status",
       url: "/system-status",
       icon: IconListDetails,
+    },
+    {
+      title: "Health Dashboard",
+      url: "/health",
+      icon: IconHeartRateMonitor,
     },
     {
       title: "Performance Analytics",
@@ -183,6 +190,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarContent>
       <SidebarFooter>
+        <SystemStatusIndicator />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

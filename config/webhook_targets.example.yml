@@ -1,0 +1,159 @@
+# Webhook Targets Configuration Example
+#
+# This file shows how to configure webhook targets for the notification system.
+# Copy this file to config/webhook_targets.yml and customize for your environment.
+
+webhook_targets:
+  # Simple webhook with no authentication
+  slack_integration:
+    name: "slack_integration"
+    url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    enabled: true
+    method: "POST"
+    timeout: 30
+    verify_ssl: true
+    max_retries: 3
+    retry_delay: 2
+    retry_exponential: true
+    content_type: "application/json"
+
+    # Authentication configuration
+    auth:
+      type: "none"
+
+    # Filtering - only send warnings and errors
+    notification_types: ["warning", "error", "critical"]
+    tags_filter: []
+
+  # Microsoft Teams webhook with custom authentication
+  teams_integration:
+    name: "teams_integration"
+    url: "https://outlook.office.com/webhook/YOUR/TEAMS/WEBHOOK"
+    enabled: true
+    method: "POST"
+    timeout: 25
+    max_retries: 2
+
+    auth:
+      type: "none"  # Teams webhooks typically don't need auth
+
+    # Custom payload template (optional)
+    payload_template: null
+
+    # Filter to only system notifications
+    notification_types: ["info", "warning", "error", "critical"]
+    tags_filter: ["system"]
+
+  # Custom API with Bearer token authentication
+  monitoring_api:
+    name: "monitoring_api"
+    url: "https://api.monitoring.example.com/events"
+    enabled: true
+    method: "POST"
+    timeout: 15
+    verify_ssl: true
+    max_retries: 5
+    retry_delay: 1
+    retry_exponential: true
+
+    auth:
+      type: "bearer"
+      bearer_token: "your-bearer-token-here"
+      custom_headers:
+        "X-Source": "CoachIQ"
+        "X-Environment": "production"
+
+    # Security - sign requests with HMAC
+    secret_key: "your-webhook-secret-key"
+    signature_header: "X-Webhook-Signature"
+
+    # Send all notifications
+    notification_types: []
+    tags_filter: []
+
+  # API with API Key authentication
+  logging_service:
+    name: "logging_service"
+    url: "https://api.logging.example.com/webhook"
+    enabled: false  # Disabled by default
+    method: "POST"
+    timeout: 10
+
+    auth:
+      type: "apikey"
+      api_key: "your-api-key-here"
+      api_key_header: "X-API-Key"
+      custom_headers:
+        "X-Service": "CoachIQ-RVC"
+
+    # Only critical alerts
+    notification_types: ["critical"]
+    tags_filter: ["security", "safety"]
+
+  # Basic authentication example
+  legacy_system:
+    name: "legacy_system"
+    url: "https://legacy.example.com/notifications"
+    enabled: false
+    method: "POST"
+    timeout: 45
+    verify_ssl: false  # For internal systems with self-signed certs
+
+    auth:
+      type: "basic"
+      username: "webhook_user"
+      password: "webhook_password"
+
+    # Custom content type
+    content_type: "application/x-www-form-urlencoded"
+
+    notification_types: ["error", "critical"]
+    tags_filter: []
+
+  # External monitoring service with custom method
+  status_page:
+    name: "status_page"
+    url: "https://api.statuspage.io/v1/pages/YOUR_PAGE_ID/incidents"
+    enabled: false
+    method: "POST"
+    timeout: 20
+
+    auth:
+      type: "bearer"
+      bearer_token: "your-statuspage-api-key"
+      custom_headers:
+        "Content-Type": "application/json"
+
+    # Only send critical incidents to status page
+    notification_types: ["critical"]
+    tags_filter: ["public", "incident"]
+
+  # Development/testing webhook (httpbin.org)
+  development_test:
+    name: "development_test"
+    url: "https://httpbin.org/post"
+    enabled: false  # Only enable in development
+    method: "POST"
+    timeout: 30
+    max_retries: 1
+
+    auth:
+      type: "none"
+
+    # Test with all notification types
+    notification_types: []
+    tags_filter: ["test", "development"]
+
+# Rate limiting configuration (applied globally)
+rate_limiting:
+  requests_per_window: 100  # Maximum requests per time window
+  window_seconds: 60        # Time window in seconds
+
+# Default configuration for all webhooks
+defaults:
+  timeout: 30
+  max_retries: 3
+  retry_delay: 1
+  retry_exponential: true
+  verify_ssl: true
+  content_type: "application/json"

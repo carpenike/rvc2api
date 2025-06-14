@@ -88,6 +88,39 @@ class SafeStateAction(str, Enum):
     """Immediate stop for emergency situations."""
 
 
+class FeatureState(str, Enum):
+    """
+    Feature lifecycle states for health monitoring and management.
+
+    States follow a defined lifecycle with clear transitions:
+    - STOPPED -> INITIALIZING -> HEALTHY
+    - HEALTHY -> DEGRADED -> FAILED
+    - Any state -> MAINTENANCE (manual intervention)
+    - FAILED -> SAFE_SHUTDOWN (for critical features)
+    """
+
+    STOPPED = "stopped"
+    """Feature is not running and not initialized."""
+
+    INITIALIZING = "initializing"
+    """Feature is starting up and performing initialization."""
+
+    HEALTHY = "healthy"
+    """Feature is running normally with all functions available."""
+
+    DEGRADED = "degraded"
+    """Feature is partially functional or has non-critical issues."""
+
+    FAILED = "failed"
+    """Feature has failed and is non-functional."""
+
+    SAFE_SHUTDOWN = "safe_shutdown"
+    """Feature is performing controlled shutdown for safety."""
+
+    MAINTENANCE = "maintenance"
+    """Feature is intentionally offline for service."""
+
+
 class FeatureDefinition(BaseModel):
     """
     Complete definition of a feature including safety requirements.
@@ -102,6 +135,11 @@ class FeatureDefinition(BaseModel):
         ...,
         alias="enabled",
         description="Default enabled state from YAML"
+    )
+
+    mandatory: bool = Field(
+        default=False,
+        description="If true, feature cannot be disabled and must start successfully"
     )
 
     safety_classification: SafetyClassification = Field(
@@ -275,7 +313,7 @@ class FeatureConfigurationSet(BaseModel):
         """Validate that dependency graph has no cycles."""
         # Implementation of cycle detection using DFS
         WHITE, GRAY, BLACK = 0, 1, 2
-        colors = {name: WHITE for name in self.features.keys()}
+        colors = dict.fromkeys(self.features.keys(), WHITE)
 
         def dfs(node: str) -> bool:
             if colors[node] == GRAY:
@@ -298,7 +336,7 @@ class FeatureConfigurationSet(BaseModel):
     def get_startup_order(self) -> list[str]:
         """Get the correct startup order based on dependencies."""
         # Topological sort implementation
-        in_degree = {name: 0 for name in self.features.keys()}
+        in_degree = dict.fromkeys(self.features.keys(), 0)
 
         # Calculate in-degrees
         for feature_def in self.features.values():
@@ -325,3 +363,229 @@ class FeatureConfigurationSet(BaseModel):
             raise ValueError("Circular dependency detected in feature graph")
 
         return result
+
+
+class SafetyValidator:
+    """
+    Safety validation utility for feature state transitions and operations.
+
+    Implements ISO 26262-inspired validation patterns for RV-C vehicle control systems.
+    """
+
+    # Valid state transitions based on safety requirements
+    VALID_TRANSITIONS: dict[FeatureState, set[FeatureState]] = {
+        FeatureState.STOPPED: {
+            FeatureState.INITIALIZING,
+            FeatureState.MAINTENANCE,
+        },
+        FeatureState.INITIALIZING: {
+            FeatureState.HEALTHY,
+            FeatureState.FAILED,
+            FeatureState.STOPPED,
+        },
+        FeatureState.HEALTHY: {
+            FeatureState.DEGRADED,
+            FeatureState.FAILED,
+            FeatureState.SAFE_SHUTDOWN,
+            FeatureState.MAINTENANCE,
+        },
+        FeatureState.DEGRADED: {
+            FeatureState.HEALTHY,      # Recovery possible
+            FeatureState.FAILED,
+            FeatureState.SAFE_SHUTDOWN,
+            FeatureState.MAINTENANCE,
+        },
+        FeatureState.FAILED: {
+            FeatureState.SAFE_SHUTDOWN,
+            FeatureState.MAINTENANCE,
+            FeatureState.STOPPED,      # For complete restart
+        },
+        FeatureState.SAFE_SHUTDOWN: {
+            FeatureState.STOPPED,
+            FeatureState.MAINTENANCE,
+        },
+        FeatureState.MAINTENANCE: {
+            FeatureState.STOPPED,
+            FeatureState.INITIALIZING,
+            FeatureState.HEALTHY,      # Direct return from maintenance
+        },
+    }
+
+    @classmethod
+    def validate_state_transition(
+        cls,
+        from_state: FeatureState,
+        to_state: FeatureState,
+        safety_classification: SafetyClassification,
+        feature_name: str = "unknown"
+    ) -> tuple[bool, str]:
+        """
+        Validate if a state transition is allowed for a feature.
+
+        Args:
+            from_state: Current state
+            to_state: Desired new state
+            safety_classification: Safety classification of the feature
+            feature_name: Name of the feature (for logging)
+
+        Returns:
+            Tuple of (is_valid, reason_if_invalid)
+        """
+        if from_state == to_state:
+            return True, "No state change"
+
+        valid_next_states = cls.VALID_TRANSITIONS.get(from_state, set())
+
+        if to_state not in valid_next_states:
+            return False, f"Invalid transition from {from_state.value} to {to_state.value}"
+
+        # Additional safety checks for critical features
+        if safety_classification == SafetyClassification.CRITICAL:
+            # Critical features should not transition to FAILED without going through DEGRADED first
+            # unless it's an emergency (INITIALIZING -> FAILED is allowed)
+            if (from_state == FeatureState.HEALTHY and
+                to_state == FeatureState.FAILED):
+                return False, "Critical features must transition through DEGRADED before FAILED"
+
+        # Position-critical features have additional restrictions
+        if safety_classification == SafetyClassification.POSITION_CRITICAL:
+            # Position-critical features should prefer SAFE_SHUTDOWN over FAILED
+            if (from_state in [FeatureState.HEALTHY, FeatureState.DEGRADED] and
+                to_state == FeatureState.FAILED):
+                return False, "Position-critical features should use SAFE_SHUTDOWN instead of FAILED"
+
+        return True, "Valid transition"
+
+    @classmethod
+    def get_safe_transition(
+        cls,
+        current_state: FeatureState,
+        desired_state: FeatureState,
+        safety_classification: SafetyClassification
+    ) -> FeatureState:
+        """
+        Get a safe intermediate state if direct transition is not allowed.
+
+        Args:
+            current_state: Current state
+            desired_state: Desired target state
+            safety_classification: Safety classification of the feature
+
+        Returns:
+            Safe intermediate state or desired_state if direct transition is valid
+        """
+        is_valid, _ = cls.validate_state_transition(
+            current_state, desired_state, safety_classification
+        )
+
+        if is_valid:
+            return desired_state
+
+        # Find safe intermediate state
+        valid_next_states = cls.VALID_TRANSITIONS.get(current_state, set())
+
+        # For critical failures, prefer DEGRADED as intermediate state
+        if (desired_state == FeatureState.FAILED and
+            FeatureState.DEGRADED in valid_next_states):
+            return FeatureState.DEGRADED
+
+        # For position-critical features, prefer SAFE_SHUTDOWN
+        if (safety_classification == SafetyClassification.POSITION_CRITICAL and
+            FeatureState.SAFE_SHUTDOWN in valid_next_states):
+            return FeatureState.SAFE_SHUTDOWN
+
+        # Default: return first valid state
+        if valid_next_states:
+            return next(iter(valid_next_states))
+
+        return current_state  # No valid transition possible
+
+    @classmethod
+    def is_emergency_stop_required(
+        cls,
+        feature_state: FeatureState,
+        safety_classification: SafetyClassification,
+        failed_dependencies: set[str] = None
+    ) -> bool:
+        """
+        Determine if emergency stop is required based on feature state and classification.
+
+        Args:
+            feature_state: Current state of the feature
+            safety_classification: Safety classification
+            failed_dependencies: Set of failed dependency names
+
+        Returns:
+            True if emergency stop should be triggered
+        """
+        failed_dependencies = failed_dependencies or set()
+
+        # Critical features failing should trigger emergency stop
+        if (safety_classification == SafetyClassification.CRITICAL and
+            feature_state == FeatureState.FAILED):
+            return True
+
+        # Position-critical features with critical dependencies failed
+        if (safety_classification == SafetyClassification.POSITION_CRITICAL and
+            len(failed_dependencies) > 0):
+            return True
+
+        # Multiple safety-related features failing simultaneously
+        if (safety_classification == SafetyClassification.SAFETY_RELATED and
+            feature_state == FeatureState.FAILED and
+            len(failed_dependencies) >= 2):
+            return True
+
+        return False
+
+    @classmethod
+    def get_required_safety_actions(
+        cls,
+        safety_classification: SafetyClassification,
+        current_state: FeatureState,
+        safe_state_action: SafeStateAction
+    ) -> list[str]:
+        """
+        Get list of required safety actions for a feature in its current state.
+
+        Args:
+            safety_classification: Safety classification
+            current_state: Current feature state
+            safe_state_action: Configured safe state action
+
+        Returns:
+            List of required safety action descriptions
+        """
+        actions = []
+
+        if current_state in [FeatureState.FAILED, FeatureState.SAFE_SHUTDOWN]:
+            if safety_classification == SafetyClassification.CRITICAL:
+                actions.extend([
+                    "Notify system administrator immediately",
+                    "Log all recent operations for forensic analysis",
+                    "Attempt automatic recovery only if explicitly configured",
+                ])
+
+            if safety_classification == SafetyClassification.POSITION_CRITICAL:
+                if safe_state_action == SafeStateAction.MAINTAIN_POSITION:
+                    actions.extend([
+                        "Maintain current physical positions",
+                        "Disable all movement commands",
+                        "Enable position monitoring only",
+                        "Record current position state for recovery",
+                    ])
+                elif safe_state_action == SafeStateAction.EMERGENCY_STOP:
+                    actions.extend([
+                        "Execute immediate emergency stop",
+                        "Log emergency stop reason and timestamp",
+                        "Require manual intervention to resume",
+                    ])
+
+            if safety_classification == SafetyClassification.SAFETY_RELATED:
+                actions.extend([
+                    "Continue monitoring system health",
+                    "Disable non-essential functionality",
+                    "Provide degraded service where possible",
+                ])
+
+        return actions

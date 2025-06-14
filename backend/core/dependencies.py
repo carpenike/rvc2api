@@ -488,3 +488,79 @@ def get_entity_domain_service(request: Request) -> Any:
     except Exception as e:
         msg = f"Failed to create entity domain service: {e}"
         raise RuntimeError(msg)
+
+
+def get_analytics_service(request: Request) -> Any:
+    """
+    Get the notification analytics service from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The notification analytics service
+
+    Raises:
+        RuntimeError: If the analytics service is not initialized
+    """
+    if not hasattr(request.app.state, "notification_analytics_service"):
+        # Try to create it if we have the database manager
+        try:
+            from backend.services.notification_analytics_service import NotificationAnalyticsService
+
+            db_manager = get_database_manager(request)
+            analytics_service = NotificationAnalyticsService(db_manager)
+
+            # Start the service
+            import asyncio
+            loop = asyncio.get_event_loop()
+            loop.create_task(analytics_service.start())
+
+            # Cache in app state
+            request.app.state.notification_analytics_service = analytics_service
+            return analytics_service
+
+        except Exception as e:
+            msg = f"Notification analytics service not initialized: {e}"
+            raise RuntimeError(msg)
+
+    return request.app.state.notification_analytics_service
+
+
+def get_reporting_service(request: Request) -> Any:
+    """
+    Get the notification reporting service from the FastAPI application state.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        The notification reporting service
+
+    Raises:
+        RuntimeError: If the reporting service is not initialized
+    """
+    if not hasattr(request.app.state, "notification_reporting_service"):
+        # Try to create it if we have the required dependencies
+        try:
+            from backend.services.notification_reporting_service import NotificationReportingService
+
+            db_manager = get_database_manager(request)
+            analytics_service = get_analytics_service(request)
+
+            reporting_service = NotificationReportingService(db_manager, analytics_service)
+
+            # Start the service
+            import asyncio
+            loop = asyncio.get_event_loop()
+            loop.create_task(reporting_service.start())
+
+            # Cache in app state
+            request.app.state.notification_reporting_service = reporting_service
+            return reporting_service
+
+        except Exception as e:
+            msg = f"Notification reporting service not initialized: {e}"
+            raise RuntimeError(msg)
+
+    return request.app.state.notification_reporting_service

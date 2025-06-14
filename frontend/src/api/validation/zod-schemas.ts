@@ -49,19 +49,43 @@ class SchemaCache {
    * Get cached schema or fetch from backend
    */
   async getSchema<T extends z.ZodSchema>(schemaName: string): Promise<T> {
-    const cacheKey = `${schemaName}_${this.version}`;
+    try {
+      const cacheKey = `${schemaName}_${this.version}`;
 
-    if (this.isCacheValid() && this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as T;
+      if (this.isCacheValid() && this.cache.has(cacheKey)) {
+        return this.cache.get(cacheKey) as T;
+      }
+
+      await this.refreshSchemas();
+
+      // Try with new version after refresh
+      const newCacheKey = `${schemaName}_${this.version}`;
+      if (!this.cache.has(newCacheKey)) {
+        console.warn(`⚠️ Schema '${schemaName}' not found, falling back to static schemas`);
+        this.initializeStaticSchemas();
+
+        // Try again with static schemas
+        const staticKey = `${schemaName}_static`;
+        if (this.cache.has(staticKey)) {
+          return this.cache.get(staticKey) as T;
+        }
+
+        throw new Error(`Schema '${schemaName}' not available after refresh and static fallback`);
+      }
+
+      return this.cache.get(newCacheKey) as T;
+    } catch (error) {
+      console.error(`❌ Error getting schema '${schemaName}':`, error);
+
+      // Final fallback - try static schemas
+      this.initializeStaticSchemas();
+      const staticKey = `${schemaName}_static`;
+      if (this.cache.has(staticKey)) {
+        return this.cache.get(staticKey) as T;
+      }
+
+      throw error;
     }
-
-    await this.refreshSchemas();
-
-    if (!this.cache.has(cacheKey)) {
-      throw new Error(`Schema '${schemaName}' not available after refresh`);
-    }
-
-    return this.cache.get(cacheKey) as T;
   }
 
   /**
@@ -83,21 +107,45 @@ class SchemaCache {
         throw new Error(`Schema fetch failed: ${response.status} ${response.statusText}`);
       }
 
-      const data: SchemaExportResponse = await response.json();
+      const rawData = await response.json();
+
+      // Handle both wrapped and direct schema responses
+      let schemas: Record<string, JsonSchema>;
+      let version: string;
+
+      if (rawData.schemas && rawData.version) {
+        // Wrapped response format
+        const data = rawData as SchemaExportResponse;
+        schemas = data.schemas;
+        version = data.version;
+      } else {
+        // Direct schemas response (current backend format)
+        schemas = rawData as Record<string, JsonSchema>;
+        version = new Date().toISOString(); // Generate version from timestamp
+      }
+
+      // Validate schemas exist and are not null/undefined
+      if (!schemas || typeof schemas !== 'object') {
+        throw new Error('Invalid schema response: schemas object is missing or invalid');
+      }
 
       // Clear existing cache
       this.cache.clear();
 
       // Convert each schema to Zod
-      for (const [name, jsonSchema] of Object.entries(data.schemas)) {
+      for (const [name, jsonSchema] of Object.entries(schemas)) {
+        if (!jsonSchema || typeof jsonSchema !== 'object') {
+          console.warn(`⚠️ Skipping invalid schema: ${name}`);
+          continue;
+        }
         const zodSchema = this.convertJsonSchemaToZod(jsonSchema);
-        this.cache.set(`${name}_${data.version}`, zodSchema);
+        this.cache.set(`${name}_${version}`, zodSchema);
       }
 
-      this.version = data.version;
+      this.version = version;
       this.lastFetch = new Date();
 
-      console.log(`✅ Refreshed ${Object.keys(data.schemas).length} schemas (v${data.version})`);
+      console.log(`✅ Refreshed ${Object.keys(schemas).length} schemas (v${version})`);
     } catch (error) {
       console.error('❌ Failed to refresh schemas from backend:', error);
 

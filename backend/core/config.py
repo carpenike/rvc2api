@@ -392,10 +392,10 @@ class RVCSettings(BaseSettings):
             Path.cwd() / "config",
             # 2. Try to find bundled config files using importlib.resources
             self._get_bundled_config_dir(),
-            # 3. System package locations
-            Path("/usr/share/coachiq/config"),
-            Path("/usr/local/share/coachiq/config"),
-            Path("/etc/coachiq"),
+            # 3. Production: Look in /var/lib/coachiq/reference
+            # This directory contains read-only reference data (RV-C specs, coach mappings)
+            # managed by Nix with restrictive permissions
+            Path("/var/lib/coachiq/reference"),
         ]
 
         for path in search_paths:
@@ -674,6 +674,51 @@ class DiscordChannelConfig(BaseSettings):
         return self.webhook_url.replace("https://discord.com/api/webhooks/", "discord://")
 
 
+class PushoverChannelConfig(BaseSettings):
+    """Pushover channel configuration for notification system."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_NOTIFICATIONS__PUSHOVER__", case_sensitive=False
+    )
+
+    enabled: bool = Field(default=False, description="Enable Pushover notifications")
+    user_key: str = Field(default="", description="Pushover user key")
+    token: str = Field(default="", description="Pushover application token")
+    device: str = Field(default="", description="Pushover device name (optional)")
+
+    def to_apprise_url(self) -> str:
+        """Convert to Apprise URL format."""
+        if not self.enabled or not self.user_key or not self.token:
+            return ""
+
+        url = f"pover://{self.user_key}@{self.token}"
+        if self.device:
+            url += f"/{self.device}"
+
+        return url
+
+
+class WebhookChannelConfig(BaseSettings):
+    """Webhook channel configuration for notification system."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="COACHIQ_NOTIFICATIONS__WEBHOOK__", case_sensitive=False
+    )
+
+    enabled: bool = Field(default=False, description="Enable webhook notifications")
+    default_timeout: int = Field(default=30, description="Default request timeout in seconds", ge=1, le=300)
+    max_retries: int = Field(default=3, description="Default maximum retry attempts", ge=0, le=10)
+    verify_ssl: bool = Field(default=True, description="Verify SSL certificates by default")
+    rate_limit_requests: int = Field(default=100, description="Rate limit requests per window", ge=1)
+    rate_limit_window: int = Field(default=60, description="Rate limit window in seconds", ge=1)
+
+    # Webhook targets configuration (simplified for environment variables)
+    targets: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Webhook target configurations"
+    )
+
+
 class NotificationSettings(BaseSettings):
     """Unified notification system configuration using Apprise."""
 
@@ -694,6 +739,8 @@ class NotificationSettings(BaseSettings):
     smtp: SMTPChannelConfig = Field(default_factory=SMTPChannelConfig)
     slack: SlackChannelConfig = Field(default_factory=SlackChannelConfig)
     discord: DiscordChannelConfig = Field(default_factory=DiscordChannelConfig)
+    pushover: PushoverChannelConfig = Field(default_factory=PushoverChannelConfig)
+    webhook: WebhookChannelConfig = Field(default_factory=WebhookChannelConfig)
 
     def get_enabled_channels(self) -> list[tuple[str, str]]:
         """Get list of enabled notification channels with their Apprise URLs."""
@@ -708,6 +755,13 @@ class NotificationSettings(BaseSettings):
 
         if self.discord.enabled and self.discord.webhook_url:
             channels.append(("discord", self.discord.to_apprise_url()))
+
+        if self.pushover.enabled and self.pushover.user_key and self.pushover.token:
+            channels.append(("pushover", self.pushover.to_apprise_url()))
+
+        if self.webhook.enabled and self.webhook.targets:
+            # Webhook uses custom delivery mechanism
+            channels.append(("webhook", "custom"))
 
         return channels
 
@@ -868,11 +922,15 @@ class FeaturesSettings(BaseSettings):
     )
 
     # Domain API v2 Features (Safety-Critical Implementation)
+    # --- API V2 MIGRATION COMPLETE ---
+    # The following flags are now defaulted to True as of 2025-01-13
+    # following the full migration to Domain API v2. Legacy API endpoints have been removed.
+    # These flags are now considered candidates for complete removal in a future iteration.
     domain_api_v2: bool = Field(
-        default=False, description="EMERGENCY SAFETY FLAG: Domain-driven API v2 with safety-critical command/acknowledgment patterns"
+        default=True, description="Domain-driven API v2 with safety-critical command/acknowledgment patterns (MIGRATION COMPLETE)"
     )
     entities_api_v2: bool = Field(
-        default=False, description="Domain-specific entities API v2 with bulk operations and safety interlocks"
+        default=True, description="Domain-specific entities API v2 with bulk operations and safety interlocks (MIGRATION COMPLETE)"
     )
     diagnostics_api_v2: bool = Field(
         default=False, description="Domain-specific diagnostics API v2 with enhanced fault correlation"

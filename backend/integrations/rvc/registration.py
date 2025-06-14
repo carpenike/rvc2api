@@ -9,6 +9,7 @@ from typing import Any
 
 from backend.integrations.rvc.feature import RVCFeature
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ def register_rvc_feature(
     config: dict[str, Any],
     dependencies: list[str],
     friendly_name: str | None = None,
+    safety_classification: SafetyClassification | None = None,
+    log_state_transitions: bool = True,
 ) -> Feature:
     """
     Factory function for creating an RVCFeature instance.
@@ -34,6 +37,8 @@ def register_rvc_feature(
         config: Feature configuration
         dependencies: Feature dependencies
         friendly_name: Human-readable name for the feature
+        safety_classification: Safety classification for state validation
+        log_state_transitions: Whether to log state transitions for audit
 
     Returns:
         Initialized RVCFeature instance
@@ -48,4 +53,6 @@ def register_rvc_feature(
         config=config,
         dependencies=dependencies,
         friendly_name=friendly_name,
+        safety_classification=safety_classification,
+        log_state_transitions=log_state_transitions,
     )

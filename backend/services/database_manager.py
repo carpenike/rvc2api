@@ -76,12 +76,11 @@ class DatabaseManager:
             return True
 
         try:
-            # Check if we're in null backend mode (no persistence)
+            # Check if we're in null backend mode (should not happen with mandatory persistence)
             database_url = self._engine.settings.get_database_url()
             if database_url == "null://memory":
-                logger.info("Database manager initialized in null mode - no persistence enabled")
-                self._initialized = True
-                return True
+                logger.error("Null backend mode detected - this should not happen with mandatory persistence")
+                return False
 
             # Initialize the database engine
             await self._engine.initialize()

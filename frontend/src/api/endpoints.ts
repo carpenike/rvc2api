@@ -106,11 +106,12 @@ import type {
 /**
  * Fetch all entities with optional filtering
  * Now uses Domain API v2 for enhanced functionality and performance
+ * Returns data in legacy format for backward compatibility
  *
  * @param params - Optional query parameters for filtering
- * @returns Promise resolving to entity collection
+ * @returns Promise resolving to entity collection in legacy format
  */
-export async function fetchEntities(params?: EntitiesQueryParams): Promise<EntityCollectionSchema> {
+export async function fetchEntities(params?: EntitiesQueryParams): Promise<Record<string, any>> {
   const queryString = params ? buildQueryString(params) : '';
   const url = queryString ? `/api/v2/entities?${queryString}` : '/api/v2/entities';
 
@@ -118,7 +119,31 @@ export async function fetchEntities(params?: EntitiesQueryParams): Promise<Entit
   const result = await apiGet<EntityCollectionSchema>(url);
   logApiResponse(url, result);
 
-  return result;
+  // Convert to legacy format for backward compatibility
+  const legacyEntities: Record<string, any> = {};
+  result.entities.forEach((entity) => {
+    legacyEntities[entity.entity_id] = {
+      entity_id: entity.entity_id,
+      name: entity.name,
+      friendly_name: entity.name,
+      device_type: entity.device_type,
+      suggested_area: entity.area || '',
+      state: entity.state?.state || 'unknown',
+      raw: entity.state || {},
+      capabilities: [], // Could be extracted from state if needed
+      timestamp: new Date(entity.last_updated).getTime(),
+      value: entity.state || {},
+      groups: [],
+      // Legacy fields
+      id: entity.entity_id,
+      last_updated: entity.last_updated,
+      current_state: entity.state?.state || 'unknown',
+      available: entity.available,
+      protocol: entity.protocol,
+    };
+  });
+
+  return legacyEntities;
 }
 
 /**
@@ -141,22 +166,34 @@ export async function fetchEntity(entityId: string): Promise<EntitySchema> {
 /**
  * Control an entity (turn on/off, set brightness, etc.)
  * Now uses Domain API v2 for enhanced safety and acknowledgment patterns
+ * Returns data in legacy format for backward compatibility
  *
  * @param entityId - The entity ID to control
  * @param command - The control command to execute
- * @returns Promise resolving to the control response
+ * @returns Promise resolving to the control response in legacy format
  */
 export async function controlEntity(
   entityId: string,
   command: ControlCommand
-): Promise<OperationResultSchema> {
+): Promise<ControlEntityResponse> {
   const url = `/api/v2/entities/${entityId}/control`;
 
   logApiRequest('POST', url, command);
   const result = await apiPost<OperationResultSchema>(url, command);
   logApiResponse(url, result);
 
-  return result;
+  // Convert to legacy format for backward compatibility
+  const legacyResponse: ControlEntityResponse = {
+    success: result.status === 'success',
+    message: result.error_message || 'Command executed successfully',
+    entity_id: result.entity_id,
+    entity_type: 'unknown', // Will be enriched by frontend logic
+    command: command,
+    timestamp: new Date().toISOString(),
+    ...(result.execution_time_ms !== undefined && result.execution_time_ms !== null && { execution_time_ms: result.execution_time_ms }),
+  };
+
+  return legacyResponse;
 }
 
 /**
@@ -275,7 +312,7 @@ export async function fetchCANInterfaces(): Promise<string[]> {
  * @returns Promise resolving to CAN statistics
  */
 export async function fetchCANStatistics(): Promise<AllCANStats> {
-  const url = '/api/can/statistics';
+  const url = '/api/can/status';
 
   logApiRequest('GET', url);
   const result = await apiGet<AllCANStats>(url);
@@ -387,44 +424,109 @@ export async function fetchCANMetrics(): Promise<CANMetrics> {
 //
 
 /**
- * Get application health status
+ * Get application health status from Domain API v2
  *
- * Special handling for health endpoint: accepts both 200 (healthy) and 503 (degraded) as valid responses
+ * Transforms /api/v2/system/status response to match HealthStatus interface
+ * for backward compatibility while providing richer system information.
+ * Falls back to /healthz if system status is unavailable.
  *
  * @returns Promise resolving to health status
  */
 export async function fetchHealthStatus(): Promise<HealthStatus> {
-  const url = '/healthz';
+  const systemStatusUrl = '/api/v2/system/status';
+  const healthzUrl = '/healthz';
 
-  logApiRequest('GET', url);
+  logApiRequest('GET', systemStatusUrl);
 
   try {
-    const result = await apiGet<HealthStatus>(url);
-    logApiResponse(url, result);
-    return result;
-  } catch (error) {
-    // For health endpoint, 503 responses contain valid degraded status data
-    if (error instanceof APIClientError && error.statusCode === 503) {
-      try {
-        // Re-fetch to get the 503 response data directly
-        const fullUrl = url.startsWith('/api') ? url : `${API_BASE}${url}`;
-        const response = await fetch(fullUrl, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
+    // Fetch rich system status from Domain API v2
+    const systemStatus = await apiGet<{
+      overall_status: string;
+      services: Array<{
+        name: string;
+        status: string;
+        enabled: boolean;
+        last_check: number;
+      }>;
+      total_services: number;
+      healthy_services: number;
+      timestamp: number;
+      response_time_ms?: number;
+      service?: {
+        name: string;
+        version: string;
+        environment: string;
+        hostname: string;
+        platform: string;
+      };
+      description?: string;
+    }>(systemStatusUrl);
 
-        if (response.status === 503) {
-          const degradedData = await response.json() as HealthStatus;
-          logApiResponse(url, degradedData);
-          return degradedData;
+    // Transform to HealthStatus interface format
+    const features: Record<string, string> = {};
+    const unhealthyFeatures: Record<string, string> = {};
+
+    // Convert services array to features format
+    systemStatus.services.forEach(service => {
+      if (service.enabled) {
+        features[service.name] = service.status;
+
+        // Track unhealthy features
+        if (service.status !== 'healthy') {
+          unhealthyFeatures[service.name] = service.status;
         }
-      } catch (fetchError) {
-        console.warn('Failed to parse 503 health response:', fetchError);
       }
-    }
+    });
 
-    // Re-throw other errors
-    throw error;
+    // Map system status to health status values
+    const status = systemStatus.overall_status === 'healthy' ? 'healthy' :
+                   systemStatus.overall_status === 'degraded' ? 'degraded' : 'failed';
+
+    const healthStatus: HealthStatus = {
+      status: status as "healthy" | "degraded" | "failed",
+      features,
+      ...(Object.keys(unhealthyFeatures).length > 0 && { unhealthy_features: unhealthyFeatures }),
+      all_features: features,
+      // Include enhanced metadata if available
+      ...(systemStatus.response_time_ms !== undefined && { response_time_ms: systemStatus.response_time_ms }),
+      ...(systemStatus.service && { service: systemStatus.service }),
+      ...(systemStatus.description && { description: systemStatus.description })
+    };
+
+    logApiResponse(systemStatusUrl, healthStatus);
+    return healthStatus;
+
+  } catch (error) {
+    // Fallback to original healthz endpoint if system status fails
+    console.warn('System status unavailable, falling back to healthz:', error);
+
+    try {
+      const fallbackResult = await apiGet<HealthStatus>(healthzUrl);
+      logApiResponse(healthzUrl + ' (fallback)', fallbackResult);
+      return fallbackResult;
+    } catch (fallbackError) {
+      // Handle 503 responses from healthz which may contain valid degraded data
+      if (fallbackError instanceof APIClientError && fallbackError.statusCode === 503) {
+        try {
+          const fullUrl = healthzUrl.startsWith('/api') ? healthzUrl : `${API_BASE}${healthzUrl}`;
+          const response = await fetch(fullUrl, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (response.status === 503) {
+            const degradedData = await response.json() as HealthStatus;
+            logApiResponse(healthzUrl + ' (503 fallback)', degradedData);
+            return degradedData;
+          }
+        } catch (fetchError) {
+          console.warn('Failed to parse 503 health response:', fetchError);
+        }
+      }
+
+      console.error('All health status endpoints failed:', fallbackError);
+      throw fallbackError;
+    }
   }
 }
 
@@ -1006,27 +1108,27 @@ export async function generatePerformanceReport(timeWindowSeconds = 3600): Promi
 /**
  * Fetch J1939 protocol entities
  *
- * @returns Promise resolving to J1939 entity collection
+ * @returns Promise resolving to J1939 entity collection in legacy format
  */
-export async function fetchJ1939Entities(): Promise<EntityCollectionSchema> {
+export async function fetchJ1939Entities(): Promise<Record<string, any>> {
   return fetchEntities({ protocol: 'j1939' } as EntitiesQueryParams);
 }
 
 /**
  * Fetch Firefly protocol entities
  *
- * @returns Promise resolving to Firefly entity collection
+ * @returns Promise resolving to Firefly entity collection in legacy format
  */
-export async function fetchFireflyEntities(): Promise<EntityCollectionSchema> {
+export async function fetchFireflyEntities(): Promise<Record<string, any>> {
   return fetchEntities({ protocol: 'firefly' } as EntitiesQueryParams);
 }
 
 /**
  * Fetch Spartan K2 protocol entities
  *
- * @returns Promise resolving to Spartan K2 entity collection
+ * @returns Promise resolving to Spartan K2 entity collection in legacy format
  */
-export async function fetchSpartanK2Entities(): Promise<EntityCollectionSchema> {
+export async function fetchSpartanK2Entities(): Promise<Record<string, any>> {
   return fetchEntities({ protocol: 'spartan_k2' } as EntitiesQueryParams);
 }
 
@@ -1053,9 +1155,9 @@ export async function fetchProtocolBridgeStatus(): Promise<ProtocolBridgeStatus>
  * Fetch only light entities
  * Convenience function that filters entities by device_type=light
  *
- * @returns Promise resolving to light entities only
+ * @returns Promise resolving to light entities in legacy format
  */
-export async function fetchLights(): Promise<EntityCollectionSchema> {
+export async function fetchLights(): Promise<Record<string, any>> {
   return fetchEntities({ device_type: 'light' });
 }
 
@@ -1063,9 +1165,9 @@ export async function fetchLights(): Promise<EntityCollectionSchema> {
  * Fetch only lock entities
  * Convenience function that filters entities by device_type=lock
  *
- * @returns Promise resolving to lock entities only
+ * @returns Promise resolving to lock entities in legacy format
  */
-export async function fetchLocks(): Promise<EntityCollectionSchema> {
+export async function fetchLocks(): Promise<Record<string, any>> {
   return fetchEntities({ device_type: 'lock' });
 }
 
@@ -1073,9 +1175,9 @@ export async function fetchLocks(): Promise<EntityCollectionSchema> {
  * Fetch only temperature sensor entities
  * Convenience function that filters entities by device_type=temperature_sensor
  *
- * @returns Promise resolving to temperature sensor entities only
+ * @returns Promise resolving to temperature sensor entities in legacy format
  */
-export async function fetchTemperatureSensors(): Promise<EntityCollectionSchema> {
+export async function fetchTemperatureSensors(): Promise<Record<string, any>> {
   return fetchEntities({ device_type: 'temperature_sensor' });
 }
 
@@ -1083,9 +1185,9 @@ export async function fetchTemperatureSensors(): Promise<EntityCollectionSchema>
  * Fetch only tank sensor entities
  * Convenience function that filters entities by device_type=tank_sensor
  *
- * @returns Promise resolving to tank sensor entities only
+ * @returns Promise resolving to tank sensor entities in legacy format
  */
-export async function fetchTankSensors(): Promise<EntityCollectionSchema> {
+export async function fetchTankSensors(): Promise<Record<string, any>> {
   return fetchEntities({ device_type: 'tank_sensor' });
 }
 
@@ -1099,7 +1201,7 @@ export async function fetchTankSensors(): Promise<EntityCollectionSchema> {
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function turnLightOn(entityId: string): Promise<OperationResultSchema> {
+export async function turnLightOn(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'set', state: true });
 }
 
@@ -1109,7 +1211,7 @@ export async function turnLightOn(entityId: string): Promise<OperationResultSche
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function turnLightOff(entityId: string): Promise<OperationResultSchema> {
+export async function turnLightOff(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'set', state: false });
 }
 
@@ -1119,7 +1221,7 @@ export async function turnLightOff(entityId: string): Promise<OperationResultSch
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function toggleLight(entityId: string): Promise<OperationResultSchema> {
+export async function toggleLight(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'toggle', parameters: {} });
 }
 
@@ -1133,7 +1235,7 @@ export async function toggleLight(entityId: string): Promise<OperationResultSche
 export async function setLightBrightness(
   entityId: string,
   brightness: number
-): Promise<OperationResultSchema> {
+): Promise<ControlEntityResponse> {
   return controlEntity(entityId, {
     command: 'set',
     state: true, // Setting brightness usually implies turning the light on
@@ -1147,7 +1249,7 @@ export async function setLightBrightness(
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function brightnessUp(entityId: string): Promise<OperationResultSchema> {
+export async function brightnessUp(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'brightness_up', parameters: {} });
 }
 
@@ -1157,7 +1259,7 @@ export async function brightnessUp(entityId: string): Promise<OperationResultSch
  * @param entityId - The light entity ID
  * @returns Promise resolving to control response
  */
-export async function brightnessDown(entityId: string): Promise<OperationResultSchema> {
+export async function brightnessDown(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'brightness_down', parameters: {} });
 }
 
@@ -1171,7 +1273,7 @@ export async function brightnessDown(entityId: string): Promise<OperationResultS
  * @param entityId - The lock entity ID
  * @returns Promise resolving to control response
  */
-export async function lockEntity(entityId: string): Promise<OperationResultSchema> {
+export async function lockEntity(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'lock', parameters: {} });
 }
 
@@ -1181,7 +1283,7 @@ export async function lockEntity(entityId: string): Promise<OperationResultSchem
  * @param entityId - The lock entity ID
  * @returns Promise resolving to control response
  */
-export async function unlockEntity(entityId: string): Promise<OperationResultSchema> {
+export async function unlockEntity(entityId: string): Promise<ControlEntityResponse> {
   return controlEntity(entityId, { command: 'unlock', parameters: {} });
 }
 

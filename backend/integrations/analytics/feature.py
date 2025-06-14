@@ -24,6 +24,7 @@ from backend.integrations.analytics.optimizer import OptimizationEngine
 from backend.integrations.analytics.telemetry import TelemetryCollector
 from backend.integrations.analytics.trend_analyzer import TrendAnalyzer
 from backend.services.feature_base import Feature
+from backend.services.feature_models import SafetyClassification
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,8 @@ class PerformanceAnalyticsFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification: SafetyClassification | None = None,
+        log_state_transitions: bool = True,
     ):
         """Initialize the performance analytics feature."""
         super().__init__(
@@ -54,6 +57,8 @@ class PerformanceAnalyticsFeature(Feature):
             config=config,
             dependencies=dependencies,
             friendly_name=friendly_name or "Performance Analytics",
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Get settings internally

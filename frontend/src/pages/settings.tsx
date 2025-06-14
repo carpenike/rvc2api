@@ -1,3 +1,4 @@
+import { AppLayout } from '@/components/app-layout';
 import { MFAManagement, MFASetup } from '@/components/mfa';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,13 +37,18 @@ const SettingsPage: React.FC = () => {
   const isAdmin = userInfo?.role === 'admin';
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
+    <AppLayout pageTitle="Settings">
+      <div className="flex-1 space-y-6 p-4 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground">
+              Manage your account and application preferences
+            </p>
+          </div>
+        </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid grid-cols-3 lg:grid-cols-4 w-full lg:w-auto">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -202,8 +208,9 @@ const SettingsPage: React.FC = () => {
             </Card>
           </TabsContent>
         )}
-      </Tabs>
-    </div>
+        </Tabs>
+      </div>
+    </AppLayout>
   );
 };
 

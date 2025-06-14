@@ -139,7 +139,7 @@ class AuthManager:
         if not self.auth_repository:
             msg = (
                 "Authentication persistence is required but not available. "
-                "Ensure the persistence feature is enabled and database is accessible."
+                "Ensure the database is accessible."
             )
             raise AuthenticationError(
                 msg
@@ -155,7 +155,7 @@ class AuthManager:
         if not self.auth_repository:
             msg = (
                 "Authentication persistence is required but not available. "
-                "Ensure the persistence feature is enabled and database is accessible."
+                "Ensure the database is accessible."
             )
             raise AuthenticationError(
                 msg

@@ -38,6 +38,9 @@ class AppState(Feature):
         dependencies: list[str] | None = None,
         controller_source_addr: int = 0xF9,
         friendly_name: str | None = None,
+        safety_classification=None,
+        log_state_transitions: bool = True,
+        **kwargs
     ) -> None:
         """
         Initialize the AppState feature.
@@ -49,6 +52,8 @@ class AppState(Feature):
             config=config or {},
             dependencies=dependencies or [],
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
         self.controller_source_addr: int = controller_source_addr
 

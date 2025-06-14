@@ -140,8 +140,31 @@
           # Install configuration files to the package site-packages directory
           # This allows the NixOS module to reference them at the expected path
           postInstall = ''
+            # Install reference data to package directory
             mkdir -p $out/${python.sitePackages}/config
             cp -r $src/config/* $out/${python.sitePackages}/config/
+
+            # Create wrapper scripts that will be used by systemd
+            mkdir -p $out/bin
+
+            # Main daemon wrapper
+            cat > $out/bin/coachiq-daemon <<'EOF'
+            #!/bin/sh
+            exec ${python.interpreter} -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 "$@"
+            EOF
+            chmod +x $out/bin/coachiq-daemon
+
+            # Config validation wrapper
+            cat > $out/bin/coachiq-validate-config <<'EOF'
+            #!/bin/sh
+            exec ${python.interpreter} -c "from backend.core.config import get_settings; print('Configuration valid')"
+            EOF
+            chmod +x $out/bin/coachiq-validate-config
+
+            # Health check script
+            mkdir -p $out/share/coachiq/nix
+            cp ${./nix/health-check.sh} $out/share/coachiq/nix/health-check.sh
+            chmod +x $out/share/coachiq/nix/health-check.sh
           '';
 
           meta = with pkgs.lib; {
@@ -181,6 +204,12 @@
             pythonPackages.pyotp
             pythonPackages.qrcode
             pythonPackages.slowapi
+            pythonPackages.cachetools
+            # Database dependencies for dev
+            pythonPackages.sqlalchemy
+            pythonPackages.aiosqlite
+            pythonPackages.asyncpg
+            pythonPackages.alembic
             pythonPackages.pytest
             pythonPackages.mypy
             pythonPackages.ruff
@@ -314,7 +343,6 @@ EOF
             pythonPackages.scikit-learn
             pythonPackages.pandas
             pythonPackages.cryptography
-            pythonPackages.cantools
             pythonPackages.networkx
             pkgs.nodejs_20
           ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin) [
@@ -599,15 +627,23 @@ EOF
             # Server configuration
             server = {
               host = lib.mkOption {
-                type = lib.types.str;
-                default = "0.0.0.0";
-                description = "Host to bind the server to";
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = ''
+                  Host to bind the server to.
+                  Default: "0.0.0.0" (binds to all interfaces)
+                  Example: "127.0.0.1" (localhost only)
+                '';
               };
 
               port = lib.mkOption {
-                type = lib.types.int;
-                default = 8000;
-                description = "Port to bind the server to";
+                type = lib.types.nullOr lib.types.int;
+                default = null;
+                description = ''
+                  Port to bind the server to.
+                  Default: 8000
+                  Example: 8080
+                '';
               };
 
               workers = lib.mkOption {
@@ -972,6 +1008,167 @@ EOF
                 type = lib.types.bool;
                 default = false;
                 description = "Enable device discovery and active polling";
+              };
+
+              # New features from feature_flags.yaml
+              enableCanbusDeoderV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable enhanced CAN bus decoder architecture with safety state engine";
+              };
+
+              enableDashboardAggregation = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable aggregated dashboard endpoints for optimized data loading";
+              };
+
+              enableSystemAnalytics = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable system analytics, performance monitoring, and alerting";
+              };
+
+              enableActivityTracking = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable activity feed tracking and recent events monitoring";
+              };
+
+              enableAnalyticsDashboard = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable advanced analytics dashboard with performance visualization";
+              };
+
+              enablePredictiveMaintenance = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable predictive maintenance with component health tracking";
+              };
+
+              enableLogHistory = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable REST API and WebSocket endpoints for log history";
+              };
+
+              enableLogStreaming = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable WebSocket log streaming endpoints and handlers";
+              };
+
+              enableGithubUpdateChecker = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable GitHub update checker service for application updates";
+              };
+
+              # Domain API v2 features
+              enableDomainApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Domain-driven API v2 with safety-critical command patterns";
+              };
+
+              enableEntitiesApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable Domain-specific entities API v2 with bulk operations";
+              };
+
+              enableDiagnosticsApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Domain-specific diagnostics API v2 with enhanced fault correlation";
+              };
+
+              enableAnalyticsApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Domain-specific analytics API v2 with advanced telemetry";
+              };
+
+              enableNetworksApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Domain-specific networks API v2 with CAN bus monitoring";
+              };
+
+              enableSystemApiV2 = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable Domain-specific system API v2 with configuration management";
+              };
+            };
+
+            # CAN Bus Decoder v2 configuration
+            canbusDecoderV2 = {
+              enableSafetyStateEngine = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable safety state engine for enhanced CAN decoder";
+              };
+
+              enableProtocolRouter = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable protocol router for multi-protocol support";
+              };
+
+              enableConfigurationService = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable configuration service for dynamic settings";
+              };
+
+              enableBamOptimization = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable BAM (Broadcast Announce Message) optimization";
+              };
+
+              enableAdaptiveSecurity = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable adaptive security features";
+              };
+
+              enablePerformanceMonitoring = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable performance monitoring for CAN decoder";
+              };
+
+              safetyStateTimeoutSeconds = lib.mkOption {
+                type = lib.types.float;
+                default = 30.0;
+                description = "Safety state timeout in seconds";
+              };
+
+              movingSpeedThresholdMph = lib.mkOption {
+                type = lib.types.float;
+                default = 0.5;
+                description = "Moving speed threshold in MPH for safety state";
+              };
+
+              configurationCacheTtlSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 300;
+                description = "Configuration cache TTL in seconds";
+              };
+
+              maxConcurrentBamSessions = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Maximum concurrent BAM sessions";
+              };
+
+              performanceMonitoringIntervalSeconds = lib.mkOption {
+                type = lib.types.float;
+                default = 10.0;
+                description = "Performance monitoring interval in seconds";
               };
             };
 
@@ -1702,6 +1899,343 @@ EOF
               };
             };
 
+            # Notification routing configuration
+            notificationRouting = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable intelligent notification routing";
+              };
+
+              quietHoursEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable quiet hours for notifications";
+              };
+
+              defaultQuietHoursStart = lib.mkOption {
+                type = lib.types.str;
+                default = "22:00";
+                description = "Default quiet hours start time (HH:MM)";
+              };
+
+              defaultQuietHoursEnd = lib.mkOption {
+                type = lib.types.str;
+                default = "08:00";
+                description = "Default quiet hours end time (HH:MM)";
+              };
+
+              escalationEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable notification escalation";
+              };
+
+              escalationDelayMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 15;
+                description = "Delay before escalating notifications";
+              };
+
+              maxRoutingRules = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Maximum number of routing rules";
+              };
+            };
+
+            # Notification analytics configuration
+            notificationAnalytics = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable notification analytics and metrics";
+              };
+
+              bufferSizeLimit = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Analytics buffer size limit";
+              };
+
+              bufferFlushInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Buffer flush interval in seconds";
+              };
+
+              metricCacheTtl = lib.mkOption {
+                type = lib.types.int;
+                default = 300;
+                description = "Metric cache TTL in seconds";
+              };
+
+              aggregationInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 3600;
+                description = "Metric aggregation interval in seconds";
+              };
+
+              healthCheckInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 300;
+                description = "Health check interval in seconds";
+              };
+
+              retentionDays = lib.mkOption {
+                type = lib.types.int;
+                default = 90;
+                description = "Analytics data retention in days";
+              };
+
+              enableRealTimeMetrics = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable real-time metric collection";
+              };
+
+              enableErrorAnalysis = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable error analysis and tracking";
+              };
+            };
+
+            # Email template configuration
+            emailTemplates = {
+              templateDir = lib.mkOption {
+                type = lib.types.str;
+                default = "backend/templates/email";
+                description = "Email template directory";
+              };
+
+              cacheTtlMinutes = lib.mkOption {
+                type = lib.types.int;
+                default = 60;
+                description = "Template cache TTL in minutes";
+              };
+
+              enableCaching = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable template caching";
+              };
+
+              enableValidation = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable template validation";
+              };
+
+              enableSandbox = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable sandboxed template environment";
+              };
+
+              defaultLanguage = lib.mkOption {
+                type = lib.types.str;
+                default = "en";
+                description = "Default template language";
+              };
+
+              supportedLanguages = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = ["en" "es" "fr"];
+                description = "Supported template languages";
+              };
+
+              enableAbTesting = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable A/B testing for templates";
+              };
+            };
+
+            # Notification performance configuration
+            notificationPerformance = {
+              connectionPoolSize = lib.mkOption {
+                type = lib.types.int;
+                default = 10;
+                description = "Connection pool size for notification channels";
+              };
+
+              circuitBreakerEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable circuit breaker pattern";
+              };
+
+              circuitBreakerThreshold = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Circuit breaker failure threshold";
+              };
+
+              circuitBreakerTimeout = lib.mkOption {
+                type = lib.types.int;
+                default = 60;
+                description = "Circuit breaker timeout in seconds";
+              };
+
+              batchSize = lib.mkOption {
+                type = lib.types.int;
+                default = 50;
+                description = "Notification batch size";
+              };
+
+              batchTimeout = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Batch timeout in seconds";
+              };
+
+              enableConnectionPooling = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable connection pooling";
+              };
+
+              enableRetryBackoff = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable exponential retry backoff";
+              };
+
+              maxRetryDelay = lib.mkOption {
+                type = lib.types.int;
+                default = 300;
+                description = "Maximum retry delay in seconds";
+              };
+            };
+
+            # Notification batching configuration
+            notificationBatching = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable notification batching";
+              };
+
+              maxBatchSize = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Maximum batch size";
+              };
+
+              batchTimeoutSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 10;
+                description = "Batch timeout in seconds";
+              };
+
+              maxRetryAttempts = lib.mkOption {
+                type = lib.types.int;
+                default = 3;
+                description = "Maximum retry attempts for batch";
+              };
+
+              enableSmartBatching = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable smart batching logic";
+              };
+
+              priorityThreshold = lib.mkOption {
+                type = lib.types.str;
+                default = "high";
+                description = "Priority threshold for immediate delivery";
+              };
+            };
+
+            # Notification rate limiting configuration
+            notificationRateLimiting = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable notification rate limiting";
+              };
+
+              defaultRateLimit = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Default rate limit per window";
+              };
+
+              defaultWindowSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 3600;
+                description = "Default rate limit window in seconds";
+              };
+
+              perChannelLimits = lib.mkOption {
+                type = lib.types.attrsOf lib.types.int;
+                default = {
+                  email = 50;
+                  slack = 100;
+                  webhook = 200;
+                };
+                description = "Per-channel rate limits";
+              };
+
+              enableBurstAllowance = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable burst allowance";
+              };
+
+              burstMultiplier = lib.mkOption {
+                type = lib.types.float;
+                default = 1.5;
+                description = "Burst multiplier for rate limits";
+              };
+            };
+
+            # Notification queue configuration
+            notificationQueue = {
+              maxQueueSize = lib.mkOption {
+                type = lib.types.int;
+                default = 10000;
+                description = "Maximum queue size";
+              };
+
+              workerCount = lib.mkOption {
+                type = lib.types.int;
+                default = 4;
+                description = "Number of queue workers";
+              };
+
+              priorityLevels = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = ["low" "medium" "high" "critical"];
+                description = "Notification priority levels";
+              };
+
+              enablePersistence = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable queue persistence";
+              };
+
+              persistenceInterval = lib.mkOption {
+                type = lib.types.int;
+                default = 60;
+                description = "Queue persistence interval in seconds";
+              };
+
+              deadLetterEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable dead letter queue";
+              };
+
+              deadLetterThreshold = lib.mkOption {
+                type = lib.types.int;
+                default = 5;
+                description = "Dead letter threshold";
+              };
+            };
+
             # Legacy compatibility options (for existing deployments)
             pushover = {
               enable = lib.mkOption {
@@ -1827,6 +2361,84 @@ EOF
               default = null;
               description = "GitHub repository to check for updates (format: owner/repo)";
             };
+
+            # Analytics dashboard configuration
+            analyticsDashboard = {
+              enabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable analytics dashboard";
+              };
+
+              # Memory-based analytics (no persistence required)
+              memoryRetentionHours = lib.mkOption {
+                type = lib.types.int;
+                default = 2;
+                description = "Hours to retain analytics data in memory";
+              };
+
+              insightGenerationIntervalSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 900;
+                description = "Interval for generating system insights in seconds";
+              };
+
+              patternAnalysisIntervalSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 1800;
+                description = "Interval for pattern analysis in seconds";
+              };
+
+              maxMemoryInsights = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Maximum number of insights to keep in memory";
+              };
+
+              maxMemoryPatterns = lib.mkOption {
+                type = lib.types.int;
+                default = 50;
+                description = "Maximum number of patterns to keep in memory";
+              };
+
+              # Persistence settings (only used when persistence feature is enabled)
+              persistenceRetentionDays = lib.mkOption {
+                type = lib.types.int;
+                default = 30;
+                description = "Days to retain data in SQLite when persistence is enabled";
+              };
+
+              enableBackgroundPersistence = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable background tasks for data persistence";
+              };
+
+              sqliteBatchSize = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Batch size for SQLite operations";
+              };
+
+              dbPath = lib.mkOption {
+                type = lib.types.str;
+                default = "data/analytics.db";
+                description = "Path to SQLite database file when persistence is enabled";
+              };
+
+              # Background processing
+              enableBackgroundCleanup = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Enable automatic cleanup of old data";
+              };
+
+              cleanupIntervalSeconds = lib.mkOption {
+                type = lib.types.int;
+                default = 3600;
+                description = "Interval for cleanup operations in seconds";
+              };
+            };
           };
         };
 
@@ -1834,16 +2446,26 @@ EOF
           # Include the package in systemPackages
           environment.systemPackages = [ config.coachiq.package ];
 
-          # Create persistent data directory with proper permissions
-          systemd.tmpfiles.rules = lib.mkIf config.coachiq.settings.persistence.enabled [
+          # Create persistent data directories with proper permissions
+          systemd.tmpfiles.rules = lib.mkIf config.coachiq.settings.persistence.enabled ([
+            # Main data directory
             "d ${config.coachiq.settings.persistence.dataDir} 0755 coachiq coachiq -"
+
+            # User-writable directories
             "d ${config.coachiq.settings.persistence.dataDir}/database 0755 coachiq coachiq -"
             "d ${config.coachiq.settings.persistence.dataDir}/backups 0755 coachiq coachiq -"
             "d ${config.coachiq.settings.persistence.dataDir}/config 0755 coachiq coachiq -"
             "d ${config.coachiq.settings.persistence.dataDir}/themes 0755 coachiq coachiq -"
             "d ${config.coachiq.settings.persistence.dataDir}/dashboards 0755 coachiq coachiq -"
             "d ${config.coachiq.settings.persistence.dataDir}/logs 0755 coachiq coachiq -"
-          ];
+
+            # Read-only reference directory (owned by root, readable by coachiq)
+            "d ${config.coachiq.settings.persistence.dataDir}/reference 0755 root root -"
+          ] ++ lib.optionals (config.coachiq.settings.persistence.dataDir == "/var/lib/coachiq") [
+            # Copy reference files from package on first install
+            # These are read-only configuration files (RV-C specs, coach mappings)
+            "C ${config.coachiq.settings.persistence.dataDir}/reference 0755 root root - ${config.coachiq.package}/${python.sitePackages}/config"
+          ]);
 
           # Create system user for coachiq service
           users.users.coachiq = {
@@ -1861,27 +2483,48 @@ EOF
             wantedBy    = [ "multi-user.target" ];
 
             serviceConfig = {
+              ExecStartPre = [
+                # Validate configuration before starting
+                "${config.coachiq.package}/bin/coachiq-validate-config"
+                # Ensure data directory exists with correct permissions
+                "+${pkgs.coreutils}/bin/mkdir -p ${config.coachiq.settings.persistence.dataDir}"
+                "+${pkgs.coreutils}/bin/chown -R coachiq:coachiq ${config.coachiq.settings.persistence.dataDir}"
+              ];
               ExecStart = "${config.coachiq.package}/bin/coachiq-daemon";
+              ExecStartPost = [
+                # Wait for service to be ready
+                "${pkgs.bash}/bin/bash -c 'sleep 2 && ${config.coachiq.package}/share/coachiq/nix/health-check.sh'"
+              ];
               Restart    = "always";
               RestartSec = 5;
               User = "coachiq";
               Group = "coachiq";
               # Ensure the service can access CAN interfaces if needed
               SupplementaryGroups = [ "dialout" ];
+
+              # Security hardening
+              NoNewPrivileges = true;
+              PrivateTmp = true;
+              ProtectSystem = "strict";
+              ProtectHome = true;
+              ReadWritePaths = [
+                config.coachiq.settings.persistence.dataDir
+                "/dev" # For CAN access
+              ];
             };
 
             environment = lib.filterAttrs (n: v: v != null) ({
               # Always set environment (for production deployment)
               COACHIQ_ENVIRONMENT = "production";
 
-              # App metadata - only if explicitly configured
-              COACHIQ_APP_NAME = lib.mkIf (config.coachiq.settings.appName != "CoachIQ") config.coachiq.settings.appName;
-              COACHIQ_APP_VERSION = lib.mkIf (config.coachiq.settings.appVersion != "0.0.0") config.coachiq.settings.appVersion;
+              # App metadata - set if user provided values
+              COACHIQ_APP_NAME = if config.coachiq.settings.appName != null then config.coachiq.settings.appName else null;
+              COACHIQ_APP_VERSION = if config.coachiq.settings.appVersion != null then config.coachiq.settings.appVersion else null;
 
-              # Server settings - only if different from defaults or necessary for production
-              COACHIQ_SERVER__HOST = lib.mkIf (config.coachiq.settings.server.host != "0.0.0.0") config.coachiq.settings.server.host;
-              COACHIQ_SERVER__PORT = lib.mkIf (config.coachiq.settings.server.port != 8000) (toString config.coachiq.settings.server.port);
-              COACHIQ_SERVER__WORKERS = lib.mkIf (config.coachiq.settings.server.workers > 1) (toString config.coachiq.settings.server.workers);
+              # Server settings - set all user-configured values
+              COACHIQ_SERVER__HOST = if config.coachiq.settings.server.host != null then config.coachiq.settings.server.host else null;
+              COACHIQ_SERVER__PORT = if config.coachiq.settings.server.port != null then toString config.coachiq.settings.server.port else null;
+              COACHIQ_SERVER__WORKERS = if config.coachiq.settings.server.workers != null then toString config.coachiq.settings.server.workers else null;
 
               # Never set reload in production - let application handle this based on environment
               # COACHIQ_SERVER__RELOAD is intentionally not set here
@@ -1999,6 +2642,72 @@ EOF
               COACHIQ_NOTIFICATIONS__DISCORD__ENABLED = lib.mkIf config.coachiq.settings.notifications.discord.enabled "true";
               COACHIQ_NOTIFICATIONS__DISCORD__WEBHOOK_URL = lib.mkIf (config.coachiq.settings.notifications.discord.enabled && config.coachiq.settings.notifications.discord.webhookUrl != "") config.coachiq.settings.notifications.discord.webhookUrl;
 
+              # Notification routing settings - only if different from defaults
+              COACHIQ_NOTIFICATION_ROUTING__ENABLED = lib.mkIf (!config.coachiq.settings.notificationRouting.enabled) "false";
+              COACHIQ_NOTIFICATION_ROUTING__QUIET_HOURS_ENABLED = lib.mkIf (!config.coachiq.settings.notificationRouting.quietHoursEnabled) "false";
+              COACHIQ_NOTIFICATION_ROUTING__DEFAULT_QUIET_HOURS_START = lib.mkIf (config.coachiq.settings.notificationRouting.defaultQuietHoursStart != "22:00") config.coachiq.settings.notificationRouting.defaultQuietHoursStart;
+              COACHIQ_NOTIFICATION_ROUTING__DEFAULT_QUIET_HOURS_END = lib.mkIf (config.coachiq.settings.notificationRouting.defaultQuietHoursEnd != "08:00") config.coachiq.settings.notificationRouting.defaultQuietHoursEnd;
+              COACHIQ_NOTIFICATION_ROUTING__ESCALATION_ENABLED = lib.mkIf (!config.coachiq.settings.notificationRouting.escalationEnabled) "false";
+              COACHIQ_NOTIFICATION_ROUTING__ESCALATION_DELAY_MINUTES = lib.mkIf (config.coachiq.settings.notificationRouting.escalationDelayMinutes != 15) (toString config.coachiq.settings.notificationRouting.escalationDelayMinutes);
+              COACHIQ_NOTIFICATION_ROUTING__MAX_ROUTING_RULES = lib.mkIf (config.coachiq.settings.notificationRouting.maxRoutingRules != 100) (toString config.coachiq.settings.notificationRouting.maxRoutingRules);
+
+              # Notification analytics settings - only if different from defaults
+              COACHIQ_NOTIFICATION_ANALYTICS__ENABLED = lib.mkIf (!config.coachiq.settings.notificationAnalytics.enabled) "false";
+              COACHIQ_NOTIFICATION_ANALYTICS__BUFFER_SIZE_LIMIT = lib.mkIf (config.coachiq.settings.notificationAnalytics.bufferSizeLimit != 100) (toString config.coachiq.settings.notificationAnalytics.bufferSizeLimit);
+              COACHIQ_NOTIFICATION_ANALYTICS__BUFFER_FLUSH_INTERVAL = lib.mkIf (config.coachiq.settings.notificationAnalytics.bufferFlushInterval != 30) (toString config.coachiq.settings.notificationAnalytics.bufferFlushInterval);
+              COACHIQ_NOTIFICATION_ANALYTICS__METRIC_CACHE_TTL = lib.mkIf (config.coachiq.settings.notificationAnalytics.metricCacheTtl != 300) (toString config.coachiq.settings.notificationAnalytics.metricCacheTtl);
+              COACHIQ_NOTIFICATION_ANALYTICS__AGGREGATION_INTERVAL = lib.mkIf (config.coachiq.settings.notificationAnalytics.aggregationInterval != 3600) (toString config.coachiq.settings.notificationAnalytics.aggregationInterval);
+              COACHIQ_NOTIFICATION_ANALYTICS__HEALTH_CHECK_INTERVAL = lib.mkIf (config.coachiq.settings.notificationAnalytics.healthCheckInterval != 300) (toString config.coachiq.settings.notificationAnalytics.healthCheckInterval);
+              COACHIQ_NOTIFICATION_ANALYTICS__RETENTION_DAYS = lib.mkIf (config.coachiq.settings.notificationAnalytics.retentionDays != 90) (toString config.coachiq.settings.notificationAnalytics.retentionDays);
+              COACHIQ_NOTIFICATION_ANALYTICS__ENABLE_REAL_TIME_METRICS = lib.mkIf (!config.coachiq.settings.notificationAnalytics.enableRealTimeMetrics) "false";
+              COACHIQ_NOTIFICATION_ANALYTICS__ENABLE_ERROR_ANALYSIS = lib.mkIf (!config.coachiq.settings.notificationAnalytics.enableErrorAnalysis) "false";
+
+              # Email template settings - only if different from defaults
+              COACHIQ_EMAIL_TEMPLATES__TEMPLATE_DIR = lib.mkIf (config.coachiq.settings.emailTemplates.templateDir != "backend/templates/email") config.coachiq.settings.emailTemplates.templateDir;
+              COACHIQ_EMAIL_TEMPLATES__CACHE_TTL_MINUTES = lib.mkIf (config.coachiq.settings.emailTemplates.cacheTtlMinutes != 60) (toString config.coachiq.settings.emailTemplates.cacheTtlMinutes);
+              COACHIQ_EMAIL_TEMPLATES__ENABLE_CACHING = lib.mkIf (!config.coachiq.settings.emailTemplates.enableCaching) "false";
+              COACHIQ_EMAIL_TEMPLATES__ENABLE_VALIDATION = lib.mkIf (!config.coachiq.settings.emailTemplates.enableValidation) "false";
+              COACHIQ_EMAIL_TEMPLATES__ENABLE_SANDBOX = lib.mkIf (!config.coachiq.settings.emailTemplates.enableSandbox) "false";
+              COACHIQ_EMAIL_TEMPLATES__DEFAULT_LANGUAGE = lib.mkIf (config.coachiq.settings.emailTemplates.defaultLanguage != "en") config.coachiq.settings.emailTemplates.defaultLanguage;
+              COACHIQ_EMAIL_TEMPLATES__SUPPORTED_LANGUAGES = lib.mkIf (config.coachiq.settings.emailTemplates.supportedLanguages != ["en" "es" "fr"]) (lib.concatStringsSep "," config.coachiq.settings.emailTemplates.supportedLanguages);
+              COACHIQ_EMAIL_TEMPLATES__ENABLE_AB_TESTING = lib.mkIf config.coachiq.settings.emailTemplates.enableAbTesting "true";
+
+              # Notification performance settings - only if different from defaults
+              COACHIQ_NOTIFICATION_PERFORMANCE__CONNECTION_POOL_SIZE = lib.mkIf (config.coachiq.settings.notificationPerformance.connectionPoolSize != 10) (toString config.coachiq.settings.notificationPerformance.connectionPoolSize);
+              COACHIQ_NOTIFICATION_PERFORMANCE__CIRCUIT_BREAKER_ENABLED = lib.mkIf (!config.coachiq.settings.notificationPerformance.circuitBreakerEnabled) "false";
+              COACHIQ_NOTIFICATION_PERFORMANCE__CIRCUIT_BREAKER_THRESHOLD = lib.mkIf (config.coachiq.settings.notificationPerformance.circuitBreakerThreshold != 5) (toString config.coachiq.settings.notificationPerformance.circuitBreakerThreshold);
+              COACHIQ_NOTIFICATION_PERFORMANCE__CIRCUIT_BREAKER_TIMEOUT = lib.mkIf (config.coachiq.settings.notificationPerformance.circuitBreakerTimeout != 60) (toString config.coachiq.settings.notificationPerformance.circuitBreakerTimeout);
+              COACHIQ_NOTIFICATION_PERFORMANCE__BATCH_SIZE = lib.mkIf (config.coachiq.settings.notificationPerformance.batchSize != 50) (toString config.coachiq.settings.notificationPerformance.batchSize);
+              COACHIQ_NOTIFICATION_PERFORMANCE__BATCH_TIMEOUT = lib.mkIf (config.coachiq.settings.notificationPerformance.batchTimeout != 5) (toString config.coachiq.settings.notificationPerformance.batchTimeout);
+              COACHIQ_NOTIFICATION_PERFORMANCE__ENABLE_CONNECTION_POOLING = lib.mkIf (!config.coachiq.settings.notificationPerformance.enableConnectionPooling) "false";
+              COACHIQ_NOTIFICATION_PERFORMANCE__ENABLE_RETRY_BACKOFF = lib.mkIf (!config.coachiq.settings.notificationPerformance.enableRetryBackoff) "false";
+              COACHIQ_NOTIFICATION_PERFORMANCE__MAX_RETRY_DELAY = lib.mkIf (config.coachiq.settings.notificationPerformance.maxRetryDelay != 300) (toString config.coachiq.settings.notificationPerformance.maxRetryDelay);
+
+              # Notification batching settings - only if different from defaults
+              COACHIQ_NOTIFICATION_BATCHING__ENABLED = lib.mkIf (!config.coachiq.settings.notificationBatching.enabled) "false";
+              COACHIQ_NOTIFICATION_BATCHING__MAX_BATCH_SIZE = lib.mkIf (config.coachiq.settings.notificationBatching.maxBatchSize != 100) (toString config.coachiq.settings.notificationBatching.maxBatchSize);
+              COACHIQ_NOTIFICATION_BATCHING__BATCH_TIMEOUT_SECONDS = lib.mkIf (config.coachiq.settings.notificationBatching.batchTimeoutSeconds != 10) (toString config.coachiq.settings.notificationBatching.batchTimeoutSeconds);
+              COACHIQ_NOTIFICATION_BATCHING__MAX_RETRY_ATTEMPTS = lib.mkIf (config.coachiq.settings.notificationBatching.maxRetryAttempts != 3) (toString config.coachiq.settings.notificationBatching.maxRetryAttempts);
+              COACHIQ_NOTIFICATION_BATCHING__ENABLE_SMART_BATCHING = lib.mkIf (!config.coachiq.settings.notificationBatching.enableSmartBatching) "false";
+              COACHIQ_NOTIFICATION_BATCHING__PRIORITY_THRESHOLD = lib.mkIf (config.coachiq.settings.notificationBatching.priorityThreshold != "high") config.coachiq.settings.notificationBatching.priorityThreshold;
+
+              # Notification rate limiting settings - only if different from defaults
+              COACHIQ_NOTIFICATION_RATE_LIMITING__ENABLED = lib.mkIf (!config.coachiq.settings.notificationRateLimiting.enabled) "false";
+              COACHIQ_NOTIFICATION_RATE_LIMITING__DEFAULT_RATE_LIMIT = lib.mkIf (config.coachiq.settings.notificationRateLimiting.defaultRateLimit != 100) (toString config.coachiq.settings.notificationRateLimiting.defaultRateLimit);
+              COACHIQ_NOTIFICATION_RATE_LIMITING__DEFAULT_WINDOW_SECONDS = lib.mkIf (config.coachiq.settings.notificationRateLimiting.defaultWindowSeconds != 3600) (toString config.coachiq.settings.notificationRateLimiting.defaultWindowSeconds);
+              COACHIQ_NOTIFICATION_RATE_LIMITING__PER_CHANNEL_LIMITS = lib.mkIf (config.coachiq.settings.notificationRateLimiting.perChannelLimits != {email = 50; slack = 100; webhook = 200;}) (builtins.toJSON config.coachiq.settings.notificationRateLimiting.perChannelLimits);
+              COACHIQ_NOTIFICATION_RATE_LIMITING__ENABLE_BURST_ALLOWANCE = lib.mkIf (!config.coachiq.settings.notificationRateLimiting.enableBurstAllowance) "false";
+              COACHIQ_NOTIFICATION_RATE_LIMITING__BURST_MULTIPLIER = lib.mkIf (config.coachiq.settings.notificationRateLimiting.burstMultiplier != 1.5) (toString config.coachiq.settings.notificationRateLimiting.burstMultiplier);
+
+              # Notification queue settings - only if different from defaults
+              COACHIQ_NOTIFICATION_QUEUE__MAX_QUEUE_SIZE = lib.mkIf (config.coachiq.settings.notificationQueue.maxQueueSize != 10000) (toString config.coachiq.settings.notificationQueue.maxQueueSize);
+              COACHIQ_NOTIFICATION_QUEUE__WORKER_COUNT = lib.mkIf (config.coachiq.settings.notificationQueue.workerCount != 4) (toString config.coachiq.settings.notificationQueue.workerCount);
+              COACHIQ_NOTIFICATION_QUEUE__PRIORITY_LEVELS = lib.mkIf (config.coachiq.settings.notificationQueue.priorityLevels != ["low" "medium" "high" "critical"]) (lib.concatStringsSep "," config.coachiq.settings.notificationQueue.priorityLevels);
+              COACHIQ_NOTIFICATION_QUEUE__ENABLE_PERSISTENCE = lib.mkIf (!config.coachiq.settings.notificationQueue.enablePersistence) "false";
+              COACHIQ_NOTIFICATION_QUEUE__PERSISTENCE_INTERVAL = lib.mkIf (config.coachiq.settings.notificationQueue.persistenceInterval != 60) (toString config.coachiq.settings.notificationQueue.persistenceInterval);
+              COACHIQ_NOTIFICATION_QUEUE__DEAD_LETTER_ENABLED = lib.mkIf (!config.coachiq.settings.notificationQueue.deadLetterEnabled) "false";
+              COACHIQ_NOTIFICATION_QUEUE__DEAD_LETTER_THRESHOLD = lib.mkIf (config.coachiq.settings.notificationQueue.deadLetterThreshold != 5) (toString config.coachiq.settings.notificationQueue.deadLetterThreshold);
+
               # Authentication settings - only if enabled
               COACHIQ_AUTH__ENABLED = lib.mkIf config.coachiq.settings.authentication.enabled "true";
               COACHIQ_AUTH__SECRET_KEY = lib.mkIf (config.coachiq.settings.authentication.enabled && config.coachiq.settings.authentication.secretKey != "") config.coachiq.settings.authentication.secretKey;
@@ -2053,6 +2762,53 @@ EOF
 
               # GitHub update repo - only if provided
               COACHIQ_GITHUB_UPDATE_REPO = lib.mkIf (config.coachiq.settings.githubUpdateRepo != null) config.coachiq.settings.githubUpdateRepo;
+
+              # New feature flags - only if enabled
+              COACHIQ_FEATURES__ENABLE_CANBUS_DECODER_V2 = lib.mkIf config.coachiq.settings.features.enableCanbusDeoderV2 "true";
+              COACHIQ_FEATURES__ENABLE_DASHBOARD_AGGREGATION = lib.mkIf (!config.coachiq.settings.features.enableDashboardAggregation) "false";
+              COACHIQ_FEATURES__ENABLE_SYSTEM_ANALYTICS = lib.mkIf (!config.coachiq.settings.features.enableSystemAnalytics) "false";
+              COACHIQ_FEATURES__ENABLE_ACTIVITY_TRACKING = lib.mkIf (!config.coachiq.settings.features.enableActivityTracking) "false";
+              COACHIQ_FEATURES__ENABLE_ANALYTICS_DASHBOARD = lib.mkIf (!config.coachiq.settings.features.enableAnalyticsDashboard) "false";
+              COACHIQ_FEATURES__ENABLE_PREDICTIVE_MAINTENANCE = lib.mkIf (!config.coachiq.settings.features.enablePredictiveMaintenance) "false";
+              COACHIQ_FEATURES__ENABLE_LOG_HISTORY = lib.mkIf (!config.coachiq.settings.features.enableLogHistory) "false";
+              COACHIQ_FEATURES__ENABLE_LOG_STREAMING = lib.mkIf (!config.coachiq.settings.features.enableLogStreaming) "false";
+              COACHIQ_FEATURES__ENABLE_GITHUB_UPDATE_CHECKER = lib.mkIf config.coachiq.settings.features.enableGithubUpdateChecker "true";
+
+              # Domain API v2 features - only if different from defaults
+              COACHIQ_FEATURES__ENABLE_DOMAIN_API_V2 = lib.mkIf (!config.coachiq.settings.features.enableDomainApiV2) "false";
+              COACHIQ_FEATURES__ENABLE_ENTITIES_API_V2 = lib.mkIf (!config.coachiq.settings.features.enableEntitiesApiV2) "false";
+              COACHIQ_FEATURES__ENABLE_DIAGNOSTICS_API_V2 = lib.mkIf config.coachiq.settings.features.enableDiagnosticsApiV2 "true";
+              COACHIQ_FEATURES__ENABLE_ANALYTICS_API_V2 = lib.mkIf config.coachiq.settings.features.enableAnalyticsApiV2 "true";
+              COACHIQ_FEATURES__ENABLE_NETWORKS_API_V2 = lib.mkIf config.coachiq.settings.features.enableNetworksApiV2 "true";
+              COACHIQ_FEATURES__ENABLE_SYSTEM_API_V2 = lib.mkIf config.coachiq.settings.features.enableSystemApiV2 "true";
+
+              # CAN Bus Decoder v2 settings - only if enabled and different from defaults
+              COACHIQ_CANBUS_DECODER_V2__ENABLED = lib.mkIf config.coachiq.settings.features.enableCanbusDeoderV2 "true";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_SAFETY_STATE_ENGINE = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && !config.coachiq.settings.canbusDecoderV2.enableSafetyStateEngine) "false";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_PROTOCOL_ROUTER = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && !config.coachiq.settings.canbusDecoderV2.enableProtocolRouter) "false";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_CONFIGURATION_SERVICE = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && !config.coachiq.settings.canbusDecoderV2.enableConfigurationService) "false";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_BAM_OPTIMIZATION = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && !config.coachiq.settings.canbusDecoderV2.enableBamOptimization) "false";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_ADAPTIVE_SECURITY = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.enableAdaptiveSecurity) "true";
+              COACHIQ_CANBUS_DECODER_V2__ENABLE_PERFORMANCE_MONITORING = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && !config.coachiq.settings.canbusDecoderV2.enablePerformanceMonitoring) "false";
+              COACHIQ_CANBUS_DECODER_V2__SAFETY_STATE_TIMEOUT_SECONDS = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.safetyStateTimeoutSeconds != 30.0) (toString config.coachiq.settings.canbusDecoderV2.safetyStateTimeoutSeconds);
+              COACHIQ_CANBUS_DECODER_V2__MOVING_SPEED_THRESHOLD_MPH = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.movingSpeedThresholdMph != 0.5) (toString config.coachiq.settings.canbusDecoderV2.movingSpeedThresholdMph);
+              COACHIQ_CANBUS_DECODER_V2__CONFIGURATION_CACHE_TTL_SECONDS = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.configurationCacheTtlSeconds != 300) (toString config.coachiq.settings.canbusDecoderV2.configurationCacheTtlSeconds);
+              COACHIQ_CANBUS_DECODER_V2__MAX_CONCURRENT_BAM_SESSIONS = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.maxConcurrentBamSessions != 100) (toString config.coachiq.settings.canbusDecoderV2.maxConcurrentBamSessions);
+              COACHIQ_CANBUS_DECODER_V2__PERFORMANCE_MONITORING_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.features.enableCanbusDeoderV2 && config.coachiq.settings.canbusDecoderV2.performanceMonitoringIntervalSeconds != 10.0) (toString config.coachiq.settings.canbusDecoderV2.performanceMonitoringIntervalSeconds);
+
+              # Analytics dashboard settings - only if different from defaults
+              COACHIQ_ANALYTICS__ENABLED = lib.mkIf (!config.coachiq.settings.analyticsDashboard.enabled) "false";
+              COACHIQ_ANALYTICS__MEMORY_RETENTION_HOURS = lib.mkIf (config.coachiq.settings.analyticsDashboard.memoryRetentionHours != 2) (toString config.coachiq.settings.analyticsDashboard.memoryRetentionHours);
+              COACHIQ_ANALYTICS__INSIGHT_GENERATION_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.analyticsDashboard.insightGenerationIntervalSeconds != 900) (toString config.coachiq.settings.analyticsDashboard.insightGenerationIntervalSeconds);
+              COACHIQ_ANALYTICS__PATTERN_ANALYSIS_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.analyticsDashboard.patternAnalysisIntervalSeconds != 1800) (toString config.coachiq.settings.analyticsDashboard.patternAnalysisIntervalSeconds);
+              COACHIQ_ANALYTICS__MAX_MEMORY_INSIGHTS = lib.mkIf (config.coachiq.settings.analyticsDashboard.maxMemoryInsights != 100) (toString config.coachiq.settings.analyticsDashboard.maxMemoryInsights);
+              COACHIQ_ANALYTICS__MAX_MEMORY_PATTERNS = lib.mkIf (config.coachiq.settings.analyticsDashboard.maxMemoryPatterns != 50) (toString config.coachiq.settings.analyticsDashboard.maxMemoryPatterns);
+              COACHIQ_ANALYTICS__PERSISTENCE_RETENTION_DAYS = lib.mkIf (config.coachiq.settings.analyticsDashboard.persistenceRetentionDays != 30) (toString config.coachiq.settings.analyticsDashboard.persistenceRetentionDays);
+              COACHIQ_ANALYTICS__ENABLE_BACKGROUND_PERSISTENCE = lib.mkIf (!config.coachiq.settings.analyticsDashboard.enableBackgroundPersistence) "false";
+              COACHIQ_ANALYTICS__SQLITE_BATCH_SIZE = lib.mkIf (config.coachiq.settings.analyticsDashboard.sqliteBatchSize != 100) (toString config.coachiq.settings.analyticsDashboard.sqliteBatchSize);
+              COACHIQ_ANALYTICS__DB_PATH = lib.mkIf (config.coachiq.settings.analyticsDashboard.dbPath != "data/analytics.db") config.coachiq.settings.analyticsDashboard.dbPath;
+              COACHIQ_ANALYTICS__ENABLE_BACKGROUND_CLEANUP = lib.mkIf (!config.coachiq.settings.analyticsDashboard.enableBackgroundCleanup) "false";
+              COACHIQ_ANALYTICS__CLEANUP_INTERVAL_SECONDS = lib.mkIf (config.coachiq.settings.analyticsDashboard.cleanupIntervalSeconds != 3600) (toString config.coachiq.settings.analyticsDashboard.cleanupIntervalSeconds);
 
               # Legacy compatibility - only if using non-default values
               COACHIQ_HOST = lib.mkIf (config.coachiq.settings.host != "0.0.0.0") config.coachiq.settings.host;

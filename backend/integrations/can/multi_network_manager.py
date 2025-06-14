@@ -25,6 +25,7 @@ import can.interface
 from can.exceptions import CanInterfaceNotImplementedError
 
 from backend.core.config import get_can_settings, get_multi_network_settings
+from backend.integrations.can.message_deduplicator import CANMessageDeduplicator
 
 logger = logging.getLogger(__name__)
 

@@ -4,6 +4,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { AuthProvider } from "@/contexts/auth-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { WebSocketProvider } from "@/contexts/websocket-provider";
+import { HealthProvider } from "@/contexts/health-context";
 import AnalyticsDashboardPage from "@/pages/analytics-dashboard";
 import CanSniffer from "@/pages/can-sniffer";
 import ConfigurationPage from "@/pages/config";
@@ -21,8 +22,9 @@ import PerformancePage from "@/pages/performance";
 import ProfilePage from "@/pages/profile";
 import AdminSettingsPage from "@/pages/admin-settings";
 import SettingsPage from "@/pages/settings";
+import HealthDashboard from "@/pages/health-dashboard";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import RVCSpec from "@/pages/rvc-spec";
 import SystemStatus from "@/pages/system-status";
 import ThemeTest from "@/pages/theme-test";
@@ -37,16 +39,17 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryProvider>
       <AuthProvider>
-        <WebSocketProvider enableEntityUpdates enableSystemStatus enableCANScan={false}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TooltipProvider>
-            <Toaster />
-            <BrowserRouter
+        <HealthProvider>
+          <WebSocketProvider enableEntityUpdates enableSystemStatus enableCANScan={false}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <TooltipProvider>
+              <Toaster />
+              <BrowserRouter
             future={{
               v7_startTransition: true,
               v7_relativeSplatPath: true,
@@ -72,6 +75,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/documentation" element={<AuthGuard><Documentation /></AuthGuard>} />
               <Route path="/rvc-spec" element={<AuthGuard><RVCSpec /></AuthGuard>} />
               <Route path="/system-status" element={<AuthGuard><SystemStatus /></AuthGuard>} />
+              <Route path="/health" element={<AuthGuard><HealthDashboard /></AuthGuard>} />
               <Route path="/performance" element={<AuthGuard><PerformancePage /></AuthGuard>} />
               <Route path="/analytics-dashboard" element={<AuthGuard><AnalyticsDashboardPage /></AuthGuard>} />
               <Route path="/settings" element={<AuthGuard><SettingsPage /></AuthGuard>} />
@@ -83,7 +87,8 @@ createRoot(document.getElementById("root")!).render(
           </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
-        </WebSocketProvider>
+          </WebSocketProvider>
+        </HealthProvider>
       </AuthProvider>
     </QueryProvider>
   </StrictMode>

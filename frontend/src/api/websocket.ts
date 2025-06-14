@@ -6,6 +6,7 @@
  */
 
 import { WS_BASE, env, logApiRequest, logApiResponse } from './client';
+import { tokenStorage } from '@/lib/token-storage';
 import type {
   CANMessageUpdate,
   EntityUpdateMessage,
@@ -116,7 +117,12 @@ export class RVCWebSocketClient {
     this.cleanup();
     this._state = 'connecting';
 
-    const wsUrl = `${WS_BASE}${this.endpoint}`;
+    // Get authentication token from token storage
+    const token = tokenStorage.getAccessToken();
+
+    // Build WebSocket URL with token as query parameter
+    const baseUrl = `${WS_BASE}${this.endpoint}`;
+    const wsUrl = token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
 
     if (env.isDevelopment) {
       logApiRequest('WS CONNECT', wsUrl);
@@ -193,6 +199,28 @@ export class RVCWebSocketClient {
     this.socket.onclose = (event) => {
       this.cleanup();
       this._state = 'disconnected';
+
+      // Handle authentication-related closures
+      if (event.code === 1008) { // Policy violation (auth failure)
+        console.warn(`WebSocket authentication failed: ${event.reason}`);
+
+        // If token expired, try to refresh and reconnect
+        if (event.reason?.includes('expired') && tokenStorage.isRefreshTokenValid()) {
+          console.log('Attempting to refresh token and reconnect...');
+          tokenStorage.attemptTokenRefresh().then((success) => {
+            if (success) {
+              setTimeout(() => this.connect(), 1000);
+            } else {
+              console.error('Token refresh failed');
+              this.handlers.onError?.(new Event('auth_failed'));
+            }
+          }).catch((error) => {
+            console.error('Token refresh failed:', error);
+            this.handlers.onError?.(new Event('auth_failed'));
+          });
+          return;
+        }
+      }
 
       // Only log unexpected closures (not normal 1000 closure)
       if (env.isDevelopment && event.code !== 1000) {

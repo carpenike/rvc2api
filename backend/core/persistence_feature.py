@@ -38,6 +38,9 @@ class PersistenceFeature(Feature):
         config: dict[str, Any] | None = None,
         dependencies: list[str] | None = None,
         friendly_name: str | None = None,
+        safety_classification=None,
+        log_state_transitions: bool = True,
+        **kwargs
     ) -> None:
         """
         Initialize the Persistence feature.
@@ -49,6 +52,9 @@ class PersistenceFeature(Feature):
             config: Configuration options
             dependencies: Feature dependencies
             friendly_name: Human-readable display name for the feature
+            safety_classification: Safety classification for state validation
+            log_state_transitions: Whether to log state transitions
+            **kwargs: Additional arguments for compatibility
         """
         super().__init__(
             name=name,
@@ -57,6 +63,8 @@ class PersistenceFeature(Feature):
             config=config or {},
             dependencies=dependencies or [],
             friendly_name=friendly_name,
+            safety_classification=safety_classification,
+            log_state_transitions=log_state_transitions,
         )
 
         # Initialize components (lazy loading)
@@ -67,10 +75,6 @@ class PersistenceFeature(Feature):
 
     async def startup(self) -> None:
         """Initialize the Persistence feature on startup."""
-        if not self.enabled:
-            logger.info("Persistence feature is disabled, skipping initialization")
-            return
-
         logger.info("Starting Persistence feature")
 
         try:
@@ -122,7 +126,7 @@ class PersistenceFeature(Feature):
             logger.info("Persistence feature started successfully")
 
         except Exception as e:
-            logger.error(f"Failed to start persistence feature: {e}")
+            logger.exception("Failed to start persistence feature: %s", e)
             # Clean up partially initialized components
             await self._cleanup()
             raise
@@ -147,14 +151,11 @@ class PersistenceFeature(Feature):
             self._dashboard_repository = None
 
         except Exception as e:
-            logger.error(f"Error during persistence feature cleanup: {e}")
+            logger.exception("Error during persistence feature cleanup: %s", e)
 
     @property
     def health(self) -> str:
         """Return the health status of the feature."""
-        if not self.enabled:
-            return "healthy"  # Disabled is considered healthy
-
         if not self._persistence_service or not self._database_manager:
             return "unhealthy"
 
@@ -168,9 +169,6 @@ class PersistenceFeature(Feature):
     @property
     def health_details(self) -> dict[str, Any]:
         """Return detailed health information for diagnostics."""
-        if not self.enabled:
-            return {"status": "disabled", "reason": "Feature not enabled"}
-
         if not self._persistence_service or not self._database_manager:
             return {"status": "unhealthy", "reason": "Services not initialized"}
 
