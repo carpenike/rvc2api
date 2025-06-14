@@ -144,6 +144,10 @@
             mkdir -p $out/${python.sitePackages}/config
             cp -r $src/config/* $out/${python.sitePackages}/config/
 
+            # Also install to a predictable location for NixOS module
+            mkdir -p $out/share/coachiq/config
+            cp -r $src/config/* $out/share/coachiq/config/
+
             # Create wrapper scripts that will be used by systemd
             mkdir -p $out/bin
 
@@ -2464,7 +2468,7 @@ EOF
           ] ++ lib.optionals (config.coachiq.settings.persistence.dataDir == "/var/lib/coachiq") [
             # Copy reference files from package on first install
             # These are read-only configuration files (RV-C specs, coach mappings)
-            "C ${config.coachiq.settings.persistence.dataDir}/reference 0755 root root - ${config.coachiq.package}/${python.sitePackages}/config"
+            "C ${config.coachiq.settings.persistence.dataDir}/reference 0755 root root - ${config.coachiq.package}/share/coachiq/config"
           ]);
 
           # Create system user for coachiq service
