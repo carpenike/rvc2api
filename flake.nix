@@ -545,6 +545,9 @@ EOF
 
             npmDepsHash = "sha256-eY3ikgJDgfpwq2BgiPorWlZdsaiG0wRDtcKagp4T1VM=";
 
+            # Handle React 19 peer dependency conflicts
+            npmFlags = [ "--legacy-peer-deps" ];
+
             nativeBuildInputs = [
               pkgs.nodejs_20
               pkgs.python3
