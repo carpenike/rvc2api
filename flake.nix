@@ -2514,6 +2514,7 @@ EOF
               PrivateTmp = true;
               ProtectSystem = "strict";
               ProtectHome = true;
+              StateDirectory = "coachiq";
               ReadWritePaths = [
                 config.coachiq.settings.persistence.dataDir
                 "/dev" # For CAN access
