@@ -121,7 +121,7 @@
           src      = self;
           format   = "pyproject";
 
-          nativeBuildInputs = with pythonPackages; [ poetry-core ];
+          nativeBuildInputs = with pythonPackages; [ poetry-core ] ++ [ pkgs.makeWrapper ];
           propagatedBuildInputs = [
             pythonPackages.coloredlogs
             pythonPackages.fastapi
@@ -173,8 +173,7 @@
             pythonPackages.apprise
             # CAN protocol handling (Linux only due to platform constraints)
             pythonPackages.cantools
-            # CAN system utilities for debugging and management
-            pkgs.can-utils
+            # pkgs.can-utils removed - will be added to PATH via makeWrapper
           ];
 
           doCheck    = true;
@@ -2533,8 +2532,8 @@ EOF
               ];
               ExecStart = "${config.coachiq.package}/bin/coachiq-daemon";
               ExecStartPost = [
-                # Wait for service to be ready
-                "${pkgs.bash}/bin/bash -c 'sleep 2 && ${config.coachiq.package}/share/coachiq/nix/health-check.sh'"
+                # Wait for service to be ready (increased from 2s to 10s for proper initialization)
+                "${pkgs.bash}/bin/bash -c 'sleep 10 && ${config.coachiq.package}/share/coachiq/nix/health-check.sh'"
               ];
               Restart    = "always";
               RestartSec = 5;
